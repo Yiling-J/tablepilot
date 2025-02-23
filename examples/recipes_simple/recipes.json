@@ -1,0 +1,37 @@
+{
+  "name": "recipes",
+  "description": "table of recipes",
+  "columns": [
+    {
+      "name": "Name",
+      "description": "recipe name",
+      "type": "string",
+      "fill_mode": "ai",
+      "context_length": 5
+    },
+    {
+      "name": "Ingredients",
+      "description": "list of ingredients",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Cooking Time",
+      "description": "time required to cook the recipe (minutes)",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Cuisine",
+      "description": "type of cuisine",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Difficulty Level",
+      "description": "difficulty level of the recipe (1-5)",
+      "type": "integer",
+      "fill_mode": "ai"
+    }
+  ]
+}

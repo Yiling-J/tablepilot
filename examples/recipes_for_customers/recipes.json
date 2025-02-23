@@ -1,0 +1,43 @@
+{
+  "name": "recipes",
+  "description": "As a renowned chef, you need to create a personalized recipe for each customer. The recipes should be tailored based on the customer's information.",
+  "sources": [
+    {
+      "name": "customer",
+      "type": "linked",
+      "table": "customers",
+      "column": "Name",
+      "context_columns": ["Name", "Age", "Job", "Country", "Taste Preference"]
+    }
+  ],
+  "columns": [
+    {
+      "name": "Name",
+      "description": "recipe name",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Ingredients",
+      "description": "list of ingredients",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Customer",
+      "description": "The customer for whom this recipe is created",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "customer"
+    },
+    {
+      "name": "Reason",
+      "description": "A detailed explanation of why this recipe is suitable for the customer",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": ""
+    }
+  ]
+}
