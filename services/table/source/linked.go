@@ -32,7 +32,7 @@ func (ls *LinkedSource) Init(ctx context.Context, db *ent.Client, column *ent.Ta
 	}
 	ls.data = data
 	ls._column = column
-	ls.indexer = newIndexer(ls.Random, ls.Replacement, len(ls.data))
+	ls.indexer = newIndexer(ls.Random, ls.Replacement, len(ls.data), ls.Repeat)
 	return nil
 }
 

@@ -1,0 +1,49 @@
+Name,Ingredients,Cooking Time,Country,Meals
+Scallion Pancakes,"[""Scallions"",""Flour"",""Water"",""Salt"",""Oil""]",25,China,Breakfast
+Congee,"[""Rice"",""Water"",""Salt"",""Preserved Vegetables"",""Peanuts""]",90,China,Breakfast
+Kung Pao Chicken,"[""Chicken"",""Peanuts"",""Vegetables"",""Soy Sauce"",""Vinegar"",""Sugar"",""Chili Peppers""]",30,China,Lunch
+Mapo Tofu,"[""Tofu"",""Ground Pork"",""Doubanjiang"",""Douchi"",""Chili Oil"",""Sichuan Peppercorns""]",25,China,Lunch
+Peking Duck,"[""Duck"",""Pancakes"",""Scallions"",""Hoisin Sauce""]",120,China,Dinner
+Sweet and Sour Pork,"[""Pork"",""Pineapple"",""Bell Peppers"",""Onion"",""Sweet and Sour Sauce""]",40,China,Dinner
+Dumplings,"[""Wheat Flour"",""Ground Pork"",""Cabbage"",""Ginger"",""Soy Sauce""]",45,Japan,Breakfast
+Chow Mein,"[""Noodles"",""Soy Sauce"",""Sesame Oil"",""Vegetables"",""Meat""]",30,Japan,Breakfast
+Spring Rolls,"[""Rice Paper"",""Vegetables"",""Shrimp"",""Noodles""]",40,Japan,Lunch
+Hot Pot,"[""Broth"",""Meat"",""Vegetables"",""Tofu"",""Noodles""]",60,Japan,Lunch
+Wonton Soup,"[""Wonton Wrappers"",""Ground Pork"",""Shrimp"",""Broth"",""Vegetables""]",35,Japan,Dinner
+Fried Rice,"[""Rice"",""Eggs"",""Soy Sauce"",""Vegetables"",""Meat""]",25,Japan,Dinner
+Full English,"[""Eggs"",""Bacon"",""Toast"",""Beans""]",20,England,Breakfast
+Sausage and Egg Toast,"[""Eggs"",""Sausage"",""Toast"",""Mushrooms""]",15,England,Breakfast
+Chicken Salad Sandwich,"[""Chicken"",""Lettuce"",""Tomato"",""Mayonnaise""]",10,England,Lunch
+Ham and Cheese Toastie,"[""Ham"",""Cheese"",""Bread"",""Butter""]",12,England,Lunch
+Roast Beef,"[""Beef"",""Potatoes"",""Carrots"",""Gravy""]",90,England,Dinner
+Fish and Chips,"[""Fish"",""Chips"",""Peas"",""Tartar Sauce""]",30,England,Dinner
+Pad See Ew,"[""Rice noodles"",""Chinese broccoli"",""Egg"",""Soy sauce"",""Garlic""]",25,Thailand,Breakfast
+Khao Pad,"[""Rice"",""Egg"",""Onion"",""Carrot"",""Soy sauce""]",20,Thailand,Breakfast
+Tom Yum Soup,"[""Lemongrass"",""Galangal"",""Kaffir lime leaves"",""Chili"",""Mushrooms"",""Shrimp""]",30,Thailand,Lunch
+Green Curry,"[""Green curry paste"",""Coconut milk"",""Bamboo shoots"",""Thai basil"",""Chicken""]",35,Thailand,Lunch
+Massaman Curry,"[""Massaman curry paste"",""Coconut milk"",""Potatoes"",""Onions"",""Peanuts"",""Beef""]",60,Thailand,Dinner
+Pad Kra Pao,"[""Ground pork"",""Thai basil"",""Chili"",""Garlic"",""Soy sauce"",""Egg""]",20,Thailand,Dinner
+Chicken Satay,"[""Chicken"",""Peanut Sauce"",""Soy Sauce"",""Sugar"",""Spices""]",25,France,Breakfast
+Panang Curry,"[""Red Curry Paste"",""Coconut Milk"",""Meat"",""Vegetables"",""Fish Sauce""]",30,France,Breakfast
+Som Tum,"[""Green Papaya"",""Tomatoes"",""Green Beans"",""Peanuts"",""Lime Juice""]",15,France,Lunch
+Tom Kha Gai,"[""Chicken"",""Coconut Milk"",""Galangal"",""Lemongrass"",""Lime Leaves""]",20,France,Lunch
+Laab,"[""Minced Meat"",""Fish Sauce"",""Lime Juice"",""Roasted Rice"",""Herbs""]",20,France,Dinner
+Mango Sticky Rice,"[""Sticky Rice"",""Mango"",""Coconut Milk"",""Sugar"",""Salt""]",35,France,Dinner
+Carbonara,"[""Eggs"",""Pancetta"",""Parmesan Cheese"",""Black Pepper""]",20,Italy,Breakfast
+Pancakes,"[""Eggs"",""Flour"",""Milk"",""Sugar"",""Butter""]",15,Italy,Breakfast
+Margherita Pizza,"[""Tomatoes"",""Mozzarella"",""Basil"",""Olive Oil""]",25,Italy,Lunch
+Spaghetti Bolognese,"[""Ground Beef"",""Tomato Sauce"",""Onions"",""Garlic"",""Pasta""]",45,Italy,Lunch
+Chicken Marsala,"[""Chicken Breast"",""Mushrooms"",""Marsala Wine"",""Flour"",""Butter""]",35,Italy,Dinner
+Risotto,"[""Risotto Rice"",""Vegetable Broth"",""Parmesan Cheese"",""Butter"",""Onion""]",40,Italy,Dinner
+Croquettes,"[""Potatoes"",""Ham"",""Breadcrumbs"",""Egg"",""Milk""]",25,Spain,Breakfast
+Churros,"[""Flour"",""Water"",""Salt"",""Sugar"",""Oil""]",30,Spain,Breakfast
+Paella,"[""Rice"",""Chicken"",""Seafood"",""Vegetables"",""Saffron""]",40,Spain,Lunch
+Gazpacho,"[""Tomatoes"",""Cucumber"",""Peppers"",""Onion"",""Garlic"",""Olive Oil"",""Vinegar""]",35,Spain,Lunch
+Tortilla Española,"[""Potatoes"",""Eggs"",""Onion"",""Olive Oil""]",50,Spain,Dinner
+Patatas Bravas,"[""Potatoes"",""Olive Oil"",""Smoked Paprika"",""Mayonnaise"",""Hot Sauce""]",45,Spain,Dinner
+Gambas al Ajillo,"[""Shrimp"",""Garlic"",""Olive Oil"",""Parsley"",""Chili Flakes""]",15,India,Breakfast
+Croquetas,"[""Milk"",""Flour"",""Butter"",""Ham"",""Breadcrumbs""]",45,India,Breakfast
+Pulpo a la Gallega,"[""Octopus"",""Potatoes"",""Olive Oil"",""Smoked Paprika"",""Salt""]",60,India,Lunch
+Pimientos de Padrón,"[""Padrón Peppers"",""Olive Oil"",""Salt""]",10,India,Lunch
+Queso Manchego,"[""Manchego Cheese"",""Olive Oil"",""Bread""]",5,India,Dinner
+Jamón Ibérico,"[""Iberian Ham"",""Bread"",""Olive Oil""]",5,India,Dinner

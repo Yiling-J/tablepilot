@@ -121,8 +121,7 @@ func TestTableService_CreateTable(t *testing.T) {
       "name": "tags",
       "type": "ai",
       "prompt": "Generate 20 tags.",
-      "random": true,
-      "replacement": false
+      "random": true
     }`),
 		[]byte(`
     {
@@ -163,7 +162,6 @@ func TestTableService_CreateTable(t *testing.T) {
       "type": "ai",
       "prompt": "Generate 20 tags.",
       "random": true,
-      "replacement": false,
       "options": null
     }`),
 		[]byte(fmt.Sprintf(`

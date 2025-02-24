@@ -10,7 +10,7 @@ import (
 func TestSource_List(t *testing.T) {
 	ctx := context.TODO()
 	so := &ListSource{
-		indexer: newIndexer(false, false, 5),
+		indexer: newIndexer(false, false, 5, 0),
 		Type:    "list",
 		Options: []string{"a", "b", "c"},
 	}

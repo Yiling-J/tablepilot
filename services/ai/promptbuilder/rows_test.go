@@ -28,7 +28,7 @@ Generate values for the following missing columns:
   <Column id="n1" name="c1" description="col1" type="string"/>
   <Column id="n2" name="c2" description="col2" type="integer"/>
 </MissingColumns>
-Here is the existing values for column n1:
+Consider the following existing values for column n1, collected from previous rows. Try not to repeat any of these values in your output for column n1:
 <Values column_id="n1">
   <Value>abc</Value>
   <Value>123</Value>

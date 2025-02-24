@@ -40,7 +40,7 @@ func TestSource_AI(t *testing.T) {
 				},
 			}
 			so := &AISource{
-				indexer: newIndexer(false, false, 20),
+				indexer: newIndexer(false, false, 20, 0),
 				Type:    "ai",
 				Prompt:  "aiai",
 			}

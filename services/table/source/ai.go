@@ -53,7 +53,7 @@ func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.Table
 		return err
 	}
 	as.Options = append(as.Options, d.Options...)
-	as.indexer = newIndexer(as.Random, as.Replacement, len(as.Options))
+	as.indexer = newIndexer(as.Random, as.Replacement, len(as.Options), as.Repeat)
 	return nil
 }
 

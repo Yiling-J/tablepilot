@@ -11,17 +11,23 @@ type Source interface {
 }
 
 type indexer struct {
-	Random      bool `json:"random"`
-	Replacement bool `json:"replacement"`
+	Random      bool `json:"random,omitempty"`
+	Replacement bool `json:"replacement,omitempty"`
+	Repeat      int  `json:"repeat,omitempty"`
+	repeated    int
 	total       int
 	current     int
 	picked      map[int]bool
 }
 
-func newIndexer(random, replacement bool, total int) indexer {
+func newIndexer(random, replacement bool, total, repeat int) indexer {
+	if repeat == 0 {
+		repeat = 1
+	}
 	return indexer{
 		Random:      random,
 		Replacement: replacement,
+		Repeat:      repeat,
 		total:       total,
 		current:     -1,
 		picked:      map[int]bool{},
@@ -29,6 +35,12 @@ func newIndexer(random, replacement bool, total int) indexer {
 }
 
 func (i *indexer) nextIndex() int {
+	if i.Repeat > 1 && i.repeated < i.Repeat && i.current != -1 {
+		i.repeated += 1
+		return i.current
+	}
+	i.repeated = 1
+
 	if i.Random {
 		if i.Replacement {
 			options := []int{}

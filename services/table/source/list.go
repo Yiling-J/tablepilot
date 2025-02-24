@@ -12,7 +12,7 @@ type ListSource struct {
 }
 
 func (ls *ListSource) Init(ctx context.Context) error {
-	ls.indexer = newIndexer(ls.Random, ls.Replacement, len(ls.Options))
+	ls.indexer = newIndexer(ls.Random, ls.Replacement, len(ls.Options), ls.Repeat)
 	return nil
 }
 
