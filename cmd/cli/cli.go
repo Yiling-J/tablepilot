@@ -47,7 +47,7 @@ func NewBackend(
 	}
 }
 
-func createBackend(cmd *cobra.Command) *Backend {
+func createBackend(cmd *cobra.Command, verbose bool) *Backend {
 	container := dig.New()
 
 	err := container.Provide(func() (*config.Config, error) {
@@ -58,15 +58,14 @@ func createBackend(cmd *cobra.Command) *Backend {
 	}
 
 	err = container.Provide(func(config *config.Config) (*zap.SugaredLogger, error) {
-		if config.Debug {
-			cfg := zap.NewDevelopmentConfig()
-			l, err := cfg.Build()
-			if err != nil {
-				return nil, err
-			}
-			return l.Sugar(), nil
+		var cfg zap.Config
+		if verbose {
+			cfg = zap.NewDevelopmentConfig()
+		} else {
+			cfg = zap.NewProductionConfig()
 		}
-		l, err := zap.NewProduction()
+		cfg.Encoding = "console"
+		l, err := cfg.Build()
 		if err != nil {
 			return nil, err
 		}
@@ -134,9 +133,12 @@ func BuildCLI(root *cobra.Command) {
 	cmd := root
 	cmd.PersistentFlags().StringVarP(&configPath, "config", "", "config.toml", "path to the config file")
 
+	var verbose bool
+	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output (default: false)")
+
 	var backend *Backend
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		backend = createBackend(cmd)
+		backend = createBackend(cmd, verbose)
 		return nil
 	}
 

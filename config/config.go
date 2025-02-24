@@ -37,7 +37,6 @@ type OpenAI struct {
 }
 
 type Config struct {
-	Debug    bool
 	Database *Database
 	Models   []Model
 	Clients  []Client

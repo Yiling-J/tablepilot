@@ -21,10 +21,10 @@ type HTTPServer struct {
 }
 
 func NewHttpServer(
-	config *config.Config, db *ent.Client,
+	config *config.Config, db *ent.Client, debug bool,
 	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
 ) *HTTPServer {
-	if config.Debug {
+	if debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
