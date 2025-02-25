@@ -2,6 +2,24 @@
 
 Tablepilot is a CLI tool designed to generate tables using AI.
 
+
+## How to Use
+
+To generate a table, you need to prepare a TOML config file and a table schema JSON file. The config file defines the LLM clients used to generate tables, as well as the database where the table schema and data will be stored. The JSON schema file includes the table name, columns, and other information about your table.
+
+Once you have everything prepared, follow these steps:
+
+1. **Save the Table Schema**: Use the `create` command to save the table schema into your database. After this step, the JSON file is no longer needed, as the schema is already stored in the database.
+   
+2. **Generate Rows**: Use the `generate` command to create rows. The rows will be stored automatically in the database. However, you can use the `saveas` flag to save the generated rows directly into a CSV file, instead of the database. In this case, the database acts as a schema store and does not store any row data.
+
+3. **Export Data**: If you are storing data in the database, you can use the `export` command to export the data as a CSV file.
+
+4. **Regenerate Data**: To regenerate data, use the `truncate` command to remove all rows from the table first. 
+
+5. **Modify Schema**: If you modify the schema JSON, `delete` the existing table first and then recreate it using the updated JSON file.
+
+
 ## Examples
 
 A number of examples demonstrating various use cases of Tablepilot are available in the [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples).
@@ -37,7 +55,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
 - **generate**
   Generate data for a specified table.
   ```
-  tablepilot generate recipes
+  tablepilot generate recipes -c=50 -b=10
   ```
 
 	- `-b, --batch int`
