@@ -296,6 +296,7 @@ func BuildCLI(root *cobra.Command) {
 
 	var count int
 	var batch int
+	var saveTo string
 	generate := &cobra.Command{
 		Use:   "generate <table id or name>",
 		Short: "Generate data for a specified table",
@@ -305,13 +306,32 @@ func BuildCLI(root *cobra.Command) {
 				batch = count
 			}
 			table := args[0]
-			generator, err := backend.tableService.Genetate(cmd.Context(), table, count, batch)
+			generator, err := backend.tableService.Genetate(
+				cmd.Context(), table, saveTo, count, batch,
+			)
 			if err != nil {
 				return err
 			}
 			indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
 			tp := newPrinter()
 			tp.AddHeader(indexer.ColumnNames())
+			var csvWriter *csv.Writer
+			if saveTo != "" {
+				file, err := os.Create(saveTo)
+				if err != nil {
+					return err
+				}
+				defer func() { _ = file.Close() }()
+				csvWriter = csv.NewWriter(file)
+				columns := []string{}
+				for _, col := range generator.Table().Edges.Columns {
+					columns = append(columns, col.Name)
+				}
+				err = csvWriter.Write(columns)
+				if err != nil {
+					return err
+				}
+			}
 			for {
 				batch, err := generator.Next(cmd.Context())
 				if err != nil {
@@ -321,18 +341,30 @@ func BuildCLI(root *cobra.Command) {
 					break
 				}
 				for _, row := range batch {
+					sr := []string{}
 					v, err := indexer.RowMapToSlice(row)
 					if err != nil {
 						return err
 					}
 					for _, cell := range v {
-						tp.AddField(cellString(cell.Value))
+						sv := cellString(cell.Value)
+						sr = append(sr, sv)
+						tp.AddField(sv)
 					}
 					tp.EndRow()
+					if csvWriter != nil {
+						err = csvWriter.Write(sr)
+						if err != nil {
+							return err
+						}
+					}
 				}
 				err = tp.Render()
 				if err != nil {
 					return err
+				}
+				if csvWriter != nil {
+					csvWriter.Flush()
 				}
 			}
 			backend.Logger.Infow("generated done")
@@ -345,6 +377,7 @@ func BuildCLI(root *cobra.Command) {
 		panic(err)
 	}
 	generate.Flags().IntVarP(&batch, "batch", "b", 10, "")
+	generate.Flags().StringVarP(&saveTo, "saveto", "s", "", "")
 
 	cmd.AddCommand(generate)
 

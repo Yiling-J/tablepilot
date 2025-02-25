@@ -29,8 +29,9 @@ type RowsGenerator struct {
 	table          *ent.TableMeta
 	missingColumns []*ent.TableColumn
 	sourceMap      map[string]source.Source
-	generated      []map[string]any
+	generated      []map[string]*schema.CellValue
 	contextLength  int
+	saveTo         string
 
 	total     int
 	batchSize int
@@ -40,7 +41,7 @@ type RowsGenerator struct {
 	builder *promptbuilder.RowsBuilder
 }
 
-func NewRowsGenerator(ctx context.Context, table string, count, batch int, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*RowsGenerator, error) {
+func NewRowsGenerator(ctx context.Context, table string, saveTo string, count, batch int, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*RowsGenerator, error) {
 	generator := &RowsGenerator{
 		logger: logger,
 		db:     db,
@@ -49,6 +50,7 @@ func NewRowsGenerator(ctx context.Context, table string, count, batch int, db *e
 		total:     count,
 		batchSize: batch,
 		sourceMap: make(map[string]source.Source),
+		saveTo:    saveTo,
 	}
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
@@ -90,27 +92,27 @@ func (g *RowsGenerator) newBatch(ctx context.Context, batch int) error {
 
 func (g *RowsGenerator) prepareContextRows(ctx context.Context) error {
 	// get required rows from previous generated results or database
-	contextRows := []map[string]any{}
+	contextRows := []map[string]*schema.CellValue{}
 	if g.contextLength > 0 {
-		if len(g.generated) >= g.contextLength {
-			for i := 0; i < g.contextLength; i++ {
-				contextRows = append(contextRows, g.generated[len(g.generated)-i])
+		remain := g.contextLength
+		for i := range g.generated {
+			contextRows = append(contextRows, g.generated[len(g.generated)-1-i])
+			remain -= 1
+			if remain == 0 {
+				break
 			}
-		} else {
+		}
+		if remain > 0 {
 			rows, err := g.table.QueryRows().Order(
 				ent.Desc(tablerow.FieldID),
-			).Limit(g.contextLength).All(ctx)
+			).Limit(remain).All(ctx)
 			if err != nil {
 				return err
 			}
 			for _, row := range rows {
-				m := map[string]any{}
+				m := map[string]*schema.CellValue{}
 				for i, col := range g.table.Edges.Columns {
-					if row.Cells[i].ContextValue != nil {
-						m[col.Nanoid] = row.Cells[i].ContextValue
-					} else {
-						m[col.Nanoid] = row.Cells[i].Value
-					}
+					m[col.Nanoid] = row.Cells[i]
 				}
 				contextRows = append(contextRows, m)
 			}
@@ -124,7 +126,12 @@ func (g *RowsGenerator) prepareContextRows(ctx context.Context) error {
 				if i >= len(contextRows) {
 					break
 				}
-				values = append(values, contextRows[i][col.Nanoid])
+				cv := contextRows[i][col.Nanoid]
+				if cv.ContextValue != nil {
+					values = append(values, cv.ContextValue)
+				} else {
+					values = append(values, cv.Value)
+				}
 			}
 			err := g.builder.AddColumnContextData(col.Nanoid, values)
 			if err != nil {
@@ -317,19 +324,22 @@ func (g *RowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellValu
 	if len(rows) > batchSize {
 		rows = rows[:batchSize]
 	}
+	g.generated = append(g.generated, rows...)
 	g.current += len(rows)
-	indexer := util.NewColumnIndexer(g.table.Edges.Columns)
-	creates := []*ent.TableRowCreate{}
-	for _, row := range rows {
-		v, err := indexer.RowMapToSlice(row)
+	if g.saveTo == "" {
+		indexer := util.NewColumnIndexer(g.table.Edges.Columns)
+		creates := []*ent.TableRowCreate{}
+		for _, row := range rows {
+			v, err := indexer.RowMapToSlice(row)
+			if err != nil {
+				return nil, err
+			}
+			creates = append(creates, g.db.TableRow.Create().SetCells(v).SetTablemeta(g.table))
+		}
+		err = g.db.TableRow.CreateBulk(creates...).Exec(ctx)
 		if err != nil {
 			return nil, err
 		}
-		creates = append(creates, g.db.TableRow.Create().SetCells(v).SetTablemeta(g.table))
-	}
-	err = g.db.TableRow.CreateBulk(creates...).Exec(ctx)
-	if err != nil {
-		return nil, err
 	}
 	return rows, nil
 }

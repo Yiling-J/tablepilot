@@ -40,7 +40,7 @@ var reflector = jsonschema.Reflector{
 type TableService interface {
 	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
-	Genetate(ctx context.Context, table string, count, batch int) (*RowsGenerator, error)
+	Genetate(ctx context.Context, table string, saveTo string, count, batch int) (*RowsGenerator, error)
 	Rows(ctx context.Context, table string) (*Rows, error)
 	Truncate(ctx context.Context, table string) (int, error)
 	Delete(ctx context.Context, table string) (int, error)
@@ -201,8 +201,8 @@ func (t *TableServiceImpl) ListTables(ctx context.Context) (*ListTablesResponse,
 	return resp, nil
 }
 
-func (t *TableServiceImpl) Genetate(ctx context.Context, table string, count, batch int) (*RowsGenerator, error) {
-	return NewRowsGenerator(ctx, table, count, batch, t.db, t.ai, t.logger)
+func (t *TableServiceImpl) Genetate(ctx context.Context, table string, saveTo string, count, batch int) (*RowsGenerator, error) {
+	return NewRowsGenerator(ctx, table, saveTo, count, batch, t.db, t.ai, t.logger)
 }
 
 func (t *TableServiceImpl) Rows(ctx context.Context, table string) (*Rows, error) {
