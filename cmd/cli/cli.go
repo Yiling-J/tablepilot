@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -12,9 +11,7 @@ import (
 	"tablepilot/services/ai"
 	"tablepilot/services/ai/client"
 	"tablepilot/services/table"
-	"tablepilot/services/table/util"
 	"tablepilot/utils/tableprinter"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
@@ -136,9 +133,10 @@ func BuildCLI(root *cobra.Command) {
 	var verbose bool
 	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output (default: false)")
 
-	var backend *Backend
+	var handler *Handler
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		backend = createBackend(cmd, verbose)
+		backend := createBackend(cmd, verbose)
+		handler = NewHandler(backend)
 		return nil
 	}
 
@@ -147,23 +145,7 @@ func BuildCLI(root *cobra.Command) {
 		Short: "Create tables from schema JSON files",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			for _, fileName := range args {
-				var req table.TableGenRequest
-				f, err := os.ReadFile(fileName)
-				if err != nil {
-					return err
-				}
-				err = json.Unmarshal(f, &req)
-				if err != nil {
-					return err
-				}
-				id, err := backend.tableService.CreateTable(cmd.Context(), &req)
-				if err != nil {
-					return err
-				}
-				backend.Logger.Infow("table created", "id", id)
-			}
-			return nil
+			return handler.Create(cmd, args)
 		},
 	})
 
@@ -171,22 +153,7 @@ func BuildCLI(root *cobra.Command) {
 		Use:   "list",
 		Short: "List all available tables",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			resp, err := backend.tableService.ListTables(cmd.Context())
-			if err != nil {
-				return err
-			}
-			width, _, err := term.GetSize(0)
-			if err != nil {
-				return err
-			}
-			tp := tableprinter.New(os.Stdout, true, width, 25)
-			tp.AddHeader([]string{"ID", "Name"})
-			for _, table := range resp.Tables {
-				tp.AddField(table.ID)
-				tp.AddField(table.Name)
-				tp.EndRow()
-			}
-			return tp.Render()
+			return handler.List(cmd, args)
 		},
 	})
 
@@ -202,21 +169,7 @@ func BuildCLI(root *cobra.Command) {
 		Use:   "show <table id or name>",
 		Short: "Display the rows of a specified table",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			table := args[0]
-			rows, err := backend.tableService.Rows(cmd.Context(), table)
-			if err != nil {
-				return err
-			}
-			indexer := util.NewColumnIndexer(rows.Columns)
-			tp := newPrinter()
-			tp.AddHeader(indexer.ColumnNames())
-			for _, row := range rows.Rows {
-				for _, cell := range row.Cells {
-					tp.AddField(cellString(cell.Value))
-				}
-				tp.EndRow()
-			}
-			return tp.Render()
+			return handler.Show(cmd, args)
 		},
 	})
 
@@ -224,188 +177,56 @@ func BuildCLI(root *cobra.Command) {
 		Use:   "delete <table id or name>",
 		Short: "Delete a specified table",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			table := args[0]
-			count, err := backend.tableService.Delete(cmd.Context(), table)
-			if err != nil {
-				return err
-			}
-			if count > 0 {
-				backend.Logger.Info("table removed")
-			} else {
-				backend.Logger.Info("table not found")
-			}
-			return nil
+			return handler.Delete(cmd, args)
 		},
 	})
 
-	var to string
 	exportCommand := &cobra.Command{
 		Use:   "export <table id or name>",
 		Short: "export the table as a CSV file",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			table := args[0]
-			rows, err := backend.tableService.Rows(cmd.Context(), table)
-			if err != nil {
-				return err
-			}
-			if to == "" {
-				to = fmt.Sprintf("%s_%d.csv", table, time.Now().Unix())
-			}
-			csvFile, err := os.Create(to)
-			if err != nil {
-				return err
-			}
-			defer func() { _ = csvFile.Close() }()
-			csvwriter := csv.NewWriter(csvFile)
-			columns := []string{}
-			for _, col := range rows.Columns {
-				columns = append(columns, col.Name)
-			}
-			err = csvwriter.Write(columns)
-			if err != nil {
-				return err
-			}
-			data := [][]string{}
-			for _, row := range rows.Rows {
-				r := []string{}
-				for _, v := range row.Cells {
-					r = append(r, cellString(v.Value))
-				}
-				data = append(data, r)
-			}
-			defer backend.Logger.Infow("file exported", "path", to)
-			return csvwriter.WriteAll(data)
+			return handler.Export(cmd, args)
 		},
 	}
-	exportCommand.Flags().StringVarP(&to, "to", "t", "", "exported file path")
+	exportCommand.Flags().StringP("to", "t", "", "exported file path")
 	cmd.AddCommand(exportCommand)
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "truncate <table id or name>",
 		Short: "Remove all data from a specified table",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			table := args[0]
-			removed, err := backend.tableService.Truncate(cmd.Context(), table)
-			if err != nil {
-				return err
-			}
-			backend.Logger.Infow("table truncated", "removed", removed)
-			return nil
+			return handler.Truncate(cmd, args)
 		},
 	})
 
-	var count int
-	var batch int
-	var saveTo string
 	generate := &cobra.Command{
 		Use:   "generate <table id or name>",
 		Short: "Generate data for a specified table",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if batch > count {
-				batch = count
-			}
-			table := args[0]
-			generator, err := backend.tableService.Genetate(
-				cmd.Context(), table, saveTo, count, batch,
-			)
-			if err != nil {
-				return err
-			}
-			indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
-			tp := newPrinter()
-			tp.AddHeader(indexer.ColumnNames())
-			var csvWriter *csv.Writer
-			if saveTo != "" {
-				file, err := os.Create(saveTo)
-				if err != nil {
-					return err
-				}
-				defer func() { _ = file.Close() }()
-				csvWriter = csv.NewWriter(file)
-				columns := []string{}
-				for _, col := range generator.Table().Edges.Columns {
-					columns = append(columns, col.Name)
-				}
-				err = csvWriter.Write(columns)
-				if err != nil {
-					return err
-				}
-			}
-			for {
-				batch, err := generator.Next(cmd.Context())
-				if err != nil {
-					return err
-				}
-				if len(batch) == 0 {
-					break
-				}
-				for _, row := range batch {
-					sr := []string{}
-					v, err := indexer.RowMapToSlice(row)
-					if err != nil {
-						return err
-					}
-					for _, cell := range v {
-						sv := cellString(cell.Value)
-						sr = append(sr, sv)
-						tp.AddField(sv)
-					}
-					tp.EndRow()
-					if csvWriter != nil {
-						err = csvWriter.Write(sr)
-						if err != nil {
-							return err
-						}
-					}
-				}
-				err = tp.Render()
-				if err != nil {
-					return err
-				}
-				if csvWriter != nil {
-					csvWriter.Flush()
-				}
-			}
-			backend.Logger.Infow("generated done")
-			return nil
+			return handler.Generate(cmd, args)
 		},
 	}
-	generate.Flags().IntVarP(&count, "count", "c", 0, "total number of rows to generate")
+	generate.Flags().IntP("count", "c", 0, "total number of rows to generate")
 	err := generate.MarkFlagRequired("count")
 	if err != nil {
 		panic(err)
 	}
-	generate.Flags().IntVarP(&batch, "batch", "b", 10, "number of rows to generate in a batch")
-	generate.Flags().StringVarP(
-		&saveTo, "saveto", "s", "",
+	generate.Flags().IntP("batch", "b", 10, "number of rows to generate in a batch")
+	generate.Flags().StringP(
+		"saveto", "s", "",
 		"specify a file to save output, instead of storing in the database",
 	)
 
 	cmd.AddCommand(generate)
 
-	var importName string
 	importCmd := &cobra.Command{
 		Use:   "import <table id or name>",
 		Short: "Import csv file as table",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tableFile := args[0]
-			reader, err := os.Open(tableFile)
-			if err != nil {
-				return err
-			}
-			defer func() { _ = reader.Close() }()
-			if importName == "" {
-				importName = tableFile
-			}
-			id, err := backend.tableService.Import(cmd.Context(), importName, reader)
-			if err != nil {
-				return err
-			}
-			backend.Logger.Infow("table imported", "id", id)
-			return nil
+			return handler.Import(cmd, args)
 		},
 	}
-	importCmd.Flags().StringVarP(&importName, "name", "n", "", "")
+	importCmd.Flags().StringP("name", "n", "", "")
 	cmd.AddCommand(importCmd)
 }
