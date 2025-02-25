@@ -10,57 +10,80 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 ### CLI Commands:
 
-- **create**  
-  Create tables from schema JSON files.  
+- **create**
+  Create tables from schema JSON files.
   ```
   tablepilot create recipes.json
   ```
 
-- **delete**  
-  Delete a specified table.  
+- **delete**
+  Delete a specified table.
   ```
   tablepilot delete recipes
   ```
 
-- **describe**  
-  Show details about the columns in a specified table.  
+- **describe**
+  Show details about the columns in a specified table.
   ```
   tablepilot describe recipes
   ```
 
-- **export**  
-  Export the table as a CSV file.  
+- **export**
+  Export the table as a CSV file.
   ```
   tablepilot export recipes
   ```
 
-- **generate**  
-  Generate data for a specified table.  
+- **generate**
+  Generate data for a specified table.
   ```
   tablepilot generate recipes
   ```
+  Here's the CLI help text converted into a README format:
 
-- **import**  
-  Import a CSV file as a table.  
+---
+
+# Tablepilot CLI Usage
+
+Tablepilot provides a command-line interface (CLI) for generating tables. Use the `generate` command to create tables based on a specified table ID or name.
+
+## Usage
+
+```bash
+tablepilot generate <table id or name> [flags]
+```
+
+	- `-b, --batch int`
+	Number of rows to generate in a batch (default: 10).
+
+	- `-c, --count int`
+	  Total number of rows to generate.
+
+	- `-s, --saveto string`
+	  Specify a file to save the output, instead of storing it in the database.
+
+
+- **import**
+  Import a CSV file as a table.
   ```
   tablepilot import users.csv
   ```
 
-- **show**  
-  Display the rows of a specified table.  
+- **show**
+  Display the rows of a specified table.
   ```
   tablepilot show recipes
   ```
 
-- **truncate**  
-  Remove all data from a specified table.  
+- **truncate**
+  Remove all data from a specified table.
   ```
   tablepilot truncate recipes
   ```
 
 ### Flags:
 
-- **--config string**  
+- **--config string**
   Path to the config file (default is `config.toml`).
   
   ```

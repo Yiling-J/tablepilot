@@ -241,7 +241,7 @@ func BuildCLI(root *cobra.Command) {
 	var to string
 	exportCommand := &cobra.Command{
 		Use:   "export <table id or name>",
-		Short: "xport the table as a CSV file",
+		Short: "export the table as a CSV file",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			table := args[0]
 			rows, err := backend.tableService.Rows(cmd.Context(), table)
@@ -371,13 +371,16 @@ func BuildCLI(root *cobra.Command) {
 			return nil
 		},
 	}
-	generate.Flags().IntVarP(&count, "count", "c", 0, "")
+	generate.Flags().IntVarP(&count, "count", "c", 0, "total number of rows to generate")
 	err := generate.MarkFlagRequired("count")
 	if err != nil {
 		panic(err)
 	}
-	generate.Flags().IntVarP(&batch, "batch", "b", 10, "")
-	generate.Flags().StringVarP(&saveTo, "saveto", "s", "", "")
+	generate.Flags().IntVarP(&batch, "batch", "b", 10, "number of rows to generate in a batch")
+	generate.Flags().StringVarP(
+		&saveTo, "saveto", "s", "",
+		"specify a file to save output, instead of storing in the database",
+	)
 
 	cmd.AddCommand(generate)
 
