@@ -461,7 +461,7 @@ func TestTableService_LinkedContextRow(t *testing.T) {
 	).Exec(ctx)
 	require.NoError(t, err)
 
-	generator := &RowsGenerator{
+	generator := &AIRowsGenerator{
 		table:         tb,
 		contextLength: 1,
 	}
@@ -495,7 +495,7 @@ func TestTableService_ChatJsonSchema(t *testing.T) {
 	srv := NewTableService(
 		&config.Config{}, nil, aiService, zap.NewNop().Sugar(),
 	)
-	generator := &RowsGenerator{
+	generator := &AIRowsGenerator{
 		db: srv.db,
 		ai: srv.ai,
 		missingColumns: []*ent.TableColumn{

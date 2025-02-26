@@ -22,7 +22,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type RowsGenerator struct {
+//go:generate moq -rm -out rows_generator_moq.go . RowsGenerator
+type RowsGenerator interface {
+	Next(ctx context.Context) ([]map[string]*schema.CellValue, error)
+	Table() *ent.TableMeta
+}
+
+type AIRowsGenerator struct {
 	db             *ent.Client
 	ai             ai.AiService
 	logger         *zap.SugaredLogger
@@ -41,8 +47,8 @@ type RowsGenerator struct {
 	builder *promptbuilder.RowsBuilder
 }
 
-func NewRowsGenerator(ctx context.Context, table string, saveTo string, count, batch int, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*RowsGenerator, error) {
-	generator := &RowsGenerator{
+func NewRowsGenerator(ctx context.Context, table string, saveTo string, count, batch int, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
+	generator := &AIRowsGenerator{
 		logger: logger,
 		db:     db,
 		ai:     ai,
@@ -84,13 +90,13 @@ func NewRowsGenerator(ctx context.Context, table string, saveTo string, count, b
 	return generator, nil
 }
 
-func (g *RowsGenerator) newBatch(ctx context.Context, batch int) error {
+func (g *AIRowsGenerator) newBatch(ctx context.Context, batch int) error {
 	g.builder = promptbuilder.NewRowsBuilder(batch)
 	g.rows = g.rows[:0]
 	return g.prepareContextRows(ctx)
 }
 
-func (g *RowsGenerator) prepareContextRows(ctx context.Context) error {
+func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 	// get required rows from previous generated results or database
 	contextRows := []map[string]*schema.CellValue{}
 	if g.contextLength > 0 {
@@ -142,7 +148,7 @@ func (g *RowsGenerator) prepareContextRows(ctx context.Context) error {
 	return nil
 }
 
-func (g *RowsGenerator) prepareRow(ctx context.Context) error {
+func (g *AIRowsGenerator) prepareRow(ctx context.Context) error {
 	row := map[string]*schema.CellValue{}
 	for _, col := range g.table.Edges.Columns {
 		so, ok := g.sourceMap[col.Nanoid]
@@ -160,7 +166,7 @@ func (g *RowsGenerator) prepareRow(ctx context.Context) error {
 	return nil
 }
 
-func (g *RowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error) {
+func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error) {
 	g.builder.AddMissingColumns(g.missingColumns)
 	om := orderedmap.New[string, *jsonschema.Schema]()
 	om.Set("id", &jsonschema.Schema{Type: "integer"})
@@ -204,7 +210,7 @@ func (g *RowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error) 
 	})
 }
 
-func (g *RowsGenerator) columnSource(ctx context.Context, column *ent.TableColumn) (source.Source, error) {
+func (g *AIRowsGenerator) columnSource(ctx context.Context, column *ent.TableColumn) (source.Source, error) {
 	var so source.Source
 	sourceType := gjson.GetBytes(column.Source, "type").String()
 	switch sourceType {
@@ -247,7 +253,7 @@ func (g *RowsGenerator) columnSource(ctx context.Context, column *ent.TableColum
 	return so, nil
 }
 
-func (g *RowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*schema.CellValue, error) {
+func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*schema.CellValue, error) {
 	err := g.newBatch(ctx, batch)
 	if err != nil {
 		return nil, err
@@ -309,7 +315,7 @@ func (g *RowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*
 	return generated, nil
 }
 
-func (g *RowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellValue, error) {
+func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellValue, error) {
 	if g.current >= g.total {
 		return []map[string]*schema.CellValue{}, nil
 	}
@@ -344,6 +350,6 @@ func (g *RowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellValu
 	return rows, nil
 }
 
-func (g *RowsGenerator) Table() *ent.TableMeta {
+func (g *AIRowsGenerator) Table() *ent.TableMeta {
 	return g.table
 }

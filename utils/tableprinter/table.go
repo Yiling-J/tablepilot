@@ -25,11 +25,12 @@ import (
 	"io"
 )
 
-type fieldOption func(*tableField)
+type FieldOption func(*tableField)
 
+//go:generate moq -out table_moq.go . TablePrinter
 type TablePrinter interface {
-	AddHeader([]string, ...fieldOption)
-	AddField(string, ...fieldOption)
+	AddHeader([]string, ...FieldOption)
+	AddField(string, ...FieldOption)
 	EndRow()
 	Render() error
 }
@@ -38,7 +39,7 @@ type TablePrinter interface {
 // argument into a string that fits within the given display width. The default behavior is to truncate the
 // value by adding "..." in the end. The truncation function will be called before padding and coloring.
 // Pass nil to disable truncation for this value.
-func WithTruncate(fn func(int, string) string) fieldOption {
+func WithTruncate(fn func(int, string) string) FieldOption {
 	return func(f *tableField) {
 		f.truncateFunc = fn
 	}
@@ -48,7 +49,7 @@ func WithTruncate(fn func(int, string) string) fieldOption {
 // into a string that is padded to fit within the given display width. The default behavior is to pad fields
 // with spaces except for the last field. The padding function will be called after truncation and before coloring.
 // Pass nil to disable padding for this value.
-func WithPadding(fn func(int, string) string) fieldOption {
+func WithPadding(fn func(int, string) string) FieldOption {
 	return func(f *tableField) {
 		f.paddingFunc = fn
 	}
@@ -57,7 +58,7 @@ func WithPadding(fn func(int, string) string) fieldOption {
 // WithColor sets the color function for the field. The function should transform a string value by wrapping
 // it in ANSI escape codes. The color function will not be used if the table was initialized in non-terminal mode.
 // The color function will be called before truncation and padding.
-func WithColor(fn func(string) string) fieldOption {
+func WithColor(fn func(string) string) FieldOption {
 	return func(f *tableField) {
 		f.colorFunc = fn
 	}
@@ -96,7 +97,7 @@ type ttyTablePrinter struct {
 	colWidths   []int
 }
 
-func (t *ttyTablePrinter) AddHeader(columns []string, opts ...fieldOption) {
+func (t *ttyTablePrinter) AddHeader(columns []string, opts ...FieldOption) {
 	if t.hasHeaders {
 		return
 	}
@@ -108,7 +109,7 @@ func (t *ttyTablePrinter) AddHeader(columns []string, opts ...fieldOption) {
 	t.EndRow()
 }
 
-func (t *ttyTablePrinter) AddField(s string, opts ...fieldOption) {
+func (t *ttyTablePrinter) AddField(s string, opts ...FieldOption) {
 	if t.rows == nil {
 		t.rows = make([][]tableField, 1)
 	}
@@ -262,9 +263,9 @@ type tsvTablePrinter struct {
 	currentCol int
 }
 
-func (t *tsvTablePrinter) AddHeader(_ []string, _ ...fieldOption) {}
+func (t *tsvTablePrinter) AddHeader(_ []string, _ ...FieldOption) {}
 
-func (t *tsvTablePrinter) AddField(text string, _ ...fieldOption) {
+func (t *tsvTablePrinter) AddField(text string, _ ...FieldOption) {
 	if t.currentCol > 0 {
 		fmt.Fprint(t.out, "\t")
 	}

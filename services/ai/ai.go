@@ -12,7 +12,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-//go:generate moq -out ai_moq.go . AiService
+//go:generate moq -rm -out ai_moq.go . AiService
 type AiService interface {
 	Chat(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
 }

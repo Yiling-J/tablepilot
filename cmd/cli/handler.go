@@ -5,21 +5,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"tablepilot/services/table"
 	"tablepilot/services/table/util"
 	"tablepilot/utils/tableprinter"
 	"time"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 type Handler struct {
-	backend *Backend
+	backend    *Backend
+	getPrinter func() tableprinter.TablePrinter
 }
 
 func NewHandler(backend *Backend) *Handler {
-	return &Handler{backend: backend}
+	return &Handler{
+		backend:    backend,
+		getPrinter: newPrinter,
+	}
 }
 
 func (h *Handler) Create(cmd *cobra.Command, args []string) error {
@@ -49,7 +54,7 @@ func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	indexer := util.NewColumnIndexer(rows.Columns)
-	tp := newPrinter()
+	tp := h.getPrinter()
 	tp.AddHeader(indexer.ColumnNames())
 	for _, row := range rows.Rows {
 		for _, cell := range row.Cells {
@@ -65,11 +70,7 @@ func (h *Handler) List(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	width, _, err := term.GetSize(0)
-	if err != nil {
-		return err
-	}
-	tp := tableprinter.New(os.Stdout, true, width, 25)
+	tp := h.getPrinter()
 	tp.AddHeader([]string{"ID", "Name"})
 	for _, table := range resp.Tables {
 		tp.AddField(table.ID)
@@ -156,7 +157,7 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
-	tp := newPrinter()
+	tp := h.getPrinter()
 	tp.AddHeader(indexer.ColumnNames())
 	var csvWriter *csv.Writer
 	if saveTo != "" {
@@ -226,7 +227,7 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 	}
 	defer func() { _ = reader.Close() }()
 	if importName == "" {
-		importName = tableFile
+		importName = strings.TrimSuffix(tableFile, filepath.Ext(tableFile))
 	}
 	id, err := h.backend.tableService.Import(cmd.Context(), importName, reader)
 	if err != nil {
