@@ -85,13 +85,18 @@ A number of examples demonstrating various use cases of Tablepilot are available
   tablepilot truncate recipes
   ```
 
-### Flags:
+### Common Flags:
 
 - **--config string**
   Path to the config file (default is `config.toml`).
   
   ```
   tablepilot show recipes --config custom_config.toml
+  ```
+- **-v, --verbose**
+  Verbose output, this will show detailed debug info including LLM prompt/response (default: false).
+  ```
+  tablepilot generate recipes -v
   ```
 
 ## Configuration
