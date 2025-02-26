@@ -394,3 +394,41 @@ func TestHandler_Truncate(t *testing.T) {
 	err := handler.Truncate(cmd, []string{"foo"})
 	require.NoError(t, err)
 }
+
+func TestHandler_Describe(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		GetTableColumnsFunc: func(ctx context.Context, name string) ([]table.TableColumnInfo, error) {
+			require.Equal(t, "foo", name)
+			return []table.TableColumnInfo{
+				{ID: "1", Name: "c1", Type: "string", FillMode: "ai", Description: "d1"},
+				{ID: "2", Name: "c2", Type: "int", FillMode: "bi", Description: "d2"},
+			}, nil
+		},
+	}
+	printer := &tableprinter.TablePrinterMock{
+		AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
+		AddFieldFunc:  func(s string, fieldOptions ...tableprinter.FieldOption) {},
+		EndRowFunc:    func() {},
+		RenderFunc:    func() error { return nil },
+	}
+	handler := NewHandler(
+		NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, tableMock,
+		),
+	)
+	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
+	cmd := &cobra.Command{}
+	err := handler.Describe(cmd, []string{"foo"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(printer.AddHeaderCalls()))
+	require.Equal(t, []string{"ID", "Name", "Type", "Fill Mode", "Description"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, 10, len(printer.AddFieldCalls()))
+	fields := []string{}
+	for _, call := range printer.AddFieldCalls() {
+		fields = append(fields, call.S)
+	}
+	require.Equal(t, []string{"1", "c1", "string", "ai", "d1", "2", "c2", "int", "bi", "d2"}, fields)
+	require.Equal(t, 2, len(printer.EndRowCalls()))
+	require.Equal(t, 1, len(printer.RenderCalls()))
+}

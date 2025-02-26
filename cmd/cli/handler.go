@@ -80,6 +80,24 @@ func (h *Handler) List(cmd *cobra.Command, args []string) error {
 	return tp.Render()
 }
 
+func (h *Handler) Describe(cmd *cobra.Command, args []string) error {
+	resp, err := h.backend.tableService.GetTableColumns(cmd.Context(), args[0])
+	if err != nil {
+		return err
+	}
+	tp := h.getPrinter()
+	tp.AddHeader([]string{"ID", "Name", "Type", "Fill Mode", "Description"})
+	for _, column := range resp {
+		tp.AddField(column.ID)
+		tp.AddField(column.Name)
+		tp.AddField(column.Type)
+		tp.AddField(column.FillMode)
+		tp.AddField(column.Description)
+		tp.EndRow()
+	}
+	return tp.Render()
+}
+
 func (h *Handler) Delete(cmd *cobra.Command, args []string) error {
 	table := args[0]
 	count, err := h.backend.tableService.Delete(cmd.Context(), table)

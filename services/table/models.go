@@ -43,6 +43,14 @@ type ListTablesResponse struct {
 	Tables []TableInfoSimple
 }
 
+type TableColumnInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	FillMode    string `json:"fill_mode"`
+}
+
 type Rows struct {
 	Columns []*ent.TableColumn
 	Rows    []*ent.TableRow

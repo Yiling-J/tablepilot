@@ -28,6 +28,9 @@ var _ TableService = &TableServiceMock{}
 //			GenetateFunc: func(ctx context.Context, table string, saveTo string, count int, batch int) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
 //			},
+//			GetTableColumnsFunc: func(ctx context.Context, table string) ([]TableColumnInfo, error) {
+//				panic("mock out the GetTableColumns method")
+//			},
 //			ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
 //				panic("mock out the Import method")
 //			},
@@ -55,6 +58,9 @@ type TableServiceMock struct {
 
 	// GenetateFunc mocks the Genetate method.
 	GenetateFunc func(ctx context.Context, table string, saveTo string, count int, batch int) (RowsGenerator, error)
+
+	// GetTableColumnsFunc mocks the GetTableColumns method.
+	GetTableColumnsFunc func(ctx context.Context, table string) ([]TableColumnInfo, error)
 
 	// ImportFunc mocks the Import method.
 	ImportFunc func(ctx context.Context, table string, reader io.Reader) (string, error)
@@ -97,6 +103,13 @@ type TableServiceMock struct {
 			// Batch is the batch argument value.
 			Batch int
 		}
+		// GetTableColumns holds details about calls to the GetTableColumns method.
+		GetTableColumns []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table string
+		}
 		// Import holds details about calls to the Import method.
 		Import []struct {
 			// Ctx is the ctx argument value.
@@ -126,13 +139,14 @@ type TableServiceMock struct {
 			Table string
 		}
 	}
-	lockCreateTable sync.RWMutex
-	lockDelete      sync.RWMutex
-	lockGenetate    sync.RWMutex
-	lockImport      sync.RWMutex
-	lockListTables  sync.RWMutex
-	lockRows        sync.RWMutex
-	lockTruncate    sync.RWMutex
+	lockCreateTable     sync.RWMutex
+	lockDelete          sync.RWMutex
+	lockGenetate        sync.RWMutex
+	lockGetTableColumns sync.RWMutex
+	lockImport          sync.RWMutex
+	lockListTables      sync.RWMutex
+	lockRows            sync.RWMutex
+	lockTruncate        sync.RWMutex
 }
 
 // CreateTable calls CreateTableFunc.
@@ -252,6 +266,42 @@ func (mock *TableServiceMock) GenetateCalls() []struct {
 	mock.lockGenetate.RLock()
 	calls = mock.calls.Genetate
 	mock.lockGenetate.RUnlock()
+	return calls
+}
+
+// GetTableColumns calls GetTableColumnsFunc.
+func (mock *TableServiceMock) GetTableColumns(ctx context.Context, table string) ([]TableColumnInfo, error) {
+	if mock.GetTableColumnsFunc == nil {
+		panic("TableServiceMock.GetTableColumnsFunc: method is nil but TableService.GetTableColumns was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Table string
+	}{
+		Ctx:   ctx,
+		Table: table,
+	}
+	mock.lockGetTableColumns.Lock()
+	mock.calls.GetTableColumns = append(mock.calls.GetTableColumns, callInfo)
+	mock.lockGetTableColumns.Unlock()
+	return mock.GetTableColumnsFunc(ctx, table)
+}
+
+// GetTableColumnsCalls gets all the calls that were made to GetTableColumns.
+// Check the length with:
+//
+//	len(mockedTableService.GetTableColumnsCalls())
+func (mock *TableServiceMock) GetTableColumnsCalls() []struct {
+	Ctx   context.Context
+	Table string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Table string
+	}
+	mock.lockGetTableColumns.RLock()
+	calls = mock.calls.GetTableColumns
+	mock.lockGetTableColumns.RUnlock()
 	return calls
 }
 

@@ -161,7 +161,7 @@ func BuildCLI(root *cobra.Command) {
 		Use:   "describe <table id or name>",
 		Short: "Show details about the columns in a specified table",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return nil
+			return handler.Describe(cmd, args)
 		},
 	})
 

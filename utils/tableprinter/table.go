@@ -27,7 +27,7 @@ import (
 
 type FieldOption func(*tableField)
 
-//go:generate moq -out table_moq.go . TablePrinter
+//go:generate moq -rm -out table_moq.go . TablePrinter
 type TablePrinter interface {
 	AddHeader([]string, ...FieldOption)
 	AddField(string, ...FieldOption)

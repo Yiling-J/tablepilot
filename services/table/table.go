@@ -41,6 +41,7 @@ var reflector = jsonschema.Reflector{
 type TableService interface {
 	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
+	GetTableColumns(ctx context.Context, table string) ([]TableColumnInfo, error)
 	Genetate(ctx context.Context, table string, saveTo string, count, batch int) (RowsGenerator, error)
 	Rows(ctx context.Context, table string) (*Rows, error)
 	Truncate(ctx context.Context, table string) (int, error)
@@ -197,6 +198,29 @@ func (t *TableServiceImpl) ListTables(ctx context.Context) (*ListTablesResponse,
 			Name:        table.Name,
 			Description: table.Description,
 			Model:       table.Model,
+		})
+	}
+	return resp, nil
+}
+
+func (t *TableServiceImpl) GetTableColumns(ctx context.Context, table string) ([]TableColumnInfo, error) {
+	meta, err := t.db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).First(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resp := []TableColumnInfo{}
+	for _, column := range meta.Edges.Columns {
+		resp = append(resp, TableColumnInfo{
+			ID:          column.Nanoid,
+			Name:        column.Name,
+			Description: column.Description,
+			Type:        column.Type.String(),
+			FillMode:    column.FillMode.String(),
 		})
 	}
 	return resp, nil
