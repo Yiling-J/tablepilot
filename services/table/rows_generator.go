@@ -22,7 +22,6 @@ import (
 	"go.uber.org/zap"
 )
 
-//go:generate moq -rm -out rows_generator_moq.go . RowsGenerator
 type RowsGenerator interface {
 	Next(ctx context.Context) ([]map[string]*schema.CellValue, error)
 	Table() *ent.TableMeta

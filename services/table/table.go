@@ -37,7 +37,7 @@ var reflector = jsonschema.Reflector{
 	DoNotReference:            true,
 }
 
-//go:generate moq -rm -out table_moq.go . TableService
+//go:generate moq -rm -out table_moq.go . TableService RowsGenerator
 type TableService interface {
 	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
