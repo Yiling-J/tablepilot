@@ -167,9 +167,18 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 	if batch > count {
 		batch = count
 	}
-	table := args[0]
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
 	generator, err := h.backend.tableService.Genetate(
-		cmd.Context(), table, saveTo, count, batch,
+		cmd.Context(), table.GenerateRowsParams{
+			Table:       args[0],
+			SaveTo:      saveTo,
+			Count:       count,
+			Batch:       batch,
+			Temperature: temperature,
+		},
 	)
 	if err != nil {
 		return err

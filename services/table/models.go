@@ -23,6 +23,14 @@ type TableGenRequest struct {
 	Sources     []json.RawMessage `json:"sources"`
 }
 
+type GenerateRowsParams struct {
+	Table       string
+	SaveTo      string
+	Count       int
+	Batch       int
+	Temperature float64
+}
+
 type ColumnSchema struct {
 	Id       string `json:"id"`
 	Name     string `json:"name"`

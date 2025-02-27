@@ -25,7 +25,7 @@ var _ TableService = &TableServiceMock{}
 //			DeleteFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Delete method")
 //			},
-//			GenetateFunc: func(ctx context.Context, table string, saveTo string, count int, batch int) (RowsGenerator, error) {
+//			GenetateFunc: func(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
 //			},
 //			GetTableColumnsFunc: func(ctx context.Context, table string) ([]TableColumnInfo, error) {
@@ -57,7 +57,7 @@ type TableServiceMock struct {
 	DeleteFunc func(ctx context.Context, table string) (int, error)
 
 	// GenetateFunc mocks the Genetate method.
-	GenetateFunc func(ctx context.Context, table string, saveTo string, count int, batch int) (RowsGenerator, error)
+	GenetateFunc func(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error)
 
 	// GetTableColumnsFunc mocks the GetTableColumns method.
 	GetTableColumnsFunc func(ctx context.Context, table string) ([]TableColumnInfo, error)
@@ -94,14 +94,8 @@ type TableServiceMock struct {
 		Genetate []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Table is the table argument value.
-			Table string
-			// SaveTo is the saveTo argument value.
-			SaveTo string
-			// Count is the count argument value.
-			Count int
-			// Batch is the batch argument value.
-			Batch int
+			// Params is the params argument value.
+			Params GenerateRowsParams
 		}
 		// GetTableColumns holds details about calls to the GetTableColumns method.
 		GetTableColumns []struct {
@@ -222,27 +216,21 @@ func (mock *TableServiceMock) DeleteCalls() []struct {
 }
 
 // Genetate calls GenetateFunc.
-func (mock *TableServiceMock) Genetate(ctx context.Context, table string, saveTo string, count int, batch int) (RowsGenerator, error) {
+func (mock *TableServiceMock) Genetate(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error) {
 	if mock.GenetateFunc == nil {
 		panic("TableServiceMock.GenetateFunc: method is nil but TableService.Genetate was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
-		Table  string
-		SaveTo string
-		Count  int
-		Batch  int
+		Params GenerateRowsParams
 	}{
 		Ctx:    ctx,
-		Table:  table,
-		SaveTo: saveTo,
-		Count:  count,
-		Batch:  batch,
+		Params: params,
 	}
 	mock.lockGenetate.Lock()
 	mock.calls.Genetate = append(mock.calls.Genetate, callInfo)
 	mock.lockGenetate.Unlock()
-	return mock.GenetateFunc(ctx, table, saveTo, count, batch)
+	return mock.GenetateFunc(ctx, params)
 }
 
 // GenetateCalls gets all the calls that were made to Genetate.
@@ -251,17 +239,11 @@ func (mock *TableServiceMock) Genetate(ctx context.Context, table string, saveTo
 //	len(mockedTableService.GenetateCalls())
 func (mock *TableServiceMock) GenetateCalls() []struct {
 	Ctx    context.Context
-	Table  string
-	SaveTo string
-	Count  int
-	Batch  int
+	Params GenerateRowsParams
 } {
 	var calls []struct {
 		Ctx    context.Context
-		Table  string
-		SaveTo string
-		Count  int
-		Batch  int
+		Params GenerateRowsParams
 	}
 	mock.lockGenetate.RLock()
 	calls = mock.calls.Genetate

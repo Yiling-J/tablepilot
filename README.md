@@ -67,6 +67,9 @@ A number of examples demonstrating various use cases of Tablepilot are available
 	- `-s, --saveto string`
 	  Specify a file to save the output, instead of storing it in the database.
 
+	- `-t, --temperature float`
+	  The sampling temperature. Higher values will make the output more random. (default 0.6)
+
 - **import**
   Import a CSV file as a table.
   ```

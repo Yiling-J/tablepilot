@@ -292,7 +292,11 @@ func TestTableService_Generate(t *testing.T) {
 				srv := NewTableService(
 					&config.Config{}, db, aiService, zap.NewNop().Sugar(),
 				)
-				generator, err := srv.Genetate(ctx, tb.Nanoid, "", tc.count, tc.batch)
+				generator, err := srv.Genetate(ctx, GenerateRowsParams{
+					Table: tb.Nanoid,
+					Count: tc.count,
+					Batch: tc.batch,
+				})
 				require.NoError(t, err)
 				for {
 					v, err := generator.Next(ctx)
@@ -364,7 +368,11 @@ func TestTableService_Generate(t *testing.T) {
 		srv := NewTableService(
 			&config.Config{}, db, aiService, zap.NewNop().Sugar(),
 		)
-		generator, err := srv.Genetate(ctx, tb.Nanoid, "", 2, 2)
+		generator, err := srv.Genetate(ctx, GenerateRowsParams{
+			Table: tb.Nanoid,
+			Count: 2,
+			Batch: 2,
+		})
 		require.NoError(t, err)
 		for {
 			v, err := generator.Next(ctx)
@@ -400,7 +408,11 @@ func TestTableService_Generate(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, p, aiService.ChatCalls()[0].Request.Messages[0].Content)
 		require.NoError(t, err)
-		generator, err = srv.Genetate(ctx, tb.Nanoid, "", 2, 2)
+		generator, err = srv.Genetate(ctx, GenerateRowsParams{
+			Table: tb.Nanoid,
+			Count: 2,
+			Batch: 2,
+		})
 		require.NoError(t, err)
 		for {
 			v, err := generator.Next(ctx)

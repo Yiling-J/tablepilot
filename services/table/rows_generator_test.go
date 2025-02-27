@@ -38,7 +38,11 @@ func TestRowsGenerator_PrepareCOntextRows(t *testing.T) {
 				SetContextLength(5).
 				SetType(tablecolumn.TypeString).Save(ctx)
 			require.NoError(t, err)
-			generator, err := NewRowsGenerator(ctx, "foo", "", 5, 5, db, nil, zap.NewNop().Sugar())
+			generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+				Table: "foo",
+				Batch: 5,
+				Count: 5,
+			}, db, nil, zap.NewNop().Sugar())
 			require.NoError(t, err)
 
 			generator.contextLength = 5

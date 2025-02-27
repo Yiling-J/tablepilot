@@ -38,6 +38,7 @@ type AIRowsGenerator struct {
 	generated      []map[string]*schema.CellValue
 	contextLength  int
 	saveTo         string
+	temperature    float64
 
 	total     int
 	batchSize int
@@ -47,22 +48,23 @@ type AIRowsGenerator struct {
 	builder *promptbuilder.RowsBuilder
 }
 
-func NewRowsGenerator(ctx context.Context, table string, saveTo string, count, batch int, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
+func NewRowsGenerator(ctx context.Context, params GenerateRowsParams, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
 	generator := &AIRowsGenerator{
 		logger: logger,
 		db:     db,
 		ai:     ai,
 
-		total:     count,
-		batchSize: batch,
-		sourceMap: make(map[string]source.Source),
-		saveTo:    saveTo,
+		total:       params.Count,
+		batchSize:   params.Batch,
+		sourceMap:   make(map[string]source.Source),
+		saveTo:      params.SaveTo,
+		temperature: params.Temperature,
 	}
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Where(tablemeta.Or(
-		tablemeta.Nanoid(table),
-		tablemeta.Name(table),
+		tablemeta.Nanoid(params.Table),
+		tablemeta.Name(params.Table),
 	)).First(ctx)
 	if err != nil {
 		return nil, err
@@ -197,8 +199,12 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 		return nil, err
 	}
 	input := client.UserMessage(prompt)
+	temperature := g.temperature
+	if temperature < 0 {
+		temperature = GENERATE_DATA_TEMPERATURE
+	}
 	return g.ai.Chat(ctx, &client.ChatRequest{
-		Temperature:     GENERATE_DATA_TEMPERATURE,
+		Temperature:     temperature,
 		MaxOutputTokens: GENERATE_DATA_MAX_TOKENS,
 		Messages:        []*client.Message{input},
 		Model:           g.table.Model,

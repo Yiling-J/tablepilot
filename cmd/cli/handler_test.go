@@ -259,15 +259,16 @@ func TestHandler_Generate(t *testing.T) {
 				},
 			}
 			tableMock := &table.TableServiceMock{
-				GenetateFunc: func(ctx context.Context, name, st string, count, batch int) (table.RowsGenerator, error) {
-					require.Equal(t, "foo", name)
+				GenetateFunc: func(ctx context.Context, params table.GenerateRowsParams) (table.RowsGenerator, error) {
+					require.Equal(t, "foo", params.Table)
 					if saveTo {
-						require.Equal(t, "foo_gen.csv", st)
+						require.Equal(t, "foo_gen.csv", params.SaveTo)
 					} else {
-						require.Equal(t, "", st)
+						require.Equal(t, "", params.SaveTo)
 					}
-					require.Equal(t, 4, count)
-					require.Equal(t, 2, batch)
+					require.Equal(t, 4, params.Count)
+					require.Equal(t, 2, params.Batch)
+					require.Equal(t, 0.56, params.Temperature)
 					return mockRowGen, nil
 				},
 			}
@@ -288,6 +289,7 @@ func TestHandler_Generate(t *testing.T) {
 			cmd.Flags().IntP("count", "", 0, "")
 			cmd.Flags().IntP("batch", "", 0, "")
 			cmd.Flags().StringP("saveto", "s", "", "")
+			cmd.Flags().Float64P("temperature", "", 0.6, "")
 			err := cmd.Flags().Set("count", "4")
 			require.NoError(t, err)
 			err = cmd.Flags().Set("batch", "2")
@@ -296,6 +298,8 @@ func TestHandler_Generate(t *testing.T) {
 				err = cmd.Flags().Set("saveto", "foo_gen.csv")
 				require.NoError(t, err)
 			}
+			err = cmd.Flags().Set("temperature", "0.56")
+			require.NoError(t, err)
 
 			err = handler.Generate(cmd, []string{"foo"})
 			require.NoError(t, err)

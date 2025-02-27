@@ -42,7 +42,7 @@ type TableService interface {
 	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
 	GetTableColumns(ctx context.Context, table string) ([]TableColumnInfo, error)
-	Genetate(ctx context.Context, table string, saveTo string, count, batch int) (RowsGenerator, error)
+	Genetate(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error)
 	Rows(ctx context.Context, table string) (*Rows, error)
 	Truncate(ctx context.Context, table string) (int, error)
 	Delete(ctx context.Context, table string) (int, error)
@@ -226,8 +226,8 @@ func (t *TableServiceImpl) GetTableColumns(ctx context.Context, table string) ([
 	return resp, nil
 }
 
-func (t *TableServiceImpl) Genetate(ctx context.Context, table string, saveTo string, count, batch int) (RowsGenerator, error) {
-	return NewRowsGenerator(ctx, table, saveTo, count, batch, t.db, t.ai, t.logger)
+func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error) {
+	return NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
 }
 
 func (t *TableServiceImpl) Rows(ctx context.Context, table string) (*Rows, error) {
