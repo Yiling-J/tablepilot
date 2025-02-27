@@ -42,7 +42,7 @@ func (i *indexer) nextIndex() int {
 	i.repeated = 1
 
 	if i.Random {
-		if i.Replacement {
+		if !i.Replacement {
 			options := []int{}
 			if len(i.picked) == i.total {
 				i.picked = map[int]bool{}

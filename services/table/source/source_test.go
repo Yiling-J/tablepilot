@@ -7,14 +7,14 @@ import (
 )
 
 func TestSource_Indexer(t *testing.T) {
-	indexer := newIndexer(false, false, 5, 0)
+	indexer := newIndexer(false, true, 5, 0)
 	nums := []int{}
 	for i := 0; i < 10; i++ {
 		nums = append(nums, indexer.nextIndex())
 	}
 	require.Equal(t, []int{0, 1, 2, 3, 4, 0, 1, 2, 3, 4}, nums)
 
-	indexer = newIndexer(true, false, 5, 0)
+	indexer = newIndexer(true, true, 5, 0)
 	numsCounter := map[int]int{}
 	nums = []int{}
 	for i := 0; i < 50; i++ {
@@ -44,7 +44,7 @@ func TestSource_Indexer(t *testing.T) {
 	require.True(t, gt > 0)
 	require.True(t, eq >= 0)
 
-	indexer = newIndexer(true, true, 5, 0)
+	indexer = newIndexer(true, false, 5, 0)
 	nums = []int{}
 	for i := 0; i < 10; i++ {
 		nums = append(nums, indexer.nextIndex())
@@ -55,7 +55,7 @@ func TestSource_Indexer(t *testing.T) {
 		}
 	}
 
-	indexer = newIndexer(false, false, 5, 2)
+	indexer = newIndexer(false, true, 5, 2)
 	nums = []int{}
 	for i := 0; i < 10; i++ {
 		nums = append(nums, indexer.nextIndex())
