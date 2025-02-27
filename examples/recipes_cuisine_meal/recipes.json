@@ -7,7 +7,7 @@
       "type": "ai",
       "prompt": "Generate 20 recipe cuisines.",
       "random": true,
-      "replacement": true
+      "replacement": false
     },
     {
       "name": "meals",
@@ -20,7 +20,8 @@
         "Appetizers",
         "Drinks"
       ],
-      "random": true
+      "random": true,
+      "replacement": true
     }
   ],
   "columns": [
