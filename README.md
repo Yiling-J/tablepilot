@@ -125,7 +125,77 @@ alias = "gpt4o"
 client = "openai"
 rpm = 10
 ```
+The configuration consists of three main sections: `database`, `clients`, and `models`.
 
+### Database
+
+- **driver**: Specifies the database driver (e.g., `"sqlite3"`).
+- **dsn**: The data source name (DSN) for the database connection.
+
+### Clients
+
+You can define multiple clients, and different models can use different clients.
+
+- **name**: The name of the client. This name is referenced in the `models` section to select which client the model uses.
+- **type**: The client type. Currently, only `"openai"` is supported, which should includes all OpenAI-compatible APIs.
+- **key**: The API key used to authenticate requests.
+- **base_url**: The base URL of the API.
+
+### Models
+
+You can define multiple models and assign them to different clients or different generations.
+
+- **model**: The name of the model as used in the LLM API (e.g., `"gemini-2.0-flash-001"`).
+- **alias**: An alias for the model (e.g., `"gemini-pro"`). This allows you to upgrade the model without changing the alias in the table JSON schema, making it easier to manage.
+- **client**: The name of the client to be used for this model (must match a name from the `clients` section).
+- **default**: Set to `true` if this is the default model. Only one model can be set as `default`. If no model is marked as `default`, the first model in the list will be used. The default model is used when generating AI columns, or when no specific model is provided in the table JSON schema or the `--model` flag.
+- **rpm**: The rate limit for this model, specified in requests per minute. This is used to control the rate of API calls and enforce a model-specific rate limiter.
 
 ## Table Schema
-Tablepilot uses JSON files to define the schema for tables. A schema file specifies the structure of your table, including column names, data types, and any other relevant information. This allows you to create tables with a predefined structure.
+
+A Table schema JSON file consists of five main parts: `name`, `description`, `model`, `sources`, and `columns`.
+
+### Schema Breakdown
+
+1. **name**: 
+   - The name of the table. This serves as a unique identifier for the table (e.g., `"recipes"` in the example above).
+
+2. **description**: 
+   - A description of what the table represents. It provides context for the data (e.g., `"table of recipes"`). This description will be used in the prompt, so it should be clear and easy for the LLM to understand. It's helpful to include relevant details to ensure accurate and meaningful generation.
+
+3. **model** (Optional): 
+   - This section allows you to specify a default model for AI-generated columns. If not defined, the default model will be selected based on the configuration file.
+
+4. **sources**: 
+   - A list of sources from which `pick`-type columns can select values. Each source is an object with the following fields:
+
+     **Common fields**:
+     - **name**: The name of the source (e.g., `"cuisines"`).
+     - **type**: The type of the source, which can be `"ai"`, `"list"`, or `"linked"`.
+     - **random**: When set to `true`, each row generation will pick a random value from all available values in the source.
+     - **replacement**: Defines whether the sampling is with or without replacement. When set to `true`, items can be selected multiple times; when set to `false`, once an item is selected, it cannot be chosen again.
+
+     **Special fields for different types**:
+     - **ai**:
+       - **prompt**: The prompt used to generate data from the AI model.
+     - **list**:
+       - **options**: A list of predefined options to pick from.
+     - **linked**:
+       - **table**: The name of the linked table.
+       - **column**: The name of the column from which data should be pulled.
+       - **context_column**: The column that provides additional context for selecting data from the linked table.
+
+5. **columns**: 
+   - A list of column definitions. Each column is an object that can contain the following fields:
+
+     - **name**: The name of the column (e.g., `"Name"`, `"Ingredients"`). This will be used in the prompt when generating rows.
+     - **description**: A brief description of what data the column contains (e.g., `"recipe name"`). This will also be used in the prompt when generating rows.
+     - **type**: The data type for the column. Possible values include:
+       - `"string"`: For text values.
+       - `"array"`: For lists.
+       - `"integer"`: For numeric values.
+     - **fill_mode**: Specifies how the column is populated. Possible values:
+       - `"ai"`: AI will generate values for this column.
+       - `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
+     - **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation.
+     - **source** (Optional): Specifies the source to pull data from when `fill_mode` is set to `"pick"`. This should match a source name defined in the `sources` section (e.g., `"cuisines"`).
