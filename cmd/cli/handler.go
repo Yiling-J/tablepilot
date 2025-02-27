@@ -171,6 +171,10 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
 	generator, err := h.backend.tableService.Genetate(
 		cmd.Context(), table.GenerateRowsParams{
 			Table:       args[0],
@@ -178,6 +182,7 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 			Count:       count,
 			Batch:       batch,
 			Temperature: temperature,
+			Model:       model,
 		},
 	)
 	if err != nil {

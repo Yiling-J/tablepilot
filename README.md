@@ -58,8 +58,11 @@ A number of examples demonstrating various use cases of Tablepilot are available
   tablepilot generate recipes -c=50 -b=10
   ```
 
+	- `-m, --model string`
+	  Specify the model used to generate rows. If not provided, the default model will be used.
+
 	- `-b, --batch int`
-	Number of rows to generate in a batch (default: 10).
+	  Number of rows to generate in a batch (default: 10).
 
 	- `-c, --count int`
 	  Total number of rows to generate.

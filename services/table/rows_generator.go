@@ -38,6 +38,7 @@ type AIRowsGenerator struct {
 	contextLength  int
 	saveTo         string
 	temperature    float64
+	model          string
 
 	total     int
 	batchSize int
@@ -58,6 +59,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsParams, db *ent.Cl
 		sourceMap:   make(map[string]source.Source),
 		saveTo:      params.SaveTo,
 		temperature: params.Temperature,
+		model:       params.Model,
 	}
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
@@ -202,11 +204,15 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 	if temperature < 0 {
 		temperature = GENERATE_DATA_TEMPERATURE
 	}
+	model := g.model
+	if model == "" {
+		model = g.table.Model
+	}
 	return g.ai.Chat(ctx, &client.ChatRequest{
 		Temperature:     temperature,
 		MaxOutputTokens: GENERATE_DATA_MAX_TOKENS,
 		Messages:        []*client.Message{input},
-		Model:           g.table.Model,
+		Model:           model,
 		Schema: &jsonschema.Schema{
 			Type:                 "object",
 			Properties:           omw,

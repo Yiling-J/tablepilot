@@ -218,6 +218,10 @@ func BuildCLI(root *cobra.Command) {
 		"specify a file to save output, instead of storing in the database",
 	)
 	generate.Flags().Float64P("temperature", "t", 0.6, "The sampling temperature. Higher values will make the output more random.")
+	generate.Flags().StringP(
+		"model", "m", "",
+		"specify the model used to generate rows. If not provided, the default model will be used",
+	)
 
 	cmd.AddCommand(generate)
 

@@ -30,6 +30,7 @@ type GenerateRowsParams struct {
 	Count       int
 	Batch       int
 	Temperature float64
+	Model       string
 }
 
 type ColumnSchema struct {

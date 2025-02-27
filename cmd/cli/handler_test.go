@@ -269,6 +269,7 @@ func TestHandler_Generate(t *testing.T) {
 					require.Equal(t, 4, params.Count)
 					require.Equal(t, 2, params.Batch)
 					require.Equal(t, 0.56, params.Temperature)
+					require.Equal(t, "aiai", params.Model)
 					return mockRowGen, nil
 				},
 			}
@@ -290,6 +291,7 @@ func TestHandler_Generate(t *testing.T) {
 			cmd.Flags().IntP("batch", "", 0, "")
 			cmd.Flags().StringP("saveto", "s", "", "")
 			cmd.Flags().Float64P("temperature", "", 0.6, "")
+			cmd.Flags().StringP("model", "", "", "")
 			err := cmd.Flags().Set("count", "4")
 			require.NoError(t, err)
 			err = cmd.Flags().Set("batch", "2")
@@ -299,6 +301,9 @@ func TestHandler_Generate(t *testing.T) {
 				require.NoError(t, err)
 			}
 			err = cmd.Flags().Set("temperature", "0.56")
+			require.NoError(t, err)
+
+			err = cmd.Flags().Set("model", "aiai")
 			require.NoError(t, err)
 
 			err = handler.Generate(cmd, []string{"foo"})
