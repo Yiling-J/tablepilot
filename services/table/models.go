@@ -18,6 +18,7 @@ type TableGenColumn struct {
 
 type TableGenRequest struct {
 	Name        string            `json:"name"`
+	Model       string            `json:"model"`
 	Description string            `json:"description"`
 	Columns     []TableGenColumn  `json:"columns"`
 	Sources     []json.RawMessage `json:"sources"`

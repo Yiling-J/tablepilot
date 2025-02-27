@@ -85,6 +85,7 @@ func TestTableService_CreateTable(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			require.Equal(t, "user", request.Messages[0].Role)
+			require.Equal(t, request.Model, "aiai")
 			columnsGenBuilder := promptbuilder.NewColumnsBuilder(1, "test", "test table")
 			bc := []promptbuilder.Column{}
 			for _, c := range columns {
@@ -181,6 +182,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		Description: "test table",
 		Columns:     columns,
 		Sources:     sources,
+		Model:       "aiai",
 	})
 	require.NoError(t, err)
 	table, err := db.TableMeta.Query().WithColumns().Where(tablemeta.Nanoid(id)).Only(ctx)

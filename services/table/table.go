@@ -90,7 +90,7 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 		}
 	}
 
-	table, err := tx.TableMeta.Create().SetName(req.Name).SetDescription(req.Description).Save(ctx)
+	table, err := tx.TableMeta.Create().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).Save(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, err)
 	}
@@ -122,6 +122,7 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 			Messages: []*client.Message{
 				client.UserMessage(prompt),
 			},
+			Model:           table.Model,
 			Temperature:     CREATE_TABLE_TEMPERATURE,
 			MaxOutputTokens: CREATE_TABLE_MAX_TOKENS,
 			Schema:          reflector.Reflect([]TableGenColumnSchema{}),
