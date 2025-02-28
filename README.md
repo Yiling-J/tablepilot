@@ -14,7 +14,7 @@ Tablepilot is a CLI tool designed to generate tables using AI.
 
 #### Linux
 
-### Install from Source
+#### Install from Source
 Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.
 
 ## How to Use
