@@ -1,3 +1,9 @@
+<div align="center">
+  <a href="https://ollama.com" />
+    <img alt="ollama" height="180px" src="icon.png">
+  </a>
+</div>
+
 # Tablepilot(WIP)
 
 Tablepilot is a CLI tool designed to generate tables using AI.
