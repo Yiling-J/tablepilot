@@ -1,4 +1,4 @@
-.PHONY: test lint gen run build
+.PHONY: test lint gen run build install
 
 test:
 	go test ./...
@@ -10,3 +10,5 @@ run:
 	go run main.go --config config.toml
 build:
 	go build -o tablepilot
+install:
+	go install

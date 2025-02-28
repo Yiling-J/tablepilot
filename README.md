@@ -14,6 +14,8 @@ Tablepilot is a CLI tool designed to generate tables using AI.
 
 #### Linux
 
+### Install from Source
+Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.
 
 ## How to Use
 
@@ -150,25 +152,6 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 Tablepilot uses a TOML configuration file to customize its behavior. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
 
-#### Example Config
-
-```toml
-[database]
-driver = "sqlite3"
-dsn = "data.db?_pragma=foreign_keys(1)"
-
-[[clients]]
-name = "openai"
-type = "openai"
-key = ""
-base_url = "https://models.inference.ai.azure.com"
-
-[[models]]
-model = "gpt-4o"
-alias = "gpt4o"
-client = "openai"
-rpm = 10
-```
 The configuration consists of three main sections: `database`, `clients`, and `models`.
 
 ### Database
