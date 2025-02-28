@@ -2,19 +2,45 @@ package table
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"tablepilot/ent"
 	"tablepilot/ent/schema"
 	"tablepilot/ent/tablecolumn"
 	"tablepilot/infra/db"
+	"tablepilot/services/ai"
+	"tablepilot/services/ai/client"
 	"tablepilot/services/ai/promptbuilder"
+	"tablepilot/services/table/source"
 	"testing"
 
+	"github.com/invopop/jsonschema"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
-func TestRowsGenerator_PrepareCOntextRows(t *testing.T) {
+func TestRowsGenerator_PrepareRow(t *testing.T) {
+	sc := &source.ListSource{Options: []string{"foo"}}
+	err := sc.Init(context.TODO())
+	require.NoError(t, err)
+	generator := &AIRowsGenerator{
+		sourceMap: map[string]source.Source{
+			"c1": sc,
+		},
+		table: &ent.TableMeta{Edges: ent.TableMetaEdges{
+			Columns: []*ent.TableColumn{
+				{Nanoid: "c1"},
+				{Nanoid: "c2"},
+			},
+		}},
+	}
+	err = generator.prepareRow(context.TODO())
+	require.NoError(t, err)
+	require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "foo"}}, generator.rows[0])
+}
+
+func TestRowsGenerator_PrepareContextRows(t *testing.T) {
 	cases := []struct {
 		generated int
 		expected  []any
@@ -67,6 +93,126 @@ func TestRowsGenerator_PrepareCOntextRows(t *testing.T) {
 			ep, err := eb.Prompt()
 			require.NoError(t, err)
 			require.Equal(t, ep, p)
+		})
+	}
+}
+
+func TestRowsGenerator_Chat(t *testing.T) {
+	ctx := context.Background()
+	var schema *jsonschema.Schema
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			schema = request.Schema
+			return &client.ChatResponse{
+				Content: "",
+			}, nil
+		},
+	}
+
+	generator := &AIRowsGenerator{
+		ai: aiService,
+		missingColumns: []*ent.TableColumn{
+			{Nanoid: "n1", Type: tablecolumn.TypeArray},
+			{Nanoid: "n2", Type: tablecolumn.TypeString},
+		},
+		builder: promptbuilder.NewRowsBuilder(1),
+		table:   &ent.TableMeta{Model: "test"},
+	}
+	_, err := generator.chat(ctx)
+	require.NoError(t, err)
+	expectedSchema := `{"properties":{"data":{"items":{"properties":{"id":{"type":"integer"},"n1":{"items":{"type":"string"},"type":"array"},"n2":{"type":"string"}},"additionalProperties":false,"type":"object","required":["n1","n2"]},"type":"array"}},"additionalProperties":false,"type":"object"}`
+	bs, err := schema.MarshalJSON()
+	require.NoError(t, err)
+	require.Equal(t, expectedSchema, string(bs))
+}
+
+func TestRowsGenerator_Next(t *testing.T) {
+	cases := []struct {
+		count     int
+		batch     int
+		chatBatch int  // how many rows returned from chat API
+		chatCount int  // how many times chat API called
+		saveTo    bool // generated data will ruturn without saving
+	}{
+		{10, 1, 1, 10, false},
+		{10, 2, 2, 5, false},
+		{10, 3, 3, 4, false},
+		{10, 8, 8, 2, false},
+		{10, 10, 10, 1, false},
+		{10, 10, 20, 1, false},
+		{10, 10, 3, 4, false},
+		{10, 10, 3, 4, true},
+	}
+
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("%+v", tc), func(t *testing.T) {
+			db := db.NewTestDB()
+			ctx := context.Background()
+			aiService := &ai.AiServiceMock{
+				ChatFunc: func(
+					ctx context.Context, request *client.ChatRequest,
+				) (*client.ChatResponse, error) {
+					data := []map[string]any{}
+					for i := 0; i < tc.chatBatch; i++ {
+						data = append(data, map[string]any{
+							"name": "go",
+						})
+					}
+					b, err := json.Marshal(map[string]any{"data": data})
+					require.NoError(t, err)
+					return &client.ChatResponse{
+						Content: string(b),
+					}, nil
+				},
+			}
+			tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+			require.NoError(t, err)
+			err = db.TableColumn.Create().
+				SetName("c").
+				SetFillMode(tablecolumn.FillModeAi).
+				SetTablemeta(tb).
+				SetType(tablecolumn.TypeString).Exec(ctx)
+			require.NoError(t, err)
+
+			st := ""
+			if tc.saveTo {
+				st = "abc"
+			}
+			generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+				Table:  tb.Nanoid,
+				Count:  tc.count,
+				Batch:  tc.batch,
+				SaveTo: st,
+			}, db, aiService, zap.NewNop().Sugar())
+			require.NoError(t, err)
+			l := []int{}
+			for {
+				v, err := generator.Next(ctx)
+				require.NoError(t, err)
+				if len(v) == 0 {
+					break
+				}
+				l = append(l, len(v))
+			}
+			left := 10
+			for i, v := range l {
+				if i != len(l)-1 {
+					require.Equal(t, v, tc.chatBatch)
+					left -= v
+				} else {
+					require.Equal(t, v, left)
+				}
+			}
+			require.Equal(t, tc.chatCount, len(aiService.ChatCalls()))
+			c, err := tb.QueryRows().Count(ctx)
+			require.NoError(t, err)
+			if tc.saveTo {
+				require.Equal(t, 0, c)
+			} else {
+				require.Equal(t, tc.count, c)
+			}
 		})
 	}
 }
