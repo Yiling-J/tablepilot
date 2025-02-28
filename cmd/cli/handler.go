@@ -260,7 +260,8 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 	}
 	defer func() { _ = reader.Close() }()
 	if importName == "" {
-		importName = strings.TrimSuffix(tableFile, filepath.Ext(tableFile))
+		importName = filepath.Base(tableFile)
+		importName = strings.TrimSuffix(importName, filepath.Ext(importName))
 	}
 	id, err := h.backend.tableService.Import(cmd.Context(), importName, reader)
 	if err != nil {
