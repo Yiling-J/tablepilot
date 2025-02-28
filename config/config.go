@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -43,9 +42,6 @@ type Config struct {
 }
 
 func NewConfig(name string) (config *Config, err error) {
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-
 	viper.SetConfigFile(name)
 	viper.AutomaticEnv()
 	err = viper.ReadInConfig()
@@ -69,7 +65,7 @@ func NewConfig(name string) (config *Config, err error) {
 			}
 			clients = append(clients, &oai)
 		default:
-			return nil, errors.New("unknow client")
+			return nil, errors.New("unknown client")
 		}
 	}
 	config = &Config{}

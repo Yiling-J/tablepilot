@@ -1,0 +1,30 @@
+debug = false
+
+[database]
+driver = "sqlite3"
+dsn = "data.db?_pragma=foreign_keys(1)"
+
+[[clients]]
+name = "gemini"
+type = "openai"
+key = "a"
+base_url = "urla"
+
+[[clients]]
+name = "oai"
+type = "openai"
+key = "b"
+base_url = "urlb"
+
+[[models]]
+model = "gemini-2.0-flash-001"
+alias = "flash"
+client = "gemini"
+default = true
+rpm = 10
+
+[[models]]
+model = "gpt-4o"
+alias = "gpt40"
+client = "oai"
+rpm = 10
