@@ -106,8 +106,8 @@ func TestHandler_List(t *testing.T) {
 			return &table.ListTablesResponse{
 				Total: 2,
 				Tables: []table.TableInfoSimple{
-					{ID: "1", Name: "t1"},
-					{ID: "2", Name: "t2"},
+					{ID: "1", Name: "t1", Description: "d1"},
+					{ID: "2", Name: "t2", Description: "d2"},
 				},
 			}, nil
 		},
@@ -129,13 +129,13 @@ func TestHandler_List(t *testing.T) {
 	err := handler.List(cmd, []string{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(printer.AddHeaderCalls()))
-	require.Equal(t, []string{"ID", "Name"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, []string{"ID", "Name", "description"}, printer.AddHeaderCalls()[0].Strings)
 	require.Equal(t, 4, len(printer.AddFieldCalls()))
 	fields := []string{}
 	for _, call := range printer.AddFieldCalls() {
 		fields = append(fields, call.S)
 	}
-	require.Equal(t, []string{"1", "t1", "2", "t2"}, fields)
+	require.Equal(t, []string{"1", "t1", "d1", "2", "t2", "d2"}, fields)
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }

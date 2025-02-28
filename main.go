@@ -10,7 +10,7 @@ import (
 func main() {
 	cmd := &cobra.Command{
 		Use:   "tablepilot",
-		Short: "AI table generator",
+		Short: "A CLI tool designed to generate tables using AI",
 		CompletionOptions: cobra.CompletionOptions{
 			HiddenDefaultCmd: true,
 		},

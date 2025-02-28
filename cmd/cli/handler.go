@@ -71,10 +71,11 @@ func (h *Handler) List(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	tp := h.getPrinter()
-	tp.AddHeader([]string{"ID", "Name"})
+	tp.AddHeader([]string{"ID", "Name", "Description"})
 	for _, table := range resp.Tables {
 		tp.AddField(table.ID)
 		tp.AddField(table.Name)
+		tp.AddField(table.Description)
 		tp.EndRow()
 	}
 	return tp.Render()
