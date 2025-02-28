@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://ollama.com" />
-    <img alt="ollama" height="180px" src="icon.png">
+    <img alt="ollama" height="150px" src="icon.png">
   </a>
 </div>
 
