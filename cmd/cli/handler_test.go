@@ -129,7 +129,7 @@ func TestHandler_List(t *testing.T) {
 	err := handler.List(cmd, []string{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(printer.AddHeaderCalls()))
-	require.Equal(t, []string{"ID", "Name", "description"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, []string{"ID", "Name", "Description"}, printer.AddHeaderCalls()[0].Strings)
 	require.Equal(t, 4, len(printer.AddFieldCalls()))
 	fields := []string{}
 	for _, call := range printer.AddFieldCalls() {
