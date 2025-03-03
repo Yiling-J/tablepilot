@@ -8,15 +8,15 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/schema"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 const (

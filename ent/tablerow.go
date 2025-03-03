@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"tablepilot/ent/schema"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // TableRow is the model entity for the TableRow schema.

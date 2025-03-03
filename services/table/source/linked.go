@@ -3,12 +3,13 @@ package source
 import (
 	"context"
 	"encoding/json"
-	"tablepilot/ent"
-	"tablepilot/ent/schema"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
-	"tablepilot/services/table/util"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
+	"github.com/Yiling-J/tablepilot/services/table/util"
 )
 
 type LinkedSource struct {

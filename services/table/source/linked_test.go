@@ -3,10 +3,11 @@ package source
 import (
 	"context"
 	"encoding/json"
-	"tablepilot/ent/schema"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/infra/db"
 	"testing"
+
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/infra/db"
 
 	"github.com/stretchr/testify/require"
 )

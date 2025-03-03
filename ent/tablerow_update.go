@@ -6,16 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/schema"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // TableRowUpdate is the builder for updating TableRow entities.

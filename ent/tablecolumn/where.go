@@ -3,11 +3,11 @@
 package tablecolumn
 
 import (
-	"tablepilot/ent/predicate"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

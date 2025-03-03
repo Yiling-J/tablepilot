@@ -3,7 +3,7 @@ package table
 import (
 	"encoding/json"
 
-	"tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent"
 )
 
 type TableGenColumn struct {

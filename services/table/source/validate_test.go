@@ -3,9 +3,10 @@ package source
 import (
 	"context"
 	"fmt"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/infra/db"
 	"testing"
+
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/infra/db"
 
 	"github.com/stretchr/testify/require"
 )

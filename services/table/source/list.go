@@ -2,7 +2,8 @@ package source
 
 import (
 	"context"
-	"tablepilot/ent/schema"
+
+	"github.com/Yiling-J/tablepilot/ent/schema"
 )
 
 type ListSource struct {

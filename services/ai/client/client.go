@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 	"errors"
-	"tablepilot/config"
+
+	"github.com/Yiling-J/tablepilot/config"
 
 	"go.uber.org/zap"
 )

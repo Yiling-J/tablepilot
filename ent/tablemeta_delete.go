@@ -4,12 +4,12 @@ package ent
 
 import (
 	"context"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/tablemeta"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // TableMetaDelete is the builder for deleting a TableMeta entity.

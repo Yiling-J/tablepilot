@@ -5,8 +5,8 @@ package ai
 
 import (
 	"context"
+	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"sync"
-	"tablepilot/services/ai/client"
 )
 
 // Ensure, that AiServiceMock does implement AiService.

@@ -4,12 +4,12 @@ package ent
 
 import (
 	"context"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/tablerow"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // TableRowDelete is the builder for deleting a TableRow entity.

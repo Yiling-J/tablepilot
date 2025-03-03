@@ -5,8 +5,9 @@ import (
 	"encoding/xml"
 	"errors"
 	"strings"
-	"tablepilot/ent"
-	"tablepilot/ent/schema"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/schema"
 )
 
 // Item represents a single map entry with custom XML marshaling.

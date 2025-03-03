@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"tablepilot/ent"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 
 	"github.com/tidwall/gjson"
 )

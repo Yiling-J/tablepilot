@@ -9,16 +9,15 @@ import (
 	"log"
 	"reflect"
 
-	"tablepilot/ent/migrate"
-
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
+	"github.com/Yiling-J/tablepilot/ent/migrate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // Client is the client that holds all ent builders.

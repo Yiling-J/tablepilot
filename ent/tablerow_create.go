@@ -6,14 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"tablepilot/ent/schema"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // TableRowCreate is the builder for creating a TableRow entity.

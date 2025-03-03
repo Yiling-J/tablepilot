@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent"
 
 	"github.com/spf13/cast"
 )

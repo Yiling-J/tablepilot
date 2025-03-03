@@ -6,15 +6,15 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // TableRowQuery is the builder for querying TableRow entities.

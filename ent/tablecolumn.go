@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // TableColumn is the model entity for the TableColumn schema.

@@ -7,15 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // TableColumnUpdate is the builder for updating TableColumn entities.

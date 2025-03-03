@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // ent aliases to avoid import conflicts in user's code.

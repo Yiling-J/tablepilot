@@ -3,7 +3,8 @@ package source
 import (
 	"context"
 	"math/rand/v2"
-	"tablepilot/ent/schema"
+
+	"github.com/Yiling-J/tablepilot/ent/schema"
 )
 
 type Source interface {

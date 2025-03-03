@@ -5,11 +5,11 @@ package ent
 import (
 	"fmt"
 	"strings"
-	"tablepilot/ent/tablemeta"
 	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // TableMeta is the model entity for the TableMeta schema.

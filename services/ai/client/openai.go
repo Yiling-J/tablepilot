@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 	"errors"
-	"tablepilot/config"
+
+	"github.com/Yiling-J/tablepilot/config"
 
 	"github.com/invopop/jsonschema"
 	"github.com/openai/openai-go"

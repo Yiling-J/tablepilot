@@ -5,13 +5,12 @@ package enttest
 import (
 	"context"
 
-	"tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent"
 	// required by schema hooks.
-	_ "tablepilot/ent/runtime"
-
-	"tablepilot/ent/migrate"
+	_ "github.com/Yiling-J/tablepilot/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
+	"github.com/Yiling-J/tablepilot/ent/migrate"
 )
 
 type (

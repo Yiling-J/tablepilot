@@ -5,10 +5,10 @@ package table
 
 import (
 	"context"
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"io"
 	"sync"
-	"tablepilot/ent"
-	"tablepilot/ent/schema"
 )
 
 // Ensure, that TableServiceMock does implement TableService.

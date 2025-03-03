@@ -1,10 +1,10 @@
 package api
 
 import (
-	"tablepilot/config"
-	"tablepilot/ent"
-	"tablepilot/services/ai"
-	"tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/config"
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/services/ai"
+	"github.com/Yiling-J/tablepilot/services/table"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

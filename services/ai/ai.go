@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"tablepilot/config"
-	"tablepilot/services/ai/client"
+	"github.com/Yiling-J/tablepilot/config"
+	"github.com/Yiling-J/tablepilot/services/ai/client"
 
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"

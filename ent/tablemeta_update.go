@@ -6,15 +6,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"tablepilot/ent/predicate"
-	"tablepilot/ent/tablecolumn"
-	"tablepilot/ent/tablemeta"
-	"tablepilot/ent/tablerow"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/predicate"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/tablerow"
 )
 
 // TableMetaUpdate is the builder for updating TableMeta entities.

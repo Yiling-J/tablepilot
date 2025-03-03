@@ -1,4 +1,4 @@
-module tablepilot
+module github.com/Yiling-J/tablepilot
 
 go 1.24
 

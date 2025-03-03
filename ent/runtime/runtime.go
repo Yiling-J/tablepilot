@@ -2,7 +2,7 @@
 
 package runtime
 
-// The schema-stitching logic is generated in tablepilot/ent/runtime.go
+// The schema-stitching logic is generated in github.com/Yiling-J/tablepilot/ent/runtime.go
 
 const (
 	Version = "v0.14.2"                                         // Version of ent codegen.

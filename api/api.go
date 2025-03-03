@@ -1,7 +1,7 @@
 package api
 
 import (
-	"tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/services/table"
 
 	"github.com/gin-gonic/gin"
 )

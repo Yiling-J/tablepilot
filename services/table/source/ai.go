@@ -3,11 +3,12 @@ package source
 import (
 	"context"
 	"encoding/json"
-	"tablepilot/ent"
-	"tablepilot/ent/schema"
-	"tablepilot/services/ai"
-	"tablepilot/services/ai/client"
-	"tablepilot/services/ai/promptbuilder"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/services/ai"
+	"github.com/Yiling-J/tablepilot/services/ai/client"
+	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 
 	"github.com/invopop/jsonschema"
 )

@@ -5,7 +5,8 @@ package hook
 import (
 	"context"
 	"fmt"
-	"tablepilot/ent"
+
+	"github.com/Yiling-J/tablepilot/ent"
 )
 
 // The TableColumnFunc type is an adapter to allow the use of ordinary

@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"tablepilot/config"
-	"tablepilot/ent"
-	"tablepilot/ent/hook"
+
+	"github.com/Yiling-J/tablepilot/config"
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/hook"
 
 	"github.com/spf13/cast"
 	"github.com/sqids/sqids-go"

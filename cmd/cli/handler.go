@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"tablepilot/services/table"
-	"tablepilot/services/table/util"
-	"tablepilot/utils/tableprinter"
 	"time"
+
+	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 
 	"github.com/spf13/cobra"
 )

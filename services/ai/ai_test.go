@@ -3,9 +3,10 @@ package ai
 import (
 	"context"
 	"fmt"
-	"tablepilot/config"
-	"tablepilot/services/ai/client"
 	"testing"
+
+	"github.com/Yiling-J/tablepilot/config"
+	"github.com/Yiling-J/tablepilot/services/ai/client"
 
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/require"

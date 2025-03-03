@@ -1,9 +1,10 @@
 package promptbuilder
 
 import (
-	"tablepilot/ent"
-	"tablepilot/ent/tablecolumn"
 	"testing"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 
 	"github.com/stretchr/testify/require"
 )

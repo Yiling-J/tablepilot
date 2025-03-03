@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"tablepilot/ent"
-	"tablepilot/services/ai"
-	"tablepilot/services/ai/client"
-	"tablepilot/services/ai/promptbuilder"
 	"testing"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/services/ai"
+	"github.com/Yiling-J/tablepilot/services/ai/client"
+	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 
 	"github.com/stretchr/testify/require"
 )
