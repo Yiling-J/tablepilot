@@ -4,7 +4,7 @@
   </a>
 </div>
 
-# Tablepilot(WIP)
+# Tablepilot
 
 Tablepilot is a CLI tool designed to generate tables using AI.
 - Reusable JSON table schema.
