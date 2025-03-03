@@ -8,11 +8,11 @@
 
 Tablepilot is a CLI tool designed to generate tables using AI.
 
-#### MacOS
+#### Download Binary Release
+Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
 
-#### Windows
-
-#### Linux
+#### Install with Go
+Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot`.
 
 #### Install from Source
 Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.
