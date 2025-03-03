@@ -79,7 +79,7 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 		return nil, err
 	}
 	if len(chatCompletion.Choices) < 1 {
-		return nil, errors.New("")
+		return nil, errors.New("chat choices empty")
 	}
 	content := chatCompletion.Choices[0].Message.Content
 	if array {

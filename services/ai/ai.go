@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
@@ -96,5 +97,5 @@ func (ai *AiServiceImpl) getChatClientByModel(model string) (client.ChatClient, 
 			return ai.clients[m.client], nil
 		}
 	}
-	return nil, errors.New("")
+	return nil, fmt.Errorf("client not found for %s", model)
 }

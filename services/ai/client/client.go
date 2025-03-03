@@ -24,7 +24,7 @@ func NewClients(cfg *config.Config, logger *zap.SugaredLogger) (map[string]ChatC
 			logger.Debug("openai client created")
 			clients[v.Name] = oai
 		default:
-			return nil, errors.New("")
+			return nil, errors.New("unknown config type")
 		}
 	}
 	return clients, nil

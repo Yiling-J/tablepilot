@@ -52,7 +52,7 @@ func NewColumnIndexer(columns []*ent.TableColumn) *ColumnIndexer {
 
 func (ci *ColumnIndexer) GetColumnByIndex(index int) (*ent.TableColumn, error) {
 	if index >= len(ci.columns) {
-		return nil, errors.New("")
+		return nil, errors.New("invalid index")
 	}
 	return ci.columns[index], nil
 }
@@ -60,7 +60,7 @@ func (ci *ColumnIndexer) GetColumnByIndex(index int) (*ent.TableColumn, error) {
 func (ci *ColumnIndexer) GetColumnByNanoid(id string) (*ent.TableColumn, error) {
 	col, ok := ci.idMap[id]
 	if !ok {
-		return nil, errors.New("")
+		return nil, errors.New("invalid id")
 	}
 	return col, nil
 }
@@ -68,7 +68,7 @@ func (ci *ColumnIndexer) GetColumnByNanoid(id string) (*ent.TableColumn, error) 
 func (ci *ColumnIndexer) GetColumnIndexByNanoid(id string) (int, error) {
 	index, ok := ci.orderMap[id]
 	if !ok {
-		return 0, errors.New("")
+		return 0, errors.New("invalid id")
 	}
 	return index, nil
 }

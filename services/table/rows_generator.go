@@ -79,7 +79,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsParams, db *ent.Cl
 		}
 		if c.FillMode == tablecolumn.FillModePick {
 			if len(c.Source) == 0 {
-				return nil, errors.New("")
+				return nil, errors.New("invalid source")
 			}
 			var so source.Source
 			so, err := generator.columnSource(ctx, c)
@@ -101,7 +101,7 @@ func (g *AIRowsGenerator) newBatch(ctx context.Context, batch int) error {
 }
 
 func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
-	// get required rows from previous generated results or database
+	// get required rows from previous generated results and database
 	contextRows := []map[string]*schema.CellValue{}
 	if g.contextLength > 0 {
 		remain := g.contextLength
@@ -300,12 +300,11 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	rows, err := util.TryDecodeJsonArray[map[string]any](
 		gjson.Get(resp.Content, "data").String(),
 	)
-	if err != nil && len(rows) == 0 {
-		return nil, err
-	}
+	// log error only because we need those successfully generated rows
 	if err != nil {
-		g.logger.Errorw("err happen when decode row gen response json", "err", err)
+		g.logger.Errorw("TryDecodeJsonArray error", "errpr", err)
 	}
+
 	if len(g.rows) > 0 {
 		for i, row := range g.rows {
 			if len(rows) >= i {
