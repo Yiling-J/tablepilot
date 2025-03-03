@@ -7,6 +7,11 @@
 # Tablepilot(WIP)
 
 Tablepilot is a CLI tool designed to generate tables using AI.
+- Reusable JSON table schema.
+- Accurate column context length control and batch generation control.
+- AI-powered columns generation.
+- Bring other table row data as context to generate new data.
+- Easy switching between LLM providers and models for flexibility.
 
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
