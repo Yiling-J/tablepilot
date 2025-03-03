@@ -189,45 +189,48 @@ A Table schema JSON file consists of five main parts: `name`, `description`, `mo
 
 ### Schema Breakdown
 
-1. **name**: 
-   - The name of the table. This serves as a unique identifier for the table (e.g., `"recipes"` in the example above).
+#### name:
 
-2. **description**: 
-   - A description of what the table represents. It provides context for the data (e.g., `"table of recipes"`). This description will be used in the prompt, so it should be clear and easy for the LLM to understand. It's helpful to include relevant details to ensure accurate and meaningful generation.
+The name of the table. This serves as a unique identifier for the table (e.g., `"recipes"` in the example above).
 
-3. **model** (Optional): 
-   - This section allows you to specify a default model for AI-generated columns. If not defined, the default model will be selected based on the configuration file.
+#### description: 
+A description of what the table represents. It provides context for the data (e.g., `"table of recipes"`). This description will be used in the prompt, so it should be clear and easy for the LLM to understand. It's helpful to include relevant details to ensure accurate and meaningful generation.
 
-4. **sources**: 
-   - A list of sources from which `pick`-type columns can select values. Each source is an object with the following fields:
+#### model (Optional): 
+This section allows you to specify a default model for AI-generated columns. If not defined, the default model will be selected based on the configuration file.
 
-     **Common fields**:
-     - **name**: The name of the source (e.g., `"cuisines"`).
-     - **type**: The type of the source, which can be `"ai"`, `"list"`, or `"linked"`.
-     - **random**: When set to `true`, each row generation will pick a random value from all available values in the source.
-     - **replacement**: Defines whether the sampling is with or without replacement. When set to `true`, items can be selected multiple times; when set to `false`, once an item is selected, it cannot be chosen again.
+#### sources: 
+A list of sources from which `pick`-type columns can select values. Each source is an object with the following fields:
 
-     **Special fields for different types**:
-     - **ai**:
-       - **prompt**: The prompt used to generate data from the AI model.
-     - **list**:
-       - **options**: A list of predefined options to pick from.
-     - **linked**:
-       - **table**: The name of the linked table.
-       - **column**: The name of the column from which data should be pulled.
-       - **context_column**: The column that provides additional context for selecting data from the linked table.
+Common fields:
 
-5. **columns**: 
-   - A list of column definitions. Each column is an object that can contain the following fields:
+- **name**: The name of the source (e.g., `"cuisines"`).
+- **type**: The type of the source, which can be `"ai"`, `"list"`, or `"linked"`.
+- **random**: When set to `true`, each row generation will pick a random value from all available values in the source.
+- **replacement**: Defines whether the sampling is with or without replacement. When set to `true`, items can be selected multiple times; when set to `false`, once an item is selected, it cannot be chosen again.
 
-     - **name**: The name of the column (e.g., `"Name"`, `"Ingredients"`). This will be used in the prompt when generating rows.
-     - **description**: A brief description of what data the column contains (e.g., `"recipe name"`). This will also be used in the prompt when generating rows.
-     - **type**: The data type for the column. Possible values include:
-       - `"string"`: For text values.
-       - `"array"`: For lists.
-       - `"integer"`: For numeric values.
-     - **fill_mode**: Specifies how the column is populated. Possible values:
-       - `"ai"`: AI will generate values for this column.
-       - `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
-     - **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation.
-     - **source** (Optional): Specifies the source to pull data from when `fill_mode` is set to `"pick"`. This should match a source name defined in the `sources` section (e.g., `"cuisines"`).
+Special fields for different types:
+
+- **ai**:
+	- **prompt**: The prompt used to generate data from the AI model.
+- **list**:
+	- **options**: A list of predefined options to pick from.
+- **linked**:
+	- **table**: The name of the linked table.
+	- **column**: The name of the column from which data should be pulled.
+	- **context_column**: The column that provides additional context for selecting data from the linked table.
+
+#### columns: 
+A list of column definitions. Each column is an object that can contain the following fields:
+
+- **name**: The name of the column (e.g., `"Name"`, `"Ingredients"`). This will be used in the prompt when generating rows.
+- **description**: A brief description of what data the column contains (e.g., `"recipe name"`). This will also be used in the prompt when generating rows.
+- **type**: The data type for the column. Possible values include:
+	- `"string"`: For text values.
+	- `"array"`: For lists.
+	- `"integer"`: For numeric values.
+- **fill_mode**: Specifies how the column is populated. Possible values:
+	- `"ai"`: AI will generate values for this column.
+	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
+- **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation.
+- **source** (Optional): Specifies the source to pull data from when `fill_mode` is set to `"pick"`. This should match a source name defined in the `sources` section (e.g., `"cuisines"`).
