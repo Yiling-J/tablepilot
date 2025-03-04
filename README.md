@@ -183,6 +183,8 @@ You can define multiple models and assign them to different clients or different
 - **default**: Set to `true` if this is the default model. Only one model can be set as `default`. If no model is marked as `default`, the first model in the list will be used. The default model is used when no specific model is provided in the table JSON schema or the `--model` flag.
 - **rpm**: The rate limit for this model, specified in requests per minute. This is used to control the rate of API calls and enforce a model-specific rate limiter.
 
+**Important**: All models must support [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).
+
 ## Table Schema
 
 A Table schema JSON file consists of five main parts: `name`, `description`, `model`, `sources`, and `columns`.
@@ -217,8 +219,8 @@ Special fields for different types:
 	- **options**: A list of predefined options to pick from.
 - **linked**:
 	- **table**: The name of the linked table.
-	- **column**: The name of the column from which data should be pulled.
-	- **context_column**: The column that provides additional context for selecting data from the linked table.
+	- **column**: The column used for display text in the generated cell(e.g., user name).
+	- **context_columns**: The columns providing context when generating data (e.g., user age, job, nationality).
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:
@@ -228,7 +230,8 @@ A list of column definitions. Each column is an object that can contain the foll
 - **type**: The data type for the column. Possible values include:
 	- `"string"`: For text values.
 	- `"array"`: For lists.
-	- `"integer"`: For numeric values.
+	- `"integer"`: For integral numbers.
+	- `"number"`: For any numeric type, either integers or floating point numbers.
 - **fill_mode**: Specifies how the column is populated. Possible values:
 	- `"ai"`: AI will generate values for this column.
 	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
