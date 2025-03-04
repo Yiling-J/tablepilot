@@ -305,6 +305,9 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		g.logger.Errorw("TryDecodeJsonArray error", "errpr", err)
 	}
 
+	// If the table schema contains pick-type columns, their cell values are pre-generated and stored in g.rows,
+	// ensuring that len(g.rows) > 0. In this case, we assign generated column values to the existing rows.
+	// Otherwise, we use the generated rows as complete rows directly.
 	if len(g.rows) > 0 {
 		for i, row := range g.rows {
 			if len(rows) >= i {
