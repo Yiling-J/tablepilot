@@ -178,10 +178,11 @@ You can define multiple clients, and different models can use different clients.
 You can define multiple models and assign them to different clients or different generations.
 
 - **model**: The name of the model as used in the LLM API (e.g., `"gemini-2.0-flash-001"`).
-- **alias**: An alias for the model (e.g., `"gemini-pro"`). This allows you to upgrade the model without changing the alias in the table JSON schema, making it easier to manage.
+- **alias**: An alias for the model (e.g., `"gemini-pro"`). This allows you to upgrade the model without changing the alias in the table JSON schema, making it easier to manage. Optional.
 - **client**: The name of the client to be used for this model (must match a name from the `clients` section).
-- **default**: Set to `true` if this is the default model. Only one model can be set as `default`. If no model is marked as `default`, the first model in the list will be used. The default model is used when no specific model is provided in the table JSON schema or the `--model` flag.
-- **rpm**: The rate limit for this model, specified in requests per minute. This is used to control the rate of API calls and enforce a model-specific rate limiter.
+- **default**: Set to `true` if this is the default model. Only one model can be set as `default`. If no model is marked as `default`, the first model in the list will be used. The default model is used when no specific model is provided in the table JSON schema or the `--model` flag. Optional.
+- **max_tokens**: The maximum number of tokens that can be generated in the chat completion (default 6000). Optional.
+- **rpm**: The rate limit for this model, specified in requests per minute. This is used to control the rate of API calls and enforce a model-specific rate limiter (default no limit). Optional.
 
 **Important**: All models must support [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).
 

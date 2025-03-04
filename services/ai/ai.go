@@ -19,10 +19,11 @@ type AiService interface {
 }
 
 type model struct {
-	model   string
-	alias   string
-	client  string
-	limiter *rate.Limiter
+	model     string
+	alias     string
+	client    string
+	maxTokens int64
+	limiter   *rate.Limiter
 }
 
 type AiServiceImpl struct {
@@ -55,10 +56,11 @@ func NewAiService(cfg *config.Config, clients map[string]client.ChatClient, logg
 			limiter = rate.NewLimiter(rate.Every(time.Minute/time.Duration(m.RPM)), m.RPM)
 		}
 		md := &model{
-			model:   m.Model,
-			alias:   m.Alias,
-			limiter: limiter,
-			client:  m.Client,
+			model:     m.Model,
+			maxTokens: m.MaxTokens,
+			alias:     m.Alias,
+			limiter:   limiter,
+			client:    m.Client,
 		}
 		srv.models[md.model] = md
 		if md.alias != "" {
@@ -78,6 +80,10 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	}
 
 	request.Model = ai.models[request.Model].model
+	modelMaxTokens := ai.models[request.Model].maxTokens
+	if modelMaxTokens != 0 {
+		request.MaxOutputTokens = modelMaxTokens
+	}
 	ai.logger.Debugln("send chat request", "model", request.Model, "temperature", request.Temperature)
 	for _, message := range request.Messages {
 		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)

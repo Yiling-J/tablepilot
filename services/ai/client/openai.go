@@ -43,10 +43,11 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 		}
 	}
 	chatParams := openai.ChatCompletionNewParams{
-		Messages:        openai.F(messages),
-		Model:           openai.F(request.Model),
-		Temperature:     openai.Float(request.Temperature),
-		PresencePenalty: openai.Float(request.PresencePenalty),
+		Messages:            openai.F(messages),
+		Model:               openai.F(request.Model),
+		Temperature:         openai.Float(request.Temperature),
+		PresencePenalty:     openai.Float(request.PresencePenalty),
+		MaxCompletionTokens: openai.Int(request.MaxOutputTokens),
 	}
 	array := false
 	if request.Schema != nil {

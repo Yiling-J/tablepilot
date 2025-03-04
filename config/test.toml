@@ -18,13 +18,13 @@ base_url = "urlb"
 
 [[models]]
 model = "gemini-2.0-flash-001"
-alias = "flash"
 client = "gemini"
 default = true
+max_tokens = 1200
 rpm = 10
 
 [[models]]
 model = "gpt-4o"
-alias = "gpt40"
+alias = "gpt4o"
 client = "oai"
-rpm = 10
+rpm = 5

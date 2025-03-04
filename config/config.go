@@ -13,12 +13,12 @@ type Database struct {
 }
 
 type Model struct {
-	Type    string
-	Default bool
-	Model   string
-	Alias   string
-	Client  string
-	RPM     int
+	Default   bool
+	Model     string
+	MaxTokens int64 `mapstructure:"max_tokens"`
+	Alias     string
+	Client    string
+	RPM       int
 }
 
 type Client interface{}

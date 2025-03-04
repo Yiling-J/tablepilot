@@ -25,4 +25,17 @@ func TestConfig_New(t *testing.T) {
 		Key:     "b",
 		BaseURL: "urlb",
 	}, clientB)
+	require.Equal(t, Model{
+		Default:   true,
+		Model:     "gemini-2.0-flash-001",
+		MaxTokens: 1200,
+		Client:    "gemini",
+		RPM:       10,
+	}, cfg.Models[0])
+	require.Equal(t, Model{
+		Model:  "gpt-4o",
+		Alias:  "gpt4o",
+		Client: "oai",
+		RPM:    5,
+	}, cfg.Models[1])
 }

@@ -46,7 +46,7 @@ func TestClient_OpenAIArraySchema(t *testing.T) {
 	require.Equal(t, 100, int(resp.Tokens))
 	b, err := params.MarshalJSON()
 	require.NoError(t, err)
-	expected := `{"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"properties":{"data":{"$schema":"v1","type":"array"}},"type":"object"}},"type":"json_schema"},"temperature":0.32}`
+	expected := `{"max_completion_tokens":1200,"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"properties":{"data":{"$schema":"v1","type":"array"}},"type":"object"}},"type":"json_schema"},"temperature":0.32}`
 	require.Equal(t, expected, string(b))
 }
 
@@ -77,6 +77,6 @@ func TestClient_OpenAIObjectSchema(t *testing.T) {
 	require.Equal(t, 100, int(resp.Tokens))
 	b, err := params.MarshalJSON()
 	require.NoError(t, err)
-	expected := `{"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"},"temperature":0.32}`
+	expected := `{"max_completion_tokens":1200,"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"},"temperature":0.32}`
 	require.Equal(t, expected, string(b))
 }
