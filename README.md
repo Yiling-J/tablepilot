@@ -218,6 +218,7 @@ Common fields:
 - **type**: The type of the source, which can be `"ai"`, `"list"`, or `"linked"`.
 - **random**: When set to `true`, each row generation will pick a random value from all available values in the source.
 - **replacement**: Defines whether the sampling is with or without replacement. When set to `true`, items can be selected multiple times; when set to `false`, once an item is selected, it cannot be chosen again.
+- **repeat**: The number of times the picked value is reused before switching to the next one. The default and minimum value is 1, meaning each value is used once.
 
 Special fields for different types:
 
