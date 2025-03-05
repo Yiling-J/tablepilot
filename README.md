@@ -8,7 +8,7 @@
 
 Tablepilot is a CLI tool designed to generate tables using AI.
 
-- **AI-generated columns:** If you know you need two columns, you'd define them like `[<column1 JSON object>, <column2 JSON object>]`. But if you want AI to generate additional columns, just add empty objects: `[<column1 JSON object>, <column2 JSON object>, {}, {}]`. Tablepilot will automatically generate two more columns for you.
+- **AI-generated columns:** If you want your table to have four columns but only know two of them, just add empty objects: `[<column1>, <column2>, {}, {}]` to schema. Tablepilot will automatically generate the missing two for you.
 
 - **Fine-grained context control:** For example, if you're generating a recipe table with "name" and "ingredients" columns, you can set a context length of 10 for the "name" column, meaning the last 10 values will be included in the prompt. Meanwhile, you can set a context length of 0 for the "ingredients" column.
 
