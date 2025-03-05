@@ -13,12 +13,16 @@ func TestPromptBuilder_ColumnsBuilder(t *testing.T) {
 	require.NoError(t, err)
 	expected := `I'm designing a database table, I will tell you existing columns I have,
 and you help me generate extra columns. Return a list of extra columns.
-- Don't add a sequence id or unique identifier column, I will add manully later.
-- column name should be spaced e.g., Recipe Name.
-- "type" can be either "string", "number", "integer", "array" or "boolean".
-- Add a short description to each column tell what info this column has.
+### Rules:
+- Do NOT add a sequence ID or unique identifier column (I will add this manually).
+- Column names should use spaces (e.g., "Recipe Name").
+- "type" can be one of: "string", "number", "integer", "array", or "boolean".
+- Each column must have a description explaining what information it contains.
+- Ensure the generated columns are **relevant** to the table's purpose.
+### Table Information:
 <TableName>foo</TableName>
 <TableDescription>bar</TableDescription>
+### Existing Columns:
 <Columns>
   <Column name="foo" description="the foo"/>
   <Column name="bar" description="the bar"/>

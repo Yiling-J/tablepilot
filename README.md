@@ -194,7 +194,7 @@ A Table schema JSON file consists of five main parts: `name`, `description`, `mo
 
 #### name:
 
-The name of the table. This serves as a unique identifier for the table (e.g., `"recipes"` in the example above).
+The name of the table. This serves as a unique identifier for the table (e.g., `"recipes"` in the example above). Use only letters, numbers, and underscores (_), and start with a letter.
 
 #### description: 
 A description of what the table represents. It provides context for the data (e.g., `"table of recipes"`). This description will be used in the prompt, so it should be clear and easy for the LLM to understand. It's helpful to include relevant details to ensure accurate and meaningful generation.

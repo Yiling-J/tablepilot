@@ -17,6 +17,7 @@ type ColumnsBuilder struct {
 func NewColumnsBuilder(count int, tableName, tableDescription string) *ColumnsBuilder {
 	pb := &ColumnsBuilder{count: count}
 	pb.AddText(columnsGenPrompt)
+	pb.AddText("### Table Information:")
 	el := pb.NewXML("TableName")
 	el.CreateText(tableName)
 	el = pb.NewXML("TableDescription")
@@ -25,6 +26,7 @@ func NewColumnsBuilder(count int, tableName, tableDescription string) *ColumnsBu
 }
 
 func (c *ColumnsBuilder) AddExistingColumns(columns []Column) {
+	c.AddText("### Existing Columns:")
 	el := c.NewXML("Columns")
 	for _, col := range columns {
 		cel := el.CreateElement("Column")
@@ -40,7 +42,9 @@ func (c *ColumnsBuilder) Prompt() (string, error) {
 
 const columnsGenPrompt = `I'm designing a database table, I will tell you existing columns I have,
 and you help me generate extra columns. Return a list of extra columns.
-- Don't add a sequence id or unique identifier column, I will add manully later.
-- column name should be spaced e.g., Recipe Name.
-- "type" can be either "string", "number", "integer", "array" or "boolean".
-- Add a short description to each column tell what info this column has.`
+### Rules:
+- Do NOT add a sequence ID or unique identifier column (I will add this manually).
+- Column names should use spaces (e.g., "Recipe Name").
+- "type" can be one of: "string", "number", "integer", "array", or "boolean".
+- Each column must have a description explaining what information it contains.
+- Ensure the generated columns are **relevant** to the table's purpose.`
