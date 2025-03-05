@@ -13,6 +13,8 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+const OptionGenMaxTokens = 3000
+
 var reflector = jsonschema.Reflector{
 	AllowAdditionalProperties: false,
 	DoNotReference:            true,
@@ -44,6 +46,7 @@ func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.Table
 		Schema:          reflector.Reflect(data{}),
 		Temperature:     0.8,
 		PresencePenalty: 1.0,
+		MaxOutputTokens: OptionGenMaxTokens,
 	})
 	if err != nil {
 		return err

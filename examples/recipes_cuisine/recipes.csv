@@ -1,101 +1,101 @@
 Name,Ingredients,Cooking Time,Cuisine,Difficulty Level
-Sauerbraten,"[""Pork"",""Sauerkraut"",""Potatoes"",""Spices""]",60,German,3
-Lo Mein,"[""Noodles"",""Soy Sauce"",""Vegetables"",""Meat""]",90,Chinese,4
-Aji de Gallina,"[""Potatoes"",""Yellow Pepper"",""Aji Amarillo Paste"",""Chicken""]",45,Peruvian,2
-Souffle,"[""Flour"",""Butter"",""Eggs"",""Cheese""]",75,French,3
-Doro Wat,"[""Berbere Spice"",""Meat"",""Vegetables"",""Injera""]",50,Ethiopian,2
-Hamburger,"[""Ground Beef"",""Lettuce"",""Tomato"",""Cheese"",""Bun""]",30,American,1
-Imam Bayildi,"[""Eggplant"",""Tomato Sauce"",""Garlic"",""Spices""]",40,Turkish,2
-Bibimbap,"[""Rice"",""Vegetables"",""Meat"",""Gochujang""]",60,Korean,3
-Hummus,"[""Chickpeas"",""Tahini"",""Lemon Juice"",""Olive Oil""]",45,Lebanese,2
-Greek Salad,"[""Cucumber"",""Tomato"",""Onion"",""Feta Cheese"",""Olives""]",35,Greek,1
-Chicken Biryani,"[""Basmati rice"",""Chicken"",""Yogurt"",""Spices""]",60,Indian,3
-Sushi,"[""Sushi rice"",""Nori seaweed"",""Soy sauce"",""Wasabi""]",45,Japanese,4
-Pasta Marinara,"[""Pasta"",""Tomato sauce"",""Mozzarella cheese"",""Basil""]",30,Italian,2
-Vegetable Tagine,"[""Couscous"",""Vegetables"",""Spices"",""Chickpeas""]",75,Moroccan,3
-Pho,"[""Rice noodles"",""Beef"",""Bean sprouts"",""Mint""]",90,Vietnamese,4
-Pad Thai,"[""Rice noodles"",""Tofu"",""Peanuts"",""Lime""]",40,Thai,3
-Tacos,"[""Corn tortillas"",""Ground beef"",""Cheese"",""Salsa""]",25,Mexican,2
-Feijoada,"[""Black beans"",""Rice"",""Beef"",""Farofa""]",120,Brazilian,5
-Falafel,"[""Pita bread"",""Falafel"",""Tahini"",""Vegetables""]",50,Mediterranean,3
-Paella,"[""Rice"",""Seafood"",""Saffron"",""Peas""]",80,Spanish,4
-Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil""]",20,Lebanese,2
-Biryani,"[""Basmati rice"",""Chicken/Mutton/Vegetables"",""Yogurt"",""Spices"",""Saffron""]",60,Indian,4
-Hamburger,"[""Ground beef"",""Burger buns"",""Lettuce"",""Tomato"",""Cheese"",""Onion""]",30,American,2
-Sauerbraten,"[""Beef"",""Vinegar"",""Water"",""Spices"",""Vegetables""]",180,German,4
-Tagine,"[""Meat/Vegetables"",""Spices"",""Dried fruit"",""Nuts"",""Olive oil""]",90,Moroccan,3
-Injera,"[""Teff flour"",""Water"",""Yeast""]",45,Ethiopian,3
-Soupe à l'oignon,"[""Onions"",""Beef broth"",""Bread"",""Cheese"",""Butter""]",50,French,3
-Kebab,"[""Meat"",""Vegetables"",""Spices""]",40,Turkish,2
-Ceviche,"[""Fish"",""Lime juice"",""Onion"",""Chili peppers"",""Cilantro""]",15,Peruvian,2
-Gazpacho,"[""Tomatoes"",""Cucumber"",""Bell pepper"",""Onion"",""Garlic"",""Olive oil"",""Vinegar""]",10,Spanish,1
-Chow Mein,"[""Soy sauce"",""Ginger"",""Garlic"",""Noodles"",""Vegetables""]",30,Chinese,2
-Tacos,"[""Tortillas"",""Ground beef"",""Cheese"",""Salsa"",""Sour cream""]",25,Mexican,1
-Greek Salad,"[""Olive oil"",""Tomatoes"",""Cucumbers"",""Feta cheese"",""Olives""]",15,Mediterranean,1
-Feijoada,"[""Black beans"",""Rice"",""Beef"",""Onion"",""Garlic""]",120,Brazilian,3
-Spanakopita,"[""Feta cheese"",""Phyllo dough"",""Spinach"",""Eggs"",""Olive oil""]",60,Greek,3
-Bibimbap,"[""Kimchi"",""Rice"",""Beef"",""Soy Sauce"",""Sesame Oil""]",40,Korean,2
-Pad Thai,"[""Rice noodles"",""Shrimp"",""Tofu"",""Peanuts"",""Bean sprouts""]",35,Thai,3
-Gỏi cuốn,"[""Rice paper"",""Shrimp"",""Vermicelli noodles"",""Vegetables"",""Mint""]",20,Vietnamese,2
-Sushi,"[""Rice"",""Seaweed"",""Fish"",""Vegetables"",""Wasabi""]",50,Japanese,4
-Pizza Margherita,"[""Pasta"",""Tomato sauce"",""Mozzarella cheese"",""Basil"",""Olive oil""]",30,Italian,2
-Kung Pao Chicken,"[""Soy sauce"",""Ginger"",""Garlic"",""Noodles"",""Vegetables""]",25,Chinese,3
-Lasagna,"[""Dough"",""Tomato sauce"",""Mozzarella cheese"",""Basil""]",30,Italian,2
-Feijoada,"[""Black beans"",""Rice"",""Beef"",""Onion"",""Garlic""]",60,Brazilian,4
-Kuzu Tandır,"[""Lamb"",""Yogurt"",""Mint"",""Cucumber"",""Pita bread""]",45,Turkish,3
-Tortilla Española,"[""Potatoes"",""Onions"",""Eggs"",""Olive oil"",""Salt""]",35,Spanish,2
+Stir-Fried Noodles,"[""Soy sauce"",""Ginger"",""Garlic"",""Noodles"",""Vegetables""]",30,Chinese,3
+Sushi Rolls,"[""Rice"",""Seaweed"",""Fish"",""Avocado"",""Soy sauce""]",20,Japanese,4
+Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil""]",45,Lebanese,2
+Greek Salad,"[""Tomatoes"",""Cucumbers"",""Olives"",""Feta cheese"",""Olive oil""]",60,Mediterranean,1
+Classic Burger,"[""Ground beef"",""Lettuce"",""Tomato"",""Cheese"",""Buns""]",40,American,3
+Apple Tart,"[""Flour"",""Butter"",""Eggs"",""Sugar"",""Apples""]",75,French,4
+Doro Wat,"[""Berbere spice"",""Chicken"",""Onions"",""Tomatoes"",""Injera bread""]",90,Ethiopian,5
+Tacos,"[""Tortillas"",""Ground beef"",""Cheese"",""Salsa"",""Sour cream""]",35,Mexican,2
+Spaghetti Bolognese,"[""Pasta"",""Tomato sauce"",""Ground beef"",""Onions"",""Garlic""]",50,Italian,3
+Chicken Tagine,"[""Chicken"",""Olives"",""Lemon"",""Onions"",""Spices""]",65,Moroccan,4
+Paella,"[""Rice"",""Saffron"",""Seafood"",""Chicken"",""Vegetables""]",45,Spanish,4
+Bibimbap,"[""Rice"",""Vegetables"",""Beef"",""Egg"",""Gochujang""]",40,Korean,3
+Dal Makhani,"[""Rice"",""Lentils"",""Spices"",""Vegetables"",""Ghee""]",55,Indian,3
+Ceviche,"[""Fish"",""Lime juice"",""Onions"",""Chili peppers"",""Cilantro""]",70,Peruvian,2
+Feijoada,"[""Black beans"",""Pork"",""Onions"",""Garlic"",""Rice""]",80,Brazilian,4
+Bratkartoffeln,"[""Potatoes"",""Sausage"",""Sauerkraut"",""Onions"",""Mustard""]",95,German,3
+Pho,"[""Rice noodles"",""Beef"",""Bean sprouts"",""Herbs"",""Fish sauce""]",30,Vietnamese,3
+Horiatiki Salad,"[""Cucumbers"",""Tomatoes"",""Feta cheese"",""Olives"",""Olive oil""]",40,Greek,1
+Pad Thai,"[""Rice noodles"",""Shrimp"",""Tofu"",""Peanuts"",""Tamarind sauce""]",25,Thai,2
+Karniyarik,"[""Eggplant"",""Ground beef"",""Tomatoes"",""Onions"",""Spices""]",50,Turkish,3
+Paella,"[""Rice"",""Seafood"",""Saffron"",""Chicken"",""Vegetables""]",60,Spanish,4
+Ramen,"[""Noodles"",""Broth"",""Pork"",""Egg"",""Seaweed""]",45,Japanese,3
+Injera with Wat,"[""Injera bread"",""Stew"",""Meat"",""Vegetables"",""Spices""]",90,Ethiopian,4
 Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil""]",15,Lebanese,1
-Doro Wat,"[""Berbere spice"",""Chicken"",""Onions"",""Tomatoes"",""Hard-boiled eggs""]",90,Ethiopian,4
-Greek Salad,"[""Feta cheese"",""Tomatoes"",""Cucumbers"",""Olives"",""Olive oil""]",20,Greek,1
-Ramen,"[""Rice"",""Salmon"",""Nori"",""Avocado"",""Soy sauce""]",40,Japanese,3
-Kimchi Fried Rice,"[""Rice"",""Vegetables"",""Egg"",""Gochujang"",""Beef""]",30,Korean,2
-Pho,"[""Rice Noodles"",""Beef"",""Bean Sprouts"",""Herbs"",""Broth""]",60,Vietnamese,3
-Schweinshaxe,"[""Pork"",""Sauerkraut"",""Potatoes"",""Caraway Seeds""]",120,German,4
-Aji de Gallina,"[""Potatoes"",""Yellow Chili"",""Chicken"",""Milk"",""Cheese""]",45,Peruvian,3
-Hamburger,"[""Ground Beef"",""Lettuce"",""Tomato"",""Cheese"",""Bun""]",30,American,2
-Chicken Tikka Masala,"[""Chicken"",""Yogurt"",""Spices"",""Rice""]",50,Indian,4
-Pad Thai,"[""Rice Noodles"",""Shrimp"",""Tofu"",""Peanuts"",""Bean Sprouts""]",35,Thai,3
-Shakshuka,"[""Tomatoes"",""Cucumbers"",""Olives"",""Feta Cheese"",""Olive Oil""]",25,Mediterranean,1
-Chicken Tagine,"[""Chicken"",""Onion"",""Ginger"",""Turmeric"",""Couscous""]",75,Moroccan,4
-Crème brûlée,"[""Butter"",""Flour"",""Eggs"",""Sugar"",""Vanilla""]",60,French,3
-Tacos,"[""Corn Tortillas"",""Beef"",""Onions"",""Cilantro"",""Salsa""]",20,Mexican,2
-Tom Yum Soup,"[""Lemongrass"",""Galangal"",""Kaffir lime leaves"",""Chili peppers"",""Fish sauce"",""Lime juice"",""Mushrooms"",""Shrimp""]",30,Thai,3
-Sushi,"[""Sushi rice"",""Nori seaweed"",""Fish (tuna, salmon, etc.)"",""Vegetables (cucumber, avocado, etc.)"",""Soy sauce"",""Wasabi"",""Pickled ginger""]",45,Japanese,4
-Hamburger,"[""Ground beef"",""Hamburger buns"",""Lettuce"",""Tomato"",""Onion"",""Cheese"",""Ketchup"",""Mustard""]",25,American,2
-Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil"",""Salt""]",15,Mediterranean,1
-Feijoada,"[""Black beans"",""Salted pork"",""Smoked sausage"",""Beef jerky"",""Garlic"",""Onion"",""Bay leaves""]",120,Brazilian,3
-Soupe à l'oignon,"[""Onions"",""Beef broth"",""French bread"",""Gruyère cheese"",""Butter"",""Thyme"",""Bay leaf""]",60,French,4
-Falafel,"[""Dried chickpeas"",""Onion"",""Garlic"",""Parsley"",""Cilantro"",""Spices (cumin, coriander)"",""Baking powder"",""Vegetable oil""]",40,Lebanese,2
-Paella,"[""Rice"",""Chicken"",""Rabbit"",""Saffron"",""Tomatoes"",""Green beans"",""White beans"",""Olive oil"",""Rosemary""]",90,Spanish,5
-Peking Duck,"[""Duck"",""Maltose syrup"",""Soy sauce"",""Scallions"",""Cucumbers"",""Pancakes"",""Hoisin sauce""]",180,Chinese,5
-Pizza Margherita,"[""Pizza dough"",""Tomato sauce"",""Mozzarella cheese"",""Fresh basil"",""Olive oil"",""Salt""]",35,Italian,2
-Sauerbraten,"[""Beef"",""Vinegar"",""Water"",""Vegetables"",""Spices""]",60,German,4
-Ceviche,"[""White Fish"",""Lime Juice"",""Onion"",""Cilantro"",""Chili""]",45,Peruvian,2
-Chicken Tikka Masala,"[""Chicken"",""Yogurt"",""Tomato Sauce"",""Cream"",""Spices""]",30,Indian,3
-Pho,"[""Beef Bones"",""Noodles"",""Beef"",""Herbs"",""Spices""]",25,Vietnamese,3
-Moussaka,"[""Eggplant"",""Ground Meat"",""Potatoes"",""Bechamel Sauce"",""Cheese""]",40,Greek,4
-Tacos al Pastor,"[""Pork"",""Pineapple"",""Onions"",""Cilantro"",""Tortillas""]",35,Mexican,3
-Injera with Wat,"[""Injera Bread"",""Meat"",""Vegetables"",""Spices"",""Berbere""]",50,Ethiopian,4
-Kebab,"[""Lamb or Beef"",""Vegetables"",""Spices"",""Yogurt Sauce""]",45,Turkish,2
+Bibimbap,"[""Rice"",""Vegetables"",""Meat"",""Egg"",""Gochujang""]",30,Korean,2
+Tacos,"[""Tortillas"",""Meat"",""Salsa"",""Onions"",""Cilantro""]",20,Mexican,2
+Pasta Carbonara,"[""Pasta"",""Eggs"",""Pancetta"",""Parmesan cheese"",""Black pepper""]",25,Italian,2
+Tom Yum Soup,"[""Lemongrass"",""Galangal"",""Lime leaves"",""Chili peppers"",""Shrimp""]",35,Thai,3
+Feijoada,"[""Black beans"",""Pork"",""Beef"",""Sausage"",""Rice""]",120,Brazilian,4
+Banh Mi,"[""Baguette"",""Pate"",""Meat"",""Pickled vegetables"",""Cilantro""]",15,Vietnamese,2
+Hamburger,"[""Bun"",""Beef patty"",""Lettuce"",""Tomato"",""Cheese""]",20,American,1
+Dumplings,"[""Dough"",""Pork"",""Cabbage"",""Ginger"",""Soy sauce""]",40,Chinese,3
+Moussaka,"[""Eggplant"",""Ground meat"",""Potatoes"",""Bechamel sauce"",""Cheese""]",75,Greek,4
+Tabbouleh,"[""Bulgur"",""Parsley"",""Mint"",""Tomato"",""Cucumber""]",20,Mediterranean,1
+Schnitzel,"[""Pork"",""Breadcrumbs"",""Egg"",""Flour"",""Lemon""]",30,German,2
+Crêpes,"[""Flour"",""Eggs"",""Milk"",""Butter"",""Sugar""]",30,French,2
+Ceviche,"[""Fish"",""Lime juice"",""Onion"",""Cilantro"",""Chili""]",15,Peruvian,2
+Dolma,"[""Grape leaves"",""Rice"",""Meat"",""Spices"",""Onion""]",60,Turkish,3
+Tagine,"[""Meat"",""Vegetables"",""Spices"",""Dried fruit"",""Olive oil""]",90,Moroccan,4
+Butter Chicken,"[""Chicken"",""Tomato sauce"",""Butter"",""Cream"",""Spices""]",45,Indian,3
+Baklava,"[""phyllo dough"",""butter"",""walnuts"",""sugar"",""lemon juice"",""honey""]",60,Turkish,3
+Kung Pao Chicken,"[""chicken"",""peanuts"",""dried chili peppers"",""soy sauce"",""vinegar"",""sugar"",""cornstarch""]",30,Chinese,3
+Apple Pie,"[""apples"",""flour"",""butter"",""sugar"",""cinnamon""]",75,American,2
+Injera,"[""teff flour"",""water"",""yeast""]",45,Ethiopian,3
+Moussaka,"[""eggplant"",""potatoes"",""ground meat"",""béchamel sauce"",""cheese""]",90,Mediterranean,4
+Hummus,"[""chickpeas"",""tahini"",""lemon juice"",""garlic"",""olive oil""]",15,Lebanese,1
+Tacos,"[""tortillas"",""ground beef"",""lettuce"",""tomatoes"",""cheese"",""salsa""]",25,Mexican,2
+Couscous,"[""couscous"",""vegetables"",""meat"",""spices""]",40,Moroccan,2
+Kimchi,"[""napa cabbage"",""gochugaru"",""garlic"",""ginger"",""fish sauce"",""salt""]",1440,Korean,3
+Sauerbraten,"[""beef"",""vinegar"",""water"",""onions"",""carrots"",""celery"",""gingerbread"",""raisins""]",180,German,4
+Paella,"[""rice"",""saffron"",""seafood"",""chicken"",""vegetables""]",60,Spanish,3
+Soupe à l'oignon,"[""onions"",""beef broth"",""bread"",""cheese""]",50,French,3
+Biryani,"[""rice"",""meat"",""spices"",""yogurt""]",70,Indian,4
+Spanakopita,"[""spinach"",""feta cheese"",""phyllo dough"",""eggs"",""butter""]",60,Greek,3
+Lomo Saltado,"[""beef"",""onions"",""tomatoes"",""soy sauce"",""vinegar"",""french fries"",""rice""]",35,Peruvian,2
+Sushi,"[""rice"",""seaweed"",""fish"",""vegetables""]",40,Japanese,3
+Pizza,"[""dough"",""tomato sauce"",""cheese"",""toppings""]",30,Italian,2
+Feijoada,"[""black beans"",""pork"",""beef"",""sausage"",""rice"",""oranges"",""collard greens""]",120,Brazilian,4
+Pad Thai,"[""rice noodles"",""shrimp"",""tofu"",""peanuts"",""bean sprouts"",""egg"",""tamarind paste""]",30,Thai,3
+Pho,"[""beef broth"",""rice noodles"",""beef"",""herbs"",""spices""]",90,Vietnamese,3
+Ratatouille,"[""Eggplant"",""Zucchini"",""Bell peppers"",""Tomatoes"",""Onion"",""Garlic"",""Herbs"",""Olive oil""]",60,French,3
+Banh Mi,"[""Baguette"",""Pork"",""Pickled vegetables"",""Cilantro"",""Jalapeno"",""Mayonnaise"",""Soy sauce""]",45,Vietnamese,2
+Moussaka,"[""Eggplant"",""Potatoes"",""Ground meat"",""Tomato sauce"",""Béchamel sauce"",""Cheese"",""Onion"",""Garlic""]",50,Greek,4
+Pasta Carbonara,"[""Pasta"",""Eggs"",""Pancetta"",""Parmesan cheese"",""Black pepper"",""Olive oil""]",35,Italian,2
+Falafel,"[""Chickpeas"",""Onion"",""Garlic"",""Parsley"",""Cilantro"",""Spices"",""Tahini"",""Lemon juice""]",40,Mediterranean,3
+Tacos,"[""Tortillas"",""Ground beef"",""Lettuce"",""Tomato"",""Cheese"",""Salsa"",""Sour cream""]",30,Mexican,2
+Ramen,"[""Noodles"",""Broth"",""Pork belly"",""Egg"",""Seaweed"",""Green onion""]",25,Japanese,4
+Kung Pao Chicken,"[""Chicken"",""Peanuts"",""Vegetables"",""Soy sauce"",""Vinegar"",""Sugar"",""Chili peppers""]",45,Chinese,3
+Moqueca,"[""Fish"",""Shrimp"",""Coconut milk"",""Tomatoes"",""Onions"",""Bell peppers"",""Cilantro"",""Palm oil""]",90,Brazilian,4
+Kebab,"[""Lamb"",""Beef"",""Chicken"",""Vegetables"",""Yogurt"",""Spices"",""Olive oil""]",55,Turkish,3
+Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil"",""Paprika""]",40,Lebanese,1
+Bibimbap,"[""Rice"",""Vegetables"",""Meat"",""Egg"",""Gochujang""]",70,Korean,3
+Butter Chicken,"[""Chicken"",""Tomato sauce"",""Butter"",""Cream"",""Spices""]",60,Indian,4
+Paella,"[""Rice"",""Seafood"",""Chicken"",""Rabbit"",""Saffron"",""Vegetables""]",50,Spanish,4
+Injera with Wat,"[""Injera"",""Meat stew"",""Vegetable stew"",""Spices""]",75,Ethiopian,3
+Cheeseburger,"[""Bun"",""Beef patty"",""Cheese"",""Lettuce"",""Tomato"",""Onion"",""Pickles"",""Sauce""]",40,American,2
+Tom Yum Soup,"[""Broth"",""Shrimp"",""Lemongrass"",""Galangal"",""Lime leaves"",""Chili peppers"",""Mushrooms""]",30,Thai,3
+Ceviche,"[""Fish"",""Lime juice"",""Onion"",""Cilantro"",""Chili peppers""]",45,Peruvian,2
+Sauerbraten,"[""Beef"",""Vinegar"",""Spices"",""Vegetables"",""Gingerbread""]",80,German,4
+Tagine,"[""Meat"",""Vegetables"",""Dried fruit"",""Spices"",""Olive oil""]",55,Moroccan,3
+Lomo Saltado,"[""Beef steak"",""Soy sauce"",""Vinegar"",""Potatoes"",""Onions"",""Tomatoes""]",30,Peruvian,3
+Rouladen,"[""Beef"",""Bacon"",""Onions"",""Pickles"",""Mustard"",""Red wine""]",120,German,4
+Feijoada,"[""Black beans"",""Pork"",""Beef"",""Sausage"",""Rice"",""Collard greens"",""Orange slices""]",180,Brazilian,4
+Peking Duck,"[""Duck"",""Maltose syrup"",""Scallions"",""Cucumbers"",""Pancakes"",""Hoisin sauce""]",150,Chinese,5
+Butter Chicken,"[""Chicken"",""Tomato sauce"",""Butter"",""Cream"",""Garam masala"",""Ginger"",""Garlic""]",45,Indian,3
+Coq au Vin,"[""Chicken"",""Red wine"",""Mushrooms"",""Bacon"",""Onions"",""Brandy""]",90,French,4
+Pho,"[""Beef broth"",""Rice noodles"",""Beef"",""Bean sprouts"",""Lime"",""Cilantro"",""Basil""]",60,Vietnamese,3
+Pastilla,"[""Pigeon or Chicken"",""Almonds"",""Eggs"",""Onions"",""Cinnamon"",""Saffron"",""Phyllo dough""]",120,Moroccan,5
+Osso Buco,"[""Veal shanks"",""White wine"",""Vegetables"",""Broth"",""Gremolata""]",150,Italian,4
+Paella,"[""Rice"",""Saffron"",""Seafood"",""Chicken"",""Rabbit"",""Vegetables""]",75,Spanish,4
+Moussaka,"[""Eggplant"",""Ground meat"",""Potatoes"",""Bechamel sauce"",""Cheese""]",90,Mediterranean,4
+Kebab,"[""Lamb"",""Beef"",""Chicken"",""Vegetables"",""Spices""]",45,Turkish,2
 Bibimbap,"[""Rice"",""Vegetables"",""Meat"",""Egg"",""Gochujang""]",40,Korean,3
-Tagine,"[""Meat"",""Vegetables"",""Dried Fruits"",""Spices"",""Olive Oil""]",55,Moroccan,4
-Sushi,"[""Rice"",""Soy Sauce"",""Vegetables"",""Tofu""]",45,Japanese,3
-Doro Wat,"[""Injera"",""Meat Stew"",""Vegetables"",""Spices""]",90,Ethiopian,4
-Feijoada,"[""Black Beans"",""Rice"",""Beef"",""Farofa"",""Collard Greens""]",120,Brazilian,4
-Carne Asada Tacos,"[""Corn Tortillas"",""Grilled Steak"",""Onions"",""Cilantro"",""Salsa""]",30,Mexican,2
-Bratwurst,"[""Sausage"",""Sauerkraut"",""Potatoes"",""Mustard""]",40,German,2
-Aji de Gallina,"[""Potatoes"",""Chicken"",""Aji Amarillo"",""Huacatay""]",60,Peruvian,3
-Pho,"[""Rice Noodles"",""Beef"",""Bean Sprouts"",""Herbs"",""Broth""]",75,Vietnamese,3
-Bulgogi,"[""Rice"",""Vegetables"",""Meat"",""Egg"",""Gochujang""]",35,Korean,2
-Hamburger,"[""Ground Beef"",""Buns"",""Lettuce"",""Tomato"",""Cheese""]",25,American,1
-Duck Confit,"[""Duck"",""Potatoes"",""Oranges"",""Olives""]",150,French,5
-Tagine,"[""Lamb"",""Apricots"",""Almonds"",""Cinnamon"",""Ginger"",""Onion"",""Olive Oil""]",90,Moroccan,3
-Paella,"[""Rice"",""Saffron"",""Chicken"",""Seafood"",""Peas"",""Bell Peppers"",""Olive Oil""]",75,Spanish,4
-Butter Chicken,"[""Chicken"",""Tomato Sauce"",""Butter"",""Cream"",""Ginger"",""Garlic"",""Garam Masala""]",45,Indian,3
-Kung Pao Chicken,"[""Chicken"",""Peanuts"",""Chili Peppers"",""Soy Sauce"",""Vinegar"",""Sugar"",""Garlic""]",30,Chinese,3
-Moussaka,"[""Eggplant"",""Ground Meat"",""Potatoes"",""Bechamel Sauce"",""Cheese"",""Onion"",""Olive Oil""]",90,Greek,4
-Pad Thai,"[""Rice Noodles"",""Shrimp"",""Tofu"",""Peanuts"",""Bean Sprouts"",""Egg"",""Fish Sauce""]",30,Thai,3
-Hummus,"[""Chickpeas"",""Tahini"",""Lemon Juice"",""Garlic"",""Olive Oil"",""Salt""]",10,Lebanese,1
-Kebab,"[""Lamb"",""Yogurt"",""Lemon Juice"",""Garlic"",""Onion"",""Spices""]",40,Turkish,2
-Pasta Carbonara,"[""Spaghetti"",""Eggs"",""Pancetta"",""Parmesan Cheese"",""Black Pepper""]",20,Italian,2
-Falafel,"[""Chickpeas"",""Onion"",""Parsley"",""Cilantro"",""Spices"",""Oil""]",35,Mediterranean,2
+Souvlaki,"[""Pork"",""Chicken"",""Lamb"",""Pita bread"",""Tzatziki sauce""]",30,Greek,2
+Injera with Wat,"[""Injera"",""Meat stew"",""Vegetable stew"",""Spices""]",60,Ethiopian,3
+Pad Thai,"[""Rice noodles"",""Shrimp"",""Tofu"",""Peanuts"",""Bean sprouts"",""Egg"",""Tamarind sauce""]",35,Thai,3
+Gumbo,"[""Okra"",""Shrimp"",""Sausage"",""Chicken"",""Rice"",""Spices""]",90,American,4
+Ramen,"[""Noodles"",""Broth"",""Pork"",""Egg"",""Seaweed"",""Scallions""]",45,Japanese,3
+Tacos,"[""Tortillas"",""Beef"",""Chicken"",""Pork"",""Salsa"",""Guacamole""]",25,Mexican,2
+Falafel,"[""Chickpeas"",""Herbs"",""Spices"",""Pita bread"",""Tahini sauce""]",30,Lebanese,2

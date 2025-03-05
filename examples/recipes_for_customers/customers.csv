@@ -1,101 +1,31 @@
 Name,Job,Age,Country,Taste Preference
-Alice Johnson,Software Engineer,32,USA,Savory
-Bob Williams,Teacher,45,Canada,Sweet
-Catherine Davis,Doctor,58,UK,Spicy
-David Miller,Artist,29,France,Sour
-Emily Wilson,Musician,38,Germany,Umami
-Frank Garcia,Chef,41,Italy,Bitter
-Grace Rodriguez,Writer,52,Spain,Salty
-Henry Martinez,Accountant,26,Japan,Sweet and Sour
-Ivy Anderson,Lawyer,35,Australia,Spicy and Sweet
-Jack Thomas,Engineer,49,Brazil,Savory and Spicy
-Kelly Jackson,Nurse,23,Mexico,Sweet
-Liam White,Salesperson,61,China,Spicy
-Mia Harris,Manager,30,India,Sour
-Noah Martin,Consultant,44,Russia,Umami
-Olivia Thompson,Analyst,55,South Africa,Bitter
-Peter Perez,Designer,28,Argentina,Salty
-Quinn Lewis,Developer,37,Sweden,Sweet and Sour
-Rose Allen,Technician,40,Netherlands,Spicy and Sweet
-Samuel King,Mechanic,51,Switzerland,Savory and Spicy
-Taylor Wright,Electrician,25,Belgium,Sweet
-Uma Green,Plumber,63,Austria,Spicy
-Victor Baker,Carpenter,31,Denmark,Sour
-Wendy Hall,Welder,46,Norway,Umami
-Xavier Clark,Painter,57,Finland,Bitter
-Yara Young,Gardener,27,Ireland,Salty
-Zachary Scott,Farmer,36,Portugal,Sweet and Sour
-Abigail Roberts,Fisherman,42,Greece,Spicy and Sweet
-Benjamin Turner,Miner,53,Poland,Savory and Spicy
-Chloe Phillips,Construction Worker,24,Hungary,Sweet
-Daniel Evans,Factory Worker,60,Czech Republic,Spicy
-Ella Collins,Truck Driver,33,Romania,Sour
-Finn Stewart,Bus Driver,47,Bulgaria,Umami
-Georgia Morris,Taxi Driver,59,Croatia,Bitter
-Harry Rogers,Pilot,22,Serbia,Salty
-Isla Cook,Flight Attendant,39,Slovakia,Sweet and Sour
-Jacob Bell,Sailor,43,Lithuania,Spicy and Sweet
-Lily Murphy,Soldier,54,Latvia,Savory and Spicy
-Mason Bailey,Police Officer,29,Estonia,Sweet
-Nora Rivera,Firefighter,62,Luxembourg,Spicy
-Owen Cooper,Paramedic,34,Malta,Sour
-Penelope Gray,Judge,48,Cyprus,Umami
-Quentin Ross,Politician,50,Iceland,Bitter
-Riley Howard,Diplomat,21,Albania,Salty
-Scarlett Ward,Activist,64,Bosnia,Sweet and Sour
-Thomas Peterson,Journalist,35,Macedonia,Spicy and Sweet
-Uma Bennett,Librarian,49,Montenegro,Savory and Spicy
-Vincent Wood,Professor,56,Kosovo,Sweet
-Willow Barnes,Student,19,Belarus,Spicy
-Xander Griffin,Athlete,27,Moldova,Sour
-Yasmine Reed,Coach,38,Georgia,Umami
-Zane Coleman,Trainer,41,Armenia,Bitter
-Amelia Jenkins,Therapist,52,Azerbaijan,Salty
-Brandon Perry,Psychologist,26,Kazakhstan,Sweet and Sour
-Charlotte Powell,Social Worker,35,Uzbekistan,Spicy and Sweet
-Declan Long,Hairdresser,49,Turkmenistan,Savory and Spicy
-Eleanor Morgan,Barber,23,Kyrgyzstan,Sweet
-Felix Fisher,Chef,61,Tajikistan,Spicy
-Gemma Simmons,Waiter,30,Afghanistan,Sour
-Hugo Gray,Bartender,44,Pakistan,Umami
-Isabelle Hayes,Cashier,55,Nepal,Bitter
-Jasper Ford,Retail Worker,28,Bhutan,Salty
-Katherine Stone,Real Estate Agent,37,Bangladesh,Sweet and Sour
-Leo Walsh,Insurance Agent,40,Myanmar,Spicy and Sweet
-Maya Fuller,Bank Teller,51,Thailand,Savory and Spicy
-Nathan West,Secretary,25,Vietnam,Sweet
-Olivia Ellis,Receptionist,63,Laos,Spicy
-Peter Murray,Office Assistant,31,Cambodia,Sour
-Quinn Dixon,Cleaner,46,Malaysia,Umami
-Rose Bowman,Security Guard,57,Singapore,Bitter
-Samuel Ray,Delivery Driver,27,Indonesia,Salty
-Taylor Brewer,Warehouse Worker,36,Philippines,Sweet and Sour
-Uma Knight,Customer Service,42,East Timor,Spicy and Sweet
-Victor Rios,Data Entry Clerk,53,Brunei,Savory and Spicy
-Wendy Marsh,Telemarketer,24,Palau,Sweet
-Xavier Arnold,Surveyor,60,Micronesia,Spicy
-Yara Gordon,Statistician,33,Marshall Islands,Sour
-Zachary Olson,Researcher,47,Nauru,Umami
-Abigail Downs,Scientist,59,Kiribati,Bitter
-Benjamin Medina,Technologist,22,Tuvalu,Salty
-Chloe Newton,Developer,39,Samoa,Sweet and Sour
-Daniel Burton,IT Support,43,Tonga,Spicy and Sweet
-Ella Shields,Network Admin,54,Vanuatu,Savory and Spicy
-Finn Patton,Database Admin,29,Fiji,Sweet
-Georgia Wade,Web Developer,62,Solomon Islands,Spicy
-Harry Andrews,Software Tester,34,Papua New Guinea,Sour
-Isla Hicks,Project Manager,48,New Zealand,Umami
-Jacob Crawford,Business Analyst,50,Australia,Bitter
-Lily Brewer,Marketing Manager,21,USA,Salty
-Mason Arnold,Sales Manager,64,Canada,Sweet and Sour
-Nora Gordon,Account Manager,35,UK,Spicy and Sweet
-Owen Olson,HR Manager,49,France,Savory and Spicy
-Penelope Downs,Financial Analyst,56,Germany,Sweet
-Quentin Medina,Product Manager,19,Italy,Spicy
-Alice Johnson,Software Engineer,32,USA,Savory
-Bob Williams,Teacher,45,Canada,Sweet
-Priya Sharma,Doctor,28,India,Spicy
-Jean Dubois,Chef,51,France,Umami
-Sofia Rodriguez,Artist,39,Spain,Sour
-Oliver Smith,Accountant,24,UK,Salty
-Klaus Müller,Musician,60,Germany,Bitter
+Alice Smith,Teacher,32,USA,Sweet
+Bob Johnson,Engineer,45,Canada,Savory
+Charlie Brown,Doctor,28,UK,Spicy
+Diana Miller,Lawyer,51,Australia,Sour
+Ethan Davis,Artist,39,Germany,Umami
+Fiona Wilson,Student,24,France,Bitter
+George Garcia,Retired,60,Spain,Salty
+Hannah Rodriguez,Chef,35,Italy,Sweet
+Isaac Williams,Programmer,48,Japan,Savory
+Julia Martinez,Designer,29,China,Spicy
+Kevin Anderson,Accountant,55,Brazil,Sour
+Linda Taylor,Writer,31,Mexico,Umami
+Michael Thomas,Musician,42,India,Bitter
+Nancy Jackson,Dancer,26,Russia,Salty
+Oscar White,Pilot,58,Argentina,Sweet
+Patricia Harris,Nurse,37,South Africa,Savory
+Quentin Martin,Salesman,49,Sweden,Spicy
+Rachel Thompson,Athlete,23,Norway,Sour
+Samuel Garcia,Farmer,62,Denmark,Umami
+Tiffany Clark,Librarian,34,Finland,Bitter
+Victor Lewis,Mechanic,41,Netherlands,Salty
+Wendy Lee,Hairdresser,27,Belgium,Sweet
+Xavier Hall,Architect,53,Switzerland,Savory
+Yasmine Wright,Journalist,30,Austria,Spicy
+Zachary King,Politician,46,Poland,Sour
+Amy Hill,Social Worker,25,Portugal,Umami
+Ben Scott,Professor,59,Greece,Bitter
+Catherine Green,Firefighter,33,Ireland,Salty
+David Baker,Accountant,40,New Zealand,Sweet
+Emily Nelson,CEO,61,Singapore,Savory
