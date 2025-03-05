@@ -1,5 +1,7 @@
 ## Examples
 
+All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
+
 - **recipes_simple**
   A simple example that generates columns defined in the schema.
 
