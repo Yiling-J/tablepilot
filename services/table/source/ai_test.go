@@ -35,7 +35,7 @@ func TestSource_AI(t *testing.T) {
 				) (*client.ChatResponse, error) {
 					require.Equal(t, p, request.Messages[0].Content)
 					require.Equal(t, 1.0, request.PresencePenalty)
-					require.Equal(t, OptionGenMaxTokens, request.MaxOutputTokens)
+					require.Equal(t, OptionGenMaxTokens, int(request.MaxOutputTokens))
 					return &client.ChatResponse{
 						Content: string(b),
 					}, nil
