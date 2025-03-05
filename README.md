@@ -7,11 +7,18 @@
 # Tablepilot
 
 Tablepilot is a CLI tool designed to generate tables using AI.
-- Reusable JSON table schema.
-- Accurate column context length control and batch generation control.
-- AI-powered columns generation.
-- Bring other table row data as context to generate new data.
-- Easy switching between LLM providers and models for flexibility.
+
+- **AI-generated columns:** If you know you need two columns, you'd define them like `[<column1 JSON object>, <column2 JSON object>]`. But if you want AI to generate additional columns, just add empty objects: `[<column1 JSON object>, <column2 JSON object>, {}, {}]`. Tablepilot will automatically generate two more columns for you.
+
+- **Fine-grained context control:** For example, if you're generating a recipe table with "name" and "ingredients" columns, you can set a context length of 10 for the "name" column, meaning the last 10 values will be included in the prompt. Meanwhile, you can set a context length of 0 for the "ingredients" column.
+
+- **Flexible column data generation strategies:** Each column can have a different generation method: AI-generated, randomly selected from a predefined list, or even pulled from another table.
+
+- **Cross-table context:** This one's a bit more advanced. Say you have a customers table and a gifts table. You want AI to generate a personalized gift and greeting message based on each customer's age, job, or other details. Tablepilot can use the customer table row as context when generating each row in the gifts table.
+
+- **Schema storage in database:** By default, schemas are stored in a local SQLite database, but you can also use a remote database, making your schemas accessible from anywhere.
+
+- **Easily switch between different LLMs and models:** You can switch between providers like OpenAI, Gemini or other LLMs or between different models easily.
 
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
