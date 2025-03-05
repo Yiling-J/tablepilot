@@ -246,7 +246,7 @@ func TestTableService_CreateTable(t *testing.T) {
 func TestTableService_LinkedContextRow(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
-	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+	tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
 	require.NoError(t, err)
 	c, err := db.TableColumn.Create().
 		SetName("c").
@@ -282,6 +282,7 @@ func TestTableService_LinkedContextRow(t *testing.T) {
 	pm, err := generator.builder.Prompt()
 	require.NoError(t, err)
 	builder := promptbuilder.NewRowsBuilder(1)
+	builder.AddDescription("bar")
 	err = builder.AddColumnContextData(c.Nanoid, []any{
 		`{"bar":3,"go":4}`,
 	})

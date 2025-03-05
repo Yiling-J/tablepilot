@@ -117,11 +117,8 @@ func TryDecodeJsonArray[T any](raw string) ([]T, error) {
 		var m T
 		err := dec.Decode(&m)
 		if err != nil {
-			if decErr == nil {
-				decErr = err
-			} else {
-				decErr = errors.Join(decErr, err)
-			}
+			decErr = err
+			break
 		} else {
 			result = append(result, m)
 		}

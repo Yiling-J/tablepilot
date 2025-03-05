@@ -96,6 +96,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsParams, db *ent.Cl
 
 func (g *AIRowsGenerator) newBatch(ctx context.Context, batch int) error {
 	g.builder = promptbuilder.NewRowsBuilder(batch)
+	g.builder.AddDescription(g.table.Description)
 	g.rows = g.rows[:0]
 	return g.prepareContextRows(ctx)
 }
@@ -171,7 +172,6 @@ func (g *AIRowsGenerator) prepareRow(ctx context.Context) error {
 }
 
 func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error) {
-	g.builder.AddMissingColumns(g.missingColumns)
 	om := orderedmap.New[string, *jsonschema.Schema]()
 	om.Set("id", &jsonschema.Schema{Type: "integer"})
 	required := []string{}
@@ -288,6 +288,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		}
 		chatRows = append(chatRows, cr)
 	}
+	g.builder.AddMissingColumns(g.missingColumns)
 	err = g.builder.AddExistings(chatRows)
 	if err != nil {
 		return nil, err
@@ -310,7 +311,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	// Otherwise, we use the generated rows as complete rows directly.
 	if len(g.rows) > 0 {
 		for i, row := range g.rows {
-			if len(rows) >= i {
+			if len(rows) > i {
 				for k, v := range rows[i] {
 					row[k] = &schema.CellValue{Value: v}
 				}

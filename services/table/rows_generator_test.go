@@ -56,7 +56,7 @@ func TestRowsGenerator_PrepareContextRows(t *testing.T) {
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
 			ctx := context.TODO()
 			db := db.NewTestDB()
-			tb, err := db.TableMeta.Create().SetName("foo").Save(ctx)
+			tb, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
 			require.NoError(t, err)
 			col, err := db.TableColumn.Create().
 				SetName("c1").
@@ -89,6 +89,7 @@ func TestRowsGenerator_PrepareContextRows(t *testing.T) {
 			p, err := generator.builder.Prompt()
 			require.NoError(t, err)
 			eb := promptbuilder.NewRowsBuilder(5)
+			eb.AddDescription("bar")
 			err = eb.AddColumnContextData(col.Nanoid, c.expected)
 			require.NoError(t, err)
 			ep, err := eb.Prompt()
@@ -216,4 +217,158 @@ func TestRowsGenerator_Next(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRowsGenerator_Prompt(t *testing.T) {
+	t.Run("simple", func(t *testing.T) {
+		db := db.NewTestDB()
+		ctx := context.Background()
+		var promptContent string
+		aiService := &ai.AiServiceMock{
+			ChatFunc: func(
+				ctx context.Context, request *client.ChatRequest,
+			) (*client.ChatResponse, error) {
+				promptContent = request.Messages[0].Content
+				b, err := json.Marshal(map[string]any{"data": "d"})
+				require.NoError(t, err)
+				return &client.ChatResponse{
+					Content: string(b),
+				}, nil
+			},
+		}
+		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
+		require.NoError(t, err)
+		col, err := db.TableColumn.Create().
+			SetName("c").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeString).Save(ctx)
+		require.NoError(t, err)
+
+		generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+			Table: tb.Nanoid,
+			Count: 2,
+			Batch: 2,
+		}, db, aiService, zap.NewNop().Sugar())
+		require.NoError(t, err)
+		_, err = generator.Next(ctx)
+		require.NoError(t, err)
+
+		builder := promptbuilder.NewRowsBuilder(2)
+		builder.AddDescription("bar")
+		builder.AddMissingColumns([]*ent.TableColumn{col})
+		p, err := builder.Prompt()
+
+		require.NoError(t, err)
+		require.Equal(t, p, promptContent)
+	})
+
+	t.Run("with context", func(t *testing.T) {
+		db := db.NewTestDB()
+		ctx := context.Background()
+		var promptContent string
+		aiService := &ai.AiServiceMock{
+			ChatFunc: func(
+				ctx context.Context, request *client.ChatRequest,
+			) (*client.ChatResponse, error) {
+				promptContent = request.Messages[0].Content
+				b, err := json.Marshal(map[string]any{"data": "d"})
+				require.NoError(t, err)
+				return &client.ChatResponse{
+					Content: string(b),
+				}, nil
+			},
+		}
+		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
+		require.NoError(t, err)
+		col, err := db.TableColumn.Create().
+			SetName("c").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetContextLength(2).
+			SetType(tablecolumn.TypeString).Save(ctx)
+		require.NoError(t, err)
+
+		generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+			Table: tb.Nanoid,
+			Count: 2,
+			Batch: 2,
+		}, db, aiService, zap.NewNop().Sugar())
+		require.NoError(t, err)
+		for i := 0; i < 5; i++ {
+			generator.generated = append(generator.generated, map[string]*schema.CellValue{
+				col.Nanoid: {Value: cast.ToString(i)},
+			})
+		}
+		_, err = generator.Next(ctx)
+		require.NoError(t, err)
+
+		builder := promptbuilder.NewRowsBuilder(2)
+		builder.AddDescription("bar")
+		err = builder.AddColumnContextData(col.Nanoid, []any{4, 3})
+		require.NoError(t, err)
+		builder.AddMissingColumns([]*ent.TableColumn{col})
+		p, err := builder.Prompt()
+
+		require.NoError(t, err)
+		require.Equal(t, p, promptContent)
+	})
+
+	t.Run("pick-type column", func(t *testing.T) {
+		db := db.NewTestDB()
+		ctx := context.Background()
+		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
+		require.NoError(t, err)
+		col, err := db.TableColumn.Create().
+			SetName("c").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeString).Save(ctx)
+		require.NoError(t, err)
+		sc := &source.ListSource{Options: []string{"a", "b"}, Type: "list"}
+		sb, err := json.Marshal(sc)
+		require.NoError(t, err)
+		col2, err := db.TableColumn.Create().
+			SetName("c2").
+			SetFillMode(tablecolumn.FillModePick).
+			SetSource(sb).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeString).Save(ctx)
+		require.NoError(t, err)
+		var promptContent string
+		aiService := &ai.AiServiceMock{
+			ChatFunc: func(
+				ctx context.Context, request *client.ChatRequest,
+			) (*client.ChatResponse, error) {
+				promptContent = request.Messages[0].Content
+				data := []map[string]any{{col.Nanoid: "d"}, {col.Nanoid: "e"}}
+				b, err := json.Marshal(map[string]any{"data": data})
+				require.NoError(t, err)
+				return &client.ChatResponse{
+					Content: string(b),
+				}, nil
+			},
+		}
+		generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+			Table: tb.Nanoid,
+			Count: 2,
+			Batch: 2,
+		}, db, aiService, zap.NewNop().Sugar())
+		require.NoError(t, err)
+		_, err = generator.Next(ctx)
+		require.NoError(t, err)
+
+		builder := promptbuilder.NewRowsBuilder(2)
+		builder.AddDescription("bar")
+		builder.AddMissingColumns([]*ent.TableColumn{col})
+		err = builder.AddExistings([]map[string]any{
+			{col2.Nanoid: "a"},
+			{col2.Nanoid: "b"},
+		})
+		require.NoError(t, err)
+		p, err := builder.Prompt()
+
+		require.NoError(t, err)
+		require.Equal(t, p, promptContent)
+	})
 }
