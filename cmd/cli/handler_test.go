@@ -13,6 +13,7 @@ import (
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 
@@ -35,7 +36,7 @@ func TestHandler_Create(t *testing.T) {
 		},
 	}
 	handler := &Handler{
-		backend: NewBackend(
+		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
 			nil, tableMock,
 		),
@@ -80,7 +81,7 @@ func TestHandler_Show(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		NewBackend(
+		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
 			nil, tableMock,
 		),
@@ -120,7 +121,7 @@ func TestHandler_List(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		NewBackend(
+		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
 			nil, tableMock,
 		),
@@ -149,7 +150,7 @@ func TestHandler_Delete(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		NewBackend(
+		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
 			nil, tableMock,
 		),
@@ -185,7 +186,7 @@ func TestHandler_Export(t *testing.T) {
 				},
 			}
 			handler := NewHandler(
-				NewBackend(
+				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
 					nil, tableMock,
 				),
@@ -281,7 +282,7 @@ func TestHandler_Generate(t *testing.T) {
 				RenderFunc:    func() error { return nil },
 			}
 			handler := NewHandler(
-				NewBackend(
+				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
 					nil, tableMock,
 				),
@@ -370,7 +371,7 @@ func TestHandler_Import(t *testing.T) {
 				},
 			}
 			handler := NewHandler(
-				NewBackend(
+				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
 					nil, tableMock,
 				),
@@ -395,7 +396,7 @@ func TestHandler_Truncate(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		NewBackend(
+		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
 			nil, tableMock,
 		),
@@ -422,7 +423,7 @@ func TestHandler_Describe(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		NewBackend(
+		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
 			nil, tableMock,
 		),

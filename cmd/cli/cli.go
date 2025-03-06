@@ -5,108 +5,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Yiling-J/tablepilot/config"
-	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/api"
 	_ "github.com/Yiling-J/tablepilot/ent/runtime"
-	"github.com/Yiling-J/tablepilot/infra/db"
-	"github.com/Yiling-J/tablepilot/services/ai"
-	"github.com/Yiling-J/tablepilot/services/ai/client"
-	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
-	"go.uber.org/dig"
-	"go.uber.org/zap"
 	"golang.org/x/term"
 	_ "modernc.org/sqlite"
 )
-
-type Backend struct {
-	config       *config.Config
-	db           *ent.Client
-	Logger       *zap.SugaredLogger
-	aiService    ai.AiService
-	tableService table.TableService
-}
-
-func NewBackend(
-	config *config.Config, db *ent.Client,
-	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
-) *Backend {
-	return &Backend{
-		config:       config,
-		db:           db,
-		Logger:       logger,
-		aiService:    aiService,
-		tableService: tableService,
-	}
-}
-
-func createBackend(cmd *cobra.Command, verbose bool) *Backend {
-	container := dig.New()
-
-	err := container.Provide(func() (*config.Config, error) {
-		return config.NewConfig(cmd.Flag("config").Value.String())
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	err = container.Provide(func(config *config.Config) (*zap.SugaredLogger, error) {
-		var cfg zap.Config
-		if verbose {
-			cfg = zap.NewDevelopmentConfig()
-		} else {
-			cfg = zap.NewProductionConfig()
-		}
-		cfg.Encoding = "console"
-		l, err := cfg.Build()
-		if err != nil {
-			return nil, err
-		}
-		return l.Sugar(), nil
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	err = container.Provide(db.NewDB)
-	if err != nil {
-		panic(err)
-	}
-
-	err = container.Provide(client.NewClients)
-	if err != nil {
-		panic(err)
-	}
-
-	err = container.Provide(ai.NewAiService, dig.As(new((ai.AiService))))
-	if err != nil {
-		panic(err)
-	}
-
-	err = container.Provide(table.NewTableService, dig.As(new((table.TableService))))
-	if err != nil {
-		panic(err)
-	}
-
-	err = container.Provide(NewBackend)
-	if err != nil {
-		panic(err)
-	}
-
-	var backend *Backend
-	err = container.Invoke(func(b *Backend) {
-		backend = b
-	})
-	if err != nil {
-		panic(err)
-	}
-	return backend
-}
 
 func newPrinter() tableprinter.TablePrinter {
 	maxWidth, _, _ := term.GetSize(0)
@@ -136,7 +46,7 @@ func BuildCLI(root *cobra.Command) {
 
 	var handler *Handler
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		backend := createBackend(cmd, verbose)
+		backend := services.CreateBackend(cmd, verbose)
 		handler = NewHandler(backend)
 		return nil
 	}
@@ -197,6 +107,21 @@ func BuildCLI(root *cobra.Command) {
 		Short: "Remove all data from a specified table",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return handler.Truncate(cmd, args)
+		},
+	})
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "serve",
+		Short: "Start tablepilot server",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			server := api.NewHttpServer(handler.backend, verbose)
+			server.RegisterRoutes()
+
+			err := server.Engine.Run(handler.backend.Config.Server.Address)
+			if err != nil {
+				return err
+			}
+			return nil
 		},
 	})
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
@@ -17,11 +18,11 @@ import (
 )
 
 type Handler struct {
-	backend    *Backend
+	backend    *services.Backend
 	getPrinter func() tableprinter.TablePrinter
 }
 
-func NewHandler(backend *Backend) *Handler {
+func NewHandler(backend *services.Backend) *Handler {
 	return &Handler{
 		backend:    backend,
 		getPrinter: newPrinter,
@@ -39,7 +40,7 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		id, err := h.backend.tableService.CreateTable(cmd.Context(), &req)
+		id, err := h.backend.TableService.CreateTable(cmd.Context(), &req)
 		if err != nil {
 			return err
 		}
@@ -50,7 +51,7 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 
 func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 	table := args[0]
-	rows, err := h.backend.tableService.Rows(cmd.Context(), table)
+	rows, err := h.backend.TableService.Rows(cmd.Context(), table)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) List(cmd *cobra.Command, args []string) error {
-	resp, err := h.backend.tableService.ListTables(cmd.Context())
+	resp, err := h.backend.TableService.ListTables(cmd.Context())
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func (h *Handler) List(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) Describe(cmd *cobra.Command, args []string) error {
-	resp, err := h.backend.tableService.GetTableColumns(cmd.Context(), args[0])
+	resp, err := h.backend.TableService.GetTableColumns(cmd.Context(), args[0])
 	if err != nil {
 		return err
 	}
@@ -102,7 +103,7 @@ func (h *Handler) Describe(cmd *cobra.Command, args []string) error {
 
 func (h *Handler) Delete(cmd *cobra.Command, args []string) error {
 	table := args[0]
-	count, err := h.backend.tableService.Delete(cmd.Context(), table)
+	count, err := h.backend.TableService.Delete(cmd.Context(), table)
 	if err != nil {
 		return err
 	}
@@ -116,7 +117,7 @@ func (h *Handler) Delete(cmd *cobra.Command, args []string) error {
 
 func (h *Handler) Export(cmd *cobra.Command, args []string) error {
 	table := args[0]
-	rows, err := h.backend.tableService.Rows(cmd.Context(), table)
+	rows, err := h.backend.TableService.Rows(cmd.Context(), table)
 	if err != nil {
 		return err
 	}
@@ -177,7 +178,7 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	generator, err := h.backend.tableService.Genetate(
+	generator, err := h.backend.TableService.Genetate(
 		cmd.Context(), table.GenerateRowsParams{
 			Table:       args[0],
 			SaveTo:      saveTo,
@@ -264,7 +265,7 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 		importName = filepath.Base(tableFile)
 		importName = strings.TrimSuffix(importName, filepath.Ext(importName))
 	}
-	id, err := h.backend.tableService.Import(cmd.Context(), importName, reader)
+	id, err := h.backend.TableService.Import(cmd.Context(), importName, reader)
 	if err != nil {
 		return err
 	}
@@ -274,7 +275,7 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 
 func (h *Handler) Truncate(cmd *cobra.Command, args []string) error {
 	table := args[0]
-	removed, err := h.backend.tableService.Truncate(cmd.Context(), table)
+	removed, err := h.backend.TableService.Truncate(cmd.Context(), table)
 	if err != nil {
 		return err
 	}

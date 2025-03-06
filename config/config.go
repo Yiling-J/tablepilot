@@ -12,6 +12,10 @@ type Database struct {
 	DSN    string
 }
 
+type Server struct {
+	Address string
+}
+
 type Model struct {
 	Default   bool
 	Model     string
@@ -36,6 +40,7 @@ type OpenAI struct {
 }
 
 type Config struct {
+	Server   Server
 	Database *Database
 	Models   []Model
 	Clients  []Client
@@ -74,5 +79,8 @@ func NewConfig(name string) (config *Config, err error) {
 		return nil, err
 	}
 	config.Clients = clients
+	if config.Server.Address == "" {
+		config.Server.Address = ":8080"
+	}
 	return config, nil
 }

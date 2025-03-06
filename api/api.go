@@ -14,13 +14,13 @@ func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 		return
 	}
 
-	uid, err := hs.tableService.CreateTable(ctx.Request.Context(), &request)
+	uid, err := hs.TableService.CreateTable(ctx.Request.Context(), &request)
 	if err != nil {
 		ctx.JSON(500, err.Error())
 		return
 	}
 
-	ctx.JSON(200, map[string]string{"uid": uid})
+	ctx.JSON(200, map[string]string{"id": uid})
 }
 
 func (hs *HTTPServer) addRouters() {
