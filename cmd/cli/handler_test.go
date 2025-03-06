@@ -261,7 +261,7 @@ func TestHandler_Generate(t *testing.T) {
 				},
 			}
 			tableMock := &table.TableServiceMock{
-				GenetateFunc: func(ctx context.Context, params table.GenerateRowsParams) (table.RowsGenerator, error) {
+				GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
 					require.Equal(t, "foo", params.Table)
 					if saveTo {
 						require.Equal(t, "foo_gen.csv", params.SaveTo)

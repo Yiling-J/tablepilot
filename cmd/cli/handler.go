@@ -179,7 +179,7 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	generator, err := h.backend.TableService.Genetate(
-		cmd.Context(), table.GenerateRowsParams{
+		cmd.Context(), table.GenerateRowsRequest{
 			Table:       args[0],
 			SaveTo:      saveTo,
 			Count:       count,

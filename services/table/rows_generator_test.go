@@ -65,7 +65,7 @@ func TestRowsGenerator_PrepareContextRows(t *testing.T) {
 				SetContextLength(5).
 				SetType(tablecolumn.TypeString).Save(ctx)
 			require.NoError(t, err)
-			generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+			generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
 				Table: "foo",
 				Batch: 5,
 				Count: 5,
@@ -182,7 +182,7 @@ func TestRowsGenerator_Next(t *testing.T) {
 			if tc.saveTo {
 				st = "abc"
 			}
-			generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+			generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
 				Table:  tb.Nanoid,
 				Count:  tc.count,
 				Batch:  tc.batch,
@@ -245,7 +245,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 			SetType(tablecolumn.TypeString).Save(ctx)
 		require.NoError(t, err)
 
-		generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+		generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
 			Table: tb.Nanoid,
 			Count: 2,
 			Batch: 2,
@@ -289,7 +289,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 			SetType(tablecolumn.TypeString).Save(ctx)
 		require.NoError(t, err)
 
-		generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+		generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
 			Table: tb.Nanoid,
 			Count: 2,
 			Batch: 2,
@@ -349,7 +349,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 				}, nil
 			},
 		}
-		generator, err := NewRowsGenerator(ctx, GenerateRowsParams{
+		generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
 			Table: tb.Nanoid,
 			Count: 2,
 			Batch: 2,

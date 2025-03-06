@@ -27,7 +27,7 @@ var _ TableService = &TableServiceMock{}
 //			DeleteFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Delete method")
 //			},
-//			GenetateFunc: func(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error) {
+//			GenetateFunc: func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
 //			},
 //			GetTableColumnsFunc: func(ctx context.Context, table string) ([]TableColumnInfo, error) {
@@ -59,7 +59,7 @@ type TableServiceMock struct {
 	DeleteFunc func(ctx context.Context, table string) (int, error)
 
 	// GenetateFunc mocks the Genetate method.
-	GenetateFunc func(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error)
+	GenetateFunc func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
 
 	// GetTableColumnsFunc mocks the GetTableColumns method.
 	GetTableColumnsFunc func(ctx context.Context, table string) ([]TableColumnInfo, error)
@@ -97,7 +97,7 @@ type TableServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Params is the params argument value.
-			Params GenerateRowsParams
+			Params GenerateRowsRequest
 		}
 		// GetTableColumns holds details about calls to the GetTableColumns method.
 		GetTableColumns []struct {
@@ -218,13 +218,13 @@ func (mock *TableServiceMock) DeleteCalls() []struct {
 }
 
 // Genetate calls GenetateFunc.
-func (mock *TableServiceMock) Genetate(ctx context.Context, params GenerateRowsParams) (RowsGenerator, error) {
+func (mock *TableServiceMock) Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
 	if mock.GenetateFunc == nil {
 		panic("TableServiceMock.GenetateFunc: method is nil but TableService.Genetate was just called")
 	}
 	callInfo := struct {
 		Ctx    context.Context
-		Params GenerateRowsParams
+		Params GenerateRowsRequest
 	}{
 		Ctx:    ctx,
 		Params: params,
@@ -241,11 +241,11 @@ func (mock *TableServiceMock) Genetate(ctx context.Context, params GenerateRowsP
 //	len(mockedTableService.GenetateCalls())
 func (mock *TableServiceMock) GenetateCalls() []struct {
 	Ctx    context.Context
-	Params GenerateRowsParams
+	Params GenerateRowsRequest
 } {
 	var calls []struct {
 		Ctx    context.Context
-		Params GenerateRowsParams
+		Params GenerateRowsRequest
 	}
 	mock.lockGenetate.RLock()
 	calls = mock.calls.Genetate

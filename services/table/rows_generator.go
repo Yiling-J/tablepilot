@@ -49,7 +49,7 @@ type AIRowsGenerator struct {
 	builder *promptbuilder.RowsBuilder
 }
 
-func NewRowsGenerator(ctx context.Context, params GenerateRowsParams, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
+func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
 	generator := &AIRowsGenerator{
 		logger: logger,
 		db:     db,

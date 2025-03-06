@@ -24,7 +24,7 @@ type TableGenRequest struct {
 	Sources     []json.RawMessage `json:"sources"`
 }
 
-type GenerateRowsParams struct {
+type GenerateRowsRequest struct {
 	Table       string
 	SaveTo      string
 	Count       int
