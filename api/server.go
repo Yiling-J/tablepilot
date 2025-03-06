@@ -1,9 +1,12 @@
 package api
 
 import (
+	"time"
+
 	"github.com/Yiling-J/tablepilot/services"
 
 	"github.com/gin-contrib/cors"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,6 +37,8 @@ func (hs *HTTPServer) RegisterRoutes() {
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 	}))
+	hs.Engine.Use(ginzap.Ginzap(hs.Logger.Desugar(), time.RFC3339, true))
+	hs.Engine.Use(ginzap.RecoveryWithZap(hs.Logger.Desugar(), true))
 	hs.apiv1 = hs.Engine.Group("/api/v1")
 	hs.addRouters()
 }

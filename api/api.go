@@ -7,17 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func errorResponse(ctx *gin.Context, code int, err error) {
+	_ = ctx.Error(err)
+	ctx.JSON(code, err.Error())
+}
+
 func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 	var request table.TableGenRequest
 	err := ctx.ShouldBindJSON(&request)
 	if err != nil {
-		ctx.JSON(400, err.Error())
+		errorResponse(ctx, 400, err)
 		return
 	}
 
 	uid, err := hs.TableService.CreateTable(ctx.Request.Context(), &request)
 	if err != nil {
-		ctx.JSON(500, err.Error())
+		errorResponse(ctx, 500, err)
 		return
 	}
 
@@ -28,21 +33,22 @@ func (hs *HTTPServer) Generate(ctx *gin.Context) {
 	var request table.GenerateRowsRequest
 	err := ctx.ShouldBindJSON(&request)
 	if err != nil {
-		ctx.JSON(400, err.Error())
+		errorResponse(ctx, 400, err)
 		return
 	}
 	request.Table = ctx.Param("table")
 	generator, err := hs.TableService.Genetate(ctx.Request.Context(), request)
 	if err != nil {
-		ctx.JSON(500, err.Error())
+		errorResponse(ctx, 500, err)
 		return
 	}
 	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
 	data := []map[string]any{}
-	for {
+	for i := 0; ; i++ {
+		hs.Logger.Debugw("start generating rows", "batch", i)
 		rows, err := generator.Next(ctx.Request.Context())
 		if err != nil {
-			ctx.JSON(500, err.Error())
+			errorResponse(ctx, 500, err)
 		}
 		if len(rows) == 0 {
 			break
@@ -50,7 +56,7 @@ func (hs *HTTPServer) Generate(ctx *gin.Context) {
 		for _, row := range rows {
 			dr, err := indexer.ToDisplayRow(row)
 			if err != nil {
-				ctx.JSON(500, err.Error())
+				errorResponse(ctx, 500, err)
 				return
 			}
 			data = append(data, dr)

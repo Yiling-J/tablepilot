@@ -11,6 +11,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 type ResponseHelper struct {
@@ -35,7 +36,7 @@ type TestServer struct {
 func NewTestServer(t *testing.T, option func(s *services.Backend)) *TestServer {
 	gin.SetMode(gin.ReleaseMode)
 	config := &config.Config{}
-	backend := &services.Backend{Config: config}
+	backend := &services.Backend{Config: config, Logger: zap.NewNop().Sugar()}
 	option(backend)
 	server := NewHttpServer(backend, false)
 	server.RegisterRoutes()

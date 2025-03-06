@@ -50,7 +50,11 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 		} else {
 			cfg = zap.NewProductionConfig()
 		}
-		cfg.Encoding = "console"
+		// serve command will start a server, use JSON encoding logs for API calls
+		// for CLI set log encoding to console
+		if cmd.Name() != "serve" {
+			cfg.Encoding = "console"
+		}
 		l, err := cfg.Build()
 		if err != nil {
 			return nil, err
