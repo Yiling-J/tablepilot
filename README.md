@@ -193,11 +193,11 @@ You can define multiple clients, and different models can use different clients.
 - **key**: The API key used to authenticate requests.
 - **base_url**: The base URL of the API.
 
-### Server
+### Server (Optional)
 
 This section configures the API server when running `tablepilot serve`.
 
-- **address**: TCP network address. Used in `http.ListenAndServe`.
+- **address**: TCP network address. Used in `http.ListenAndServe`. Default `:8080`.
 
 ### Models
 
