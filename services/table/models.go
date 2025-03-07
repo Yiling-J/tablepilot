@@ -31,6 +31,8 @@ type GenerateRowsRequest struct {
 	Batch       int
 	Temperature float64
 	Model       string
+	// used in API only to send streaming results
+	Stream bool
 }
 
 type ColumnSchema struct {

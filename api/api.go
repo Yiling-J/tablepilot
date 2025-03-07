@@ -29,12 +29,22 @@ func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"id": uid})
 }
 
+func sseHeaders(c *gin.Context) {
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+}
+
 func (hs *HTTPServer) Generate(ctx *gin.Context) {
 	var request table.GenerateRowsRequest
 	err := ctx.ShouldBindJSON(&request)
 	if err != nil {
 		errorResponse(ctx, 400, err)
 		return
+	}
+	if request.Stream {
+		sseHeaders(ctx)
 	}
 	request.Table = ctx.Param("table")
 	generator, err := hs.TableService.Genetate(ctx.Request.Context(), request)
@@ -59,8 +69,20 @@ func (hs *HTTPServer) Generate(ctx *gin.Context) {
 				errorResponse(ctx, 500, err)
 				return
 			}
+
 			data = append(data, dr)
 		}
+		if request.Stream {
+			ctx.SSEvent("message", map[string]any{
+				"data": data,
+			})
+			data = data[:0]
+			ctx.Writer.Flush()
+		}
+	}
+	if request.Stream {
+		ctx.SSEvent("message", "[DONE]")
+		ctx.Writer.Flush()
 	}
 	ctx.JSON(200, gin.H{"data": data})
 }
