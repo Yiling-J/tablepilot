@@ -20,6 +20,8 @@ Tablepilot is a CLI tool designed to generate tables using AI.
 
 - **Easily switch between different LLMs and models:** You can switch between providers like OpenAI, Gemini or other LLMs or between different models easily.
 
+- **API server:** Start an API server and execute commands via API requests.
+
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
 
@@ -145,6 +147,17 @@ A number of examples demonstrating various use cases of Tablepilot are available
   ```
   tablepilot truncate recipes
   ```
+  
+- **serve**
+  Start an API server. See [API.md](API.md) for available endpoints.
+  ```
+  tablepilot serve
+  ```
+  By default, the API server listens on `:8080`. You can customize the address by adding a `server` section to your TOML config:
+  ```
+  [server]
+  address = ":9901"
+  ```
 
 ### Common Flags:
 
@@ -164,7 +177,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 Tablepilot uses a TOML configuration file to customize its behavior. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
 
-The configuration consists of three main sections: `database`, `clients`, and `models`.
+The configuration consists of four main sections: `database`, `clients`, `server` and `models`.
 
 ### Database
 
@@ -179,6 +192,12 @@ You can define multiple clients, and different models can use different clients.
 - **type**: The client type. Currently, only `"openai"` is supported, which should includes all OpenAI-compatible APIs.
 - **key**: The API key used to authenticate requests.
 - **base_url**: The base URL of the API.
+
+### Server
+
+This section configures the API server when running `tablepilot serve`.
+
+- **address**: TCP network address. Used in `http.ListenAndServe`.
 
 ### Models
 
