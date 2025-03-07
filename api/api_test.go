@@ -92,3 +92,88 @@ func TestAPI_Generate(t *testing.T) {
 	}
 	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows})
 }
+
+func TestAPI_Rows(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		RowsFunc: func(ctx context.Context, name string) (*table.Rows, error) {
+			require.Equal(t, "foo", name)
+			return &table.Rows{
+				Columns: []*ent.TableColumn{
+					{Nanoid: "1", Name: "c1"},
+					{Nanoid: "2", Name: "c2"},
+				},
+				Rows: []*ent.TableRow{
+					{Cells: []*schema.CellValue{{Value: "a1"}, {Value: "b1"}}},
+					{Cells: []*schema.CellValue{{Value: "a2"}, {Value: "b2"}}},
+					{Cells: []*schema.CellValue{{Value: "a3"}, {Value: "b3"}}},
+				},
+			}, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewGetRequest("/api/v1/tables/foo/rows")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	expectedRows := []map[string]any{
+		{"c1": "a1", "c2": "b1"},
+		{"c1": "a2", "c2": "b2"},
+		{"c1": "a3", "c2": "b3"},
+	}
+	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows, "total": 3})
+}
+
+func TestAPI_ListTables(t *testing.T) {
+	expectedResponse := &table.ListTablesResponse{
+		Total: 2,
+		Tables: []table.TableInfoSimple{
+			{ID: "1", Name: "t1", Description: "d1"},
+			{ID: "2", Name: "t2", Description: "d2"},
+		},
+	}
+	tableMock := &table.TableServiceMock{
+		ListTablesFunc: func(ctx context.Context) (*table.ListTablesResponse, error) {
+			return expectedResponse, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewGetRequest("/api/v1/tables")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, expectedResponse)
+}
+
+func TestAPI_Delete(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		DeleteFunc: func(ctx context.Context, table string) (int, error) {
+			require.Equal(t, "foo", table)
+			return 1, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewDeleteRequest("/api/v1/tables/foo")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 204, nil)
+}
+
+func TestAPI_Truncate(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		TruncateFunc: func(ctx context.Context, table string) (int, error) {
+			require.Equal(t, "foo", table)
+			return 5, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewPostRequest("/api/v1/tables/foo/truncate", nil)
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, map[string]any{"removed": 5})
+}

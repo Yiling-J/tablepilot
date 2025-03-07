@@ -26,7 +26,11 @@ func (h *ResponseHelper) ResponseEq(t *testing.T, code int, expected any) {
 	b, err := json.Marshal(expected)
 	require.NoError(t, err)
 	require.Equal(t, code, h.response.Code, h.response.Body.String())
-	require.JSONEq(t, string(b), h.response.Body.String())
+	if expected == nil {
+		require.Equal(t, "", h.response.Body.String())
+	} else {
+		require.JSONEq(t, string(b), h.response.Body.String())
+	}
 }
 
 type TestServer struct {
