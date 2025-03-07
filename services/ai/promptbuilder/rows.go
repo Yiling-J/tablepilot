@@ -53,21 +53,19 @@ func (rb *RowsBuilder) AddMissingColumns(v []*ent.TableColumn) {
 		return
 	}
 	rb.AddText("Generate values for the following missing columns:")
-	missingData := map[string]any{}
 	el := rb.NewXML("MissingColumns")
+	// add id column
+	cel := el.CreateElement("Column")
+	cel.CreateAttr("id", "id")
+	cel.CreateAttr("name", "id")
+	cel.CreateAttr("description", "index of the row, always starting from 0 in each generation")
+	cel.CreateAttr("type", "integer")
 	for _, col := range v {
 		cel := el.CreateElement("Column")
 		cel.CreateAttr("id", col.Nanoid)
 		cel.CreateAttr("name", col.Name)
 		cel.CreateAttr("description", col.Description)
 		cel.CreateAttr("type", string(col.Type))
-		var v interface{}
-		if col.Type == "number" {
-			v = 0
-		} else {
-			v = ""
-		}
-		missingData[col.Nanoid] = v
 	}
 }
 

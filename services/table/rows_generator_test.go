@@ -124,7 +124,7 @@ func TestRowsGenerator_Chat(t *testing.T) {
 	}
 	_, err := generator.chat(ctx)
 	require.NoError(t, err)
-	expectedSchema := `{"properties":{"data":{"items":{"properties":{"id":{"type":"integer"},"n1":{"items":{"type":"string"},"type":"array"},"n2":{"type":"string"}},"additionalProperties":false,"type":"object","required":["n1","n2"]},"type":"array"}},"additionalProperties":false,"type":"object"}`
+	expectedSchema := `{"properties":{"data":{"items":{"properties":{"id":{"type":"integer"},"n1":{"items":{"type":"string"},"type":"array"},"n2":{"type":"string"}},"additionalProperties":false,"type":"object","required":["id","n1","n2"]},"type":"array"}},"additionalProperties":false,"type":"object"}`
 	bs, err := schema.MarshalJSON()
 	require.NoError(t, err)
 	require.Equal(t, expectedSchema, string(bs))

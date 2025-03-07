@@ -26,6 +26,7 @@ func TestPromptBuilder_RowsBuilder(t *testing.T) {
 <TableDescription>rows gen</TableDescription>
 Generate values for the following missing columns:
 <MissingColumns>
+  <Column id="id" name="id" description="index of the row, always starting from 0 in each generation" type="integer"/>
   <Column id="n1" name="c1" description="col1" type="string"/>
   <Column id="n2" name="c2" description="col2" type="integer"/>
 </MissingColumns>
@@ -58,6 +59,7 @@ func TestPromptBuilder_RowsBuilderExists(t *testing.T) {
 	expected := `<TableDescription>rows gen</TableDescription>
 Generate values for the following missing columns:
 <MissingColumns>
+  <Column id="id" name="id" description="index of the row, always starting from 0 in each generation" type="integer"/>
   <Column id="n1" name="c1" description="col1" type="string"/>
   <Column id="n2" name="c2" description="col2" type="integer"/>
 </MissingColumns>

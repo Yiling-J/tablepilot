@@ -174,7 +174,7 @@ func (g *AIRowsGenerator) prepareRow(ctx context.Context) error {
 func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error) {
 	om := orderedmap.New[string, *jsonschema.Schema]()
 	om.Set("id", &jsonschema.Schema{Type: "integer"})
-	required := []string{}
+	required := []string{"id"}
 	for _, col := range g.missingColumns {
 		s := &jsonschema.Schema{
 			Type: col.Type.String(),
@@ -313,6 +313,10 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		for i, row := range g.rows {
 			if len(rows) > i {
 				for k, v := range rows[i] {
+					// id is an internal columns to hint LLM to return correct count/order
+					if k == "id" {
+						continue
+					}
 					row[k] = &schema.CellValue{Value: v}
 				}
 			}
@@ -322,6 +326,10 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		for _, row := range rows {
 			n := map[string]*schema.CellValue{}
 			for k, v := range row {
+				// id is an internal columns to hint LLM to return correct count/order
+				if k == "id" {
+					continue
+				}
 				n[k] = &schema.CellValue{Value: v}
 			}
 			generated = append(generated, n)
