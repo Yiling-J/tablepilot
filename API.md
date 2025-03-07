@@ -1,7 +1,7 @@
-# TablePilot API Documentation
+# Tablepilot API Documentation
 
 ## Overview
-TablePilot provides a REST API for managing AI-generated tables. You can start server using `tablepilot serve`
+Tablepilot provides a REST API for managing AI-generated tables. You can start server using `tablepilot serve`
 
 ## Base URL
 ```
