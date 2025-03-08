@@ -66,48 +66,6 @@ func (tmc *TableMetaCreate) SetNillableNanoid(s *string) *TableMetaCreate {
 	return tmc
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (tmc *TableMetaCreate) SetMaxRows(i int) *TableMetaCreate {
-	tmc.mutation.SetMaxRows(i)
-	return tmc
-}
-
-// SetNillableMaxRows sets the "max_rows" field if the given value is not nil.
-func (tmc *TableMetaCreate) SetNillableMaxRows(i *int) *TableMetaCreate {
-	if i != nil {
-		tmc.SetMaxRows(*i)
-	}
-	return tmc
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (tmc *TableMetaCreate) SetPromptRaw(s string) *TableMetaCreate {
-	tmc.mutation.SetPromptRaw(s)
-	return tmc
-}
-
-// SetNillablePromptRaw sets the "prompt_raw" field if the given value is not nil.
-func (tmc *TableMetaCreate) SetNillablePromptRaw(s *string) *TableMetaCreate {
-	if s != nil {
-		tmc.SetPromptRaw(*s)
-	}
-	return tmc
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (tmc *TableMetaCreate) SetPromptGen(s string) *TableMetaCreate {
-	tmc.mutation.SetPromptGen(s)
-	return tmc
-}
-
-// SetNillablePromptGen sets the "prompt_gen" field if the given value is not nil.
-func (tmc *TableMetaCreate) SetNillablePromptGen(s *string) *TableMetaCreate {
-	if s != nil {
-		tmc.SetPromptGen(*s)
-	}
-	return tmc
-}
-
 // SetName sets the "name" field.
 func (tmc *TableMetaCreate) SetName(s string) *TableMetaCreate {
 	tmc.mutation.SetName(s)
@@ -124,20 +82,6 @@ func (tmc *TableMetaCreate) SetDescription(s string) *TableMetaCreate {
 func (tmc *TableMetaCreate) SetNillableDescription(s *string) *TableMetaCreate {
 	if s != nil {
 		tmc.SetDescription(*s)
-	}
-	return tmc
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (tmc *TableMetaCreate) SetBuildStatus(ts tablemeta.BuildStatus) *TableMetaCreate {
-	tmc.mutation.SetBuildStatus(ts)
-	return tmc
-}
-
-// SetNillableBuildStatus sets the "build_status" field if the given value is not nil.
-func (tmc *TableMetaCreate) SetNillableBuildStatus(ts *tablemeta.BuildStatus) *TableMetaCreate {
-	if ts != nil {
-		tmc.SetBuildStatus(*ts)
 	}
 	return tmc
 }
@@ -229,25 +173,9 @@ func (tmc *TableMetaCreate) defaults() {
 		v := tablemeta.DefaultUpdatedAt()
 		tmc.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := tmc.mutation.MaxRows(); !ok {
-		v := tablemeta.DefaultMaxRows
-		tmc.mutation.SetMaxRows(v)
-	}
-	if _, ok := tmc.mutation.PromptRaw(); !ok {
-		v := tablemeta.DefaultPromptRaw
-		tmc.mutation.SetPromptRaw(v)
-	}
-	if _, ok := tmc.mutation.PromptGen(); !ok {
-		v := tablemeta.DefaultPromptGen
-		tmc.mutation.SetPromptGen(v)
-	}
 	if _, ok := tmc.mutation.Description(); !ok {
 		v := tablemeta.DefaultDescription
 		tmc.mutation.SetDescription(v)
-	}
-	if _, ok := tmc.mutation.BuildStatus(); !ok {
-		v := tablemeta.DefaultBuildStatus
-		tmc.mutation.SetBuildStatus(v)
 	}
 	if _, ok := tmc.mutation.Model(); !ok {
 		v := tablemeta.DefaultModel
@@ -257,15 +185,6 @@ func (tmc *TableMetaCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (tmc *TableMetaCreate) check() error {
-	if _, ok := tmc.mutation.MaxRows(); !ok {
-		return &ValidationError{Name: "max_rows", err: errors.New(`ent: missing required field "TableMeta.max_rows"`)}
-	}
-	if _, ok := tmc.mutation.PromptRaw(); !ok {
-		return &ValidationError{Name: "prompt_raw", err: errors.New(`ent: missing required field "TableMeta.prompt_raw"`)}
-	}
-	if _, ok := tmc.mutation.PromptGen(); !ok {
-		return &ValidationError{Name: "prompt_gen", err: errors.New(`ent: missing required field "TableMeta.prompt_gen"`)}
-	}
 	if _, ok := tmc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "TableMeta.name"`)}
 	}
@@ -276,14 +195,6 @@ func (tmc *TableMetaCreate) check() error {
 	}
 	if _, ok := tmc.mutation.Description(); !ok {
 		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "TableMeta.description"`)}
-	}
-	if _, ok := tmc.mutation.BuildStatus(); !ok {
-		return &ValidationError{Name: "build_status", err: errors.New(`ent: missing required field "TableMeta.build_status"`)}
-	}
-	if v, ok := tmc.mutation.BuildStatus(); ok {
-		if err := tablemeta.BuildStatusValidator(v); err != nil {
-			return &ValidationError{Name: "build_status", err: fmt.Errorf(`ent: validator failed for field "TableMeta.build_status": %w`, err)}
-		}
 	}
 	if _, ok := tmc.mutation.Model(); !ok {
 		return &ValidationError{Name: "model", err: errors.New(`ent: missing required field "TableMeta.model"`)}
@@ -327,18 +238,6 @@ func (tmc *TableMetaCreate) createSpec() (*TableMeta, *sqlgraph.CreateSpec) {
 		_spec.SetField(tablemeta.FieldNanoid, field.TypeString, value)
 		_node.Nanoid = value
 	}
-	if value, ok := tmc.mutation.MaxRows(); ok {
-		_spec.SetField(tablemeta.FieldMaxRows, field.TypeInt, value)
-		_node.MaxRows = value
-	}
-	if value, ok := tmc.mutation.PromptRaw(); ok {
-		_spec.SetField(tablemeta.FieldPromptRaw, field.TypeString, value)
-		_node.PromptRaw = value
-	}
-	if value, ok := tmc.mutation.PromptGen(); ok {
-		_spec.SetField(tablemeta.FieldPromptGen, field.TypeString, value)
-		_node.PromptGen = value
-	}
 	if value, ok := tmc.mutation.Name(); ok {
 		_spec.SetField(tablemeta.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -346,10 +245,6 @@ func (tmc *TableMetaCreate) createSpec() (*TableMeta, *sqlgraph.CreateSpec) {
 	if value, ok := tmc.mutation.Description(); ok {
 		_spec.SetField(tablemeta.FieldDescription, field.TypeString, value)
 		_node.Description = value
-	}
-	if value, ok := tmc.mutation.BuildStatus(); ok {
-		_spec.SetField(tablemeta.FieldBuildStatus, field.TypeEnum, value)
-		_node.BuildStatus = value
 	}
 	if value, ok := tmc.mutation.Model(); ok {
 		_spec.SetField(tablemeta.FieldModel, field.TypeString, value)
@@ -475,48 +370,6 @@ func (u *TableMetaUpsert) ClearNanoid() *TableMetaUpsert {
 	return u
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (u *TableMetaUpsert) SetMaxRows(v int) *TableMetaUpsert {
-	u.Set(tablemeta.FieldMaxRows, v)
-	return u
-}
-
-// UpdateMaxRows sets the "max_rows" field to the value that was provided on create.
-func (u *TableMetaUpsert) UpdateMaxRows() *TableMetaUpsert {
-	u.SetExcluded(tablemeta.FieldMaxRows)
-	return u
-}
-
-// AddMaxRows adds v to the "max_rows" field.
-func (u *TableMetaUpsert) AddMaxRows(v int) *TableMetaUpsert {
-	u.Add(tablemeta.FieldMaxRows, v)
-	return u
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (u *TableMetaUpsert) SetPromptRaw(v string) *TableMetaUpsert {
-	u.Set(tablemeta.FieldPromptRaw, v)
-	return u
-}
-
-// UpdatePromptRaw sets the "prompt_raw" field to the value that was provided on create.
-func (u *TableMetaUpsert) UpdatePromptRaw() *TableMetaUpsert {
-	u.SetExcluded(tablemeta.FieldPromptRaw)
-	return u
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (u *TableMetaUpsert) SetPromptGen(v string) *TableMetaUpsert {
-	u.Set(tablemeta.FieldPromptGen, v)
-	return u
-}
-
-// UpdatePromptGen sets the "prompt_gen" field to the value that was provided on create.
-func (u *TableMetaUpsert) UpdatePromptGen() *TableMetaUpsert {
-	u.SetExcluded(tablemeta.FieldPromptGen)
-	return u
-}
-
 // SetName sets the "name" field.
 func (u *TableMetaUpsert) SetName(v string) *TableMetaUpsert {
 	u.Set(tablemeta.FieldName, v)
@@ -538,18 +391,6 @@ func (u *TableMetaUpsert) SetDescription(v string) *TableMetaUpsert {
 // UpdateDescription sets the "description" field to the value that was provided on create.
 func (u *TableMetaUpsert) UpdateDescription() *TableMetaUpsert {
 	u.SetExcluded(tablemeta.FieldDescription)
-	return u
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (u *TableMetaUpsert) SetBuildStatus(v tablemeta.BuildStatus) *TableMetaUpsert {
-	u.Set(tablemeta.FieldBuildStatus, v)
-	return u
-}
-
-// UpdateBuildStatus sets the "build_status" field to the value that was provided on create.
-func (u *TableMetaUpsert) UpdateBuildStatus() *TableMetaUpsert {
-	u.SetExcluded(tablemeta.FieldBuildStatus)
 	return u
 }
 
@@ -652,55 +493,6 @@ func (u *TableMetaUpsertOne) ClearNanoid() *TableMetaUpsertOne {
 	})
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (u *TableMetaUpsertOne) SetMaxRows(v int) *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetMaxRows(v)
-	})
-}
-
-// AddMaxRows adds v to the "max_rows" field.
-func (u *TableMetaUpsertOne) AddMaxRows(v int) *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.AddMaxRows(v)
-	})
-}
-
-// UpdateMaxRows sets the "max_rows" field to the value that was provided on create.
-func (u *TableMetaUpsertOne) UpdateMaxRows() *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdateMaxRows()
-	})
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (u *TableMetaUpsertOne) SetPromptRaw(v string) *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetPromptRaw(v)
-	})
-}
-
-// UpdatePromptRaw sets the "prompt_raw" field to the value that was provided on create.
-func (u *TableMetaUpsertOne) UpdatePromptRaw() *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdatePromptRaw()
-	})
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (u *TableMetaUpsertOne) SetPromptGen(v string) *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetPromptGen(v)
-	})
-}
-
-// UpdatePromptGen sets the "prompt_gen" field to the value that was provided on create.
-func (u *TableMetaUpsertOne) UpdatePromptGen() *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdatePromptGen()
-	})
-}
-
 // SetName sets the "name" field.
 func (u *TableMetaUpsertOne) SetName(v string) *TableMetaUpsertOne {
 	return u.Update(func(s *TableMetaUpsert) {
@@ -726,20 +518,6 @@ func (u *TableMetaUpsertOne) SetDescription(v string) *TableMetaUpsertOne {
 func (u *TableMetaUpsertOne) UpdateDescription() *TableMetaUpsertOne {
 	return u.Update(func(s *TableMetaUpsert) {
 		s.UpdateDescription()
-	})
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (u *TableMetaUpsertOne) SetBuildStatus(v tablemeta.BuildStatus) *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetBuildStatus(v)
-	})
-}
-
-// UpdateBuildStatus sets the "build_status" field to the value that was provided on create.
-func (u *TableMetaUpsertOne) UpdateBuildStatus() *TableMetaUpsertOne {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdateBuildStatus()
 	})
 }
 
@@ -1010,55 +788,6 @@ func (u *TableMetaUpsertBulk) ClearNanoid() *TableMetaUpsertBulk {
 	})
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (u *TableMetaUpsertBulk) SetMaxRows(v int) *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetMaxRows(v)
-	})
-}
-
-// AddMaxRows adds v to the "max_rows" field.
-func (u *TableMetaUpsertBulk) AddMaxRows(v int) *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.AddMaxRows(v)
-	})
-}
-
-// UpdateMaxRows sets the "max_rows" field to the value that was provided on create.
-func (u *TableMetaUpsertBulk) UpdateMaxRows() *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdateMaxRows()
-	})
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (u *TableMetaUpsertBulk) SetPromptRaw(v string) *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetPromptRaw(v)
-	})
-}
-
-// UpdatePromptRaw sets the "prompt_raw" field to the value that was provided on create.
-func (u *TableMetaUpsertBulk) UpdatePromptRaw() *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdatePromptRaw()
-	})
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (u *TableMetaUpsertBulk) SetPromptGen(v string) *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetPromptGen(v)
-	})
-}
-
-// UpdatePromptGen sets the "prompt_gen" field to the value that was provided on create.
-func (u *TableMetaUpsertBulk) UpdatePromptGen() *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdatePromptGen()
-	})
-}
-
 // SetName sets the "name" field.
 func (u *TableMetaUpsertBulk) SetName(v string) *TableMetaUpsertBulk {
 	return u.Update(func(s *TableMetaUpsert) {
@@ -1084,20 +813,6 @@ func (u *TableMetaUpsertBulk) SetDescription(v string) *TableMetaUpsertBulk {
 func (u *TableMetaUpsertBulk) UpdateDescription() *TableMetaUpsertBulk {
 	return u.Update(func(s *TableMetaUpsert) {
 		s.UpdateDescription()
-	})
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (u *TableMetaUpsertBulk) SetBuildStatus(v tablemeta.BuildStatus) *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.SetBuildStatus(v)
-	})
-}
-
-// UpdateBuildStatus sets the "build_status" field to the value that was provided on create.
-func (u *TableMetaUpsertBulk) UpdateBuildStatus() *TableMetaUpsertBulk {
-	return u.Update(func(s *TableMetaUpsert) {
-		s.UpdateBuildStatus()
 	})
 }
 

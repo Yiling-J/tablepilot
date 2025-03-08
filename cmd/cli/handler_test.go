@@ -408,12 +408,14 @@ func TestHandler_Truncate(t *testing.T) {
 
 func TestHandler_Describe(t *testing.T) {
 	tableMock := &table.TableServiceMock{
-		GetTableColumnsFunc: func(ctx context.Context, name string) ([]table.TableColumnInfo, error) {
+		GetTableDetailFunc: func(ctx context.Context, name string) (*table.TableDetail, error) {
 			require.Equal(t, "foo", name)
-			return []table.TableColumnInfo{
-				{ID: "1", Name: "c1", Type: "string", FillMode: "ai", Description: "d1"},
-				{ID: "2", Name: "c2", Type: "int", FillMode: "bi", Description: "d2"},
-			}, nil
+			return &table.TableDetail{
+				ID: "t1",
+				Columns: []table.TableColumnInfo{
+					{ID: "1", Name: "c1", Type: "string", FillMode: "ai", Description: "d1"},
+					{ID: "2", Name: "c2", Type: "int", FillMode: "bi", Description: "d2"},
+				}}, nil
 		},
 	}
 	printer := &tableprinter.TablePrinterMock{

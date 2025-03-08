@@ -24,12 +24,8 @@ func (TableMeta) Mixin() []ent.Mixin {
 // Fields of the TableMeta.
 func (TableMeta) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int("max_rows").Default(100),
-		field.String("prompt_raw").Default(""),
-		field.String("prompt_gen").Default(""),
 		field.String("name").Unique().NotEmpty().Match(regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")),
 		field.String("description").Default(""),
-		field.Enum("build_status").Values("init", "success", "failed").Default("init"),
 		field.String("model").Default(""),
 	}
 }

@@ -221,10 +221,17 @@ func TestAPI_Describe(t *testing.T) {
 		{ID: "1", Name: "c1", Type: "string", FillMode: "ai", Description: "d1"},
 		{ID: "2", Name: "c2", Type: "int", FillMode: "bi", Description: "d2"},
 	}
+	expected := &table.TableDetail{
+		ID:          "t1",
+		Name:        "tb",
+		Description: "td",
+		Model:       "tm",
+		Columns:     columns,
+	}
 	tableMock := &table.TableServiceMock{
-		GetTableColumnsFunc: func(ctx context.Context, name string) ([]table.TableColumnInfo, error) {
+		GetTableDetailFunc: func(ctx context.Context, name string) (*table.TableDetail, error) {
 			require.Equal(t, "foo", name)
-			return columns, nil
+			return expected, nil
 		},
 	}
 	server := NewTestServer(t, func(s *services.Backend) {
@@ -233,7 +240,7 @@ func TestAPI_Describe(t *testing.T) {
 	req, err := server.NewGetRequest("/api/v1/tables/foo")
 	require.NoError(t, err)
 	resp := server.Send(req)
-	resp.ResponseEq(t, 200, map[string]any{"columns": columns})
+	resp.ResponseEq(t, 200, expected)
 }
 
 func TestAPI_Delete(t *testing.T) {

@@ -1072,13 +1072,8 @@ type TableMetaMutation struct {
 	created_at     *time.Time
 	updated_at     *time.Time
 	nanoid         *string
-	max_rows       *int
-	addmax_rows    *int
-	prompt_raw     *string
-	prompt_gen     *string
 	name           *string
 	description    *string
-	build_status   *tablemeta.BuildStatus
 	model          *string
 	clearedFields  map[string]struct{}
 	columns        map[int]struct{}
@@ -1337,134 +1332,6 @@ func (m *TableMetaMutation) ResetNanoid() {
 	delete(m.clearedFields, tablemeta.FieldNanoid)
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (m *TableMetaMutation) SetMaxRows(i int) {
-	m.max_rows = &i
-	m.addmax_rows = nil
-}
-
-// MaxRows returns the value of the "max_rows" field in the mutation.
-func (m *TableMetaMutation) MaxRows() (r int, exists bool) {
-	v := m.max_rows
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldMaxRows returns the old "max_rows" field's value of the TableMeta entity.
-// If the TableMeta object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TableMetaMutation) OldMaxRows(ctx context.Context) (v int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldMaxRows is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldMaxRows requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldMaxRows: %w", err)
-	}
-	return oldValue.MaxRows, nil
-}
-
-// AddMaxRows adds i to the "max_rows" field.
-func (m *TableMetaMutation) AddMaxRows(i int) {
-	if m.addmax_rows != nil {
-		*m.addmax_rows += i
-	} else {
-		m.addmax_rows = &i
-	}
-}
-
-// AddedMaxRows returns the value that was added to the "max_rows" field in this mutation.
-func (m *TableMetaMutation) AddedMaxRows() (r int, exists bool) {
-	v := m.addmax_rows
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetMaxRows resets all changes to the "max_rows" field.
-func (m *TableMetaMutation) ResetMaxRows() {
-	m.max_rows = nil
-	m.addmax_rows = nil
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (m *TableMetaMutation) SetPromptRaw(s string) {
-	m.prompt_raw = &s
-}
-
-// PromptRaw returns the value of the "prompt_raw" field in the mutation.
-func (m *TableMetaMutation) PromptRaw() (r string, exists bool) {
-	v := m.prompt_raw
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPromptRaw returns the old "prompt_raw" field's value of the TableMeta entity.
-// If the TableMeta object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TableMetaMutation) OldPromptRaw(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPromptRaw is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPromptRaw requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPromptRaw: %w", err)
-	}
-	return oldValue.PromptRaw, nil
-}
-
-// ResetPromptRaw resets all changes to the "prompt_raw" field.
-func (m *TableMetaMutation) ResetPromptRaw() {
-	m.prompt_raw = nil
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (m *TableMetaMutation) SetPromptGen(s string) {
-	m.prompt_gen = &s
-}
-
-// PromptGen returns the value of the "prompt_gen" field in the mutation.
-func (m *TableMetaMutation) PromptGen() (r string, exists bool) {
-	v := m.prompt_gen
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPromptGen returns the old "prompt_gen" field's value of the TableMeta entity.
-// If the TableMeta object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TableMetaMutation) OldPromptGen(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPromptGen is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPromptGen requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPromptGen: %w", err)
-	}
-	return oldValue.PromptGen, nil
-}
-
-// ResetPromptGen resets all changes to the "prompt_gen" field.
-func (m *TableMetaMutation) ResetPromptGen() {
-	m.prompt_gen = nil
-}
-
 // SetName sets the "name" field.
 func (m *TableMetaMutation) SetName(s string) {
 	m.name = &s
@@ -1535,42 +1402,6 @@ func (m *TableMetaMutation) OldDescription(ctx context.Context) (v string, err e
 // ResetDescription resets all changes to the "description" field.
 func (m *TableMetaMutation) ResetDescription() {
 	m.description = nil
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (m *TableMetaMutation) SetBuildStatus(ts tablemeta.BuildStatus) {
-	m.build_status = &ts
-}
-
-// BuildStatus returns the value of the "build_status" field in the mutation.
-func (m *TableMetaMutation) BuildStatus() (r tablemeta.BuildStatus, exists bool) {
-	v := m.build_status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldBuildStatus returns the old "build_status" field's value of the TableMeta entity.
-// If the TableMeta object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TableMetaMutation) OldBuildStatus(ctx context.Context) (v tablemeta.BuildStatus, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldBuildStatus is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldBuildStatus requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldBuildStatus: %w", err)
-	}
-	return oldValue.BuildStatus, nil
-}
-
-// ResetBuildStatus resets all changes to the "build_status" field.
-func (m *TableMetaMutation) ResetBuildStatus() {
-	m.build_status = nil
 }
 
 // SetModel sets the "model" field.
@@ -1751,7 +1582,7 @@ func (m *TableMetaMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TableMetaMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 6)
 	if m.created_at != nil {
 		fields = append(fields, tablemeta.FieldCreatedAt)
 	}
@@ -1761,23 +1592,11 @@ func (m *TableMetaMutation) Fields() []string {
 	if m.nanoid != nil {
 		fields = append(fields, tablemeta.FieldNanoid)
 	}
-	if m.max_rows != nil {
-		fields = append(fields, tablemeta.FieldMaxRows)
-	}
-	if m.prompt_raw != nil {
-		fields = append(fields, tablemeta.FieldPromptRaw)
-	}
-	if m.prompt_gen != nil {
-		fields = append(fields, tablemeta.FieldPromptGen)
-	}
 	if m.name != nil {
 		fields = append(fields, tablemeta.FieldName)
 	}
 	if m.description != nil {
 		fields = append(fields, tablemeta.FieldDescription)
-	}
-	if m.build_status != nil {
-		fields = append(fields, tablemeta.FieldBuildStatus)
 	}
 	if m.model != nil {
 		fields = append(fields, tablemeta.FieldModel)
@@ -1796,18 +1615,10 @@ func (m *TableMetaMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case tablemeta.FieldNanoid:
 		return m.Nanoid()
-	case tablemeta.FieldMaxRows:
-		return m.MaxRows()
-	case tablemeta.FieldPromptRaw:
-		return m.PromptRaw()
-	case tablemeta.FieldPromptGen:
-		return m.PromptGen()
 	case tablemeta.FieldName:
 		return m.Name()
 	case tablemeta.FieldDescription:
 		return m.Description()
-	case tablemeta.FieldBuildStatus:
-		return m.BuildStatus()
 	case tablemeta.FieldModel:
 		return m.Model()
 	}
@@ -1825,18 +1636,10 @@ func (m *TableMetaMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldUpdatedAt(ctx)
 	case tablemeta.FieldNanoid:
 		return m.OldNanoid(ctx)
-	case tablemeta.FieldMaxRows:
-		return m.OldMaxRows(ctx)
-	case tablemeta.FieldPromptRaw:
-		return m.OldPromptRaw(ctx)
-	case tablemeta.FieldPromptGen:
-		return m.OldPromptGen(ctx)
 	case tablemeta.FieldName:
 		return m.OldName(ctx)
 	case tablemeta.FieldDescription:
 		return m.OldDescription(ctx)
-	case tablemeta.FieldBuildStatus:
-		return m.OldBuildStatus(ctx)
 	case tablemeta.FieldModel:
 		return m.OldModel(ctx)
 	}
@@ -1869,27 +1672,6 @@ func (m *TableMetaMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetNanoid(v)
 		return nil
-	case tablemeta.FieldMaxRows:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetMaxRows(v)
-		return nil
-	case tablemeta.FieldPromptRaw:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPromptRaw(v)
-		return nil
-	case tablemeta.FieldPromptGen:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPromptGen(v)
-		return nil
 	case tablemeta.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -1903,13 +1685,6 @@ func (m *TableMetaMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDescription(v)
-		return nil
-	case tablemeta.FieldBuildStatus:
-		v, ok := value.(tablemeta.BuildStatus)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetBuildStatus(v)
 		return nil
 	case tablemeta.FieldModel:
 		v, ok := value.(string)
@@ -1925,21 +1700,13 @@ func (m *TableMetaMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *TableMetaMutation) AddedFields() []string {
-	var fields []string
-	if m.addmax_rows != nil {
-		fields = append(fields, tablemeta.FieldMaxRows)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *TableMetaMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case tablemeta.FieldMaxRows:
-		return m.AddedMaxRows()
-	}
 	return nil, false
 }
 
@@ -1948,13 +1715,6 @@ func (m *TableMetaMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *TableMetaMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case tablemeta.FieldMaxRows:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddMaxRows(v)
-		return nil
 	}
 	return fmt.Errorf("unknown TableMeta numeric field %s", name)
 }
@@ -2012,23 +1772,11 @@ func (m *TableMetaMutation) ResetField(name string) error {
 	case tablemeta.FieldNanoid:
 		m.ResetNanoid()
 		return nil
-	case tablemeta.FieldMaxRows:
-		m.ResetMaxRows()
-		return nil
-	case tablemeta.FieldPromptRaw:
-		m.ResetPromptRaw()
-		return nil
-	case tablemeta.FieldPromptGen:
-		m.ResetPromptGen()
-		return nil
 	case tablemeta.FieldName:
 		m.ResetName()
 		return nil
 	case tablemeta.FieldDescription:
 		m.ResetDescription()
-		return nil
-	case tablemeta.FieldBuildStatus:
-		m.ResetBuildStatus()
 		return nil
 	case tablemeta.FieldModel:
 		m.ResetModel()

@@ -84,13 +84,13 @@ func (h *Handler) List(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) Describe(cmd *cobra.Command, args []string) error {
-	resp, err := h.backend.TableService.GetTableColumns(cmd.Context(), args[0])
+	detail, err := h.backend.TableService.GetTableDetail(cmd.Context(), args[0])
 	if err != nil {
 		return err
 	}
 	tp := h.getPrinter()
 	tp.AddHeader([]string{"ID", "Name", "Type", "Fill Mode", "Description"})
-	for _, column := range resp {
+	for _, column := range detail.Columns {
 		tp.AddField(column.ID)
 		tp.AddField(column.Name)
 		tp.AddField(column.Type)

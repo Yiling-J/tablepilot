@@ -23,18 +23,10 @@ type TableMeta struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Nanoid holds the value of the "nanoid" field.
 	Nanoid string `json:"nanoid,omitempty"`
-	// MaxRows holds the value of the "max_rows" field.
-	MaxRows int `json:"max_rows,omitempty"`
-	// PromptRaw holds the value of the "prompt_raw" field.
-	PromptRaw string `json:"prompt_raw,omitempty"`
-	// PromptGen holds the value of the "prompt_gen" field.
-	PromptGen string `json:"prompt_gen,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
-	// BuildStatus holds the value of the "build_status" field.
-	BuildStatus tablemeta.BuildStatus `json:"build_status,omitempty"`
 	// Model holds the value of the "model" field.
 	Model string `json:"model,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -77,9 +69,9 @@ func (*TableMeta) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tablemeta.FieldID, tablemeta.FieldMaxRows:
+		case tablemeta.FieldID:
 			values[i] = new(sql.NullInt64)
-		case tablemeta.FieldNanoid, tablemeta.FieldPromptRaw, tablemeta.FieldPromptGen, tablemeta.FieldName, tablemeta.FieldDescription, tablemeta.FieldBuildStatus, tablemeta.FieldModel:
+		case tablemeta.FieldNanoid, tablemeta.FieldName, tablemeta.FieldDescription, tablemeta.FieldModel:
 			values[i] = new(sql.NullString)
 		case tablemeta.FieldCreatedAt, tablemeta.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -122,24 +114,6 @@ func (tm *TableMeta) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				tm.Nanoid = value.String
 			}
-		case tablemeta.FieldMaxRows:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field max_rows", values[i])
-			} else if value.Valid {
-				tm.MaxRows = int(value.Int64)
-			}
-		case tablemeta.FieldPromptRaw:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field prompt_raw", values[i])
-			} else if value.Valid {
-				tm.PromptRaw = value.String
-			}
-		case tablemeta.FieldPromptGen:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field prompt_gen", values[i])
-			} else if value.Valid {
-				tm.PromptGen = value.String
-			}
 		case tablemeta.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -151,12 +125,6 @@ func (tm *TableMeta) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				tm.Description = value.String
-			}
-		case tablemeta.FieldBuildStatus:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field build_status", values[i])
-			} else if value.Valid {
-				tm.BuildStatus = tablemeta.BuildStatus(value.String)
 			}
 		case tablemeta.FieldModel:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -219,23 +187,11 @@ func (tm *TableMeta) String() string {
 	builder.WriteString("nanoid=")
 	builder.WriteString(tm.Nanoid)
 	builder.WriteString(", ")
-	builder.WriteString("max_rows=")
-	builder.WriteString(fmt.Sprintf("%v", tm.MaxRows))
-	builder.WriteString(", ")
-	builder.WriteString("prompt_raw=")
-	builder.WriteString(tm.PromptRaw)
-	builder.WriteString(", ")
-	builder.WriteString("prompt_gen=")
-	builder.WriteString(tm.PromptGen)
-	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(tm.Name)
 	builder.WriteString(", ")
 	builder.WriteString("description=")
 	builder.WriteString(tm.Description)
-	builder.WriteString(", ")
-	builder.WriteString("build_status=")
-	builder.WriteString(fmt.Sprintf("%v", tm.BuildStatus))
 	builder.WriteString(", ")
 	builder.WriteString("model=")
 	builder.WriteString(tm.Model)

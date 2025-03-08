@@ -114,12 +114,12 @@ func (hs *HTTPServer) ListTables(ctx *gin.Context) {
 }
 
 func (hs *HTTPServer) Describe(ctx *gin.Context) {
-	columns, err := hs.TableService.GetTableColumns(ctx.Request.Context(), ctx.Param("table"))
+	table, err := hs.TableService.GetTableDetail(ctx.Request.Context(), ctx.Param("table"))
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
 	}
-	ctx.JSON(200, gin.H{"columns": columns})
+	ctx.JSON(200, table)
 }
 
 func (hs *HTTPServer) Delete(ctx *gin.Context) {

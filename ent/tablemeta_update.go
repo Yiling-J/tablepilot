@@ -63,55 +63,6 @@ func (tmu *TableMetaUpdate) ClearNanoid() *TableMetaUpdate {
 	return tmu
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (tmu *TableMetaUpdate) SetMaxRows(i int) *TableMetaUpdate {
-	tmu.mutation.ResetMaxRows()
-	tmu.mutation.SetMaxRows(i)
-	return tmu
-}
-
-// SetNillableMaxRows sets the "max_rows" field if the given value is not nil.
-func (tmu *TableMetaUpdate) SetNillableMaxRows(i *int) *TableMetaUpdate {
-	if i != nil {
-		tmu.SetMaxRows(*i)
-	}
-	return tmu
-}
-
-// AddMaxRows adds i to the "max_rows" field.
-func (tmu *TableMetaUpdate) AddMaxRows(i int) *TableMetaUpdate {
-	tmu.mutation.AddMaxRows(i)
-	return tmu
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (tmu *TableMetaUpdate) SetPromptRaw(s string) *TableMetaUpdate {
-	tmu.mutation.SetPromptRaw(s)
-	return tmu
-}
-
-// SetNillablePromptRaw sets the "prompt_raw" field if the given value is not nil.
-func (tmu *TableMetaUpdate) SetNillablePromptRaw(s *string) *TableMetaUpdate {
-	if s != nil {
-		tmu.SetPromptRaw(*s)
-	}
-	return tmu
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (tmu *TableMetaUpdate) SetPromptGen(s string) *TableMetaUpdate {
-	tmu.mutation.SetPromptGen(s)
-	return tmu
-}
-
-// SetNillablePromptGen sets the "prompt_gen" field if the given value is not nil.
-func (tmu *TableMetaUpdate) SetNillablePromptGen(s *string) *TableMetaUpdate {
-	if s != nil {
-		tmu.SetPromptGen(*s)
-	}
-	return tmu
-}
-
 // SetName sets the "name" field.
 func (tmu *TableMetaUpdate) SetName(s string) *TableMetaUpdate {
 	tmu.mutation.SetName(s)
@@ -136,20 +87,6 @@ func (tmu *TableMetaUpdate) SetDescription(s string) *TableMetaUpdate {
 func (tmu *TableMetaUpdate) SetNillableDescription(s *string) *TableMetaUpdate {
 	if s != nil {
 		tmu.SetDescription(*s)
-	}
-	return tmu
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (tmu *TableMetaUpdate) SetBuildStatus(ts tablemeta.BuildStatus) *TableMetaUpdate {
-	tmu.mutation.SetBuildStatus(ts)
-	return tmu
-}
-
-// SetNillableBuildStatus sets the "build_status" field if the given value is not nil.
-func (tmu *TableMetaUpdate) SetNillableBuildStatus(ts *tablemeta.BuildStatus) *TableMetaUpdate {
-	if ts != nil {
-		tmu.SetBuildStatus(*ts)
 	}
 	return tmu
 }
@@ -288,11 +225,6 @@ func (tmu *TableMetaUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "TableMeta.name": %w`, err)}
 		}
 	}
-	if v, ok := tmu.mutation.BuildStatus(); ok {
-		if err := tablemeta.BuildStatusValidator(v); err != nil {
-			return &ValidationError{Name: "build_status", err: fmt.Errorf(`ent: validator failed for field "TableMeta.build_status": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -329,26 +261,11 @@ func (tmu *TableMetaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if tmu.mutation.NanoidCleared() {
 		_spec.ClearField(tablemeta.FieldNanoid, field.TypeString)
 	}
-	if value, ok := tmu.mutation.MaxRows(); ok {
-		_spec.SetField(tablemeta.FieldMaxRows, field.TypeInt, value)
-	}
-	if value, ok := tmu.mutation.AddedMaxRows(); ok {
-		_spec.AddField(tablemeta.FieldMaxRows, field.TypeInt, value)
-	}
-	if value, ok := tmu.mutation.PromptRaw(); ok {
-		_spec.SetField(tablemeta.FieldPromptRaw, field.TypeString, value)
-	}
-	if value, ok := tmu.mutation.PromptGen(); ok {
-		_spec.SetField(tablemeta.FieldPromptGen, field.TypeString, value)
-	}
 	if value, ok := tmu.mutation.Name(); ok {
 		_spec.SetField(tablemeta.FieldName, field.TypeString, value)
 	}
 	if value, ok := tmu.mutation.Description(); ok {
 		_spec.SetField(tablemeta.FieldDescription, field.TypeString, value)
-	}
-	if value, ok := tmu.mutation.BuildStatus(); ok {
-		_spec.SetField(tablemeta.FieldBuildStatus, field.TypeEnum, value)
 	}
 	if value, ok := tmu.mutation.Model(); ok {
 		_spec.SetField(tablemeta.FieldModel, field.TypeString, value)
@@ -497,55 +414,6 @@ func (tmuo *TableMetaUpdateOne) ClearNanoid() *TableMetaUpdateOne {
 	return tmuo
 }
 
-// SetMaxRows sets the "max_rows" field.
-func (tmuo *TableMetaUpdateOne) SetMaxRows(i int) *TableMetaUpdateOne {
-	tmuo.mutation.ResetMaxRows()
-	tmuo.mutation.SetMaxRows(i)
-	return tmuo
-}
-
-// SetNillableMaxRows sets the "max_rows" field if the given value is not nil.
-func (tmuo *TableMetaUpdateOne) SetNillableMaxRows(i *int) *TableMetaUpdateOne {
-	if i != nil {
-		tmuo.SetMaxRows(*i)
-	}
-	return tmuo
-}
-
-// AddMaxRows adds i to the "max_rows" field.
-func (tmuo *TableMetaUpdateOne) AddMaxRows(i int) *TableMetaUpdateOne {
-	tmuo.mutation.AddMaxRows(i)
-	return tmuo
-}
-
-// SetPromptRaw sets the "prompt_raw" field.
-func (tmuo *TableMetaUpdateOne) SetPromptRaw(s string) *TableMetaUpdateOne {
-	tmuo.mutation.SetPromptRaw(s)
-	return tmuo
-}
-
-// SetNillablePromptRaw sets the "prompt_raw" field if the given value is not nil.
-func (tmuo *TableMetaUpdateOne) SetNillablePromptRaw(s *string) *TableMetaUpdateOne {
-	if s != nil {
-		tmuo.SetPromptRaw(*s)
-	}
-	return tmuo
-}
-
-// SetPromptGen sets the "prompt_gen" field.
-func (tmuo *TableMetaUpdateOne) SetPromptGen(s string) *TableMetaUpdateOne {
-	tmuo.mutation.SetPromptGen(s)
-	return tmuo
-}
-
-// SetNillablePromptGen sets the "prompt_gen" field if the given value is not nil.
-func (tmuo *TableMetaUpdateOne) SetNillablePromptGen(s *string) *TableMetaUpdateOne {
-	if s != nil {
-		tmuo.SetPromptGen(*s)
-	}
-	return tmuo
-}
-
 // SetName sets the "name" field.
 func (tmuo *TableMetaUpdateOne) SetName(s string) *TableMetaUpdateOne {
 	tmuo.mutation.SetName(s)
@@ -570,20 +438,6 @@ func (tmuo *TableMetaUpdateOne) SetDescription(s string) *TableMetaUpdateOne {
 func (tmuo *TableMetaUpdateOne) SetNillableDescription(s *string) *TableMetaUpdateOne {
 	if s != nil {
 		tmuo.SetDescription(*s)
-	}
-	return tmuo
-}
-
-// SetBuildStatus sets the "build_status" field.
-func (tmuo *TableMetaUpdateOne) SetBuildStatus(ts tablemeta.BuildStatus) *TableMetaUpdateOne {
-	tmuo.mutation.SetBuildStatus(ts)
-	return tmuo
-}
-
-// SetNillableBuildStatus sets the "build_status" field if the given value is not nil.
-func (tmuo *TableMetaUpdateOne) SetNillableBuildStatus(ts *tablemeta.BuildStatus) *TableMetaUpdateOne {
-	if ts != nil {
-		tmuo.SetBuildStatus(*ts)
 	}
 	return tmuo
 }
@@ -735,11 +589,6 @@ func (tmuo *TableMetaUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "TableMeta.name": %w`, err)}
 		}
 	}
-	if v, ok := tmuo.mutation.BuildStatus(); ok {
-		if err := tablemeta.BuildStatusValidator(v); err != nil {
-			return &ValidationError{Name: "build_status", err: fmt.Errorf(`ent: validator failed for field "TableMeta.build_status": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -793,26 +642,11 @@ func (tmuo *TableMetaUpdateOne) sqlSave(ctx context.Context) (_node *TableMeta, 
 	if tmuo.mutation.NanoidCleared() {
 		_spec.ClearField(tablemeta.FieldNanoid, field.TypeString)
 	}
-	if value, ok := tmuo.mutation.MaxRows(); ok {
-		_spec.SetField(tablemeta.FieldMaxRows, field.TypeInt, value)
-	}
-	if value, ok := tmuo.mutation.AddedMaxRows(); ok {
-		_spec.AddField(tablemeta.FieldMaxRows, field.TypeInt, value)
-	}
-	if value, ok := tmuo.mutation.PromptRaw(); ok {
-		_spec.SetField(tablemeta.FieldPromptRaw, field.TypeString, value)
-	}
-	if value, ok := tmuo.mutation.PromptGen(); ok {
-		_spec.SetField(tablemeta.FieldPromptGen, field.TypeString, value)
-	}
 	if value, ok := tmuo.mutation.Name(); ok {
 		_spec.SetField(tablemeta.FieldName, field.TypeString, value)
 	}
 	if value, ok := tmuo.mutation.Description(); ok {
 		_spec.SetField(tablemeta.FieldDescription, field.TypeString, value)
-	}
-	if value, ok := tmuo.mutation.BuildStatus(); ok {
-		_spec.SetField(tablemeta.FieldBuildStatus, field.TypeEnum, value)
 	}
 	if value, ok := tmuo.mutation.Model(); ok {
 		_spec.SetField(tablemeta.FieldModel, field.TypeString, value)

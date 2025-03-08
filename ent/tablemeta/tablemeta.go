@@ -3,7 +3,6 @@
 package tablemeta
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -21,18 +20,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldNanoid holds the string denoting the nanoid field in the database.
 	FieldNanoid = "nanoid"
-	// FieldMaxRows holds the string denoting the max_rows field in the database.
-	FieldMaxRows = "max_rows"
-	// FieldPromptRaw holds the string denoting the prompt_raw field in the database.
-	FieldPromptRaw = "prompt_raw"
-	// FieldPromptGen holds the string denoting the prompt_gen field in the database.
-	FieldPromptGen = "prompt_gen"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldDescription holds the string denoting the description field in the database.
 	FieldDescription = "description"
-	// FieldBuildStatus holds the string denoting the build_status field in the database.
-	FieldBuildStatus = "build_status"
 	// FieldModel holds the string denoting the model field in the database.
 	FieldModel = "model"
 	// EdgeColumns holds the string denoting the columns edge name in mutations.
@@ -63,12 +54,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldNanoid,
-	FieldMaxRows,
-	FieldPromptRaw,
-	FieldPromptGen,
 	FieldName,
 	FieldDescription,
-	FieldBuildStatus,
 	FieldModel,
 }
 
@@ -89,12 +76,6 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultMaxRows holds the default value on creation for the "max_rows" field.
-	DefaultMaxRows int
-	// DefaultPromptRaw holds the default value on creation for the "prompt_raw" field.
-	DefaultPromptRaw string
-	// DefaultPromptGen holds the default value on creation for the "prompt_gen" field.
-	DefaultPromptGen string
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// DefaultDescription holds the default value on creation for the "description" field.
@@ -102,33 +83,6 @@ var (
 	// DefaultModel holds the default value on creation for the "model" field.
 	DefaultModel string
 )
-
-// BuildStatus defines the type for the "build_status" enum field.
-type BuildStatus string
-
-// BuildStatusInit is the default value of the BuildStatus enum.
-const DefaultBuildStatus = BuildStatusInit
-
-// BuildStatus values.
-const (
-	BuildStatusInit    BuildStatus = "init"
-	BuildStatusSuccess BuildStatus = "success"
-	BuildStatusFailed  BuildStatus = "failed"
-)
-
-func (bs BuildStatus) String() string {
-	return string(bs)
-}
-
-// BuildStatusValidator is a validator for the "build_status" field enum values. It is called by the builders before save.
-func BuildStatusValidator(bs BuildStatus) error {
-	switch bs {
-	case BuildStatusInit, BuildStatusSuccess, BuildStatusFailed:
-		return nil
-	default:
-		return fmt.Errorf("tablemeta: invalid enum value for build_status field: %q", bs)
-	}
-}
 
 // OrderOption defines the ordering options for the TableMeta queries.
 type OrderOption func(*sql.Selector)
@@ -153,21 +107,6 @@ func ByNanoid(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNanoid, opts...).ToFunc()
 }
 
-// ByMaxRows orders the results by the max_rows field.
-func ByMaxRows(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldMaxRows, opts...).ToFunc()
-}
-
-// ByPromptRaw orders the results by the prompt_raw field.
-func ByPromptRaw(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPromptRaw, opts...).ToFunc()
-}
-
-// ByPromptGen orders the results by the prompt_gen field.
-func ByPromptGen(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldPromptGen, opts...).ToFunc()
-}
-
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
@@ -176,11 +115,6 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByDescription orders the results by the description field.
 func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDescription, opts...).ToFunc()
-}
-
-// ByBuildStatus orders the results by the build_status field.
-func ByBuildStatus(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldBuildStatus, opts...).ToFunc()
 }
 
 // ByModel orders the results by the model field.

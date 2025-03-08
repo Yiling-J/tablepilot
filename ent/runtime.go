@@ -53,20 +53,8 @@ func init() {
 	tablemeta.DefaultUpdatedAt = tablemetaDescUpdatedAt.Default.(func() time.Time)
 	// tablemeta.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	tablemeta.UpdateDefaultUpdatedAt = tablemetaDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// tablemetaDescMaxRows is the schema descriptor for max_rows field.
-	tablemetaDescMaxRows := tablemetaFields[0].Descriptor()
-	// tablemeta.DefaultMaxRows holds the default value on creation for the max_rows field.
-	tablemeta.DefaultMaxRows = tablemetaDescMaxRows.Default.(int)
-	// tablemetaDescPromptRaw is the schema descriptor for prompt_raw field.
-	tablemetaDescPromptRaw := tablemetaFields[1].Descriptor()
-	// tablemeta.DefaultPromptRaw holds the default value on creation for the prompt_raw field.
-	tablemeta.DefaultPromptRaw = tablemetaDescPromptRaw.Default.(string)
-	// tablemetaDescPromptGen is the schema descriptor for prompt_gen field.
-	tablemetaDescPromptGen := tablemetaFields[2].Descriptor()
-	// tablemeta.DefaultPromptGen holds the default value on creation for the prompt_gen field.
-	tablemeta.DefaultPromptGen = tablemetaDescPromptGen.Default.(string)
 	// tablemetaDescName is the schema descriptor for name field.
-	tablemetaDescName := tablemetaFields[3].Descriptor()
+	tablemetaDescName := tablemetaFields[0].Descriptor()
 	// tablemeta.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tablemeta.NameValidator = func() func(string) error {
 		validators := tablemetaDescName.Validators
@@ -84,11 +72,11 @@ func init() {
 		}
 	}()
 	// tablemetaDescDescription is the schema descriptor for description field.
-	tablemetaDescDescription := tablemetaFields[4].Descriptor()
+	tablemetaDescDescription := tablemetaFields[1].Descriptor()
 	// tablemeta.DefaultDescription holds the default value on creation for the description field.
 	tablemeta.DefaultDescription = tablemetaDescDescription.Default.(string)
 	// tablemetaDescModel is the schema descriptor for model field.
-	tablemetaDescModel := tablemetaFields[6].Descriptor()
+	tablemetaDescModel := tablemetaFields[2].Descriptor()
 	// tablemeta.DefaultModel holds the default value on creation for the model field.
 	tablemeta.DefaultModel = tablemetaDescModel.Default.(string)
 	tablerowMixin := schema.TableRow{}.Mixin()

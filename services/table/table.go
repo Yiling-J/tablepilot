@@ -41,7 +41,7 @@ var reflector = jsonschema.Reflector{
 type TableService interface {
 	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
-	GetTableColumns(ctx context.Context, table string) ([]TableColumnInfo, error)
+	GetTableDetail(ctx context.Context, table string) (*TableDetail, error)
 	Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
 	Rows(ctx context.Context, table string) (*Rows, error)
 	Truncate(ctx context.Context, table string) (int, error)
@@ -179,10 +179,6 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 		return "", ent.Rollback(tx, err)
 	}
 
-	err = table.Update().SetBuildStatus(tablemeta.BuildStatusSuccess).Exec(ctx)
-	if err != nil {
-		return "", ent.Rollback(tx, err)
-	}
 	t.logger.Debug("finish creating table")
 	return table.Nanoid, tx.Commit()
 }
@@ -204,7 +200,7 @@ func (t *TableServiceImpl) ListTables(ctx context.Context) (*ListTablesResponse,
 	return resp, nil
 }
 
-func (t *TableServiceImpl) GetTableColumns(ctx context.Context, table string) ([]TableColumnInfo, error) {
+func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*TableDetail, error) {
 	meta, err := t.db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Where(tablemeta.Or(
@@ -214,9 +210,9 @@ func (t *TableServiceImpl) GetTableColumns(ctx context.Context, table string) ([
 	if err != nil {
 		return nil, err
 	}
-	resp := []TableColumnInfo{}
+	columns := []TableColumnInfo{}
 	for _, column := range meta.Edges.Columns {
-		resp = append(resp, TableColumnInfo{
+		columns = append(columns, TableColumnInfo{
 			ID:          column.Nanoid,
 			Name:        column.Name,
 			Description: column.Description,
@@ -224,7 +220,13 @@ func (t *TableServiceImpl) GetTableColumns(ctx context.Context, table string) ([
 			FillMode:    column.FillMode.String(),
 		})
 	}
-	return resp, nil
+	return &TableDetail{
+		ID:          meta.Nanoid,
+		Name:        meta.Name,
+		Description: meta.Description,
+		Model:       meta.Model,
+		Columns:     columns,
+	}, nil
 }
 
 func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {

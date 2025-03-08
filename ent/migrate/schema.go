@@ -49,12 +49,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Nullable: true},
 		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
 		{Name: "nanoid", Type: field.TypeString, Unique: true, Nullable: true},
-		{Name: "max_rows", Type: field.TypeInt, Default: 100},
-		{Name: "prompt_raw", Type: field.TypeString, Default: ""},
-		{Name: "prompt_gen", Type: field.TypeString, Default: ""},
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Default: ""},
-		{Name: "build_status", Type: field.TypeEnum, Enums: []string{"init", "success", "failed"}, Default: "init"},
 		{Name: "model", Type: field.TypeString, Default: ""},
 	}
 	// TableMetaTable holds the schema information for the "table_meta" table.
