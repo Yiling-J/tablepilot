@@ -30,7 +30,7 @@ var _ TableService = &TableServiceMock{}
 //			GenetateFunc: func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
 //			},
-//			GetTableDetailFunc: func(ctx context.Context, table string) (*TableDetail, error) {
+//			GetTableDetailFunc: func(ctx context.Context, table string) (*TableInfo, error) {
 //				panic("mock out the GetTableDetail method")
 //			},
 //			ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
@@ -62,7 +62,7 @@ type TableServiceMock struct {
 	GenetateFunc func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
 
 	// GetTableDetailFunc mocks the GetTableDetail method.
-	GetTableDetailFunc func(ctx context.Context, table string) (*TableDetail, error)
+	GetTableDetailFunc func(ctx context.Context, table string) (*TableInfo, error)
 
 	// ImportFunc mocks the Import method.
 	ImportFunc func(ctx context.Context, table string, reader io.Reader) (string, error)
@@ -254,7 +254,7 @@ func (mock *TableServiceMock) GenetateCalls() []struct {
 }
 
 // GetTableDetail calls GetTableDetailFunc.
-func (mock *TableServiceMock) GetTableDetail(ctx context.Context, table string) (*TableDetail, error) {
+func (mock *TableServiceMock) GetTableDetail(ctx context.Context, table string) (*TableInfo, error) {
 	if mock.GetTableDetailFunc == nil {
 		panic("TableServiceMock.GetTableDetailFunc: method is nil but TableService.GetTableDetail was just called")
 	}

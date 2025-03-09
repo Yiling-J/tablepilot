@@ -197,7 +197,7 @@ func TestAPI_Rows(t *testing.T) {
 func TestAPI_ListTables(t *testing.T) {
 	expectedResponse := &table.ListTablesResponse{
 		Total: 2,
-		Tables: []table.TableInfoSimple{
+		Tables: []table.TableInfo{
 			{ID: "1", Name: "t1", Description: "d1"},
 			{ID: "2", Name: "t2", Description: "d2"},
 		},
@@ -221,7 +221,7 @@ func TestAPI_Describe(t *testing.T) {
 		{ID: "1", Name: "c1", Type: "string", FillMode: "ai", Description: "d1"},
 		{ID: "2", Name: "c2", Type: "int", FillMode: "bi", Description: "d2"},
 	}
-	expected := &table.TableDetail{
+	expected := &table.TableInfo{
 		ID:          "t1",
 		Name:        "tb",
 		Description: "td",
@@ -229,7 +229,7 @@ func TestAPI_Describe(t *testing.T) {
 		Columns:     columns,
 	}
 	tableMock := &table.TableServiceMock{
-		GetTableDetailFunc: func(ctx context.Context, name string) (*table.TableDetail, error) {
+		GetTableDetailFunc: func(ctx context.Context, name string) (*table.TableInfo, error) {
 			require.Equal(t, "foo", name)
 			return expected, nil
 		},

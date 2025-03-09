@@ -43,16 +43,9 @@ type ColumnSchema struct {
 	Mode     string `json:"mode"`
 }
 
-type TableInfoSimple struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Model       string `json:"model"`
-}
-
 type ListTablesResponse struct {
-	Total  int               `json:"total"`
-	Tables []TableInfoSimple `json:"tables"`
+	Total  int         `json:"total"`
+	Tables []TableInfo `json:"tables"`
 }
 
 type TableColumnInfo struct {
@@ -68,7 +61,7 @@ type Rows struct {
 	Rows    []*ent.TableRow    `json:"rows"`
 }
 
-type TableDetail struct {
+type TableInfo struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`

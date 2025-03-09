@@ -107,7 +107,7 @@ func TestHandler_List(t *testing.T) {
 		ListTablesFunc: func(ctx context.Context) (*table.ListTablesResponse, error) {
 			return &table.ListTablesResponse{
 				Total: 2,
-				Tables: []table.TableInfoSimple{
+				Tables: []table.TableInfo{
 					{ID: "1", Name: "t1", Description: "d1"},
 					{ID: "2", Name: "t2", Description: "d2"},
 				},
@@ -408,9 +408,9 @@ func TestHandler_Truncate(t *testing.T) {
 
 func TestHandler_Describe(t *testing.T) {
 	tableMock := &table.TableServiceMock{
-		GetTableDetailFunc: func(ctx context.Context, name string) (*table.TableDetail, error) {
+		GetTableDetailFunc: func(ctx context.Context, name string) (*table.TableInfo, error) {
 			require.Equal(t, "foo", name)
-			return &table.TableDetail{
+			return &table.TableInfo{
 				ID: "t1",
 				Columns: []table.TableColumnInfo{
 					{ID: "1", Name: "c1", Type: "string", FillMode: "ai", Description: "d1"},

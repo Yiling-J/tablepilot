@@ -41,7 +41,7 @@ var reflector = jsonschema.Reflector{
 type TableService interface {
 	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
-	GetTableDetail(ctx context.Context, table string) (*TableDetail, error)
+	GetTableDetail(ctx context.Context, table string) (*TableInfo, error)
 	Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
 	Rows(ctx context.Context, table string) (*Rows, error)
 	Truncate(ctx context.Context, table string) (int, error)
@@ -184,23 +184,36 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 }
 
 func (t *TableServiceImpl) ListTables(ctx context.Context) (*ListTablesResponse, error) {
-	tables, err := t.db.TableMeta.Query().Order(ent.Desc(tablemeta.FieldID)).All(ctx)
+	tables, err := t.db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Order(ent.Desc(tablemeta.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	resp := &ListTablesResponse{Total: len(tables)}
 	for _, table := range tables {
-		resp.Tables = append(resp.Tables, TableInfoSimple{
+		columns := []TableColumnInfo{}
+		for _, column := range table.Edges.Columns {
+			columns = append(columns, TableColumnInfo{
+				ID:          column.Nanoid,
+				Name:        column.Name,
+				Description: column.Description,
+				Type:        column.Type.String(),
+				FillMode:    column.FillMode.String(),
+			})
+		}
+		resp.Tables = append(resp.Tables, TableInfo{
 			ID:          table.Nanoid,
 			Name:        table.Name,
 			Description: table.Description,
 			Model:       table.Model,
+			Columns:     columns,
 		})
 	}
 	return resp, nil
 }
 
-func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*TableDetail, error) {
+func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*TableInfo, error) {
 	meta, err := t.db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Where(tablemeta.Or(
@@ -220,7 +233,7 @@ func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*T
 			FillMode:    column.FillMode.String(),
 		})
 	}
-	return &TableDetail{
+	return &TableInfo{
 		ID:          meta.Nanoid,
 		Name:        meta.Name,
 		Description: meta.Description,

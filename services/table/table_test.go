@@ -453,3 +453,60 @@ func TestTableService_Import(t *testing.T) {
 	}
 	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
 }
+
+func TestTableService_ListTables(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	tb1, err := db.TableMeta.Create().SetName("t1").SetDescription("tt1").SetModel("m1").Save(ctx)
+	require.NoError(t, err)
+	col1, err := db.TableColumn.Create().
+		SetName("c1").SetDescription("cc1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb1).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	tb2, err := db.TableMeta.Create().SetName("t2").SetDescription("tt2").SetModel("m2").Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").SetDescription("cc2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb2).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+
+	resp, err := srv.ListTables(ctx)
+	require.NoError(t, err)
+	require.Equal(t, &ListTablesResponse{
+		Total: 2,
+		Tables: []TableInfo{
+			{ID: tb2.Nanoid, Name: "t2", Description: "tt2", Model: "m2", Columns: []TableColumnInfo{
+				{ID: col2.Nanoid, Name: "c2", Description: "cc2", Type: "string", FillMode: "ai"},
+			}},
+			{ID: tb1.Nanoid, Name: "t1", Description: "tt1", Model: "m1", Columns: []TableColumnInfo{
+				{ID: col1.Nanoid, Name: "c1", Description: "cc1", Type: "string", FillMode: "ai"},
+			}},
+		},
+	}, resp)
+}
+
+func TestTableService_GetTableDetail(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	tb1, err := db.TableMeta.Create().SetName("t1").SetDescription("tt1").SetModel("m1").Save(ctx)
+	require.NoError(t, err)
+	col1, err := db.TableColumn.Create().
+		SetName("c1").SetDescription("cc1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb1).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+
+	resp, err := srv.GetTableDetail(ctx, "t1")
+	require.NoError(t, err)
+	require.Equal(t,
+		&TableInfo{ID: tb1.Nanoid, Name: "t1", Description: "tt1", Model: "m1", Columns: []TableColumnInfo{
+			{ID: col1.Nanoid, Name: "c1", Description: "cc1", Type: "string", FillMode: "ai"},
+		}}, resp)
+}
