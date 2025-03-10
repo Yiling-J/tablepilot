@@ -180,3 +180,16 @@ GET /tables/{table_id or table_name}
 }
 ```
 
+---
+### 9. List Modela
+#### Endpoint
+```
+GET /models
+```
+#### Response
+```json
+{
+  "default": "4o"
+  "models": ["gemini-2","4o","vllm-llama3"]
+}
+```

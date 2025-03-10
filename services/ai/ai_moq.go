@@ -22,6 +22,9 @@ var _ AiService = &AiServiceMock{}
 //			ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
 //				panic("mock out the Chat method")
 //			},
+//			ListModelsFunc: func(ctx context.Context) *ModelList {
+//				panic("mock out the ListModels method")
+//			},
 //		}
 //
 //		// use mockedAiService in code that requires AiService
@@ -32,6 +35,9 @@ type AiServiceMock struct {
 	// ChatFunc mocks the Chat method.
 	ChatFunc func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
 
+	// ListModelsFunc mocks the ListModels method.
+	ListModelsFunc func(ctx context.Context) *ModelList
+
 	// calls tracks calls to the methods.
 	calls struct {
 		// Chat holds details about calls to the Chat method.
@@ -41,8 +47,14 @@ type AiServiceMock struct {
 			// Request is the request argument value.
 			Request *client.ChatRequest
 		}
+		// ListModels holds details about calls to the ListModels method.
+		ListModels []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+		}
 	}
-	lockChat sync.RWMutex
+	lockChat       sync.RWMutex
+	lockListModels sync.RWMutex
 }
 
 // Chat calls ChatFunc.
@@ -78,5 +90,37 @@ func (mock *AiServiceMock) ChatCalls() []struct {
 	mock.lockChat.RLock()
 	calls = mock.calls.Chat
 	mock.lockChat.RUnlock()
+	return calls
+}
+
+// ListModels calls ListModelsFunc.
+func (mock *AiServiceMock) ListModels(ctx context.Context) *ModelList {
+	if mock.ListModelsFunc == nil {
+		panic("AiServiceMock.ListModelsFunc: method is nil but AiService.ListModels was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
+	mock.lockListModels.Lock()
+	mock.calls.ListModels = append(mock.calls.ListModels, callInfo)
+	mock.lockListModels.Unlock()
+	return mock.ListModelsFunc(ctx)
+}
+
+// ListModelsCalls gets all the calls that were made to ListModels.
+// Check the length with:
+//
+//	len(mockedAiService.ListModelsCalls())
+func (mock *AiServiceMock) ListModelsCalls() []struct {
+	Ctx context.Context
+} {
+	var calls []struct {
+		Ctx context.Context
+	}
+	mock.lockListModels.RLock()
+	calls = mock.calls.ListModels
+	mock.lockListModels.RUnlock()
 	return calls
 }

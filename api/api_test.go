@@ -8,6 +8,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services"
+	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
@@ -273,4 +274,23 @@ func TestAPI_Truncate(t *testing.T) {
 	require.NoError(t, err)
 	resp := server.Send(req)
 	resp.ResponseEq(t, 200, map[string]any{"removed": 5})
+}
+
+func TestAPI_ListModels(t *testing.T) {
+	expected := &ai.ModelList{
+		Default: "foo",
+		Models:  []string{"foo", "bar"},
+	}
+	aiMock := &ai.AiServiceMock{
+		ListModelsFunc: func(ctx context.Context) *ai.ModelList {
+			return expected
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.AIService = aiMock
+	})
+	req, err := server.NewGetRequest("/api/v1/models")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, expected)
 }

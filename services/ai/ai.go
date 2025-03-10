@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
@@ -16,6 +17,7 @@ import (
 //go:generate moq -rm -out ai_moq.go . AiService
 type AiService interface {
 	Chat(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
+	ListModels(ctx context.Context) *ModelList
 }
 
 type model struct {
@@ -44,7 +46,11 @@ func NewAiService(cfg *config.Config, clients map[string]client.ChatClient, logg
 
 	for i, m := range cfg.Models {
 		if i == 0 || m.Default {
-			srv.defaultModel = m.Model
+			if m.Alias != "" {
+				srv.defaultModel = m.Alias
+			} else {
+				srv.defaultModel = m.Model
+			}
 		}
 		_, ok := srv.clients[m.Client]
 		if !ok {
@@ -104,4 +110,35 @@ func (ai *AiServiceImpl) getChatClientByModel(model string) (client.ChatClient, 
 		}
 	}
 	return nil, fmt.Errorf("client not found for %s", model)
+}
+
+type ModelList struct {
+	Models  []string `json:"models"`
+	Default string   `json:"default"`
+}
+
+func (ai *AiServiceImpl) ListModels(ctx context.Context) *ModelList {
+	models := []string{}
+	var defaultModel string
+	for key, model := range ai.models {
+		if model.alias != "" && key != model.alias {
+			// only keep alias name in return list
+			continue
+		}
+		var name string
+		if model.alias != "" {
+			name = model.alias
+		} else {
+			name = model.model
+		}
+		models = append(models, name)
+		if key == ai.defaultModel {
+			defaultModel = name
+		}
+	}
+	slices.Sort(models)
+	return &ModelList{
+		Models:  models,
+		Default: defaultModel,
+	}
 }

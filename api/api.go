@@ -140,7 +140,13 @@ func (hs *HTTPServer) Truncate(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"removed": n})
 }
 
+func (hs *HTTPServer) ListModels(ctx *gin.Context) {
+	modelList := hs.AIService.ListModels(ctx.Request.Context())
+	ctx.JSON(200, modelList)
+}
+
 func (hs *HTTPServer) addRouters() {
+	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
 	hs.apiv1.GET("/tables", hs.ListTables)
 	hs.apiv1.GET("/tables/:table", hs.Describe)

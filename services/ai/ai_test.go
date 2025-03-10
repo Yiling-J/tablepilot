@@ -74,3 +74,51 @@ func TestAIService_Chat(t *testing.T) {
 		})
 	}
 }
+
+func TestAIService_ListModels(t *testing.T) {
+	ctx := context.TODO()
+	srv, err := NewAiService(&config.Config{
+		Models: []config.Model{
+			{Model: "m1", Client: "chat"},
+			{Model: "m2", Alias: "m2a", Client: "chat"},
+		},
+	}, map[string]client.ChatClient{
+		"chat": nil,
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	ml := srv.ListModels(ctx)
+	require.Equal(t, &ModelList{
+		Default: "m1",
+		Models:  []string{"m1", "m2a"},
+	}, ml)
+
+	srv, err = NewAiService(&config.Config{
+		Models: []config.Model{
+			{Model: "m2", Alias: "m2a", Client: "chat"},
+			{Model: "m1", Client: "chat"},
+		},
+	}, map[string]client.ChatClient{
+		"chat": nil,
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	ml = srv.ListModels(ctx)
+	require.Equal(t, &ModelList{
+		Default: "m2a",
+		Models:  []string{"m1", "m2a"},
+	}, ml)
+
+	srv, err = NewAiService(&config.Config{
+		Models: []config.Model{
+			{Model: "m1", Client: "chat"},
+			{Model: "m2", Client: "chat", Default: true},
+		},
+	}, map[string]client.ChatClient{
+		"chat": nil,
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	ml = srv.ListModels(ctx)
+	require.Equal(t, &ModelList{
+		Default: "m2",
+		Models:  []string{"m1", "m2"},
+	}, ml)
+}
