@@ -103,6 +103,15 @@ func (ci *ColumnIndexer) ToDisplayRow(row map[string]*schema.CellValue) (map[str
 	return data, nil
 }
 
+// APIRow return a map of [columnID]cellValue
+func (ci *ColumnIndexer) ToAPIRow(row map[string]*schema.CellValue) (map[string]any, error) {
+	data := map[string]any{}
+	for k, v := range row {
+		data[k] = v.Value
+	}
+	return data, nil
+}
+
 func (ci *ColumnIndexer) ColumnNames() []string {
 	names := []string{}
 	for _, col := range ci.columns {

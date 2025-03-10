@@ -64,7 +64,7 @@ func (hs *HTTPServer) Generate(ctx *gin.Context) {
 			break
 		}
 		for _, row := range rows {
-			dr, err := indexer.ToDisplayRow(row)
+			dr, err := indexer.ToAPIRow(row)
 			if err != nil {
 				errorResponse(ctx, 500, err)
 				return
@@ -97,7 +97,7 @@ func (hs *HTTPServer) Rows(ctx *gin.Context) {
 	for _, row := range rows.Rows {
 		r := map[string]any{}
 		for i, col := range rows.Columns {
-			r[col.Name] = row.Cells[i].Value
+			r[col.Nanoid] = row.Cells[i].Value
 		}
 		data = append(data, r)
 	}

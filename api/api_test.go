@@ -88,8 +88,8 @@ func TestAPI_Generate(t *testing.T) {
 	require.NoError(t, err)
 	resp := server.Send(req)
 	expectedRows := []map[string]any{
-		{"c1": "0", "c2": "t0"},
-		{"c1": "1", "c2": "t1"},
+		{"1": "0", "2": "t0"},
+		{"1": "1", "2": "t1"},
 	}
 	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows})
 }
@@ -149,10 +149,10 @@ func TestAPI_GenerateStreaming(t *testing.T) {
 	require.Equal(t, "keep-alive", headers.Get("Connection"))
 	require.Equal(t, "chunked", headers.Get("Transfer-Encoding"))
 	expectedData := `event:message
-data:{"data":[{"c1":"0","c2":"t0"}]}
+data:{"data":[{"1":"0","2":"t0"}]}
 
 event:message
-data:{"data":[{"c1":"1","c2":"t1"}]}
+data:{"data":[{"1":"1","2":"t1"}]}
 
 event:message
 data:[DONE]
@@ -188,9 +188,9 @@ func TestAPI_Rows(t *testing.T) {
 	require.NoError(t, err)
 	resp := server.Send(req)
 	expectedRows := []map[string]any{
-		{"c1": "a1", "c2": "b1"},
-		{"c1": "a2", "c2": "b2"},
-		{"c1": "a3", "c2": "b3"},
+		{"1": "a1", "2": "b1"},
+		{"1": "a2", "2": "b2"},
+		{"1": "a3", "2": "b3"},
 	}
 	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows, "total": 3})
 }
