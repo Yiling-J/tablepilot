@@ -59,6 +59,7 @@ func (hs *HTTPServer) Generate(ctx *gin.Context) {
 		rows, err := generator.Next(ctx.Request.Context())
 		if err != nil {
 			errorResponse(ctx, 500, err)
+			return
 		}
 		if len(rows) == 0 {
 			break
