@@ -231,7 +231,7 @@ export function ColumnsForm({
               </Button>
               <Button
                 onClick={handleAddColumn}
-                disabled={!columnName || (fillMode === "pick" && !source)}
+                disabled={fillMode === "pick" && !source}
               >
                 {editIndex !== null ? "Update" : "Add"}
               </Button>
