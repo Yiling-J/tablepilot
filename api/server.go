@@ -39,10 +39,7 @@ type indexHTML struct {
 }
 
 func (e *indexHTML) Exists(prefix string, path string) bool {
-	if strings.HasPrefix(path, "/api/") {
-		return false
-	}
-	return true
+	return !strings.HasPrefix(path, "/api/")
 }
 
 func (e *indexHTML) Open(path string) (http.File, error) {
