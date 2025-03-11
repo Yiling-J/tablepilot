@@ -1,0 +1,416 @@
+import {
+    GenerateRequest,
+    ModelList,
+    TableInfo,
+    generate,
+    getModels,
+    getRows,
+    getTable,
+    truncateTable,
+} from "@/actions";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { ColumnDef } from "@tanstack/react-table";
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+import { CellTextDialog } from "./dialog/cell-text.tsx";
+import { DataGrid } from "./grid/data-grid";
+import { Button } from "./ui/button";
+
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ReloadIcon, SizeIcon } from "@radix-ui/react-icons";
+import { download, generateCsv, mkConfig } from "export-to-csv";
+import { GridHeader } from "./grid-header.tsx";
+import { TablepilotHeader } from "./header.tsx";
+
+import { useTables } from "@/context/tables";
+import { JSONObject } from "@/json.ts";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check } from "lucide-react";
+
+export default function TablePage() {
+  const { id } = useParams();
+
+  return <Table id={id as string} key={`${id}`} />;
+}
+
+const csvConfig = mkConfig({ useKeysAsHeaders: true });
+
+interface TableButton {
+  text: string;
+  enabled: boolean;
+  clickState: string;
+  icon: string;
+  color: string;
+}
+
+interface TableProps {
+  id: string;
+}
+
+const loading = (
+  <div className="w-full h-full flex flex-col pl-0 peer-[[data-state=open]]:lg:pl-[300px] peer-[[data-state=open]]:xl:pl-[300px]">
+    <div className="flex flex-row w-full justify-between pt-6 text-xl font-bold">
+      <div className="invisible">D</div>
+      <div className="flex flex-wrap">
+        <Skeleton className="h-6 w-[250px]" />
+      </div>
+      <div></div>
+    </div>
+
+    <div className="my-3 w-full px-4 self-center">
+      <Separator />
+    </div>
+
+    <div className="pb-3 px-4">
+      <Button className="mr-3 bg-green-600 text-white" disabled={true}>
+        <span className="cursor-pointer material-symbols-rounded pl-0 pr-2">
+          play_circle
+        </span>
+        Start
+      </Button>
+    </div>
+
+    <div className="grow overflow-auto">
+      <Skeleton className="h-full w-full" />
+    </div>
+
+    <div className="pt-3 pb-5 border-t-2 border-t-teal-500 px-4 flex flex-wrap justify-between bg-secondary">
+      <div className="flex items-center">
+        <p className="align-bottom pr-3 font-semibold	text-slate-500">Rows:</p>
+      </div>
+      <div>
+        <Button className="mr-3" disabled={true}>
+          <span className="cursor-pointer material-symbols-rounded pl-0 pr-2">
+            download
+          </span>
+          output.csv
+        </Button>
+      </div>
+    </div>
+  </div>
+);
+
+export function Table({ id }: TableProps) {
+  const [rows, setRows] = useState(Array<JSONObject>);
+  const [table, setTable] = useState<TableInfo | undefined>(undefined);
+  const [models, setModels] = useState<ModelList | undefined>(undefined);
+  const [isLoading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [expandCellOpen, setExpandCellOpen] = useState(false);
+  const [hoverCell, setHoverCell] = useState("");
+  const [model, setModel] = useState("");
+  const [button, setButton] = useState<TableButton>({
+    text: "Start",
+    enabled: true,
+    clickState: "start",
+    icon: "play_circle",
+    color: "bg-green-600",
+  });
+  const hoverRowIDRef = useRef("0");
+  const hoverColumnIDRef = useRef("");
+  const expandCellTextRef = useRef("");
+  const genRef = useRef(false);
+  const genRequestRef = useRef({
+    batch: 10,
+    count: 50,
+    temperature: 0.6,
+  } as GenerateRequest);
+  const abortControllerRef = useRef(new AbortController());
+  const { refreshTables } = useTables();
+
+  const fetchData = async () => {
+    try {
+      const table = await getTable(id);
+      setTable(table);
+      const rows = await getRows(id);
+      const vm = [];
+      for (const row of rows) {
+        vm.push(row);
+      }
+      await refreshTables();
+
+      const models = await getModels();
+      let currentModel = models.default;
+      if (table.model) {
+        currentModel = table.model;
+      }
+      setModel(currentModel);
+      genRequestRef.current.model = currentModel;
+      setModels(models);
+      setRows(vm);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, []);
+
+  const handleGenEvent = (data: string): void => {
+    if (data === "[DONE]") {
+      setButton({
+        text: "Start",
+        enabled: true,
+        clickState: "start",
+        icon: "play_circle",
+        color: "bg-green-600",
+      });
+      setGenerating(false);
+      return;
+    }
+    try {
+      const newRows: JSONObject[] = JSON.parse(data).data;
+      setRows((old) => {
+        return [...old, ...newRows];
+      });
+    } catch (error) {
+      console.error("Error generating data:", error);
+    }
+  };
+
+  const clickButton = (state: string) => {
+    switch (state) {
+      case "start": {
+        setButton({
+          text: "Stop",
+          enabled: true,
+          clickState: "stop",
+          icon: "stop_circle",
+          color: "bg-red-600",
+        });
+        setGenerating(true);
+        genRef.current = true;
+        abortControllerRef.current = new AbortController();
+        generate(
+          id,
+          abortControllerRef.current.signal,
+          handleGenEvent,
+          genRequestRef.current,
+        );
+        break;
+      }
+      case "stop": {
+        genRef.current = false;
+        abortControllerRef.current.abort();
+        break;
+      }
+    }
+  };
+
+  if (isLoading) {
+    return loading;
+  }
+
+  if (table === undefined) {
+    throw new Error("data undefined");
+  }
+
+  const columns: ColumnDef<JSONObject, string>[] = [
+    {
+      accessorKey: "rowIndex",
+      header: () => <div></div>,
+      size: 10,
+      cell: (cell) => {
+        return <div className="w-6 h-4">{cell.row.index + 1}</div>;
+      },
+    },
+
+    ...table.columns.map(
+      (e): ColumnDef<JSONObject, string> => ({
+        accessorKey: e.id,
+        header: () => (
+          <div className="flex content-center text-black dark:text-white text-sm items-center">
+            <span className="cursor-pointer material-symbols-rounded pl-2 pr-2 text-base">
+              {e.type == "string" && "text_fields"}
+              {e.type == "number" && "numbers"}
+              {e.type == "integer" && "numbers"}
+              {e.type == "array" && "data_array"}
+              {e.type == "boolean" && "check"}
+            </span>
+
+            <div className="text-base">{e.name}</div>
+          </div>
+        ),
+        accessorFn: (row: JSONObject) => {
+          const v = row[e.id] as object;
+          if (Array.isArray(v)) {
+            return v.map((e) => `• ${e}`).join("\n");
+          }
+          return String(v);
+        },
+
+        cell: ({ cell }) => {
+          const cellValue = cell.renderValue();
+          return (
+            <div>
+              <div className="max-h-80 line-clamp-6">{cellValue}</div>
+              {hoverCell == cell.row.id + "::" + cell.id && (
+                <div className="absolute bottom-0 right-0 flex pr-1 pb-1">
+                  {["string", "array"].includes(e.type) && (
+                    <Button
+                      size="icon"
+                      className="rounded-full border hover:scale-100 transition-transform duration-50 scale-90 group hover:bg-secondary"
+                      variant="secondary"
+                      onClick={() => {
+                        hoverColumnIDRef.current = cell.column.id;
+                        hoverRowIDRef.current = cell.row.id;
+                        expandCellTextRef.current = String(cell.renderValue());
+                        setExpandCellOpen(true);
+                      }}
+                    >
+                      <SizeIcon className="group-hover:scale-150 transition-transform duration-50" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        },
+      }),
+    ),
+  ];
+
+  const handleExportRows = () => {
+    const exported = rows.map((row) => {
+      return Object.fromEntries(
+        table!.columns.map((header) => {
+          const obj = row[header.id]!;
+          let cv = "";
+          if (Array.isArray(obj)) {
+            cv = JSON.stringify(obj);
+          } else {
+            cv = String(obj);
+          }
+          return [[header.name], cv];
+        }),
+      );
+    });
+    const csv = generateCsv(csvConfig)(exported);
+    download(csvConfig)(csv);
+  };
+
+  return (
+    <div className="flex grow">
+      <CellTextDialog
+        text={expandCellTextRef.current}
+        isOpen={expandCellOpen}
+        setIsOpen={setExpandCellOpen}
+      />
+      <div className="grow overflow-hidden h-full flex flex-col pl-0 peer-[[data-state=open]]:lg:pl-[300px] peer-[[data-state=open]]:xl:pl-[300px]">
+        <TablepilotHeader title={table.name} />
+
+        <div className="pb-3 px-4 pt-5">
+          <div className="flex">
+            <Button
+              className={cn("mr-3 text-white rounded-sm", button.color)}
+              onClick={() => {
+                clickButton(button.clickState);
+              }}
+              disabled={!button.enabled}
+            >
+              <div className="flex pr-2 justify-center">
+                <span className="cursor-pointer material-symbols-rounded">
+                  {button.icon}
+                </span>
+              </div>
+              {button.text}
+            </Button>
+            <div className="flex ml-4 border rounded-sm">
+              <Select
+                value={model}
+                disabled={generating}
+                onValueChange={async (v) => {
+                  setModel(v);
+                }}
+              >
+                <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {models?.models.map((model) => (
+                      <SelectPrimitive.Item
+                        value={model}
+                        key={model}
+                        className={cn(
+                          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                          "",
+                        )}
+                      >
+                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                          <SelectPrimitive.ItemIndicator>
+                            <Check className="h-4 w-4" />
+                          </SelectPrimitive.ItemIndicator>
+                        </span>
+
+                        <div>
+                          <SelectPrimitive.ItemText>
+                            <p>{model}</p>
+                          </SelectPrimitive.ItemText>
+                        </div>
+                      </SelectPrimitive.Item>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {generating && (
+            <div className="flex pt-2 text-sm text-gray-500 items-center">
+              <ReloadIcon className="animate-spin mr-1" />
+              <div>Generating...</div>
+            </div>
+          )}
+        </div>
+        {!generating && (
+          <GridHeader
+            genRequestRef={genRequestRef}
+            clearData={async () => {
+              await truncateTable(id);
+              await fetchData();
+            }}
+          />
+        )}
+        <div className="scrollbar-thin grow overflow-auto pl-3">
+          {table.columns.length > 0 && (
+            <DataGrid
+              columns={columns}
+              data={rows}
+              setHoverCell={setHoverCell}
+            />
+          )}
+        </div>
+
+        <div className="pt-3 pb-5 border-t-2 border-t-teal-500/50 px-4 flex flex-wrap justify-between bg-secondary">
+          <div className="flex items-center">
+            <p className="align-bottom pr-3 font-semibold text-slate-500">
+              Rows: {rows.length}
+            </p>
+          </div>
+          <div>
+            <Button className="mr-3" onClick={() => handleExportRows()}>
+              <span className="cursor-pointer material-symbols-rounded pl-0 pr-2">
+                download
+              </span>
+              output.csv
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
