@@ -303,112 +303,106 @@ export function Table({ id }: TableProps) {
   };
 
   return (
-    <div className="flex grow">
+    <div className="grow overflow-hidden h-full flex flex-col pl-0 peer-[[data-state=open]]:lg:pl-[300px] peer-[[data-state=open]]:xl:pl-[300px]">
       <CellTextDialog
         text={expandCellTextRef.current}
         isOpen={expandCellOpen}
         setIsOpen={setExpandCellOpen}
       />
-      <div className="grow overflow-hidden h-full flex flex-col pl-0 peer-[[data-state=open]]:lg:pl-[300px] peer-[[data-state=open]]:xl:pl-[300px]">
-        <TablepilotHeader title={table.name} />
+      <TablepilotHeader title={table.name} />
 
-        <div className="pb-3 px-4 pt-5">
-          <div className="flex">
-            <Button
-              className={cn("mr-3 text-white rounded-sm", button.color)}
-              onClick={() => {
-                clickButton(button.clickState);
-              }}
-              disabled={!button.enabled}
-            >
-              <div className="flex pr-2 justify-center">
-                <span className="cursor-pointer material-symbols-rounded">
-                  {button.icon}
-                </span>
-              </div>
-              {button.text}
-            </Button>
-            <div className="flex ml-4 border rounded-sm">
-              <Select
-                value={model}
-                disabled={generating}
-                onValueChange={async (v) => {
-                  setModel(v);
-                }}
-              >
-                <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {models?.models.map((model) => (
-                      <SelectPrimitive.Item
-                        value={model}
-                        key={model}
-                        className={cn(
-                          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                          "",
-                        )}
-                      >
-                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                          <SelectPrimitive.ItemIndicator>
-                            <Check className="h-4 w-4" />
-                          </SelectPrimitive.ItemIndicator>
-                        </span>
-
-                        <div>
-                          <SelectPrimitive.ItemText>
-                            <p>{model}</p>
-                          </SelectPrimitive.ItemText>
-                        </div>
-                      </SelectPrimitive.Item>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {generating && (
-            <div className="flex pt-2 text-sm text-gray-500 items-center">
-              <ReloadIcon className="animate-spin mr-1" />
-              <div>Generating...</div>
-            </div>
-          )}
-        </div>
-        {!generating && (
-          <GridHeader
-            genRequestRef={genRequestRef}
-            clearData={async () => {
-              await truncateTable(id);
-              await fetchData();
+      <div className="pb-3 px-4 pt-5">
+        <div className="flex">
+          <Button
+            className={cn("mr-3 text-white rounded-sm", button.color)}
+            onClick={() => {
+              clickButton(button.clickState);
             }}
-          />
-        )}
-        <div className="scrollbar-thin grow overflow-auto pl-3">
-          {table.columns.length > 0 && (
-            <DataGrid
-              columns={columns}
-              data={rows}
-              setHoverCell={setHoverCell}
-            />
-          )}
+            disabled={!button.enabled}
+          >
+            <div className="flex pr-2 justify-center">
+              <span className="cursor-pointer material-symbols-rounded">
+                {button.icon}
+              </span>
+            </div>
+            {button.text}
+          </Button>
+          <div className="flex ml-4 border rounded-sm">
+            <Select
+              value={model}
+              disabled={generating}
+              onValueChange={async (v) => {
+                setModel(v);
+              }}
+            >
+              <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {models?.models.map((model) => (
+                    <SelectPrimitive.Item
+                      value={model}
+                      key={model}
+                      className={cn(
+                        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                        "",
+                      )}
+                    >
+                      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                        <SelectPrimitive.ItemIndicator>
+                          <Check className="h-4 w-4" />
+                        </SelectPrimitive.ItemIndicator>
+                      </span>
+
+                      <div>
+                        <SelectPrimitive.ItemText>
+                          <p>{model}</p>
+                        </SelectPrimitive.ItemText>
+                      </div>
+                    </SelectPrimitive.Item>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="pt-3 pb-5 border-t-2 border-t-teal-500/50 px-4 flex flex-wrap justify-between bg-secondary">
-          <div className="flex items-center">
-            <p className="align-bottom pr-3 font-semibold text-slate-500">
-              Rows: {rows.length}
-            </p>
+        {generating && (
+          <div className="flex pt-2 text-sm text-gray-500 items-center">
+            <ReloadIcon className="animate-spin mr-1" />
+            <div>Generating...</div>
           </div>
-          <div>
-            <Button className="mr-3" onClick={() => handleExportRows()}>
-              <span className="cursor-pointer material-symbols-rounded pl-0 pr-2">
-                download
-              </span>
-              output.csv
-            </Button>
-          </div>
+        )}
+      </div>
+      {!generating && (
+        <GridHeader
+          genRequestRef={genRequestRef}
+          clearData={async () => {
+            await truncateTable(id);
+            await fetchData();
+          }}
+        />
+      )}
+      <div className="scrollbar-thin grow overflow-auto pl-3">
+        {table.columns.length > 0 && (
+          <DataGrid columns={columns} data={rows} setHoverCell={setHoverCell} />
+        )}
+      </div>
+
+      <div className="pt-3 pb-5 border-t-2 border-t-teal-500/50 px-4 flex flex-wrap justify-between bg-secondary">
+        <div className="flex items-center">
+          <p className="align-bottom pr-3 font-semibold text-slate-500">
+            Rows: {rows.length}
+          </p>
+        </div>
+        <div>
+          <Button className="mr-3" onClick={() => handleExportRows()}>
+            <span className="cursor-pointer material-symbols-rounded pl-0 pr-2">
+              download
+            </span>
+            output.csv
+          </Button>
         </div>
       </div>
     </div>
