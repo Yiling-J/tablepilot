@@ -53,6 +53,10 @@ jobs:
         working-directory: ./ui
         run: pnpm install
 
+      - name: Lint
+        working-directory: ./ui
+        run: pnpm lint
+
       - name: Build
         working-directory: ./ui
         run: pnpm build
