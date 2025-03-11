@@ -12,7 +12,8 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
+ui/dist/*
+!ui/dist/placeholder
 dist-ssr
 *.local
 

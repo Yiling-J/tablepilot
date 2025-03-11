@@ -4,8 +4,10 @@ import (
 	"time"
 
 	"github.com/Yiling-J/tablepilot/services"
+	"github.com/Yiling-J/tablepilot/ui"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 )
@@ -39,6 +41,7 @@ func (hs *HTTPServer) RegisterRoutes() {
 	}))
 	hs.Engine.Use(ginzap.Ginzap(hs.Logger.Desugar(), time.RFC3339, true))
 	hs.Engine.Use(ginzap.RecoveryWithZap(hs.Logger.Desugar(), true))
+	hs.Engine.Use(static.Serve("/", static.EmbedFolder(ui.Dist, "dist")))
 	hs.apiv1 = hs.Engine.Group("/api/v1")
 	hs.addRouters()
 }
