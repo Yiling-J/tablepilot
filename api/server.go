@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/Yiling-J/tablepilot/services"
@@ -32,6 +34,21 @@ func NewHttpServer(backend *services.Backend, verbose bool) *HTTPServer {
 	}
 }
 
+type indexHTML struct {
+	fs http.FileSystem
+}
+
+func (e *indexHTML) Exists(prefix string, path string) bool {
+	if strings.HasPrefix(path, "/api/") {
+		return false
+	}
+	return true
+}
+
+func (e *indexHTML) Open(path string) (http.File, error) {
+	return e.fs.Open("dist/index.html")
+}
+
 func (hs *HTTPServer) RegisterRoutes() {
 	hs.Engine.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"},
@@ -42,6 +59,7 @@ func (hs *HTTPServer) RegisterRoutes() {
 	hs.Engine.Use(ginzap.Ginzap(hs.Logger.Desugar(), time.RFC3339, true))
 	hs.Engine.Use(ginzap.RecoveryWithZap(hs.Logger.Desugar(), true))
 	hs.Engine.Use(static.Serve("/", static.EmbedFolder(ui.Dist, "dist")))
+	hs.Engine.Use(static.Serve("/", &indexHTML{fs: http.FS(ui.Dist)}))
 	hs.apiv1 = hs.Engine.Group("/api/v1")
 	hs.addRouters()
 }
