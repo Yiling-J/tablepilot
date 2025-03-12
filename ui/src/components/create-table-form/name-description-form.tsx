@@ -80,10 +80,6 @@ export function NameDescriptionForm({
         );
       }
 
-      if (!Array.isArray(parsedData.sources)) {
-        throw new Error("JSON must contain a 'sources' array");
-      }
-
       if (!Array.isArray(parsedData.columns)) {
         throw new Error("JSON must contain a 'columns' array");
       }
