@@ -22,6 +22,8 @@ Tablepilot is a CLI tool designed to generate tables using AI.
 
 - **API server:** Start an API server and execute commands via API requests.
 
+![Demo](./demo.gif)
+
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
 
