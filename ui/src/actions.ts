@@ -89,6 +89,7 @@ interface BaseSource {
   type: string;
   random: boolean;
   replacement: boolean;
+  repeat: number;
 }
 
 export interface AiSource extends BaseSource {

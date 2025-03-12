@@ -47,6 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown, Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { NumberInput } from "../ui/number-input";
 
 interface SourcesFormProps {
   formData: TableCreateRequest;
@@ -67,6 +68,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
   const [options, setOptions] = useState("");
   const [random, setRandom] = useState(true);
   const [replacement, setReplacement] = useState(false);
+  const [repeat, setRepeat] = useState(1);
 
   // Add new state for linked source type
   const [tables, setTables] = useState<TableInfo[]>([]);
@@ -130,6 +132,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     setSelectedContextColumns([]);
     setTableColumns([]);
     setEditIndex(null);
+    setRepeat(1);
   };
 
   const handleAddSource = () => {
@@ -142,6 +145,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
         prompt,
         random,
         replacement,
+        repeat,
       };
     } else if (sourceType === "list") {
       newSource = {
@@ -150,6 +154,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
         options: options.split("\n").filter(Boolean),
         random,
         replacement,
+        repeat,
       };
     } else {
       newSource = {
@@ -160,6 +165,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
         context_columns: selectedContextColumns,
         random,
         replacement,
+        repeat,
       };
     }
 
@@ -180,17 +186,16 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     const source = formData.sources[index];
     setSourceName(source.name);
     setSourceType(source.type as SourceType);
+    setRandom(source.random);
+    setReplacement(source.replacement);
+    setRepeat(source.repeat);
 
     if (source.type === "ai") {
       const aiSource = source as AiSource;
       setPrompt(aiSource.prompt);
-      setRandom(aiSource.random);
-      setReplacement(aiSource.replacement);
     } else if (source.type === "list") {
       const listSource = source as ListSource;
       setOptions(listSource.options.join("\n"));
-      setRandom(listSource.random);
-      setReplacement(listSource.replacement);
     } else if (source.type === "linked") {
       const linkedSource = source as LinkedSource;
       setSelectedTable(linkedSource.table);
@@ -526,6 +531,15 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
                   <Label htmlFor="replacement">
                     Selection with Replacement
                   </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <NumberInput
+                    id="repeat"
+                    value={repeat > 0 ? repeat : 1}
+                    onValueChange={(v) => setRepeat(v ?? 1)}
+                  />
+                  <Label htmlFor="reppeat">Repeat selection</Label>
                 </div>
               </>
             </div>
