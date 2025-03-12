@@ -85,12 +85,11 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch tables when dialog opens
   useEffect(() => {
-    if (isDialogOpen && sourceType === "linked" && tables.length === 0) {
+    if (tables.length === 0) {
       fetchTables();
     }
-  }, [isDialogOpen, sourceType]);
+  }, []);
 
   // Fetch tables from API
   const fetchTables = async () => {
@@ -106,18 +105,16 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     }
   };
 
-  // Update table columns when a table is selected
-  useEffect(() => {
-    if (selectedTable) {
-      const table = tables.find((t) => t.name === selectedTable);
-      if (table) {
-        setTableColumns(table.columns);
-        // Reset column selections when table changes
-        setSelectedColumn("");
-        setSelectedContextColumns([]);
-      }
+  const changeSelectedTable = (selected: string) => {
+    const table = tables.find((t) => t.name === selected);
+    if (table) {
+      setSelectedTable(selected);
+      setTableColumns(table.columns);
+      // Reset column selections when table changes
+      setSelectedColumn("");
+      setSelectedContextColumns([]);
     }
-  }, [selectedTable, tables]);
+  };
 
   const resetForm = () => {
     setSourceName("");
@@ -202,15 +199,10 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
       setSelectedColumn(linkedSource.column);
       setSelectedContextColumns(linkedSource.context_columns || []);
 
-      // Fetch tables if not already loaded
-      if (tables.length === 0) {
-        fetchTables();
-      } else {
-        // Set table columns based on the selected table
-        const table = tables.find((t) => t.name === linkedSource.table);
-        if (table) {
-          setTableColumns(table.columns);
-        }
+      // Set table columns based on the selected table
+      const table = tables.find((t) => t.name === linkedSource.table);
+      if (table) {
+        setTableColumns(table.columns);
       }
     }
 
@@ -364,7 +356,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
                     <Label htmlFor="table">Select Table</Label>
                     <Select
                       value={selectedTable}
-                      onValueChange={setSelectedTable}
+                      onValueChange={changeSelectedTable}
                       disabled={isLoadingTables || tables.length === 0}
                     >
                       <SelectTrigger>
