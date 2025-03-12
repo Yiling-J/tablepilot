@@ -68,6 +68,8 @@ export function NameDescriptionForm({
       if (!parsedData.name || typeof parsedData.name !== "string") {
         throw new Error("JSON must contain a 'name' property of type string");
       }
+      setName(parsedData.name);
+      validateName(parsedData.name);
 
       if (
         !parsedData.description ||
