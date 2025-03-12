@@ -6,7 +6,7 @@
 
 # Tablepilot
 
-Tablepilot is a CLI tool designed to generate tables using AI.
+Tablepilot is a CLI/API/WebUI tool designed to generate tables using AI.
 
 - **AI-generated columns:** If you want your table to have four columns but only know two of them, just add empty objects: `[<column1>, <column2>, {}, {}]` to schema. Tablepilot will automatically generate the missing two for you.
 
@@ -20,18 +20,18 @@ Tablepilot is a CLI tool designed to generate tables using AI.
 
 - **Easily switch between different LLMs and models:** You can switch between providers like OpenAI, Gemini or other LLMs or between different models easily.
 
-- **API server:** Start an API server and execute commands via API requests.
+- **Seamless API & WebUI:** With a single command: `tablepilot serve`, you can launch both the API server and the WebUI effortlessly. Whether you're integrating Tablepilot into your workflow via API or using the interactive WebUI for an intuitive experience, everything is included by default in the released binary. Check out the WebUI in action:
 
 ![Demo](./demo.gif)
 
 #### Download Binary Release
-Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
+Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly.
 
 #### Install with Go
-Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot@latest`.
+Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot@latest`. Only CLI/API are supported.
 
 #### Install from Source
-Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.
+Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.  This includes CLI, API, and WebUI. However, to use the WebUI, you need to build the frontend first. Ensure you have `pnpm` and `node` installed, then run `make build-ui`, Once built, you can start the server using `serve` command.
 
 ## How to Use
 
