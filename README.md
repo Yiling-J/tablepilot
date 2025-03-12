@@ -35,7 +35,12 @@ Ensure that Go is installed on your system. Then, clone the repository and run `
 
 ## How to Use
 
-To generate a table, you need to prepare a TOML config file and a table schema JSON file. The config file defines the LLM clients used to generate tables, as well as the database where the table schema and data will be stored. The JSON schema file includes the table name, columns, and other information about your table.
+To generate a table, you’ll need a **TOML config file**, and in the case of the CLI, a **table schema JSON file**:
+
+- **Config File (Required):** Defines the LLM clients for table generation and specifies the database for storing table schemas and data.
+- **Schema File (Only Required for CLI):** If using the CLI, you'll need a JSON schema file to define the table name, columns, and other details.
+- **For WebUI Users:** No need to create a schema file, you can build the schema interactively in the UI.
+- **For API Users:** No schema file is required. Instead, send the schema as JSON in the request body when calling the API.
 
 Below is an example TOML config for using OpenAI GPT-4o and an SQLite3 database. Replace the `key` field with your OpenAI API key and save the file as `config.toml`:
 ```toml
@@ -54,7 +59,7 @@ model = "gpt-4o"
 client = "openai"
 rpm = 10
 ```
-For this example, we'll use the schema file located at `examples/recipes_simple/recipes.json`.
+For CLI, we'll use the schema file located at `examples/recipes_simple/recipes.json`.
 
 Once you have everything prepared, follow these steps:
 
@@ -78,6 +83,7 @@ tablepilot generate recipes -c=20 -b=5
 tablepilot export recipes -t recipes.csv
 ```
 
+For the API server, send a request with the schema as JSON in the request body. For the WebUI, you can build your schema interactively, see the demo above.
 
 ## Examples
 
@@ -151,7 +157,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
   ```
   
 - **serve**
-  Start an API server. See [API.md](API.md) for available endpoints.
+  Start an API server. See [API.md](API.md) for available endpoints. If you installed Tablepilot from a binary release or built the frontend when installing from source, the WebUI will be accessible at the root URL, such as: http://127.0.0.1:8080/
   ```
   tablepilot serve
   ```
