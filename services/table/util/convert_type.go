@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
@@ -33,24 +34,24 @@ func ConvertToType(v string, to tablecolumn.Type) (any, error) {
 		if num, err := strconv.ParseFloat(v, 64); err == nil {
 			return num, nil
 		}
-		return nil, errors.New("invalid number format")
+		return nil, fmt.Errorf("invalid number format: %v", v)
 	case tablecolumn.TypeInteger:
 		if num, err := strconv.Atoi(v); err == nil {
 			return num, nil
 		}
-		return nil, errors.New("invalid integer format")
+		return nil, fmt.Errorf("invalid integer format: %v", v)
 	case tablecolumn.TypeBoolean:
 		if b, err := strconv.ParseBool(v); err == nil {
 			return b, nil
 		}
-		return nil, errors.New("invalid boolean format")
+		return nil, fmt.Errorf("invalid boolean format: %v", v)
 	case tablecolumn.TypeArray:
 		var arr []any
 		if err := json.Unmarshal([]byte(v), &arr); err == nil {
 			return arr, nil
 		}
-		return nil, errors.New("invalid JSON array format")
+		return nil, fmt.Errorf("invalid JSON array format: %v", v)
 	default:
-		return nil, errors.New("unsupported type")
+		return nil, fmt.Errorf("unsupported type: %v", v)
 	}
 }
