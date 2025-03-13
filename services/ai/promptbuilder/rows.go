@@ -48,12 +48,12 @@ func (rb *RowsBuilder) AddExistings(rows []map[string]any) error {
 	return nil
 }
 
-func (rb *RowsBuilder) AddMissingColumns(v []*ent.TableColumn) {
+func (rb *RowsBuilder) AddTableColumns(v []*ent.TableColumn) {
 	if len(v) == 0 {
 		return
 	}
-	rb.AddText("Generate values for the following missing columns:")
-	el := rb.NewXML("MissingColumns")
+	rb.AddText("Columns of the table:")
+	el := rb.NewXML("Columns")
 	// add id column
 	cel := el.CreateElement("Column")
 	cel.CreateAttr("id", "id")
@@ -66,6 +66,21 @@ func (rb *RowsBuilder) AddMissingColumns(v []*ent.TableColumn) {
 		cel.CreateAttr("name", col.Name)
 		cel.CreateAttr("description", col.Description)
 		cel.CreateAttr("type", string(col.Type))
+	}
+}
+
+func (rb *RowsBuilder) AddMissingColumns(v []*ent.TableColumn) {
+	if len(v) == 0 {
+		return
+	}
+	rb.AddText("Generate values for the following missing columns:")
+	el := rb.NewXML("MissingColumns")
+	// add id column
+	cel := el.CreateElement("Column")
+	cel.CreateAttr("id", "id")
+	for _, col := range v {
+		cel := el.CreateElement("Column")
+		cel.CreateAttr("id", col.Nanoid)
 	}
 }
 

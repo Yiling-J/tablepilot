@@ -288,6 +288,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		}
 		chatRows = append(chatRows, cr)
 	}
+	g.builder.AddTableColumns(g.table.Edges.Columns)
 	g.builder.AddMissingColumns(g.missingColumns)
 	err = g.builder.AddExistings(chatRows)
 	if err != nil {
