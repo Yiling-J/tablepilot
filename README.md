@@ -139,10 +139,15 @@ A number of examples demonstrating various use cases of Tablepilot are available
 	  The sampling temperature. Higher values will make the output more random. (default 0.6)
 
 - **import**
-  Import a CSV file as a table.
+  Import a CSV file into a table.
   ```
   tablepilot import users.csv
   ```
+
+  	- `-t, --table string`
+	 Imports into an existing table or creates a new one if missing. Defaults to the file name if not set.
+	 - If the table exists, Tablepilot matches columns by name and tries to convert data types automatically, if a column exists in table but not in csv file, the default empty value of the column type will be used. Errors occur if conversion fails.
+	 - If the table doesn't exist, all columns are treated as strings.
 
 - **show**
   Display the rows of a specified table.

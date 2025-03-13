@@ -284,18 +284,25 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 	if err != nil {
 		return "", fmt.Errorf("starting a transaction: %w", err)
 	}
-	exists, err := tx.TableMeta.Query().Where(
+	exists, err := tx.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Where(
 		tablemeta.Name(table),
-	).Exist(ctx)
+	).All(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, err)
 	}
-	if exists {
-		return "", ent.Rollback(tx, errors.New("table already exists"))
+	// if table already exists, import data to matched columns for the table
+	var tablemeta *ent.TableMeta
+	if len(exists) > 0 {
+		tablemeta = exists[0]
 	}
 	cr := csv.NewReader(reader)
 	columns := []string{}
+	// rows read from csv
 	rows := [][]string{}
+	// rows import to table
+	importRows := [][]any{}
 	counter := 0
 	for {
 		record, err := cr.Read()
@@ -312,31 +319,66 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		}
 		counter += 1
 	}
-	tm, err := tx.TableMeta.Create().SetName(table).Save(ctx)
-	if err != nil {
-		return "", ent.Rollback(tx, err)
-	}
-	columnCreates := []*ent.TableColumnCreate{}
-	for _, col := range columns {
-		columnCreates = append(
-			columnCreates, tx.TableColumn.Create().SetName(col).SetType(tablecolumn.TypeString).SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tm),
-		)
-	}
-	err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
-	if err != nil {
-		return "", ent.Rollback(tx, err)
+
+	if tablemeta != nil {
+		cm := map[string]int{}
+		for i, col := range columns {
+			cm[col] = i
+		}
+		for _, row := range rows {
+			newRow := []any{}
+			for _, col := range tablemeta.Edges.Columns {
+				if j, ok := cm[col.Name]; ok {
+					v, err := util.ConvertToType(row[j], col.Type)
+					if err != nil {
+						return "", ent.Rollback(tx, err)
+					}
+					newRow = append(newRow, v)
+				} else {
+					v, err := util.ConvertToType("", col.Type)
+					if err != nil {
+						return "", ent.Rollback(tx, err)
+					}
+					newRow = append(newRow, v)
+				}
+			}
+			importRows = append(importRows, newRow)
+		}
+	} else {
+		for _, row := range rows {
+			newRow := []any{}
+			for _, v := range row {
+				newRow = append(newRow, v)
+			}
+			importRows = append(importRows, newRow)
+		}
+		tablemeta, err = tx.TableMeta.Create().SetName(table).Save(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, err)
+		}
+		columnCreates := []*ent.TableColumnCreate{}
+		for _, col := range columns {
+			columnCreates = append(
+				columnCreates, tx.TableColumn.Create().SetName(col).SetType(tablecolumn.TypeString).
+					SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tablemeta),
+			)
+		}
+		err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, err)
+		}
 	}
 	rowCreates := []*ent.TableRowCreate{}
-	for _, row := range rows {
+	for _, row := range importRows {
 		cells := []*schema.CellValue{}
 		for _, cell := range row {
 			cells = append(cells, &schema.CellValue{Value: cell})
 		}
-		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(cells).SetTablemeta(tm))
+		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(cells).SetTablemeta(tablemeta))
 	}
 	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, err)
 	}
-	return tm.Nanoid, tx.Commit()
+	return tablemeta.Nanoid, tx.Commit()
 }

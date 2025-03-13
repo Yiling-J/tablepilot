@@ -452,6 +452,94 @@ func TestTableService_Import(t *testing.T) {
 		rows = append(rows, r)
 	}
 	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
+
+	// import some data again, test table exists case
+	records = [][]string{
+		{"col2", "col4", "col1"},
+		{"3", "n1", "c"},
+		{"4", "n2", "d"},
+	}
+
+	buffer = bytes.NewBuffer([]byte(""))
+	w = csv.NewWriter(buffer)
+	for _, record := range records {
+		err := w.Write(record)
+		require.NoError(t, err)
+	}
+	w.Flush()
+
+	id, err = srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	require.NoError(t, err)
+	require.Equal(t, table.Nanoid, id)
+	table, err = db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).WithRows(func(trq *ent.TableRowQuery) {
+		trq.Order(ent.Asc(tablerow.FieldID))
+	}).Where(tablemeta.Nanoid(id)).First(ctx)
+	require.NoError(t, err)
+	rows = [][]any{}
+	for _, row := range table.Edges.Rows {
+		r := []any{}
+		for _, cell := range row.Cells {
+			r = append(r, cell.Value)
+		}
+		rows = append(rows, r)
+	}
+	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}, {"c", "3"}, {"d", "4"}}, rows)
+}
+
+func TestTableService_ImportAutoType(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+
+	tb, err := db.TableMeta.Create().SetName("foo").Save(ctx)
+	require.NoError(t, err)
+	creates := []*ent.TableColumnCreate{
+		db.TableColumn.Create().SetName("int").SetTablemeta(tb).SetFillMode(tablecolumn.FillModeAi).SetType(tablecolumn.TypeInteger),
+		db.TableColumn.Create().SetName("string").SetTablemeta(tb).SetFillMode(tablecolumn.FillModeAi).SetType(tablecolumn.TypeString),
+		db.TableColumn.Create().SetName("number").SetTablemeta(tb).SetFillMode(tablecolumn.FillModeAi).SetType(tablecolumn.TypeNumber),
+		db.TableColumn.Create().SetName("array").SetTablemeta(tb).SetFillMode(tablecolumn.FillModeAi).SetType(tablecolumn.TypeArray),
+	}
+	err = db.TableColumn.CreateBulk(creates...).Exec(ctx)
+	require.NoError(t, err)
+
+	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	records := [][]string{
+		{"int", "string", "number", "array"},
+		{"1", "2", "3.2", `["a", "b"]`},
+	}
+
+	buffer := bytes.NewBuffer([]byte(""))
+	w := csv.NewWriter(buffer)
+	for _, record := range records {
+		err := w.Write(record)
+		require.NoError(t, err)
+	}
+	w.Flush()
+
+	id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	require.NoError(t, err)
+
+	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).WithRows(func(trq *ent.TableRowQuery) {
+		trq.Order(ent.Asc(tablerow.FieldID))
+	}).Where(tablemeta.Nanoid(id)).First(ctx)
+	require.NoError(t, err)
+	columnNames := []string{}
+	for _, col := range table.Edges.Columns {
+		columnNames = append(columnNames, col.Name)
+	}
+	require.Equal(t, []string{"int", "string", "number", "array"}, columnNames)
+	rows := [][]any{}
+	for _, row := range table.Edges.Rows {
+		r := []any{}
+		for _, cell := range row.Cells {
+			r = append(r, cell.Value)
+		}
+		rows = append(rows, r)
+	}
+	require.Equal(t, [][]any{{1.0, "2", 3.2, []any{"a", "b"}}}, rows)
 }
 
 func TestTableService_ListTables(t *testing.T) {

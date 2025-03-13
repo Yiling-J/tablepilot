@@ -377,9 +377,9 @@ func TestHandler_Import(t *testing.T) {
 				),
 			)
 			cmd := &cobra.Command{}
-			cmd.Flags().String("name", "", "")
+			cmd.Flags().String("table", "", "")
 			if name != "" {
-				err = cmd.Flags().Set("name", name)
+				err = cmd.Flags().Set("table", name)
 				require.NoError(t, err)
 			}
 			err = handler.Import(cmd, []string{"foo.csv"})

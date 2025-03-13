@@ -251,7 +251,7 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) Import(cmd *cobra.Command, args []string) error {
-	importName, err := cmd.Flags().GetString("name")
+	table, err := cmd.Flags().GetString("table")
 	if err != nil {
 		return err
 	}
@@ -261,11 +261,11 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer func() { _ = reader.Close() }()
-	if importName == "" {
-		importName = filepath.Base(tableFile)
-		importName = strings.TrimSuffix(importName, filepath.Ext(importName))
+	if table == "" {
+		table = filepath.Base(tableFile)
+		table = strings.TrimSuffix(table, filepath.Ext(table))
 	}
-	id, err := h.backend.TableService.Import(cmd.Context(), importName, reader)
+	id, err := h.backend.TableService.Import(cmd.Context(), table, reader)
 	if err != nil {
 		return err
 	}

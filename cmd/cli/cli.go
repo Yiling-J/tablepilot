@@ -152,12 +152,12 @@ func BuildCLI(root *cobra.Command) {
 	cmd.AddCommand(generate)
 
 	importCmd := &cobra.Command{
-		Use:   "import <table id or name>",
+		Use:   "import <file>",
 		Short: "Import csv file as table",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return handler.Import(cmd, args)
 		},
 	}
-	importCmd.Flags().StringP("name", "n", "", "")
+	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing. Defaults to file name if not set")
 	cmd.AddCommand(importCmd)
 }
