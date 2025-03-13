@@ -1,6 +1,7 @@
 import {
     Cell,
     ColumnDef,
+    RowData,
     flexRender,
     getCoreRowModel,
     useReactTable,
@@ -22,8 +23,9 @@ import { SizeIcon } from "@radix-ui/react-icons";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { MutableRefObject, memo, useRef, useState } from "react";
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 declare module "@tanstack/react-table" {
-  interface ColumnMeta {
+  interface ColumnMeta<TData extends RowData, TValue> {
     columnType: string;
   }
 }
