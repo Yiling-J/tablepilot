@@ -15,11 +15,11 @@ builds:
 
 archives:
   - id: linux-archive
-    builds: [linux]
+    ids: [linux]
     formats: [tar.gz]
   - id: macos-archive
-    builds: [macos]
+    ids: [macos]
     formats: [zip]
   - id: windows-archive
-    builds: [windows]
+    ids: [windows]
     formats: [zip]
