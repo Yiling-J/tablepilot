@@ -25,7 +25,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ReloadIcon, SizeIcon } from "@radix-ui/react-icons";
+import { ReloadIcon } from "@radix-ui/react-icons";
 import { download, generateCsv, mkConfig } from "export-to-csv";
 import { GridHeader } from "./grid-header.tsx";
 import { TablepilotHeader } from "./header.tsx";
@@ -105,7 +105,6 @@ export function Table({ id }: TableProps) {
   const [isLoading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [expandCellOpen, setExpandCellOpen] = useState(false);
-  const [hoverCell, setHoverCell] = useState("");
   const [model, setModel] = useState("");
   const [button, setButton] = useState<TableButton>({
     text: "Start",
@@ -114,8 +113,6 @@ export function Table({ id }: TableProps) {
     icon: "play_circle",
     color: "bg-green-600",
   });
-  const hoverRowIDRef = useRef("0");
-  const hoverColumnIDRef = useRef("");
   const expandCellTextRef = useRef("");
   const genRef = useRef(false);
   const genRequestRef = useRef({
@@ -124,11 +121,60 @@ export function Table({ id }: TableProps) {
     temperature: 0.6,
   } as GenerateRequest);
   const abortControllerRef = useRef(new AbortController());
+  const columnsRef = useRef([] as ColumnDef<JSONObject, string>[]);
   const { refreshTables } = useTables();
 
   const fetchData = async () => {
     try {
       const table = await getTable(id);
+      // set columns first
+      columnsRef.current = [
+        {
+          accessorKey: "rowIndex",
+          header: () => <div></div>,
+          meta: { columnType: "integer" },
+          size: 10,
+          cell: (cell) => {
+            return <div className="w-6 h-4">{cell.row.index + 1}</div>;
+          },
+        },
+
+        ...table.columns.map(
+          (e): ColumnDef<JSONObject, string> => ({
+            accessorKey: e.id,
+            meta: { columnType: e.type.toString() },
+            header: () => (
+              <div className="flex content-center text-black dark:text-white text-sm items-center">
+                <span className="cursor-pointer material-symbols-rounded pl-2 pr-2 text-base">
+                  {e.type == "string" && "text_fields"}
+                  {e.type == "number" && "numbers"}
+                  {e.type == "integer" && "numbers"}
+                  {e.type == "array" && "data_array"}
+                  {e.type == "boolean" && "check"}
+                </span>
+
+                <div className="text-base">{e.name}</div>
+              </div>
+            ),
+            accessorFn: (row: JSONObject) => {
+              const v = row[e.id] as object;
+              if (Array.isArray(v)) {
+                return v.map((e) => `• ${e}`).join("\n");
+              }
+              return String(v);
+            },
+
+            cell: ({ cell }) => {
+              const cellValue = cell.renderValue();
+              return (
+                <div>
+                  <div className="max-h-80 line-clamp-6">{cellValue}</div>
+                </div>
+              );
+            },
+          }),
+        ),
+      ];
       setTable(table);
       const rows = await getRows(id);
       const vm = [];
@@ -217,71 +263,6 @@ export function Table({ id }: TableProps) {
   if (table === undefined) {
     throw new Error("data undefined");
   }
-
-  const columns: ColumnDef<JSONObject, string>[] = [
-    {
-      accessorKey: "rowIndex",
-      header: () => <div></div>,
-      size: 10,
-      cell: (cell) => {
-        return <div className="w-6 h-4">{cell.row.index + 1}</div>;
-      },
-    },
-
-    ...table.columns.map(
-      (e): ColumnDef<JSONObject, string> => ({
-        accessorKey: e.id,
-        header: () => (
-          <div className="flex content-center text-black dark:text-white text-sm items-center">
-            <span className="cursor-pointer material-symbols-rounded pl-2 pr-2 text-base">
-              {e.type == "string" && "text_fields"}
-              {e.type == "number" && "numbers"}
-              {e.type == "integer" && "numbers"}
-              {e.type == "array" && "data_array"}
-              {e.type == "boolean" && "check"}
-            </span>
-
-            <div className="text-base">{e.name}</div>
-          </div>
-        ),
-        accessorFn: (row: JSONObject) => {
-          const v = row[e.id] as object;
-          if (Array.isArray(v)) {
-            return v.map((e) => `• ${e}`).join("\n");
-          }
-          return String(v);
-        },
-
-        cell: ({ cell }) => {
-          const cellValue = cell.renderValue();
-          return (
-            <div>
-              <div className="max-h-80 line-clamp-6">{cellValue}</div>
-              {hoverCell == cell.row.id + "::" + cell.id && (
-                <div className="absolute bottom-0 right-0 flex pr-1 pb-1">
-                  {["string", "array"].includes(e.type) && (
-                    <Button
-                      size="icon"
-                      className="rounded-full border hover:scale-100 transition-transform duration-50 scale-90 group hover:bg-secondary"
-                      variant="secondary"
-                      onClick={() => {
-                        hoverColumnIDRef.current = cell.column.id;
-                        hoverRowIDRef.current = cell.row.id;
-                        expandCellTextRef.current = String(cell.renderValue());
-                        setExpandCellOpen(true);
-                      }}
-                    >
-                      <SizeIcon className="group-hover:scale-150 transition-transform duration-50" />
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        },
-      }),
-    ),
-  ];
 
   const handleExportRows = () => {
     const exported = rows.map((row) => {
@@ -386,7 +367,7 @@ export function Table({ id }: TableProps) {
       )}
       <div className="scrollbar-thin grow overflow-auto pl-3">
         {table.columns.length > 0 && (
-          <DataGrid columns={columns} data={rows} setHoverCell={setHoverCell} />
+          <DataGrid columns={columnsRef.current} data={rows} />
         )}
       </div>
 

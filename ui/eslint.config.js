@@ -6,5 +6,8 @@ export default [
   { files: ["**/*.{js,mjs,cjs,ts,tsx}"] },
   { files: ["**/*.js"], languageOptions: { sourceType: "script" } },
   { languageOptions: { globals: globals.browser } },
+  {
+    ignores: ["**/dist/*"],
+  },
   ...tseslint.configs.recommended,
 ];
