@@ -121,7 +121,7 @@ func TestPromptBuilder_RowsBuilderAutofill(t *testing.T) {
 	expected := `<TableDescription>rows gen</TableDescription>
 Columns of the table:
 <Columns>
-  <Column id="id" name="id" description="short unique database id of this row" type="string"/>
+  <Column id="id" name="id" description="short unique database id of this row, must match input row id attr in &lt;Rows&gt;" type="string"/>
   <Column id="n1" name="c1" description="col1" type="string"/>
   <Column id="n2" name="c2" description="col2" type="integer"/>
 </Columns>
