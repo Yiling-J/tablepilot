@@ -146,7 +146,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
 	  The sampling temperature. Higher values will make the output more random. (default 0.6)
 
 - **autofill**
-  Generate data for a specified table.
+  Autofill specified columns for a table. For each existing row, the provided `--columns` will be generated.
   ```
   tablepilot autofill recipes -c=50 -b=10 --columns=ingredients --columns=tags --context_columns=name --context_columns=steps
   ```
