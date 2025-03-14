@@ -11,7 +11,7 @@ http://127.0.0.1:8080/api/v1
 ---
 ## Endpoints
 
-### 1. Create a Table
+### Create a Table
 #### Endpoint
 ```
 POST /tables
@@ -41,7 +41,7 @@ See [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/exampl
 ```
 
 ---
-### 2. Generate Rows
+### Generate Rows
 #### Endpoint
 ```
 POST /generate/tables/{table_id or table_name}
@@ -66,7 +66,33 @@ POST /generate/tables/{table_id or table_name}
 ```
 
 ---
-### 3. Stream Row Generation
+### Autofill Rows
+#### Endpoint
+```
+POST /autofill/tables/{table_id or table_name}
+```
+#### Request Body
+```json
+{
+  "batch": 2,
+  "count": 4,
+  "temperature": 0.56,
+  "model": "aiai"
+  "autofill": {"columns": ["ingredients"], "context_columns": ["steps"]}
+}
+```
+#### Response
+```json
+{
+  "data": [
+    {"recipe_name": "0", "ingredient": "t0"},
+    {"recipe_name": "1", "ingredient": "t1"}
+  ]
+}
+```
+
+---
+### Stream Row Generation
 #### Endpoint
 ```
 POST /generate/tables/{table_id or table_name}
@@ -94,7 +120,7 @@ data:[DONE]
 ```
 
 ---
-### 4. Fetch Table Rows
+### Fetch Table Rows
 #### Endpoint
 ```
 GET /tables/{table_id or table_name}/rows
@@ -112,7 +138,7 @@ GET /tables/{table_id or table_name}/rows
 ```
 
 ---
-### 5. List All Tables
+### List All Tables
 #### Endpoint
 ```
 GET /tables
@@ -129,7 +155,7 @@ GET /tables
 ```
 
 ---
-### 6. Delete a Table
+### Delete a Table
 #### Endpoint
 ```
 DELETE /tables/{table_id or table_name}
@@ -140,7 +166,7 @@ DELETE /tables/{table_id or table_name}
 ```
 
 ---
-### 7. Truncate a Table
+### Truncate a Table
 #### Endpoint
 ```
 POST /tables/{table_id or table_name}/truncate
@@ -153,7 +179,7 @@ POST /tables/{table_id or table_name}/truncate
 ```
 
 ---
-### 8. Describe a Table
+### Describe a Table
 #### Endpoint
 ```
 GET /tables/{table_id or table_name}
@@ -181,7 +207,7 @@ GET /tables/{table_id or table_name}
 ```
 
 ---
-### 9. List Modela
+### List Models
 #### Endpoint
 ```
 GET /models

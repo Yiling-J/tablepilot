@@ -294,3 +294,67 @@ func TestAPI_ListModels(t *testing.T) {
 	resp := server.Send(req)
 	resp.ResponseEq(t, 200, expected)
 }
+
+func TestAPI_Autofill(t *testing.T) {
+	var counter int
+	mockRowGen := &table.RowsGeneratorMock{
+		NextFunc: func(ctx context.Context) ([]map[string]*schema.CellValue, error) {
+			defer func() { counter += 1 }()
+			if counter < 2 {
+				return []map[string]*schema.CellValue{
+					{
+						"1": &schema.CellValue{Value: cast.ToString(counter), ContextValue: map[string]any{"a": "b"}},
+						"2": &schema.CellValue{Value: "t" + cast.ToString(counter)},
+					},
+				}, nil
+			}
+			return []map[string]*schema.CellValue{}, nil
+		},
+		TableFunc: func() *ent.TableMeta {
+			return &ent.TableMeta{
+				Name: "foo",
+				Edges: ent.TableMetaEdges{
+					Columns: []*ent.TableColumn{
+						{Nanoid: "1", Name: "c1"},
+						{Nanoid: "2", Name: "c2"},
+					},
+				},
+			}
+		},
+	}
+	tableMock := &table.TableServiceMock{
+		GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
+			require.Equal(t, "foo", params.Table)
+			require.Equal(t, 4, params.Count)
+			require.Equal(t, 2, params.Batch)
+			require.Equal(t, 0.56, params.Temperature)
+			require.Equal(t, "aiai", params.Model)
+			require.Equal(t, true, params.Autofill.Enable)
+			require.Equal(t, 3, params.Autofill.Offset)
+			require.Equal(t, []string{"c1", "c2"}, params.Autofill.Columns)
+			require.Equal(t, []string{"c3", "c4"}, params.Autofill.ContextColumns)
+			return mockRowGen, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewPostRequest("/api/v1/autofill/tables/foo", &table.GenerateRowsRequest{
+		Batch:       2,
+		Count:       4,
+		Temperature: 0.56,
+		Model:       "aiai",
+		Autofill: table.AutofillRequest{
+			Offset:         3,
+			Columns:        []string{"c1", "c2"},
+			ContextColumns: []string{"c3", "c4"},
+		},
+	})
+	require.NoError(t, err)
+	resp := server.Send(req)
+	expectedRows := []map[string]any{
+		{"1": "0", "2": "t0"},
+		{"1": "1", "2": "t1"},
+	}
+	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows})
+}

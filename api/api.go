@@ -36,13 +36,7 @@ func sseHeaders(c *gin.Context) {
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
 }
 
-func (hs *HTTPServer) Generate(ctx *gin.Context) {
-	var request table.GenerateRowsRequest
-	err := ctx.ShouldBindJSON(&request)
-	if err != nil {
-		errorResponse(ctx, 400, err)
-		return
-	}
+func (hs *HTTPServer) gen(ctx *gin.Context, request table.GenerateRowsRequest) {
 	if request.Stream {
 		sseHeaders(ctx)
 	}
@@ -86,6 +80,28 @@ func (hs *HTTPServer) Generate(ctx *gin.Context) {
 		ctx.Writer.Flush()
 	}
 	ctx.JSON(200, gin.H{"data": data})
+}
+
+func (hs *HTTPServer) Generate(ctx *gin.Context) {
+	var request table.GenerateRowsRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	request.Autofill.Enable = false
+	hs.gen(ctx, request)
+}
+
+func (hs *HTTPServer) Autofill(ctx *gin.Context) {
+	var request table.GenerateRowsRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	request.Autofill.Enable = true
+	hs.gen(ctx, request)
 }
 
 func (hs *HTTPServer) Rows(ctx *gin.Context) {
@@ -154,5 +170,6 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.DELETE("/tables/:table", hs.Delete)
 	hs.apiv1.POST("/tables/:table/truncate", hs.Truncate)
 	hs.apiv1.POST("/generate/tables/:table", hs.Generate)
+	hs.apiv1.POST("/autofill/tables/:table", hs.Autofill)
 	hs.apiv1.GET("/tables/:table/rows", hs.Rows)
 }
