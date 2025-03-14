@@ -282,3 +282,119 @@ func (h *Handler) Truncate(cmd *cobra.Command, args []string) error {
 	h.backend.Logger.Infow("table truncated", "removed", removed)
 	return nil
 }
+
+func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
+	batch, err := cmd.Flags().GetInt("batch")
+	if err != nil {
+		return err
+	}
+	count, err := cmd.Flags().GetInt("count")
+	if err != nil {
+		return err
+	}
+	offset, err := cmd.Flags().GetInt("offset")
+	if err != nil {
+		return err
+	}
+	saveTo, err := cmd.Flags().GetString("saveto")
+	if err != nil {
+		return err
+	}
+	if batch > count {
+		batch = count
+	}
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
+	columns, err := cmd.Flags().GetStringArray("columns")
+	if err != nil {
+		return err
+	}
+	contextColumns, err := cmd.Flags().GetStringArray("context_columns")
+	if err != nil {
+		return err
+	}
+
+	generator, err := h.backend.TableService.Genetate(
+		cmd.Context(), table.GenerateRowsRequest{
+			Table:       args[0],
+			SaveTo:      saveTo,
+			Count:       count,
+			Batch:       batch,
+			Temperature: temperature,
+			Model:       model,
+			Autofill: table.AutofillRequest{
+				Enable:         true,
+				Offset:         offset,
+				Columns:        columns,
+				ContextColumns: contextColumns,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
+	tp := h.getPrinter()
+	tp.AddHeader(indexer.ColumnNames())
+	var csvWriter *csv.Writer
+	if saveTo != "" {
+		file, err := os.Create(saveTo)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = file.Close() }()
+		csvWriter = csv.NewWriter(file)
+		columns := []string{}
+		for _, col := range generator.Table().Edges.Columns {
+			columns = append(columns, col.Name)
+		}
+		err = csvWriter.Write(columns)
+		if err != nil {
+			return err
+		}
+	}
+	for {
+		batch, err := generator.Next(cmd.Context())
+		if err != nil {
+			return err
+		}
+		if len(batch) == 0 {
+			break
+		}
+		for _, row := range batch {
+			sr := []string{}
+			v, err := indexer.RowMapToSlice(row)
+			if err != nil {
+				return err
+			}
+			for _, cell := range v {
+				sv := cellString(cell.Value)
+				sr = append(sr, sv)
+				tp.AddField(sv)
+			}
+			tp.EndRow()
+			if csvWriter != nil {
+				err = csvWriter.Write(sr)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		err = tp.Render()
+		if err != nil {
+			return err
+		}
+		if csvWriter != nil {
+			csvWriter.Flush()
+		}
+	}
+	h.backend.Logger.Infow("autofill done")
+	return nil
+}

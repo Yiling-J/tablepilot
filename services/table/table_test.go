@@ -274,8 +274,9 @@ func TestTableService_LinkedContextRow(t *testing.T) {
 	require.NoError(t, err)
 
 	generator := &AIRowsGenerator{
-		table:         tb,
-		contextLength: 1,
+		table:          tb,
+		contextLength:  1,
+		contextColumns: []*ent.TableColumn{c},
 	}
 	err = generator.newBatch(ctx, 1)
 	require.NoError(t, err)

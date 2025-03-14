@@ -24,15 +24,24 @@ type TableGenRequest struct {
 	Sources     []json.RawMessage `json:"sources"`
 }
 
+type AutofillRequest struct {
+	Enable         bool     `json:"enable"`
+	Offset         int      `json:"offset"`
+	Columns        []string `json:"columns"`
+	ContextColumns []string `json:"context_columns"`
+}
+
 type GenerateRowsRequest struct {
-	Table       string
-	SaveTo      string
-	Count       int
-	Batch       int
-	Temperature float64
-	Model       string
-	// used in API only to send streaming results
-	Stream bool
+	Table       string  `json:"table"`
+	SaveTo      string  `json:"save_to"`
+	Count       int     `json:"count"`
+	Batch       int     `json:"batch"`
+	Temperature float64 `json:"temperature"`
+	Model       string  `json:"model"`
+	// used `json:""` in API only to send streaming results
+	Stream bool `json:"stream"`
+
+	Autofill AutofillRequest `json:"autofill"`
 }
 
 type ColumnSchema struct {

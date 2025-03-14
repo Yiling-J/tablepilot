@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -16,6 +17,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 	"github.com/Yiling-J/tablepilot/services/table/source"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/spf13/cast"
 
 	"github.com/invopop/jsonschema"
 	"github.com/tidwall/gjson"
@@ -34,6 +36,7 @@ type AIRowsGenerator struct {
 	logger         *zap.SugaredLogger
 	table          *ent.TableMeta
 	missingColumns []*ent.TableColumn
+	contextColumns []*ent.TableColumn
 	sourceMap      map[string]source.Source
 	generated      []map[string]*schema.CellValue
 	contextLength  int
@@ -44,9 +47,12 @@ type AIRowsGenerator struct {
 	total     int
 	batchSize int
 	current   int
+	offset    int
 
 	rows    []map[string]*schema.CellValue
 	builder *promptbuilder.RowsBuilder
+
+	autofill AutofillRequest
 }
 
 func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
@@ -61,6 +67,8 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		saveTo:      params.SaveTo,
 		temperature: params.Temperature,
 		model:       params.Model,
+		autofill:    params.Autofill,
+		offset:      params.Autofill.Offset,
 	}
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
@@ -72,8 +80,27 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		return nil, err
 	}
 	generator.table = meta
+	// in autofill mode, is ContextColumns is empty, add all other columns as context columns
+	if generator.autofill.Enable && len(generator.autofill.ContextColumns) == 0 {
+		for _, c := range meta.Edges.Columns {
+			if !slices.Contains(params.Autofill.Columns, c.Name) && !slices.Contains(params.Autofill.Columns, c.Nanoid) {
+				generator.autofill.ContextColumns = append(generator.autofill.ContextColumns, c.Nanoid)
+			}
+		}
+	}
 
 	for _, c := range meta.Edges.Columns {
+		if params.Autofill.Enable {
+			if slices.Contains(generator.autofill.ContextColumns, c.Name) || slices.Contains(generator.autofill.ContextColumns, c.Nanoid) {
+				generator.contextColumns = append(generator.contextColumns, c)
+			}
+		} else {
+			generator.contextColumns = append(generator.contextColumns, c)
+		}
+		// in autofill mode, only autofill required columns
+		if params.Autofill.Enable && !slices.Contains(generator.autofill.Columns, c.Name) && !slices.Contains(generator.autofill.Columns, c.Nanoid) {
+			continue
+		}
 		if c.ContextLength > generator.contextLength {
 			generator.contextLength = c.ContextLength
 		}
@@ -129,8 +156,8 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 			}
 		}
 	}
-	// add context values for each column
-	for _, col := range g.table.Edges.Columns {
+
+	for _, col := range g.contextColumns {
 		if col.ContextLength > 0 {
 			values := []any{}
 			for i := 0; i < col.ContextLength; i++ {
@@ -153,27 +180,59 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 	return nil
 }
 
-func (g *AIRowsGenerator) prepareRow(ctx context.Context) error {
-	row := map[string]*schema.CellValue{}
-	for _, col := range g.table.Edges.Columns {
-		so, ok := g.sourceMap[col.Nanoid]
-		if ok {
-			v, err := so.Next(ctx)
-			if err != nil {
-				return err
-			}
-			row[col.Nanoid] = v
+func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
+	if g.autofill.Enable {
+		rows, err := g.table.QueryRows().Order(
+			ent.Asc(tablerow.FieldID),
+		).Limit(batch).Offset(g.offset).All(ctx)
+		if err != nil {
+			return err
 		}
-	}
-	if len(row) > 0 {
-		g.rows = append(g.rows, row)
+		g.offset += len(rows)
+		contextColumnIDs := map[string]bool{}
+		for _, col := range g.contextColumns {
+			contextColumnIDs[col.Nanoid] = true
+		}
+		for _, dbrow := range rows {
+			row := map[string]*schema.CellValue{}
+			for i, col := range g.table.Edges.Columns {
+				if _, ok := contextColumnIDs[col.Nanoid]; ok {
+					row[col.Nanoid] = dbrow.Cells[i]
+				}
+			}
+			row["id"] = &schema.CellValue{Value: dbrow.Nanoid}
+			g.rows = append(g.rows, row)
+		}
+	} else {
+		for n := 0; n < batch; n++ {
+			row := map[string]*schema.CellValue{}
+			for _, col := range g.table.Edges.Columns {
+				so, ok := g.sourceMap[col.Nanoid]
+				if ok {
+					v, err := so.Next(ctx)
+					if err != nil {
+						return err
+					}
+					row[col.Nanoid] = v
+				}
+			}
+			if len(row) > 0 {
+				row["id"] = &schema.CellValue{Value: n}
+				g.rows = append(g.rows, row)
+			}
+		}
 	}
 	return nil
 }
 
 func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error) {
 	om := orderedmap.New[string, *jsonschema.Schema]()
-	om.Set("id", &jsonschema.Schema{Type: "integer"})
+	if g.autofill.Enable {
+		// row nanoid
+		om.Set("id", &jsonschema.Schema{Type: "string"})
+	} else {
+		om.Set("id", &jsonschema.Schema{Type: "integer"})
+	}
 	required := []string{"id"}
 	for _, col := range g.missingColumns {
 		s := &jsonschema.Schema{
@@ -270,11 +329,13 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	if err != nil {
 		return nil, err
 	}
-	for n := 0; n < batch; n++ {
-		err = g.prepareRow(ctx)
-		if err != nil {
-			return nil, err
-		}
+	err = g.prepareRows(ctx, batch)
+	if err != nil {
+		return nil, err
+	}
+	// no more rows to be autofill
+	if g.autofill.Enable && len(g.rows) == 0 {
+		return nil, nil
 	}
 	chatRows := []map[string]any{}
 	for _, row := range g.rows {
@@ -288,7 +349,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		}
 		chatRows = append(chatRows, cr)
 	}
-	g.builder.AddTableColumns(g.table.Edges.Columns)
+	g.builder.AddTableColumns(g.table.Edges.Columns, g.autofill.Enable)
 	g.builder.AddMissingColumns(g.missingColumns)
 	err = g.builder.AddExistings(chatRows)
 	if err != nil {
@@ -313,13 +374,17 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	if len(g.rows) > 0 {
 		for i, row := range g.rows {
 			if len(rows) > i {
+				if cast.ToString(rows[i]["id"]) != cast.ToString(row["id"].Value) {
+					return nil, errors.New("generated row id mismatch")
+				}
 				for k, v := range rows[i] {
-					// id is an internal columns to hint LLM to return correct count/order
-					if k == "id" {
-						continue
-					}
 					row[k] = &schema.CellValue{Value: v}
 				}
+			}
+			// on create rows, id is an internal columns to hint LLM to return correct count/order
+			// on autofill rows, id is the database nanoid field, so must keep it so we can update database based on this id
+			if !g.autofill.Enable {
+				delete(row, "id")
 			}
 			generated = append(generated, row)
 		}
@@ -327,12 +392,9 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		for _, row := range rows {
 			n := map[string]*schema.CellValue{}
 			for k, v := range row {
-				// id is an internal columns to hint LLM to return correct count/order
-				if k == "id" {
-					continue
-				}
 				n[k] = &schema.CellValue{Value: v}
 			}
+			delete(row, "id")
 			generated = append(generated, n)
 		}
 	}
@@ -351,24 +413,47 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 	if err != nil {
 		return nil, err
 	}
+	if len(rows) == 0 {
+		return []map[string]*schema.CellValue{}, nil
+	}
 	if len(rows) > batchSize {
 		rows = rows[:batchSize]
 	}
 	g.generated = append(g.generated, rows...)
 	g.current += len(rows)
 	if g.saveTo == "" {
-		indexer := util.NewColumnIndexer(g.table.Edges.Columns)
-		creates := []*ent.TableRowCreate{}
-		for _, row := range rows {
-			v, err := indexer.RowMapToSlice(row)
+		if g.autofill.Enable {
+			// update rows by nanoid
+			indexer := util.NewColumnIndexer(g.table.Edges.Columns)
+			creates := []*ent.TableRowCreate{}
+			for _, row := range rows {
+				v, err := indexer.RowMapToSlice(row)
+				if err != nil {
+					return nil, err
+				}
+				creates = append(creates, g.db.TableRow.Create().SetNanoid(
+					cast.ToString(row["id"].Value),
+				).SetCells(v).SetTablemeta(g.table))
+			}
+			err = g.db.TableRow.CreateBulk(creates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
 			if err != nil {
 				return nil, err
 			}
-			creates = append(creates, g.db.TableRow.Create().SetCells(v).SetTablemeta(g.table))
-		}
-		err = g.db.TableRow.CreateBulk(creates...).Exec(ctx)
-		if err != nil {
-			return nil, err
+		} else {
+			// create rows
+			indexer := util.NewColumnIndexer(g.table.Edges.Columns)
+			creates := []*ent.TableRowCreate{}
+			for _, row := range rows {
+				v, err := indexer.RowMapToSlice(row)
+				if err != nil {
+					return nil, err
+				}
+				creates = append(creates, g.db.TableRow.Create().SetCells(v).SetTablemeta(g.table))
+			}
+			err = g.db.TableRow.CreateBulk(creates...).Exec(ctx)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return rows, nil

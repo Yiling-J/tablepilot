@@ -6,7 +6,7 @@
 
 # Tablepilot
 
-Tablepilot is a CLI/API/WebUI tool designed to generate tables using AI.
+Tablepilot is a CLI/API/WebUI tool designed to generate/autofill tables using AI.
 
 - **AI-generated columns:** If you want your table to have four columns but only know two of them, just add empty objects: `[<column1>, <column2>, {}, {}]` to schema. Tablepilot will automatically generate the missing two for you.
 
@@ -87,7 +87,14 @@ For the API server, send a request with the schema as JSON in the request body. 
 
 ## Examples
 
-A number of examples demonstrating various use cases of Tablepilot are available in the [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples).
+A number of examples demonstrating various use cases of Tablepilot are available in the [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples). Below are two of the most interesting ones:
+
+- **recipes_for_customers**
+  This example illustrating how to use another table as a reference. The `customers.json` file is used to generate a customer table, and then the recipes table is generated based on customer data. Each customer will receive a unique recipe tailored to their information.
+  
+- **pokémons**
+  This example demonstrates how to create a table, import an existing CSV of 1000 Pokémons, and autofill column data. Tablepilot will generate ecological information for each Pokémon based on the existing row data.
+
 
 ## Usage
 
@@ -137,6 +144,23 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 	- `-t, --temperature float`
 	  The sampling temperature. Higher values will make the output more random. (default 0.6)
+
+- **autofill**
+  Generate data for a specified table.
+  ```
+  tablepilot autofill recipes -c=50 -b=10 --columns=ingredients --columns=tags --context_columns=name --context_columns=steps
+  ```
+    - <all generate command flgs>
+
+	- `--columns string`
+	  Specifies the columns to autofill; existing values will be ignored and regenerated. This flag can be set multiple times to specify multiple columns (see example).
+
+	- `--context_columns string`
+	  Specifies the columns to autofill; existing values will be ignored and regenerated. This flag can be set multiple times to specify multiple columns (see example).
+	  If you don't want any context columns, just set it to a non-existent column (`--context_columns=nullll`).
+
+	- `-o, --offset int`
+	  Start offset for autofilling rows. (default 0)
 
 - **import**
   Import a CSV file into a table.

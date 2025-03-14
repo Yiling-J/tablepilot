@@ -35,9 +35,10 @@ func (rb *RowsBuilder) AddExistings(rows []map[string]any) error {
 	}
 	rb.AddText("Below is the rows data, each row contains existing columns data, and help me fill missing columns for each row. In the return rows array, provide id field and missing column data.")
 	rx := rb.NewXML("Rows")
-	for i, row := range rows {
+	for _, row := range rows {
 		r := rx.CreateElement("Row")
-		r.CreateAttr("id", cast.ToString(i))
+		r.CreateAttr("id", cast.ToString(row["id"]))
+		delete(row, "id")
 		b, err := json.Marshal(row)
 		if err != nil {
 			return err
@@ -48,7 +49,7 @@ func (rb *RowsBuilder) AddExistings(rows []map[string]any) error {
 	return nil
 }
 
-func (rb *RowsBuilder) AddTableColumns(v []*ent.TableColumn) {
+func (rb *RowsBuilder) AddTableColumns(v []*ent.TableColumn, autofill bool) {
 	if len(v) == 0 {
 		return
 	}
@@ -58,8 +59,13 @@ func (rb *RowsBuilder) AddTableColumns(v []*ent.TableColumn) {
 	cel := el.CreateElement("Column")
 	cel.CreateAttr("id", "id")
 	cel.CreateAttr("name", "id")
-	cel.CreateAttr("description", "index of the row, always starting from 0 in each generation")
-	cel.CreateAttr("type", "integer")
+	if autofill {
+		cel.CreateAttr("description", "short unique database id of this row, must match input row id attr in <Rows>")
+		cel.CreateAttr("type", "string")
+	} else {
+		cel.CreateAttr("description", "index of the row, always starting from 0 in each generation")
+		cel.CreateAttr("type", "integer")
+	}
 	for _, col := range v {
 		cel := el.CreateElement("Column")
 		cel.CreateAttr("id", col.Nanoid)

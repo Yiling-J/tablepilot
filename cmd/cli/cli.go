@@ -151,6 +151,35 @@ func BuildCLI(root *cobra.Command) {
 
 	cmd.AddCommand(generate)
 
+	autofill := &cobra.Command{
+		Use:   "autofill <table id or name>",
+		Short: "Autofill missing columns specified table",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handler.Autofill(cmd, args)
+		},
+	}
+	autofill.Flags().IntP("count", "c", 0, "total number of rows to autofill, default all existing rows")
+	autofill.Flags().IntP("batch", "b", 10, "number of rows to autofill in a batch")
+	autofill.Flags().IntP("offset", "o", 0, "start offset")
+	autofill.Flags().StringP(
+		"saveto", "s", "",
+		"specify a file to save output, instead of storing in the database",
+	)
+	autofill.Flags().Float64P("temperature", "t", 0.6, "The sampling temperature. Higher values will make the output more random.")
+	autofill.Flags().StringP(
+		"model", "m", "",
+		"specify the model used to generate rows. If not provided, the default model will be used",
+	)
+	autofill.Flags().StringArray("columns", []string{}, "columns to be autofilled, existing value wil be ignore and force regenerate")
+	err = autofill.MarkFlagRequired("columns")
+	if err != nil {
+		panic(err)
+	}
+	autofill.Flags().StringArray("context_columns", []string{}, "columns that should be put in prompt as context, default to all other columns")
+
+	cmd.AddCommand(autofill)
+
 	importCmd := &cobra.Command{
 		Use:   "import <file>",
 		Short: "Import csv file as table",

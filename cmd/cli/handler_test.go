@@ -445,3 +445,126 @@ func TestHandler_Describe(t *testing.T) {
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }
+
+func TestHandler_Autofill(t *testing.T) {
+	for _, saveTo := range []bool{false, true} {
+		t.Run(fmt.Sprintf("saveto flag set %v", saveTo), func(t *testing.T) {
+			var counter int
+			mockRowGen := &table.RowsGeneratorMock{
+				NextFunc: func(ctx context.Context) ([]map[string]*schema.CellValue, error) {
+					defer func() { counter += 1 }()
+					if counter < 2 {
+						return []map[string]*schema.CellValue{
+							{
+								"1": &schema.CellValue{Value: cast.ToString(counter)},
+								"2": &schema.CellValue{Value: "t" + cast.ToString(counter)},
+							},
+						}, nil
+					}
+					return []map[string]*schema.CellValue{}, nil
+				},
+				TableFunc: func() *ent.TableMeta {
+					return &ent.TableMeta{
+						Name: "foo",
+						Edges: ent.TableMetaEdges{
+							Columns: []*ent.TableColumn{
+								{Nanoid: "1", Name: "c1"},
+								{Nanoid: "2", Name: "c2"},
+							},
+						},
+					}
+				},
+			}
+			tableMock := &table.TableServiceMock{
+				GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
+					require.Equal(t, "foo", params.Table)
+					if saveTo {
+						require.Equal(t, "foo_gen.csv", params.SaveTo)
+					} else {
+						require.Equal(t, "", params.SaveTo)
+					}
+					require.Equal(t, 4, params.Count)
+					require.Equal(t, 2, params.Batch)
+					require.Equal(t, 0.56, params.Temperature)
+					require.Equal(t, "aiai", params.Model)
+					require.Equal(t, true, params.Autofill.Enable)
+					require.Equal(t, 3, params.Autofill.Offset)
+					require.Equal(t, []string{"c1"}, params.Autofill.Columns)
+					require.Equal(t, []string{"c2"}, params.Autofill.ContextColumns)
+					return mockRowGen, nil
+				},
+			}
+			printer := &tableprinter.TablePrinterMock{
+				AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
+				AddFieldFunc:  func(s string, fieldOptions ...tableprinter.FieldOption) {},
+				EndRowFunc:    func() {},
+				RenderFunc:    func() error { return nil },
+			}
+			handler := NewHandler(
+				services.NewBackend(
+					&config.Config{}, nil, zap.NewNop().Sugar(),
+					nil, tableMock,
+				),
+			)
+			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
+			cmd := &cobra.Command{}
+			cmd.Flags().IntP("count", "", 0, "")
+			cmd.Flags().IntP("batch", "", 0, "")
+			cmd.Flags().StringP("saveto", "s", "", "")
+			cmd.Flags().Float64P("temperature", "", 0.6, "")
+			cmd.Flags().StringP("model", "", "", "")
+			cmd.Flags().Int("offset", 3, "")
+			cmd.Flags().StringArray("columns", []string{}, "")
+			cmd.Flags().StringArray("context_columns", []string{}, "")
+			err := cmd.Flags().Set("count", "4")
+			require.NoError(t, err)
+			err = cmd.Flags().Set("batch", "2")
+			require.NoError(t, err)
+			if saveTo {
+				err = cmd.Flags().Set("saveto", "foo_gen.csv")
+				require.NoError(t, err)
+			}
+			err = cmd.Flags().Set("temperature", "0.56")
+			require.NoError(t, err)
+
+			err = cmd.Flags().Set("model", "aiai")
+			require.NoError(t, err)
+
+			err = cmd.Flags().Set("columns", "c1")
+			require.NoError(t, err)
+
+			err = cmd.Flags().Set("context_columns", "c2")
+			require.NoError(t, err)
+
+			err = handler.Autofill(cmd, []string{"foo"})
+			require.NoError(t, err)
+			if saveTo {
+				defer os.Remove("foo_gen.csv")
+			}
+
+			require.Equal(t, 1, len(printer.AddHeaderCalls()))
+			require.Equal(t, []string{"c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+			require.Equal(t, 4, len(printer.AddFieldCalls()))
+			fields := []string{}
+			for _, call := range printer.AddFieldCalls() {
+				fields = append(fields, call.S)
+			}
+			require.Equal(t, []string{"0", "t0", "1", "t1"}, fields)
+			require.Equal(t, 2, len(printer.EndRowCalls()))
+			require.Equal(t, 2, len(printer.RenderCalls()))
+
+			if saveTo {
+				file, err := os.Open("foo_gen.csv")
+				require.NoError(t, err)
+				defer file.Close()
+				reader := csv.NewReader(file)
+				records, err := reader.ReadAll()
+				require.NoError(t, err)
+				require.Equal(
+					t,
+					[][]string{{"c1", "c2"}, {"0", "t0"}, {"1", "t1"}},
+					records)
+			}
+		})
+	}
+}
