@@ -230,6 +230,7 @@ export function Table({ id }: TableProps) {
   const clickButton = (state: string) => {
     switch (state) {
       case "start": {
+        genRequestRef.current.model = model;
         setButton({
           text: "Stop",
           enabled: true,
