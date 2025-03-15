@@ -297,7 +297,6 @@ func TestAPI_ListModels(t *testing.T) {
 }
 
 func TestAPI_Autofill(t *testing.T) {
-
 	for _, emptyContextColumns := range []bool{false, true} {
 		t.Run(fmt.Sprintf("empty context columns %v", emptyContextColumns), func(t *testing.T) {
 			var counter int
