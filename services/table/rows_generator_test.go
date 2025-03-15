@@ -621,3 +621,79 @@ func TestRowsGenerator_AutofillNext(t *testing.T) {
 		})
 	}
 }
+
+func TestRowsGenerator_AutofillPartial(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+	require.NoError(t, err)
+	err = db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Exec(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	_, err = db.TableColumn.Create().
+		SetName("c3").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	_, err = db.TableColumn.Create().
+		SetName("c4").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	dbrows, err := db.TableRow.CreateBulk([]*ent.TableRowCreate{
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v10"}, {Value: "v20"}, {Value: "v30"}, {Value: "v40"},
+		}),
+	}...).Save(ctx)
+	require.NoError(t, err)
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			data := []map[string]any{
+				{"id": dbrows[0].Nanoid, col2.Nanoid: "foobar"},
+			}
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 1,
+		Batch: 1,
+		Autofill: AutofillRequest{
+			Enable:         true,
+			Columns:        []string{"c1"},
+			ContextColumns: []string{col2.Nanoid},
+		},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	for {
+		v, err := generator.Next(ctx)
+		require.NoError(t, err)
+		if len(v) == 0 {
+			break
+		}
+	}
+	rows, err := tb.QueryRows().All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(rows))
+	require.Equal(t, rows[0].Cells, []*schema.CellValue{
+		{Value: "v10"}, {Value: "foobar"}, {Value: "v30"}, {Value: "v40"},
+	})
+}

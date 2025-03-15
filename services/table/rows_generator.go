@@ -189,16 +189,10 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 			return err
 		}
 		g.offset += len(rows)
-		contextColumnIDs := map[string]bool{}
-		for _, col := range g.contextColumns {
-			contextColumnIDs[col.Nanoid] = true
-		}
 		for _, dbrow := range rows {
 			row := map[string]*schema.CellValue{}
 			for i, col := range g.table.Edges.Columns {
-				if _, ok := contextColumnIDs[col.Nanoid]; ok {
-					row[col.Nanoid] = dbrow.Cells[i]
-				}
+				row[col.Nanoid] = dbrow.Cells[i]
 			}
 			row["id"] = &schema.CellValue{Value: dbrow.Nanoid}
 			g.rows = append(g.rows, row)
@@ -338,9 +332,19 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		return nil, nil
 	}
 	chatRows := []map[string]any{}
+	// used in autofill mode only
+	contextColumnIDs := map[string]bool{}
+	for _, col := range g.contextColumns {
+		contextColumnIDs[col.Nanoid] = true
+	}
 	for _, row := range g.rows {
 		cr := map[string]any{}
 		for k, v := range row {
+			if g.autofill.Enable && k != "id" {
+				if _, ok := contextColumnIDs[k]; !ok {
+					continue
+				}
+			}
 			if v.ContextValue != nil {
 				cr[k] = v.ContextValue
 			} else {
