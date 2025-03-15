@@ -68,7 +68,7 @@ export function GridHeader({
           <div className="flex ml-4">Temperature</div>
           <Slider
             min={0}
-            defaultValue={[0.6]}
+            value={[genRequestRef.current.temperature]}
             max={2}
             step={0.01}
             className="w-36 ml-4"

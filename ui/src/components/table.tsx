@@ -1,7 +1,9 @@
 import {
+    Column,
     GenerateRequest,
     ModelList,
     TableInfo,
+    autofill,
     generate,
     getModels,
     getRows,
@@ -13,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { AutofillDialog } from "./dialog/autofill-start.tsx";
 import { CellTextDialog } from "./dialog/cell-text.tsx";
 import { DataGrid } from "./grid/data-grid";
 import { Button } from "./ui/button";
@@ -105,6 +108,7 @@ export function Table({ id }: TableProps) {
   const [isLoading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [expandCellOpen, setExpandCellOpen] = useState(false);
+  const [autofillOpen, setAutofillOpen] = useState(false);
   const [model, setModel] = useState("");
   const [button, setButton] = useState<TableButton>({
     text: "Start",
@@ -122,6 +126,8 @@ export function Table({ id }: TableProps) {
   } as GenerateRequest);
   const abortControllerRef = useRef(new AbortController());
   const columnsRef = useRef([] as ColumnDef<JSONObject, string>[]);
+  const modeRef = useRef<"generate" | "autofill">("generate");
+  const autofillOffsetRef = useRef(0);
   const { refreshTables } = useTables();
 
   const fetchData = async () => {
@@ -227,10 +233,38 @@ export function Table({ id }: TableProps) {
     }
   };
 
+  const handleAutofillEvent = (data: string): void => {
+    if (data === "[DONE]") {
+      setButton({
+        text: "Start",
+        enabled: true,
+        clickState: "start",
+        icon: "play_circle",
+        color: "bg-green-600",
+      });
+      setGenerating(false);
+      return;
+    }
+    try {
+      const newRows: JSONObject[] = JSON.parse(data).data;
+      setRows((old) => {
+        return concateRows(old, newRows, autofillOffsetRef.current);
+      });
+      autofillOffsetRef.current += newRows.length;
+    } catch (error) {
+      console.error("Error generating data:", error);
+    }
+  };
+
   const clickButton = (state: string) => {
     switch (state) {
       case "start": {
         genRequestRef.current.model = model;
+        if (modeRef.current === "autofill") {
+          autofillOffsetRef.current = 0;
+          setAutofillOpen(true);
+          return;
+        }
         setButton({
           text: "Stop",
           enabled: true,
@@ -291,7 +325,37 @@ export function Table({ id }: TableProps) {
         isOpen={expandCellOpen}
         setIsOpen={setExpandCellOpen}
       />
-      <TablepilotHeader title={table.name} />
+      <AutofillDialog
+        isOpen={autofillOpen}
+        setIsOpen={setAutofillOpen}
+        columns={table.columns}
+        onStart={(columns: Column[], contextColumns: Column[]) => {
+          setAutofillOpen(false);
+          setButton({
+            text: "Stop",
+            enabled: true,
+            clickState: "stop",
+            icon: "stop_circle",
+            color: "bg-red-600",
+          });
+          setGenerating(true);
+          genRef.current = true;
+          abortControllerRef.current = new AbortController();
+          autofill(id, abortControllerRef.current.signal, handleAutofillEvent, {
+            genRequest: genRequestRef.current,
+            autofill: {
+              columns: columns.map((c) => c.id),
+              context_columns: contextColumns.map((c) => c.id),
+              offset: 0,
+            },
+          });
+        }}
+      />
+      <TablepilotHeader
+        title={table.name}
+        modeRef={modeRef}
+        modeSwitchDisabled={generating}
+      />
 
       <div className="pb-3 px-4 pt-5">
         <div className="flex">
@@ -389,4 +453,20 @@ export function Table({ id }: TableProps) {
       </div>
     </div>
   );
+}
+
+function concateRows(
+  oldRows: JSONObject[],
+  newRows: JSONObject[],
+  offset: number,
+): JSONObject[] {
+  if (offset < 0 || offset > oldRows.length) {
+    throw new Error("Invalid offset value");
+  }
+
+  return [
+    ...oldRows.slice(0, offset),
+    ...newRows,
+    ...oldRows.slice(offset + newRows.length),
+  ];
 }

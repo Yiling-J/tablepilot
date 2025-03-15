@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -101,6 +102,10 @@ func (hs *HTTPServer) Autofill(ctx *gin.Context) {
 		return
 	}
 	request.Autofill.Enable = true
+	if len(request.Autofill.ContextColumns) == 0 {
+		// add a random not exist id
+		request.Autofill.ContextColumns = []string{uuid.New().String()}
+	}
 	hs.gen(ctx, request)
 }
 

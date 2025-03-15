@@ -1,6 +1,7 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { JSONObject } from "./json";
 import {
+    autofillUrl,
     generateUrl,
     modelsUrl,
     rowsUrl,
@@ -176,6 +177,45 @@ export async function generate(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ batch, count, temperature, model, stream: true }),
+    signal: signal,
+    onclose() {
+      callback("[DONE]");
+    },
+    onmessage(ev) {
+      callback(ev.data);
+    },
+  });
+  callback("[DONE]");
+}
+
+export interface AutofillParams {
+  columns: string[];
+  context_columns: string[];
+  offset: number;
+}
+
+export interface AutofillRequest {
+  genRequest: GenerateRequest;
+  autofill: AutofillParams;
+}
+
+export async function autofill(
+  table: string,
+  signal: AbortSignal,
+  callback: (data: string) => void,
+  { genRequest, autofill }: AutofillRequest,
+) {
+  await fetchEventSource(autofillUrl(table), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      batch: genRequest.batch,
+      count: genRequest.count,
+      temperature: genRequest.temperature,
+      model: genRequest.model,
+      stream: true,
+      autofill,
+    }),
     signal: signal,
     onclose() {
       callback("[DONE]");

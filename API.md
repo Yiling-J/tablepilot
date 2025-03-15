@@ -81,6 +81,8 @@ POST /autofill/tables/{table_id or table_name}
   "autofill": {"columns": ["ingredients"], "context_columns": ["steps"]}
 }
 ```
+**Important**: Unlike the autofill CLI command, if `context_columns` is empty, other columns will not be used automatically. You must explicitly specify which `context_columns` to use.
+
 #### Response
 ```json
 {

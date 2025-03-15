@@ -20,6 +20,10 @@ export function generateUrl(id: string) {
   return `${address}/api/v1/generate/tables/${id}`;
 }
 
+export function autofillUrl(id: string) {
+  return `${address}/api/v1/autofill/tables/${id}`;
+}
+
 export function truncateUrl(id: string) {
   return `${address}/api/v1/tables/${id}/truncate`;
 }
