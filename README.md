@@ -8,19 +8,15 @@
 
 Tablepilot is a CLI/API/WebUI tool designed to generate/autofill tables using AI.
 
-- **AI-generated columns:** If you want your table to have four columns but only know two of them, just add empty objects: `[<column1>, <column2>, {}, {}]` to schema. Tablepilot will automatically generate the missing two for you.
-
-- **Fine-grained context control:** For example, if you're generating a recipe table with "name" and "ingredients" columns, you can set a context length of 10 for the "name" column, meaning the previous 10 values will be included in the prompt. Meanwhile, you can set a context length of 0 for the "ingredients" column to reduce token usage.
+- **AI-Native:** Built from the ground up with AI at its core. Every aspect is designed with AI-first principles.
 
 - **Flexible column data generation strategies:** Each column can have a different generation method: AI-generated, randomly selected from a predefined list, or even pulled from another table.
 
 - **Cross-table context:** Say you have a customers table and a gifts table. You want AI to generate a personalized gift and greeting message based on each customer's age, job, or other details. Tablepilot can use the customer table row as context when generating each row in the gifts table.
 
-- **Schema storage in database:** By default, schemas are stored in a local SQLite database, but you can also use a remote database, making your schemas accessible from anywhere.
+- **Easily switch between different LLMs and models:** You can switch between models like OpenAI, Gemini or other OpenAI compatible models easily.
 
-- **Easily switch between different LLMs and models:** You can switch between providers like OpenAI, Gemini or other LLMs or between different models easily.
-
-- **Seamless API & WebUI:** With a single command: `tablepilot serve`, you can launch both the API server and the WebUI effortlessly. Whether you're integrating Tablepilot into your workflow via API or using the interactive WebUI for an intuitive experience, everything is included by default in the released binary. Check out the WebUI in action:
+- **Seamless API & WebUI:** With a single command: `tablepilot serve`, you can launch both the API server and the WebUI effortlessly. Everything is included by default in the released binary. Check out the WebUI in action! This demo showcases both table generation and autofill:
 
 ![Demo](./demo.gif)
 
