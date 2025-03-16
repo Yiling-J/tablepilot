@@ -372,3 +372,23 @@ func TestAPI_Autofill(t *testing.T) {
 		})
 	}
 }
+
+func TestAPI_CreateRows(t *testing.T) {
+	expectedRequest := &table.CreateRowsRequest{
+		Rows: []map[string]any{{"name": "foo"}},
+	}
+	tableMock := &table.TableServiceMock{
+		CreateRowsFunc: func(ctx context.Context, table string, rows []map[string]any) error {
+			require.Equal(t, expectedRequest.Rows, rows)
+			return nil
+
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewPostRequest("/api/v1/tables/foo", expectedRequest)
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, "")
+}

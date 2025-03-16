@@ -21,6 +21,9 @@ var _ TableService = &TableServiceMock{}
 //
 //		// make and configure a mocked TableService
 //		mockedTableService := &TableServiceMock{
+//			CreateRowsFunc: func(ctx context.Context, table string, rows []map[string]any) error {
+//				panic("mock out the CreateRows method")
+//			},
 //			CreateTableFunc: func(ctx context.Context, req *TableGenRequest) (string, error) {
 //				panic("mock out the CreateTable method")
 //			},
@@ -52,6 +55,9 @@ var _ TableService = &TableServiceMock{}
 //
 //	}
 type TableServiceMock struct {
+	// CreateRowsFunc mocks the CreateRows method.
+	CreateRowsFunc func(ctx context.Context, table string, rows []map[string]any) error
+
 	// CreateTableFunc mocks the CreateTable method.
 	CreateTableFunc func(ctx context.Context, req *TableGenRequest) (string, error)
 
@@ -78,6 +84,15 @@ type TableServiceMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateRows holds details about calls to the CreateRows method.
+		CreateRows []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table string
+			// Rows is the rows argument value.
+			Rows []map[string]any
+		}
 		// CreateTable holds details about calls to the CreateTable method.
 		CreateTable []struct {
 			// Ctx is the ctx argument value.
@@ -135,6 +150,7 @@ type TableServiceMock struct {
 			Table string
 		}
 	}
+	lockCreateRows     sync.RWMutex
 	lockCreateTable    sync.RWMutex
 	lockDelete         sync.RWMutex
 	lockGenetate       sync.RWMutex
@@ -143,6 +159,46 @@ type TableServiceMock struct {
 	lockListTables     sync.RWMutex
 	lockRows           sync.RWMutex
 	lockTruncate       sync.RWMutex
+}
+
+// CreateRows calls CreateRowsFunc.
+func (mock *TableServiceMock) CreateRows(ctx context.Context, table string, rows []map[string]any) error {
+	if mock.CreateRowsFunc == nil {
+		panic("TableServiceMock.CreateRowsFunc: method is nil but TableService.CreateRows was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Table string
+		Rows  []map[string]any
+	}{
+		Ctx:   ctx,
+		Table: table,
+		Rows:  rows,
+	}
+	mock.lockCreateRows.Lock()
+	mock.calls.CreateRows = append(mock.calls.CreateRows, callInfo)
+	mock.lockCreateRows.Unlock()
+	return mock.CreateRowsFunc(ctx, table, rows)
+}
+
+// CreateRowsCalls gets all the calls that were made to CreateRows.
+// Check the length with:
+//
+//	len(mockedTableService.CreateRowsCalls())
+func (mock *TableServiceMock) CreateRowsCalls() []struct {
+	Ctx   context.Context
+	Table string
+	Rows  []map[string]any
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Table string
+		Rows  []map[string]any
+	}
+	mock.lockCreateRows.RLock()
+	calls = mock.calls.CreateRows
+	mock.lockCreateRows.RUnlock()
+	return calls
 }
 
 // CreateTable calls CreateTableFunc.

@@ -1,9 +1,15 @@
+import { TableCreateRequest } from "@/actions";
 import { CreateTableDialog } from "@/components/dialog/create-table";
-import { ReactNode, createContext, useContext, useState } from "react";
+import { JSONObject } from "@/json";
+import { ReactNode, createContext, useContext, useRef, useState } from "react";
 
 interface CreateTableDialogContextValue {
   isOpen: boolean;
   openNewTableDialog: () => void;
+  withForm: (form: TableCreateRequest) => void;
+  clearForm: () => void;
+  withRows: (rows: JSONObject[]) => void;
+  clearRows: () => void;
 }
 
 const CreateTableDialogContext = createContext<
@@ -28,17 +34,37 @@ export function CreateTableDialogProvider({
   children,
 }: CreateTableDialogProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
-
   const openNewTableDialog = () => setIsOpen(true);
   const closeDialog = () => setIsOpen(false);
+  const [form, setForm] = useState<TableCreateRequest | undefined>(undefined);
+  const withForm = (form: TableCreateRequest) => setForm(form);
+  const clearForm = () => setForm(undefined);
+  const rowsRef = useRef<JSONObject[] | undefined>(undefined);
+  const withRows = (rows: JSONObject[]) => {
+    rowsRef.current = rows;
+  };
+  const clearRows = () => {
+    rowsRef.current = undefined;
+  };
 
   return (
-    <CreateTableDialogContext.Provider value={{ isOpen, openNewTableDialog }}>
+    <CreateTableDialogContext.Provider
+      value={{
+        isOpen,
+        openNewTableDialog,
+        withForm,
+        clearForm,
+        withRows,
+        clearRows,
+      }}
+    >
       {children}
       <CreateTableDialog
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         close={closeDialog}
+        form={form}
+        rows={rowsRef.current}
       />
     </CreateTableDialogContext.Provider>
   );

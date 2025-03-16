@@ -167,11 +167,27 @@ func (hs *HTTPServer) ListModels(ctx *gin.Context) {
 	ctx.JSON(200, modelList)
 }
 
+func (hs *HTTPServer) CreateRows(ctx *gin.Context) {
+	var request table.CreateRowsRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	err = hs.TableService.CreateRows(ctx.Request.Context(), ctx.Param("table"), request.Rows)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, "")
+}
+
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
 	hs.apiv1.GET("/tables", hs.ListTables)
 	hs.apiv1.GET("/tables/:table", hs.Describe)
+	hs.apiv1.POST("/tables/:table", hs.CreateRows)
 	hs.apiv1.DELETE("/tables/:table", hs.Delete)
 	hs.apiv1.POST("/tables/:table/truncate", hs.Truncate)
 	hs.apiv1.POST("/generate/tables/:table", hs.Generate)

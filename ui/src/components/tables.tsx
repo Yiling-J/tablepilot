@@ -1,4 +1,10 @@
-import { TableInfo, deleteTable, getTables } from "@/actions";
+import {
+    TableCreateRequest,
+    TableInfo,
+    deleteTable,
+    getTables,
+} from "@/actions";
+import { ImportCSVDialog } from "@/components/dialog/import-csv";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -9,7 +15,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
-import { PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { JSONObject } from "@/json.ts";
+import { FileIcon, PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
@@ -21,8 +28,9 @@ export default function TablesPage() {
 
 function Tables() {
   const [tables, setTables] = useState<TableInfo[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const { openNewTableDialog } = useCreateTableDialog();
+  const [loading, setLoading] = useState(true);
+  const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
+  const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { refreshTables } = useTables();
   const navigate = useNavigate();
 
@@ -38,6 +46,16 @@ function Tables() {
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
+      <ImportCSVDialog
+        isOpen={importCSVOpen}
+        setIsOpen={setImportCSVOpen}
+        onNext={(form: TableCreateRequest, rows: JSONObject[]) => {
+          withForm(form);
+          withRows(rows);
+          setImportCSVOpen(false);
+          openNewTableDialog();
+        }}
+      />
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
@@ -92,15 +110,28 @@ function Tables() {
                   </div>
                 </div>
               ))}
-          <Card
-            className="flex items-center justify-center cursor-pointer hover:bg-muted-foreground/5 transition-colors h-60 min-w-72 border-dashed"
-            onClick={() => {
-              openNewTableDialog();
-            }}
-          >
-            <div className="grid grid-cols-1 gap-4 justify-items-center">
-              <PlusIcon className="w-6 h-6 mr-2" />
-              Add New Table
+          <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
+            <div
+              className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1 hover:h-[70%] peer"
+              onClick={() => {
+                openNewTableDialog();
+              }}
+            >
+              <PlusIcon className="w-5 h-5 mr-2 mb-2" />
+              <span>Add New Table</span>
+            </div>
+
+            <div
+              className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-[30%] peer-hover:h-[30%] hover:h-[70%] border-t rounded-t-xl"
+              onClick={() => setImportCSVOpen(true)}
+            >
+              <div className="flex items-center">
+                <FileIcon className="w-4 h-4 mr-2" />
+                <span>Import</span>
+              </div>
+              <p className="text-xs pt-2 text-gray-500">
+                supported formats: csv
+              </p>
             </div>
           </Card>
         </div>

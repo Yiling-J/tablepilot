@@ -7,9 +7,10 @@ import (
 	"strconv"
 
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/spf13/cast"
 )
 
-func ConvertToType(v string, to tablecolumn.Type) (any, error) {
+func ConvertStringToType(v string, to tablecolumn.Type) (any, error) {
 	if v == "" {
 		switch to {
 		case tablecolumn.TypeString:
@@ -53,5 +54,31 @@ func ConvertToType(v string, to tablecolumn.Type) (any, error) {
 		return nil, fmt.Errorf("invalid JSON array format: %v", v)
 	default:
 		return nil, fmt.Errorf("unsupported type: %v", v)
+	}
+}
+
+func ConvertAnyToType(v any, to tablecolumn.Type) any {
+	switch to {
+	case tablecolumn.TypeString:
+		return cast.ToString(v)
+	case tablecolumn.TypeNumber:
+		return cast.ToFloat64(v)
+	case tablecolumn.TypeInteger:
+		return cast.ToInt(v)
+	case tablecolumn.TypeBoolean:
+		return cast.ToBool(v)
+	case tablecolumn.TypeArray:
+		switch vt := v.(type) {
+		case string:
+			var arr []any
+			if err := json.Unmarshal([]byte(vt), &arr); err == nil {
+				return arr
+			}
+		case []any:
+			return v
+		}
+		return []any{}
+	default:
+		return cast.ToString(v)
 	}
 }
