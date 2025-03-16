@@ -381,7 +381,6 @@ func TestAPI_CreateRows(t *testing.T) {
 		CreateRowsFunc: func(ctx context.Context, table string, rows []map[string]any) error {
 			require.Equal(t, expectedRequest.Rows, rows)
 			return nil
-
 		},
 	}
 	server := NewTestServer(t, func(s *services.Backend) {
