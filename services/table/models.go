@@ -77,3 +77,7 @@ type TableInfo struct {
 	Model       string            `json:"model"`
 	Columns     []TableColumnInfo `json:"columns"`
 }
+
+type CreateRowsRequest struct {
+	Rows []map[string]any `json:"rows"`
+}

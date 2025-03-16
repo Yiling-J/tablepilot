@@ -1,6 +1,6 @@
 "use client";
 
-import { TableCreateRequest, createTable } from "@/actions";
+import { TableCreateRequest, createRows, createTable } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -10,7 +10,9 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
+import { JSONObject } from "@/json";
 import { cn } from "@/lib/utils";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
@@ -30,13 +32,22 @@ const initialFormData: TableCreateRequest = {
 
 interface CreateTableFormProps {
   close: () => void;
+  form?: TableCreateRequest;
+  rows?: JSONObject[];
 }
 
-export default function CreateTableForm({ close }: CreateTableFormProps) {
-  const [formData, setFormData] = useState<TableCreateRequest>(initialFormData);
+export default function CreateTableForm({
+  close,
+  form,
+  rows,
+}: CreateTableFormProps) {
+  const [formData, setFormData] = useState<TableCreateRequest>(
+    form ?? initialFormData,
+  );
   const [loading, setLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("step1");
   const [showPreview, setShowPreview] = useState(false);
+  const { clearForm, clearRows } = useCreateTableDialog();
   const navigate = useNavigate();
   const { refreshTables } = useTables();
 
@@ -58,8 +69,13 @@ export default function CreateTableForm({ close }: CreateTableFormProps) {
     setLoading(true);
     try {
       const info = await createTable(formData);
+      if (rows && rows.length > 0) {
+        await createRows(info.id, rows);
+      }
       await refreshTables();
       close();
+      clearForm();
+      clearRows();
       navigate(`/tables/${info.id}`);
     } catch {
       toast.error("Creation failed. Please wait and try again.");

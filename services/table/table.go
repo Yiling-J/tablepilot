@@ -47,6 +47,7 @@ type TableService interface {
 	Truncate(ctx context.Context, table string) (int, error)
 	Delete(ctx context.Context, table string) (int, error)
 	Import(ctx context.Context, table string, reader io.Reader) (string, error)
+	CreateRows(ctx context.Context, table string, rows []map[string]any) error
 }
 
 type TableServiceImpl struct {
@@ -329,13 +330,13 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 			newRow := []any{}
 			for _, col := range tablemeta.Edges.Columns {
 				if j, ok := cm[col.Name]; ok {
-					v, err := util.ConvertToType(row[j], col.Type)
+					v, err := util.ConvertStringToType(row[j], col.Type)
 					if err != nil {
 						return "", ent.Rollback(tx, err)
 					}
 					newRow = append(newRow, v)
 				} else {
-					v, err := util.ConvertToType("", col.Type)
+					v, err := util.ConvertStringToType("", col.Type)
 					if err != nil {
 						return "", ent.Rollback(tx, err)
 					}
@@ -381,4 +382,53 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		return "", ent.Rollback(tx, err)
 	}
 	return tablemeta.Nanoid, tx.Commit()
+}
+
+func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []map[string]any) error {
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("starting a transaction: %w", err)
+	}
+	tablemeta, err := tx.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Where(
+		tablemeta.Or(
+			tablemeta.Nanoid(table),
+			tablemeta.Name(table)),
+	).First(ctx)
+	if err != nil {
+		return ent.Rollback(tx, err)
+	}
+	importRows := [][]any{}
+	for _, row := range rows {
+		newRow := []any{}
+		for _, col := range tablemeta.Edges.Columns {
+			if v, ok := row[col.Name]; ok {
+				newRow = append(newRow, util.ConvertAnyToType(v, col.Type))
+			} else if v, ok := row[col.Nanoid]; ok {
+				newRow = append(newRow, util.ConvertAnyToType(v, col.Type))
+			} else {
+				v, err = util.ConvertStringToType("", col.Type)
+				if err != nil {
+					return ent.Rollback(tx, err)
+				}
+				newRow = append(newRow, v)
+			}
+		}
+		importRows = append(importRows, newRow)
+	}
+
+	rowCreates := []*ent.TableRowCreate{}
+	for _, row := range importRows {
+		cells := []*schema.CellValue{}
+		for _, cell := range row {
+			cells = append(cells, &schema.CellValue{Value: cell})
+		}
+		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(cells).SetTablemeta(tablemeta))
+	}
+	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
+	if err != nil {
+		return ent.Rollback(tx, err)
+	}
+	return tx.Commit()
 }

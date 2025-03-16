@@ -239,3 +239,16 @@ export async function truncateTable(table: string) {
     throw new Error("Failed to truncate table");
   }
 }
+
+export async function createRows(table: string, rows: JSONObject[]) {
+  const res = await fetch(tableUrl(table), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ rows }),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to truncate table");
+  }
+}

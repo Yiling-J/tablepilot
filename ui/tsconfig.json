@@ -25,6 +25,9 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "../../../.emacs.d/emacs_backup/!Users!yiling!Projects!tablepilot!ui!src!components!dialog!import-csv.tsx~"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

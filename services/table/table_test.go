@@ -599,3 +599,45 @@ func TestTableService_GetTableDetail(t *testing.T) {
 			{ID: col1.Nanoid, Name: "c1", Description: "cc1", Type: "string", FillMode: "ai"},
 		}}, resp)
 }
+
+func TestTableService_CreateRows(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	tb, err := db.TableMeta.Create().SetName("t1").Save(ctx)
+	require.NoError(t, err)
+	col1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeInteger).Save(ctx)
+	require.NoError(t, err)
+	err = srv.CreateRows(ctx, "t1", []map[string]any{
+		{"c1": "v1", "c2": 1},
+		{col1.Nanoid: "v2", col2.Nanoid: 2},
+		{"c1": "v3"},
+	})
+	require.NoError(t, err)
+	rows, err := tb.QueryRows().All(ctx)
+	require.NoError(t, err)
+	expected := [][]any{
+		{"v1", float64(1)},
+		{"v2", float64(2)},
+		{"v3", float64(0)},
+	}
+	data := [][]any{}
+	for _, row := range rows {
+		r := []any{}
+		for _, c := range row.Cells {
+			r = append(r, c.Value)
+		}
+		data = append(data, r)
+	}
+	require.Equal(t, expected, data)
+}
