@@ -33,7 +33,7 @@ export function CreateTableDialog({
         }}
       >
         <DialogTitle>Create New Table</DialogTitle>
-        <div className="mx-2 mt-2">
+        <div className="mx-2 mt-2 scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background">
           <CreateTableForm close={close} form={form} rows={rows} />
         </div>
       </DialogContent>

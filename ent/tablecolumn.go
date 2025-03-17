@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -44,6 +45,10 @@ type TableColumn struct {
 	Replacement bool `json:"replacement,omitempty"`
 	// Repeat holds the value of the "repeat" field.
 	Repeat int `json:"repeat,omitempty"`
+	// LinkedColumn holds the value of the "linked_column" field.
+	LinkedColumn string `json:"linked_column,omitempty"`
+	// LinkedContextColumns holds the value of the "linked_context_columns" field.
+	LinkedContextColumns []string `json:"linked_context_columns,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TableColumnQuery when eager-loading is set.
 	Edges        TableColumnEdges `json:"edges"`
@@ -75,11 +80,13 @@ func (*TableColumn) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case tablecolumn.FieldLinkedContextColumns:
+			values[i] = new([]byte)
 		case tablecolumn.FieldRandom, tablecolumn.FieldReplacement:
 			values[i] = new(sql.NullBool)
 		case tablecolumn.FieldID, tablecolumn.FieldContextLength, tablecolumn.FieldTableID, tablecolumn.FieldRepeat:
 			values[i] = new(sql.NullInt64)
-		case tablecolumn.FieldNanoid, tablecolumn.FieldName, tablecolumn.FieldDescription, tablecolumn.FieldType, tablecolumn.FieldFillMode, tablecolumn.FieldSource:
+		case tablecolumn.FieldNanoid, tablecolumn.FieldName, tablecolumn.FieldDescription, tablecolumn.FieldType, tablecolumn.FieldFillMode, tablecolumn.FieldSource, tablecolumn.FieldLinkedColumn:
 			values[i] = new(sql.NullString)
 		case tablecolumn.FieldCreatedAt, tablecolumn.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -182,6 +189,20 @@ func (tc *TableColumn) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				tc.Repeat = int(value.Int64)
 			}
+		case tablecolumn.FieldLinkedColumn:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field linked_column", values[i])
+			} else if value.Valid {
+				tc.LinkedColumn = value.String
+			}
+		case tablecolumn.FieldLinkedContextColumns:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field linked_context_columns", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &tc.LinkedContextColumns); err != nil {
+					return fmt.Errorf("unmarshal field linked_context_columns: %w", err)
+				}
+			}
 		default:
 			tc.selectValues.Set(columns[i], values[i])
 		}
@@ -261,6 +282,12 @@ func (tc *TableColumn) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("repeat=")
 	builder.WriteString(fmt.Sprintf("%v", tc.Repeat))
+	builder.WriteString(", ")
+	builder.WriteString("linked_column=")
+	builder.WriteString(tc.LinkedColumn)
+	builder.WriteString(", ")
+	builder.WriteString("linked_context_columns=")
+	builder.WriteString(fmt.Sprintf("%v", tc.LinkedContextColumns))
 	builder.WriteByte(')')
 	return builder.String()
 }

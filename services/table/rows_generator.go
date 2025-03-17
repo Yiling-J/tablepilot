@@ -278,7 +278,7 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 
 func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawMessage, column *ent.TableColumn) (*source.Indexer, error) {
 	if so, ok := g.sourceMap[column.Source]; ok {
-		return source.NewIndexer(so, column.Random, column.Replacement, column.Repeat), nil
+		return source.NewIndexer(so, column), nil
 	}
 	var so source.Source
 	sourceType := gjson.GetBytes(raw, "type").String()
@@ -320,7 +320,7 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 		return nil, fmt.Errorf("unknow source type %s", sourceType)
 	}
 	g.sourceMap[column.Source] = so
-	return source.NewIndexer(so, column.Random, column.Replacement, column.Repeat), nil
+	return source.NewIndexer(so, column), nil
 }
 
 func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*schema.CellValue, error) {

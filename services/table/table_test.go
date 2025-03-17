@@ -76,7 +76,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		},
 		{
 			Name: "user", Description: "recipe user", Type: "boolean",
-			FillMode: "pick", Source: "users",
+			FillMode: "pick", Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
 		},
 		{},
 	}
@@ -126,8 +126,6 @@ func TestTableService_CreateTable(t *testing.T) {
       "name": "users",
       "type": "linked",
       "table": "user",
-      "column": "name",
-      "context_columns": ["age"],
       "filters": { "must": [{ "name": "a" }, { "age": 12 }, { "should": [] }] },
       "sorts": [{ "column": "name", "desc": true }]
     }
@@ -136,7 +134,7 @@ func TestTableService_CreateTable(t *testing.T) {
 
 	userTable, err := db.TableMeta.Create().SetName("user").Save(ctx)
 	require.NoError(t, err)
-	userColumns, err := db.TableColumn.CreateBulk(
+	_, err = db.TableColumn.CreateBulk(
 		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
 			tablecolumn.TypeString,
 		).SetFillMode(tablecolumn.FillModeAi),
@@ -149,7 +147,7 @@ func TestTableService_CreateTable(t *testing.T) {
 	savedSources := map[string]json.RawMessage{
 		"countries": []byte(`{"type":"list","options":["China","Japan","England","Thai","France"]}`),
 		"tags":      []byte(`{"type":"ai","prompt":"Generate 20 tags.","options":null}`),
-		"users":     []byte(fmt.Sprintf(`{"type":"linked","table":"%s","column":"%s","context_columns":["%s"]}`, userTable.Nanoid, userColumns[0].Nanoid, userColumns[1].Nanoid)),
+		"users":     []byte(fmt.Sprintf(`{"type":"linked","table":"%s"}`, userTable.Nanoid)),
 	}
 
 	id, err := srv.CreateTable(ctx, &TableGenRequest{

@@ -110,6 +110,11 @@ func Repeat(v int) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldRepeat, v))
 }
 
+// LinkedColumn applies equality check predicate on the "linked_column" field. It's identical to LinkedColumnEQ.
+func LinkedColumn(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldLinkedColumn, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldCreatedAt, v))
@@ -658,6 +663,71 @@ func RepeatLT(v int) predicate.TableColumn {
 // RepeatLTE applies the LTE predicate on the "repeat" field.
 func RepeatLTE(v int) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldLTE(FieldRepeat, v))
+}
+
+// LinkedColumnEQ applies the EQ predicate on the "linked_column" field.
+func LinkedColumnEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldLinkedColumn, v))
+}
+
+// LinkedColumnNEQ applies the NEQ predicate on the "linked_column" field.
+func LinkedColumnNEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldLinkedColumn, v))
+}
+
+// LinkedColumnIn applies the In predicate on the "linked_column" field.
+func LinkedColumnIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIn(FieldLinkedColumn, vs...))
+}
+
+// LinkedColumnNotIn applies the NotIn predicate on the "linked_column" field.
+func LinkedColumnNotIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotIn(FieldLinkedColumn, vs...))
+}
+
+// LinkedColumnGT applies the GT predicate on the "linked_column" field.
+func LinkedColumnGT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGT(FieldLinkedColumn, v))
+}
+
+// LinkedColumnGTE applies the GTE predicate on the "linked_column" field.
+func LinkedColumnGTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGTE(FieldLinkedColumn, v))
+}
+
+// LinkedColumnLT applies the LT predicate on the "linked_column" field.
+func LinkedColumnLT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLT(FieldLinkedColumn, v))
+}
+
+// LinkedColumnLTE applies the LTE predicate on the "linked_column" field.
+func LinkedColumnLTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLTE(FieldLinkedColumn, v))
+}
+
+// LinkedColumnContains applies the Contains predicate on the "linked_column" field.
+func LinkedColumnContains(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContains(FieldLinkedColumn, v))
+}
+
+// LinkedColumnHasPrefix applies the HasPrefix predicate on the "linked_column" field.
+func LinkedColumnHasPrefix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasPrefix(FieldLinkedColumn, v))
+}
+
+// LinkedColumnHasSuffix applies the HasSuffix predicate on the "linked_column" field.
+func LinkedColumnHasSuffix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasSuffix(FieldLinkedColumn, v))
+}
+
+// LinkedColumnEqualFold applies the EqualFold predicate on the "linked_column" field.
+func LinkedColumnEqualFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEqualFold(FieldLinkedColumn, v))
+}
+
+// LinkedColumnContainsFold applies the ContainsFold predicate on the "linked_column" field.
+func LinkedColumnContainsFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContainsFold(FieldLinkedColumn, v))
 }
 
 // HasTablemeta applies the HasEdge predicate on the "tablemeta" edge.

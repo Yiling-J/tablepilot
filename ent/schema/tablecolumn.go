@@ -32,6 +32,8 @@ func (TableColumn) Fields() []ent.Field {
 		field.Bool("random").Default(false),
 		field.Bool("replacement").Default(false),
 		field.Int("repeat").Default(1),
+		field.String("linked_column").Default(""),
+		field.Strings("linked_context_columns").Default([]string{}),
 	}
 }
 

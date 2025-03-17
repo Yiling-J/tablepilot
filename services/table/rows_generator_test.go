@@ -27,7 +27,9 @@ func TestRowsGenerator_PrepareRows(t *testing.T) {
 	sc := &source.ListSource{Options: []string{"foo"}}
 	err := sc.Init(context.TODO())
 	require.NoError(t, err)
-	idx := source.NewIndexer(sc, false, false, 1)
+	idx := source.NewIndexer(sc, &ent.TableColumn{
+		Random: false,
+	})
 	generator := &AIRowsGenerator{
 		indexerMap: map[string]*source.Indexer{
 			"c1": idx,

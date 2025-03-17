@@ -36,29 +36,32 @@ const (
 // TableColumnMutation represents an operation that mutates the TableColumn nodes in the graph.
 type TableColumnMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *int
-	created_at        *time.Time
-	updated_at        *time.Time
-	nanoid            *string
-	name              *string
-	description       *string
-	_type             *tablecolumn.Type
-	fill_mode         *tablecolumn.FillMode
-	source            *string
-	context_length    *int
-	addcontext_length *int
-	random            *bool
-	replacement       *bool
-	repeat            *int
-	addrepeat         *int
-	clearedFields     map[string]struct{}
-	tablemeta         *int
-	clearedtablemeta  bool
-	done              bool
-	oldValue          func(context.Context) (*TableColumn, error)
-	predicates        []predicate.TableColumn
+	op                           Op
+	typ                          string
+	id                           *int
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	nanoid                       *string
+	name                         *string
+	description                  *string
+	_type                        *tablecolumn.Type
+	fill_mode                    *tablecolumn.FillMode
+	source                       *string
+	context_length               *int
+	addcontext_length            *int
+	random                       *bool
+	replacement                  *bool
+	repeat                       *int
+	addrepeat                    *int
+	linked_column                *string
+	linked_context_columns       *[]string
+	appendlinked_context_columns []string
+	clearedFields                map[string]struct{}
+	tablemeta                    *int
+	clearedtablemeta             bool
+	done                         bool
+	oldValue                     func(context.Context) (*TableColumn, error)
+	predicates                   []predicate.TableColumn
 }
 
 var _ ent.Mutation = (*TableColumnMutation)(nil)
@@ -732,6 +735,93 @@ func (m *TableColumnMutation) ResetRepeat() {
 	m.addrepeat = nil
 }
 
+// SetLinkedColumn sets the "linked_column" field.
+func (m *TableColumnMutation) SetLinkedColumn(s string) {
+	m.linked_column = &s
+}
+
+// LinkedColumn returns the value of the "linked_column" field in the mutation.
+func (m *TableColumnMutation) LinkedColumn() (r string, exists bool) {
+	v := m.linked_column
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkedColumn returns the old "linked_column" field's value of the TableColumn entity.
+// If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableColumnMutation) OldLinkedColumn(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkedColumn is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkedColumn requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkedColumn: %w", err)
+	}
+	return oldValue.LinkedColumn, nil
+}
+
+// ResetLinkedColumn resets all changes to the "linked_column" field.
+func (m *TableColumnMutation) ResetLinkedColumn() {
+	m.linked_column = nil
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (m *TableColumnMutation) SetLinkedContextColumns(s []string) {
+	m.linked_context_columns = &s
+	m.appendlinked_context_columns = nil
+}
+
+// LinkedContextColumns returns the value of the "linked_context_columns" field in the mutation.
+func (m *TableColumnMutation) LinkedContextColumns() (r []string, exists bool) {
+	v := m.linked_context_columns
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLinkedContextColumns returns the old "linked_context_columns" field's value of the TableColumn entity.
+// If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableColumnMutation) OldLinkedContextColumns(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLinkedContextColumns is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLinkedContextColumns requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLinkedContextColumns: %w", err)
+	}
+	return oldValue.LinkedContextColumns, nil
+}
+
+// AppendLinkedContextColumns adds s to the "linked_context_columns" field.
+func (m *TableColumnMutation) AppendLinkedContextColumns(s []string) {
+	m.appendlinked_context_columns = append(m.appendlinked_context_columns, s...)
+}
+
+// AppendedLinkedContextColumns returns the list of values that were appended to the "linked_context_columns" field in this mutation.
+func (m *TableColumnMutation) AppendedLinkedContextColumns() ([]string, bool) {
+	if len(m.appendlinked_context_columns) == 0 {
+		return nil, false
+	}
+	return m.appendlinked_context_columns, true
+}
+
+// ResetLinkedContextColumns resets all changes to the "linked_context_columns" field.
+func (m *TableColumnMutation) ResetLinkedContextColumns() {
+	m.linked_context_columns = nil
+	m.appendlinked_context_columns = nil
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by id.
 func (m *TableColumnMutation) SetTablemetaID(id int) {
 	m.tablemeta = &id
@@ -806,7 +896,7 @@ func (m *TableColumnMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TableColumnMutation) Fields() []string {
-	fields := make([]string, 0, 13)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, tablecolumn.FieldCreatedAt)
 	}
@@ -846,6 +936,12 @@ func (m *TableColumnMutation) Fields() []string {
 	if m.repeat != nil {
 		fields = append(fields, tablecolumn.FieldRepeat)
 	}
+	if m.linked_column != nil {
+		fields = append(fields, tablecolumn.FieldLinkedColumn)
+	}
+	if m.linked_context_columns != nil {
+		fields = append(fields, tablecolumn.FieldLinkedContextColumns)
+	}
 	return fields
 }
 
@@ -880,6 +976,10 @@ func (m *TableColumnMutation) Field(name string) (ent.Value, bool) {
 		return m.Replacement()
 	case tablecolumn.FieldRepeat:
 		return m.Repeat()
+	case tablecolumn.FieldLinkedColumn:
+		return m.LinkedColumn()
+	case tablecolumn.FieldLinkedContextColumns:
+		return m.LinkedContextColumns()
 	}
 	return nil, false
 }
@@ -915,6 +1015,10 @@ func (m *TableColumnMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldReplacement(ctx)
 	case tablecolumn.FieldRepeat:
 		return m.OldRepeat(ctx)
+	case tablecolumn.FieldLinkedColumn:
+		return m.OldLinkedColumn(ctx)
+	case tablecolumn.FieldLinkedContextColumns:
+		return m.OldLinkedContextColumns(ctx)
 	}
 	return nil, fmt.Errorf("unknown TableColumn field %s", name)
 }
@@ -1014,6 +1118,20 @@ func (m *TableColumnMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRepeat(v)
+		return nil
+	case tablecolumn.FieldLinkedColumn:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkedColumn(v)
+		return nil
+	case tablecolumn.FieldLinkedContextColumns:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLinkedContextColumns(v)
 		return nil
 	}
 	return fmt.Errorf("unknown TableColumn field %s", name)
@@ -1162,6 +1280,12 @@ func (m *TableColumnMutation) ResetField(name string) error {
 		return nil
 	case tablecolumn.FieldRepeat:
 		m.ResetRepeat()
+		return nil
+	case tablecolumn.FieldLinkedColumn:
+		m.ResetLinkedColumn()
+		return nil
+	case tablecolumn.FieldLinkedContextColumns:
+		m.ResetLinkedContextColumns()
 		return nil
 	}
 	return fmt.Errorf("unknown TableColumn field %s", name)

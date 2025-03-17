@@ -173,6 +173,26 @@ func (tcc *TableColumnCreate) SetNillableRepeat(i *int) *TableColumnCreate {
 	return tcc
 }
 
+// SetLinkedColumn sets the "linked_column" field.
+func (tcc *TableColumnCreate) SetLinkedColumn(s string) *TableColumnCreate {
+	tcc.mutation.SetLinkedColumn(s)
+	return tcc
+}
+
+// SetNillableLinkedColumn sets the "linked_column" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableLinkedColumn(s *string) *TableColumnCreate {
+	if s != nil {
+		tcc.SetLinkedColumn(*s)
+	}
+	return tcc
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (tcc *TableColumnCreate) SetLinkedContextColumns(s []string) *TableColumnCreate {
+	tcc.mutation.SetLinkedContextColumns(s)
+	return tcc
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcc *TableColumnCreate) SetTablemetaID(id int) *TableColumnCreate {
 	tcc.mutation.SetTablemetaID(id)
@@ -243,6 +263,14 @@ func (tcc *TableColumnCreate) defaults() {
 		v := tablecolumn.DefaultRepeat
 		tcc.mutation.SetRepeat(v)
 	}
+	if _, ok := tcc.mutation.LinkedColumn(); !ok {
+		v := tablecolumn.DefaultLinkedColumn
+		tcc.mutation.SetLinkedColumn(v)
+	}
+	if _, ok := tcc.mutation.LinkedContextColumns(); !ok {
+		v := tablecolumn.DefaultLinkedContextColumns
+		tcc.mutation.SetLinkedContextColumns(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -285,6 +313,12 @@ func (tcc *TableColumnCreate) check() error {
 	}
 	if _, ok := tcc.mutation.Repeat(); !ok {
 		return &ValidationError{Name: "repeat", err: errors.New(`ent: missing required field "TableColumn.repeat"`)}
+	}
+	if _, ok := tcc.mutation.LinkedColumn(); !ok {
+		return &ValidationError{Name: "linked_column", err: errors.New(`ent: missing required field "TableColumn.linked_column"`)}
+	}
+	if _, ok := tcc.mutation.LinkedContextColumns(); !ok {
+		return &ValidationError{Name: "linked_context_columns", err: errors.New(`ent: missing required field "TableColumn.linked_context_columns"`)}
 	}
 	if len(tcc.mutation.TablemetaIDs()) == 0 {
 		return &ValidationError{Name: "tablemeta", err: errors.New(`ent: missing required edge "TableColumn.tablemeta"`)}
@@ -363,6 +397,14 @@ func (tcc *TableColumnCreate) createSpec() (*TableColumn, *sqlgraph.CreateSpec) 
 	if value, ok := tcc.mutation.Repeat(); ok {
 		_spec.SetField(tablecolumn.FieldRepeat, field.TypeInt, value)
 		_node.Repeat = value
+	}
+	if value, ok := tcc.mutation.LinkedColumn(); ok {
+		_spec.SetField(tablecolumn.FieldLinkedColumn, field.TypeString, value)
+		_node.LinkedColumn = value
+	}
+	if value, ok := tcc.mutation.LinkedContextColumns(); ok {
+		_spec.SetField(tablecolumn.FieldLinkedContextColumns, field.TypeJSON, value)
+		_node.LinkedContextColumns = value
 	}
 	if nodes := tcc.mutation.TablemetaIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -610,6 +652,30 @@ func (u *TableColumnUpsert) UpdateRepeat() *TableColumnUpsert {
 // AddRepeat adds v to the "repeat" field.
 func (u *TableColumnUpsert) AddRepeat(v int) *TableColumnUpsert {
 	u.Add(tablecolumn.FieldRepeat, v)
+	return u
+}
+
+// SetLinkedColumn sets the "linked_column" field.
+func (u *TableColumnUpsert) SetLinkedColumn(v string) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldLinkedColumn, v)
+	return u
+}
+
+// UpdateLinkedColumn sets the "linked_column" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateLinkedColumn() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldLinkedColumn)
+	return u
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (u *TableColumnUpsert) SetLinkedContextColumns(v []string) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldLinkedContextColumns, v)
+	return u
+}
+
+// UpdateLinkedContextColumns sets the "linked_context_columns" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateLinkedContextColumns() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldLinkedContextColumns)
 	return u
 }
 
@@ -865,6 +931,34 @@ func (u *TableColumnUpsertOne) AddRepeat(v int) *TableColumnUpsertOne {
 func (u *TableColumnUpsertOne) UpdateRepeat() *TableColumnUpsertOne {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.UpdateRepeat()
+	})
+}
+
+// SetLinkedColumn sets the "linked_column" field.
+func (u *TableColumnUpsertOne) SetLinkedColumn(v string) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetLinkedColumn(v)
+	})
+}
+
+// UpdateLinkedColumn sets the "linked_column" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateLinkedColumn() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateLinkedColumn()
+	})
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (u *TableColumnUpsertOne) SetLinkedContextColumns(v []string) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetLinkedContextColumns(v)
+	})
+}
+
+// UpdateLinkedContextColumns sets the "linked_context_columns" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateLinkedContextColumns() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateLinkedContextColumns()
 	})
 }
 
@@ -1286,6 +1380,34 @@ func (u *TableColumnUpsertBulk) AddRepeat(v int) *TableColumnUpsertBulk {
 func (u *TableColumnUpsertBulk) UpdateRepeat() *TableColumnUpsertBulk {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.UpdateRepeat()
+	})
+}
+
+// SetLinkedColumn sets the "linked_column" field.
+func (u *TableColumnUpsertBulk) SetLinkedColumn(v string) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetLinkedColumn(v)
+	})
+}
+
+// UpdateLinkedColumn sets the "linked_column" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateLinkedColumn() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateLinkedColumn()
+	})
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (u *TableColumnUpsertBulk) SetLinkedContextColumns(v []string) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetLinkedContextColumns(v)
+	})
+}
+
+// UpdateLinkedContextColumns sets the "linked_context_columns" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateLinkedContextColumns() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateLinkedContextColumns()
 	})
 }
 

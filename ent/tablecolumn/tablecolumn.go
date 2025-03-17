@@ -41,6 +41,10 @@ const (
 	FieldReplacement = "replacement"
 	// FieldRepeat holds the string denoting the repeat field in the database.
 	FieldRepeat = "repeat"
+	// FieldLinkedColumn holds the string denoting the linked_column field in the database.
+	FieldLinkedColumn = "linked_column"
+	// FieldLinkedContextColumns holds the string denoting the linked_context_columns field in the database.
+	FieldLinkedContextColumns = "linked_context_columns"
 	// EdgeTablemeta holds the string denoting the tablemeta edge name in mutations.
 	EdgeTablemeta = "tablemeta"
 	// Table holds the table name of the tablecolumn in the database.
@@ -70,6 +74,8 @@ var Columns = []string{
 	FieldRandom,
 	FieldReplacement,
 	FieldRepeat,
+	FieldLinkedColumn,
+	FieldLinkedContextColumns,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -99,6 +105,10 @@ var (
 	DefaultReplacement bool
 	// DefaultRepeat holds the default value on creation for the "repeat" field.
 	DefaultRepeat int
+	// DefaultLinkedColumn holds the default value on creation for the "linked_column" field.
+	DefaultLinkedColumn string
+	// DefaultLinkedContextColumns holds the default value on creation for the "linked_context_columns" field.
+	DefaultLinkedContextColumns []string
 )
 
 // Type defines the type for the "type" enum field.
@@ -221,6 +231,11 @@ func ByReplacement(opts ...sql.OrderTermOption) OrderOption {
 // ByRepeat orders the results by the repeat field.
 func ByRepeat(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRepeat, opts...).ToFunc()
+}
+
+// ByLinkedColumn orders the results by the linked_column field.
+func ByLinkedColumn(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkedColumn, opts...).ToFunc()
 }
 
 // ByTablemetaField orders the results by tablemeta field.

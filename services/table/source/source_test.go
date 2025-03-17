@@ -3,6 +3,7 @@ package source
 import (
 	"testing"
 
+	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/stretchr/testify/require"
 )
 
@@ -11,14 +12,19 @@ func TestSource_Indexer(t *testing.T) {
 		Type:    "list",
 		Options: []string{"a", "b", "c", "d", "e"},
 	}
-	indexer := NewIndexer(so, false, true, 0)
+	indexer := NewIndexer(so, &ent.TableColumn{
+		Random: false,
+	})
 	nums := []int{}
 	for i := 0; i < 10; i++ {
 		nums = append(nums, indexer.nextIndex())
 	}
 	require.Equal(t, []int{0, 1, 2, 3, 4, 0, 1, 2, 3, 4}, nums)
 
-	indexer = NewIndexer(so, true, true, 0)
+	indexer = NewIndexer(so, &ent.TableColumn{
+		Random:      true,
+		Replacement: true,
+	})
 	numsCounter := map[int]int{}
 	nums = []int{}
 	for i := 0; i < 50; i++ {
@@ -48,7 +54,9 @@ func TestSource_Indexer(t *testing.T) {
 	require.True(t, gt > 0)
 	require.True(t, eq >= 0)
 
-	indexer = NewIndexer(so, true, false, 0)
+	indexer = NewIndexer(so, &ent.TableColumn{
+		Random: true,
+	})
 	nums = []int{}
 	for i := 0; i < 10; i++ {
 		nums = append(nums, indexer.nextIndex())
@@ -59,7 +67,10 @@ func TestSource_Indexer(t *testing.T) {
 		}
 	}
 
-	indexer = NewIndexer(so, false, true, 2)
+	indexer = NewIndexer(so, &ent.TableColumn{
+		Random: false,
+		Repeat: 2,
+	})
 	nums = []int{}
 	for i := 0; i < 10; i++ {
 		nums = append(nums, indexer.nextIndex())

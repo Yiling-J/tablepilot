@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
@@ -228,6 +229,32 @@ func (tcu *TableColumnUpdate) AddRepeat(i int) *TableColumnUpdate {
 	return tcu
 }
 
+// SetLinkedColumn sets the "linked_column" field.
+func (tcu *TableColumnUpdate) SetLinkedColumn(s string) *TableColumnUpdate {
+	tcu.mutation.SetLinkedColumn(s)
+	return tcu
+}
+
+// SetNillableLinkedColumn sets the "linked_column" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableLinkedColumn(s *string) *TableColumnUpdate {
+	if s != nil {
+		tcu.SetLinkedColumn(*s)
+	}
+	return tcu
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (tcu *TableColumnUpdate) SetLinkedContextColumns(s []string) *TableColumnUpdate {
+	tcu.mutation.SetLinkedContextColumns(s)
+	return tcu
+}
+
+// AppendLinkedContextColumns appends s to the "linked_context_columns" field.
+func (tcu *TableColumnUpdate) AppendLinkedContextColumns(s []string) *TableColumnUpdate {
+	tcu.mutation.AppendLinkedContextColumns(s)
+	return tcu
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcu *TableColumnUpdate) SetTablemetaID(id int) *TableColumnUpdate {
 	tcu.mutation.SetTablemetaID(id)
@@ -380,6 +407,17 @@ func (tcu *TableColumnUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tcu.mutation.AddedRepeat(); ok {
 		_spec.AddField(tablecolumn.FieldRepeat, field.TypeInt, value)
+	}
+	if value, ok := tcu.mutation.LinkedColumn(); ok {
+		_spec.SetField(tablecolumn.FieldLinkedColumn, field.TypeString, value)
+	}
+	if value, ok := tcu.mutation.LinkedContextColumns(); ok {
+		_spec.SetField(tablecolumn.FieldLinkedContextColumns, field.TypeJSON, value)
+	}
+	if value, ok := tcu.mutation.AppendedLinkedContextColumns(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tablecolumn.FieldLinkedContextColumns, value)
+		})
 	}
 	if tcu.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -630,6 +668,32 @@ func (tcuo *TableColumnUpdateOne) AddRepeat(i int) *TableColumnUpdateOne {
 	return tcuo
 }
 
+// SetLinkedColumn sets the "linked_column" field.
+func (tcuo *TableColumnUpdateOne) SetLinkedColumn(s string) *TableColumnUpdateOne {
+	tcuo.mutation.SetLinkedColumn(s)
+	return tcuo
+}
+
+// SetNillableLinkedColumn sets the "linked_column" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableLinkedColumn(s *string) *TableColumnUpdateOne {
+	if s != nil {
+		tcuo.SetLinkedColumn(*s)
+	}
+	return tcuo
+}
+
+// SetLinkedContextColumns sets the "linked_context_columns" field.
+func (tcuo *TableColumnUpdateOne) SetLinkedContextColumns(s []string) *TableColumnUpdateOne {
+	tcuo.mutation.SetLinkedContextColumns(s)
+	return tcuo
+}
+
+// AppendLinkedContextColumns appends s to the "linked_context_columns" field.
+func (tcuo *TableColumnUpdateOne) AppendLinkedContextColumns(s []string) *TableColumnUpdateOne {
+	tcuo.mutation.AppendLinkedContextColumns(s)
+	return tcuo
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcuo *TableColumnUpdateOne) SetTablemetaID(id int) *TableColumnUpdateOne {
 	tcuo.mutation.SetTablemetaID(id)
@@ -812,6 +876,17 @@ func (tcuo *TableColumnUpdateOne) sqlSave(ctx context.Context) (_node *TableColu
 	}
 	if value, ok := tcuo.mutation.AddedRepeat(); ok {
 		_spec.AddField(tablecolumn.FieldRepeat, field.TypeInt, value)
+	}
+	if value, ok := tcuo.mutation.LinkedColumn(); ok {
+		_spec.SetField(tablecolumn.FieldLinkedColumn, field.TypeString, value)
+	}
+	if value, ok := tcuo.mutation.LinkedContextColumns(); ok {
+		_spec.SetField(tablecolumn.FieldLinkedContextColumns, field.TypeJSON, value)
+	}
+	if value, ok := tcuo.mutation.AppendedLinkedContextColumns(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tablecolumn.FieldLinkedContextColumns, value)
+		})
 	}
 	if tcuo.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{

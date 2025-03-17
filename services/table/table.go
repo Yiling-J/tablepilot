@@ -99,6 +99,13 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 	if err != nil {
 		return "", ent.Rollback(tx, err)
 	}
+
+	// validate linked column column/context_columns exists
+	err = validateLinkedColumnInfo(ctx, tx, req.Columns, sources)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+
 	extra := 0
 	columns := []TableGenColumn{}
 	for _, col := range req.Columns {

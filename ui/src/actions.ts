@@ -103,8 +103,6 @@ export interface ListSource extends BaseSource {
 export interface LinkedSource extends BaseSource {
   type: "linked";
   table: string;
-  column: string;
-  context_columns: string[];
 }
 
 export type Source = AiSource | ListSource | LinkedSource;
@@ -123,6 +121,8 @@ export interface TableCreateRequest {
     random: boolean;
     replacement: boolean;
     repeat: number;
+    linked_column: string;
+    linked_context_columns: string[];
   }[];
 }
 

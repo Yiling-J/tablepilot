@@ -55,7 +55,7 @@ func TestSource_AI(t *testing.T) {
 			} else {
 				require.Equal(t, so.Options, []string{"foo", "bar"})
 			}
-			indexer := NewIndexer(so, false, false, 0)
+			indexer := NewIndexer(so, &ent.TableColumn{Random: false})
 
 			v, err := indexer.Next(ctx)
 			require.NoError(t, err)

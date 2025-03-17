@@ -50,6 +50,14 @@ func init() {
 	tablecolumnDescRepeat := tablecolumnFields[9].Descriptor()
 	// tablecolumn.DefaultRepeat holds the default value on creation for the repeat field.
 	tablecolumn.DefaultRepeat = tablecolumnDescRepeat.Default.(int)
+	// tablecolumnDescLinkedColumn is the schema descriptor for linked_column field.
+	tablecolumnDescLinkedColumn := tablecolumnFields[10].Descriptor()
+	// tablecolumn.DefaultLinkedColumn holds the default value on creation for the linked_column field.
+	tablecolumn.DefaultLinkedColumn = tablecolumnDescLinkedColumn.Default.(string)
+	// tablecolumnDescLinkedContextColumns is the schema descriptor for linked_context_columns field.
+	tablecolumnDescLinkedContextColumns := tablecolumnFields[11].Descriptor()
+	// tablecolumn.DefaultLinkedContextColumns holds the default value on creation for the linked_context_columns field.
+	tablecolumn.DefaultLinkedContextColumns = tablecolumnDescLinkedContextColumns.Default.([]string)
 	tablemetaMixin := schema.TableMeta{}.Mixin()
 	tablemetaMixinFields0 := tablemetaMixin[0].Fields()
 	_ = tablemetaMixinFields0

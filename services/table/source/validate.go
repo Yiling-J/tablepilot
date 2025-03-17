@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/Yiling-J/tablepilot/ent"
-	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 
 	"github.com/tidwall/gjson"
@@ -56,37 +55,6 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 			return nil, err
 		}
 		ls.Table = tb.Nanoid
-		if ls.Column == "" {
-			return nil, ErrColumnNameOrIdEmpty()
-		}
-		col, err := db.TableColumn.Query().Where(
-			tablecolumn.HasTablemetaWith(tablemeta.Nanoid(tb.Nanoid)),
-			tablecolumn.Or(
-				tablecolumn.Name(ls.Column),
-				tablecolumn.Nanoid(ls.Column),
-			)).Only(ctx)
-		if err != nil {
-			if ent.IsNotFound(err) {
-				return nil, ErrColumnNotFound(ls.Column)
-			}
-			return nil, err
-		}
-		ls.Column = col.Nanoid
-		for i, c := range ls.ContextColumns {
-			col, err := db.TableColumn.Query().Where(
-				tablecolumn.HasTablemetaWith(tablemeta.Nanoid(tb.Nanoid)),
-				tablecolumn.Or(
-					tablecolumn.Name(c),
-					tablecolumn.Nanoid(c),
-				)).Only(ctx)
-			if err != nil {
-				if ent.IsNotFound(err) {
-					return nil, ErrColumnNotFound(c)
-				}
-				return nil, err
-			}
-			ls.ContextColumns[i] = col.Nanoid
-		}
 		s = &ls
 	}
 	return s, nil

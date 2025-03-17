@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -12,13 +13,11 @@ import (
 )
 
 type LinkedSource struct {
-	Type           string `json:"type"`
-	db             *ent.Client
-	Table          string   `json:"table"`
-	Column         string   `json:"column"`
-	ContextColumns []string `json:"context_columns"`
-	data           []*ent.TableRow
-	columns        []*ent.TableColumn
+	Type    string `json:"type"`
+	db      *ent.Client
+	Table   string `json:"table"`
+	data    []*ent.TableRow
+	columns []*ent.TableColumn
 }
 
 func (ls *LinkedSource) Init(ctx context.Context, db *ent.Client) error {
@@ -40,19 +39,19 @@ func (ls *LinkedSource) Init(ctx context.Context, db *ent.Client) error {
 	return nil
 }
 
-func (ls *LinkedSource) getLinkedCellValue(idx int) (*schema.CellValue, error) {
+func (ls *LinkedSource) getLinkedCellValue(idx int, column string, contextColumns []string) (*schema.CellValue, error) {
 	indexer := util.NewColumnIndexer(ls.columns)
 	row := ls.data[idx]
 	lv := &schema.CellValue{}
-	idx, err := indexer.GetColumnIndexByNanoid(ls.Column)
+	idx, err := indexer.GetColumnIndexByNanoid(column)
 	if err != nil {
 		return nil, err
 	}
 	lv.Value = row.Cells[idx].Value
 
-	if len(ls.ContextColumns) > 0 {
+	if len(contextColumns) > 0 {
 		values := map[string]any{}
-		for _, c := range ls.ContextColumns {
+		for _, c := range contextColumns {
 			cc, err := indexer.GetColumnByNanoid(c)
 			if err != nil {
 				return nil, err
@@ -76,7 +75,28 @@ func (ls *LinkedSource) getLinkedCellValue(idx int) (*schema.CellValue, error) {
 }
 
 func (ls *LinkedSource) Next(ctx context.Context, idx int) (*schema.CellValue, error) {
-	return ls.getLinkedCellValue(idx)
+	return nil, errors.New("not implemented")
+}
+
+func (ls *LinkedSource) NextLinked(ctx context.Context, idx int, column string, contextColumns []string) (*schema.CellValue, error) {
+	ids := map[string]bool{}
+	names := map[string]string{}
+	for _, col := range ls.columns {
+		ids[col.Nanoid] = true
+		names[col.Name] = col.Nanoid
+	}
+
+	// column name -> column id
+	if v, ok := names[column]; ok {
+		column = v
+	}
+	for i, c := range contextColumns {
+		if v, ok := names[c]; ok {
+			contextColumns[i] = v
+		}
+	}
+
+	return ls.getLinkedCellValue(idx, column, contextColumns)
 }
 
 func (ls *LinkedSource) Total() int {

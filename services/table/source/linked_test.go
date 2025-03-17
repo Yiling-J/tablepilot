@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/infra/db"
@@ -37,16 +38,14 @@ func TestSource_LinkedContextColumns(t *testing.T) {
 	}).Exec(ctx)
 	require.NoError(t, err)
 	so := &LinkedSource{
-		db:             db,
-		Table:          tb.Nanoid,
-		Column:         c1.Nanoid,
-		ContextColumns: []string{c1.Nanoid, c2.Nanoid},
+		db:    db,
+		Table: tb.Nanoid,
 	}
 
 	require.NoError(t, err)
 	err = so.Init(ctx, db)
 	require.NoError(t, err)
-	indexer := NewIndexer(so, false, false, 0)
+	indexer := NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: c1.Nanoid, LinkedContextColumns: []string{c1.Nanoid, c2.Nanoid}})
 	v, err := indexer.Next(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "foo", v.Value)
