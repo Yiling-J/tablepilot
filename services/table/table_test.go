@@ -34,6 +34,8 @@ func requireColumnEqual(t *testing.T, expcted, column *ent.TableColumn) {
 		require.Equal(t, expcted.Random, column.Random)
 		require.Equal(t, expcted.Replacement, column.Replacement)
 		require.Equal(t, expcted.Repeat, column.Repeat)
+		require.Equal(t, expcted.LinkedColumn, column.LinkedColumn)
+		require.Equal(t, expcted.LinkedContextColumns, column.LinkedContextColumns)
 	}
 	require.Equal(t, expcted.ContextLength, column.ContextLength)
 }
@@ -204,7 +206,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		&ent.TableColumn{
 			Name: "user", Description: "recipe user", ContextLength: 0,
 			Type: tablecolumn.TypeBoolean, FillMode: tablecolumn.FillModePick,
-			Source: "users",
+			Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
 		},
 		table.Edges.Columns[4],
 	)

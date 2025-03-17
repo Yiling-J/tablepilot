@@ -172,7 +172,8 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 			if _, ok := sources[col.Source]; ok {
 				cc.SetSource(col.Source).SetRandom(col.Random).
 					SetReplacement(col.Replacement).
-					SetRepeat(col.Repeat)
+					SetRepeat(col.Repeat).SetLinkedColumn(col.LinkedColumn).
+					SetLinkedContextColumns(col.LinkedContextColumns)
 			} else {
 				return "", ent.Rollback(tx, fmt.Errorf("source %s not dound", col.Source))
 			}
