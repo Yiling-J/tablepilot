@@ -48,7 +48,7 @@ func TestSource_AI(t *testing.T) {
 			if hasOption {
 				so.Options = []string{"go"}
 			}
-			err = so.Init(ctx, aiService, &ent.TableColumn{Name: "table", Description: "a table"})
+			err = so.Init(ctx, aiService, &ent.TableColumn{Name: "table", Description: "a table"}, "")
 			require.NoError(t, err)
 			if hasOption {
 				require.Equal(t, so.Options, []string{"go", "foo", "bar"})
