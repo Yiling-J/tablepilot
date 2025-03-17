@@ -88,9 +88,6 @@ export async function getTable(id: string): Promise<TableInfo> {
 interface BaseSource {
   name: string;
   type: string;
-  random: boolean;
-  replacement: boolean;
-  repeat: number;
 }
 
 export interface AiSource extends BaseSource {
@@ -123,6 +120,9 @@ export interface TableCreateRequest {
     fill_mode: string;
     context_length?: number;
     source?: string;
+    random: boolean;
+    replacement: boolean;
+    repeat: number;
   }[];
 }
 

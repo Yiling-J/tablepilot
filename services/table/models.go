@@ -12,6 +12,8 @@ type TableGenColumn struct {
 	Type          string `json:"type"`
 	FillMode      string `json:"fill_mode"`
 	Source        string `json:"source"`
+	Random        bool   `json:"random"`
+	Replacement   bool   `json:"replacement"`
 	Repeat        int    `json:"repeat"`
 	ContextLength int    `json:"context_length"`
 }

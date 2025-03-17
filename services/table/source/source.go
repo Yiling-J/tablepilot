@@ -8,10 +8,12 @@ import (
 )
 
 type Source interface {
-	Next(ctx context.Context) (*schema.CellValue, error)
+	Next(ctx context.Context, idx int) (*schema.CellValue, error)
+	Total() int
 }
 
-type indexer struct {
+type Indexer struct {
+	source      Source
 	Random      bool `json:"random,omitempty"`
 	Replacement bool `json:"replacement,omitempty"`
 	Repeat      int  `json:"repeat,omitempty"`
@@ -21,21 +23,22 @@ type indexer struct {
 	picked      map[int]bool
 }
 
-func newIndexer(random, replacement bool, total, repeat int) indexer {
+func NewIndexer(source Source, random, replacement bool, repeat int) *Indexer {
 	if repeat == 0 {
 		repeat = 1
 	}
-	return indexer{
+	return &Indexer{
+		source:      source,
 		Random:      random,
 		Replacement: replacement,
 		Repeat:      repeat,
-		total:       total,
+		total:       source.Total(),
 		current:     -1,
 		picked:      map[int]bool{},
 	}
 }
 
-func (i *indexer) nextIndex() int {
+func (i *Indexer) nextIndex() int {
 	if i.Repeat > 1 && i.repeated < i.Repeat && i.current != -1 {
 		i.repeated += 1
 		return i.current
@@ -65,4 +68,8 @@ func (i *indexer) nextIndex() int {
 		}
 	}
 	return i.current
+}
+
+func (i *Indexer) Next(ctx context.Context) (*schema.CellValue, error) {
+	return i.source.Next(ctx, i.nextIndex())
 }

@@ -38,6 +38,18 @@ func init() {
 	tablecolumnDescContextLength := tablecolumnFields[5].Descriptor()
 	// tablecolumn.DefaultContextLength holds the default value on creation for the context_length field.
 	tablecolumn.DefaultContextLength = tablecolumnDescContextLength.Default.(int)
+	// tablecolumnDescRandom is the schema descriptor for random field.
+	tablecolumnDescRandom := tablecolumnFields[7].Descriptor()
+	// tablecolumn.DefaultRandom holds the default value on creation for the random field.
+	tablecolumn.DefaultRandom = tablecolumnDescRandom.Default.(bool)
+	// tablecolumnDescReplacement is the schema descriptor for replacement field.
+	tablecolumnDescReplacement := tablecolumnFields[8].Descriptor()
+	// tablecolumn.DefaultReplacement holds the default value on creation for the replacement field.
+	tablecolumn.DefaultReplacement = tablecolumnDescReplacement.Default.(bool)
+	// tablecolumnDescRepeat is the schema descriptor for repeat field.
+	tablecolumnDescRepeat := tablecolumnFields[9].Descriptor()
+	// tablecolumn.DefaultRepeat holds the default value on creation for the repeat field.
+	tablecolumn.DefaultRepeat = tablecolumnDescRepeat.Default.(int)
 	tablemetaMixin := schema.TableMeta{}.Mixin()
 	tablemetaMixinFields0 := tablemetaMixin[0].Fields()
 	_ = tablemetaMixinFields0

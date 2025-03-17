@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -97,6 +98,12 @@ func (tmc *TableMetaCreate) SetNillableModel(s *string) *TableMetaCreate {
 	if s != nil {
 		tmc.SetModel(*s)
 	}
+	return tmc
+}
+
+// SetSources sets the "sources" field.
+func (tmc *TableMetaCreate) SetSources(mm map[string]json.RawMessage) *TableMetaCreate {
+	tmc.mutation.SetSources(mm)
 	return tmc
 }
 
@@ -249,6 +256,10 @@ func (tmc *TableMetaCreate) createSpec() (*TableMeta, *sqlgraph.CreateSpec) {
 	if value, ok := tmc.mutation.Model(); ok {
 		_spec.SetField(tablemeta.FieldModel, field.TypeString, value)
 		_node.Model = value
+	}
+	if value, ok := tmc.mutation.Sources(); ok {
+		_spec.SetField(tablemeta.FieldSources, field.TypeJSON, value)
+		_node.Sources = value
 	}
 	if nodes := tmc.mutation.ColumnsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -406,6 +417,24 @@ func (u *TableMetaUpsert) UpdateModel() *TableMetaUpsert {
 	return u
 }
 
+// SetSources sets the "sources" field.
+func (u *TableMetaUpsert) SetSources(v map[string]json.RawMessage) *TableMetaUpsert {
+	u.Set(tablemeta.FieldSources, v)
+	return u
+}
+
+// UpdateSources sets the "sources" field to the value that was provided on create.
+func (u *TableMetaUpsert) UpdateSources() *TableMetaUpsert {
+	u.SetExcluded(tablemeta.FieldSources)
+	return u
+}
+
+// ClearSources clears the value of the "sources" field.
+func (u *TableMetaUpsert) ClearSources() *TableMetaUpsert {
+	u.SetNull(tablemeta.FieldSources)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -532,6 +561,27 @@ func (u *TableMetaUpsertOne) SetModel(v string) *TableMetaUpsertOne {
 func (u *TableMetaUpsertOne) UpdateModel() *TableMetaUpsertOne {
 	return u.Update(func(s *TableMetaUpsert) {
 		s.UpdateModel()
+	})
+}
+
+// SetSources sets the "sources" field.
+func (u *TableMetaUpsertOne) SetSources(v map[string]json.RawMessage) *TableMetaUpsertOne {
+	return u.Update(func(s *TableMetaUpsert) {
+		s.SetSources(v)
+	})
+}
+
+// UpdateSources sets the "sources" field to the value that was provided on create.
+func (u *TableMetaUpsertOne) UpdateSources() *TableMetaUpsertOne {
+	return u.Update(func(s *TableMetaUpsert) {
+		s.UpdateSources()
+	})
+}
+
+// ClearSources clears the value of the "sources" field.
+func (u *TableMetaUpsertOne) ClearSources() *TableMetaUpsertOne {
+	return u.Update(func(s *TableMetaUpsert) {
+		s.ClearSources()
 	})
 }
 
@@ -827,6 +877,27 @@ func (u *TableMetaUpsertBulk) SetModel(v string) *TableMetaUpsertBulk {
 func (u *TableMetaUpsertBulk) UpdateModel() *TableMetaUpsertBulk {
 	return u.Update(func(s *TableMetaUpsert) {
 		s.UpdateModel()
+	})
+}
+
+// SetSources sets the "sources" field.
+func (u *TableMetaUpsertBulk) SetSources(v map[string]json.RawMessage) *TableMetaUpsertBulk {
+	return u.Update(func(s *TableMetaUpsert) {
+		s.SetSources(v)
+	})
+}
+
+// UpdateSources sets the "sources" field to the value that was provided on create.
+func (u *TableMetaUpsertBulk) UpdateSources() *TableMetaUpsertBulk {
+	return u.Update(func(s *TableMetaUpsert) {
+		s.UpdateSources()
+	})
+}
+
+// ClearSources clears the value of the "sources" field.
+func (u *TableMetaUpsertBulk) ClearSources() *TableMetaUpsertBulk {
+	return u.Update(func(s *TableMetaUpsert) {
+		s.ClearSources()
 	})
 }
 

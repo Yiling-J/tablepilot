@@ -27,9 +27,10 @@ func TestRowsGenerator_PrepareRows(t *testing.T) {
 	sc := &source.ListSource{Options: []string{"foo"}}
 	err := sc.Init(context.TODO())
 	require.NoError(t, err)
+	idx := source.NewIndexer(sc, false, false, 1)
 	generator := &AIRowsGenerator{
-		sourceMap: map[string]source.Source{
-			"c1": sc,
+		indexerMap: map[string]*source.Indexer{
+			"c1": idx,
 		},
 		table: &ent.TableMeta{Edges: ent.TableMetaEdges{
 			Columns: []*ent.TableColumn{
@@ -322,7 +323,10 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 	t.Run("pick-type column", func(t *testing.T) {
 		db := db.NewTestDB()
 		ctx := context.Background()
-		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
+		sc := &source.ListSource{Options: []string{"a", "b"}, Type: "list"}
+		sb, err := json.Marshal(sc)
+		require.NoError(t, err)
+		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").SetSources(map[string]json.RawMessage{"so": sb}).Save(ctx)
 		require.NoError(t, err)
 		col, err := db.TableColumn.Create().
 			SetName("c").
@@ -330,13 +334,10 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 			SetTablemeta(tb).
 			SetType(tablecolumn.TypeString).Save(ctx)
 		require.NoError(t, err)
-		sc := &source.ListSource{Options: []string{"a", "b"}, Type: "list"}
-		sb, err := json.Marshal(sc)
-		require.NoError(t, err)
 		col2, err := db.TableColumn.Create().
 			SetName("c2").
 			SetFillMode(tablecolumn.FillModePick).
-			SetSource(sb).
+			SetSource("so").
 			SetTablemeta(tb).
 			SetType(tablecolumn.TypeString).Save(ctx)
 		require.NoError(t, err)

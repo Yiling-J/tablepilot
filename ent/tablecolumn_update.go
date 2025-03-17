@@ -4,14 +4,12 @@ package ent
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
@@ -127,14 +125,16 @@ func (tcu *TableColumnUpdate) SetNillableFillMode(tm *tablecolumn.FillMode) *Tab
 }
 
 // SetSource sets the "source" field.
-func (tcu *TableColumnUpdate) SetSource(jm json.RawMessage) *TableColumnUpdate {
-	tcu.mutation.SetSource(jm)
+func (tcu *TableColumnUpdate) SetSource(s string) *TableColumnUpdate {
+	tcu.mutation.SetSource(s)
 	return tcu
 }
 
-// AppendSource appends jm to the "source" field.
-func (tcu *TableColumnUpdate) AppendSource(jm json.RawMessage) *TableColumnUpdate {
-	tcu.mutation.AppendSource(jm)
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableSource(s *string) *TableColumnUpdate {
+	if s != nil {
+		tcu.SetSource(*s)
+	}
 	return tcu
 }
 
@@ -176,6 +176,55 @@ func (tcu *TableColumnUpdate) SetNillableTableID(i *int) *TableColumnUpdate {
 	if i != nil {
 		tcu.SetTableID(*i)
 	}
+	return tcu
+}
+
+// SetRandom sets the "random" field.
+func (tcu *TableColumnUpdate) SetRandom(b bool) *TableColumnUpdate {
+	tcu.mutation.SetRandom(b)
+	return tcu
+}
+
+// SetNillableRandom sets the "random" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableRandom(b *bool) *TableColumnUpdate {
+	if b != nil {
+		tcu.SetRandom(*b)
+	}
+	return tcu
+}
+
+// SetReplacement sets the "replacement" field.
+func (tcu *TableColumnUpdate) SetReplacement(b bool) *TableColumnUpdate {
+	tcu.mutation.SetReplacement(b)
+	return tcu
+}
+
+// SetNillableReplacement sets the "replacement" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableReplacement(b *bool) *TableColumnUpdate {
+	if b != nil {
+		tcu.SetReplacement(*b)
+	}
+	return tcu
+}
+
+// SetRepeat sets the "repeat" field.
+func (tcu *TableColumnUpdate) SetRepeat(i int) *TableColumnUpdate {
+	tcu.mutation.ResetRepeat()
+	tcu.mutation.SetRepeat(i)
+	return tcu
+}
+
+// SetNillableRepeat sets the "repeat" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableRepeat(i *int) *TableColumnUpdate {
+	if i != nil {
+		tcu.SetRepeat(*i)
+	}
+	return tcu
+}
+
+// AddRepeat adds i to the "repeat" field.
+func (tcu *TableColumnUpdate) AddRepeat(i int) *TableColumnUpdate {
+	tcu.mutation.AddRepeat(i)
 	return tcu
 }
 
@@ -309,21 +358,28 @@ func (tcu *TableColumnUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.SetField(tablecolumn.FieldFillMode, field.TypeEnum, value)
 	}
 	if value, ok := tcu.mutation.Source(); ok {
-		_spec.SetField(tablecolumn.FieldSource, field.TypeJSON, value)
-	}
-	if value, ok := tcu.mutation.AppendedSource(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, tablecolumn.FieldSource, value)
-		})
+		_spec.SetField(tablecolumn.FieldSource, field.TypeString, value)
 	}
 	if tcu.mutation.SourceCleared() {
-		_spec.ClearField(tablecolumn.FieldSource, field.TypeJSON)
+		_spec.ClearField(tablecolumn.FieldSource, field.TypeString)
 	}
 	if value, ok := tcu.mutation.ContextLength(); ok {
 		_spec.SetField(tablecolumn.FieldContextLength, field.TypeInt, value)
 	}
 	if value, ok := tcu.mutation.AddedContextLength(); ok {
 		_spec.AddField(tablecolumn.FieldContextLength, field.TypeInt, value)
+	}
+	if value, ok := tcu.mutation.Random(); ok {
+		_spec.SetField(tablecolumn.FieldRandom, field.TypeBool, value)
+	}
+	if value, ok := tcu.mutation.Replacement(); ok {
+		_spec.SetField(tablecolumn.FieldReplacement, field.TypeBool, value)
+	}
+	if value, ok := tcu.mutation.Repeat(); ok {
+		_spec.SetField(tablecolumn.FieldRepeat, field.TypeInt, value)
+	}
+	if value, ok := tcu.mutation.AddedRepeat(); ok {
+		_spec.AddField(tablecolumn.FieldRepeat, field.TypeInt, value)
 	}
 	if tcu.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -471,14 +527,16 @@ func (tcuo *TableColumnUpdateOne) SetNillableFillMode(tm *tablecolumn.FillMode) 
 }
 
 // SetSource sets the "source" field.
-func (tcuo *TableColumnUpdateOne) SetSource(jm json.RawMessage) *TableColumnUpdateOne {
-	tcuo.mutation.SetSource(jm)
+func (tcuo *TableColumnUpdateOne) SetSource(s string) *TableColumnUpdateOne {
+	tcuo.mutation.SetSource(s)
 	return tcuo
 }
 
-// AppendSource appends jm to the "source" field.
-func (tcuo *TableColumnUpdateOne) AppendSource(jm json.RawMessage) *TableColumnUpdateOne {
-	tcuo.mutation.AppendSource(jm)
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableSource(s *string) *TableColumnUpdateOne {
+	if s != nil {
+		tcuo.SetSource(*s)
+	}
 	return tcuo
 }
 
@@ -520,6 +578,55 @@ func (tcuo *TableColumnUpdateOne) SetNillableTableID(i *int) *TableColumnUpdateO
 	if i != nil {
 		tcuo.SetTableID(*i)
 	}
+	return tcuo
+}
+
+// SetRandom sets the "random" field.
+func (tcuo *TableColumnUpdateOne) SetRandom(b bool) *TableColumnUpdateOne {
+	tcuo.mutation.SetRandom(b)
+	return tcuo
+}
+
+// SetNillableRandom sets the "random" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableRandom(b *bool) *TableColumnUpdateOne {
+	if b != nil {
+		tcuo.SetRandom(*b)
+	}
+	return tcuo
+}
+
+// SetReplacement sets the "replacement" field.
+func (tcuo *TableColumnUpdateOne) SetReplacement(b bool) *TableColumnUpdateOne {
+	tcuo.mutation.SetReplacement(b)
+	return tcuo
+}
+
+// SetNillableReplacement sets the "replacement" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableReplacement(b *bool) *TableColumnUpdateOne {
+	if b != nil {
+		tcuo.SetReplacement(*b)
+	}
+	return tcuo
+}
+
+// SetRepeat sets the "repeat" field.
+func (tcuo *TableColumnUpdateOne) SetRepeat(i int) *TableColumnUpdateOne {
+	tcuo.mutation.ResetRepeat()
+	tcuo.mutation.SetRepeat(i)
+	return tcuo
+}
+
+// SetNillableRepeat sets the "repeat" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableRepeat(i *int) *TableColumnUpdateOne {
+	if i != nil {
+		tcuo.SetRepeat(*i)
+	}
+	return tcuo
+}
+
+// AddRepeat adds i to the "repeat" field.
+func (tcuo *TableColumnUpdateOne) AddRepeat(i int) *TableColumnUpdateOne {
+	tcuo.mutation.AddRepeat(i)
 	return tcuo
 }
 
@@ -683,21 +790,28 @@ func (tcuo *TableColumnUpdateOne) sqlSave(ctx context.Context) (_node *TableColu
 		_spec.SetField(tablecolumn.FieldFillMode, field.TypeEnum, value)
 	}
 	if value, ok := tcuo.mutation.Source(); ok {
-		_spec.SetField(tablecolumn.FieldSource, field.TypeJSON, value)
-	}
-	if value, ok := tcuo.mutation.AppendedSource(); ok {
-		_spec.AddModifier(func(u *sql.UpdateBuilder) {
-			sqljson.Append(u, tablecolumn.FieldSource, value)
-		})
+		_spec.SetField(tablecolumn.FieldSource, field.TypeString, value)
 	}
 	if tcuo.mutation.SourceCleared() {
-		_spec.ClearField(tablecolumn.FieldSource, field.TypeJSON)
+		_spec.ClearField(tablecolumn.FieldSource, field.TypeString)
 	}
 	if value, ok := tcuo.mutation.ContextLength(); ok {
 		_spec.SetField(tablecolumn.FieldContextLength, field.TypeInt, value)
 	}
 	if value, ok := tcuo.mutation.AddedContextLength(); ok {
 		_spec.AddField(tablecolumn.FieldContextLength, field.TypeInt, value)
+	}
+	if value, ok := tcuo.mutation.Random(); ok {
+		_spec.SetField(tablecolumn.FieldRandom, field.TypeBool, value)
+	}
+	if value, ok := tcuo.mutation.Replacement(); ok {
+		_spec.SetField(tablecolumn.FieldReplacement, field.TypeBool, value)
+	}
+	if value, ok := tcuo.mutation.Repeat(); ok {
+		_spec.SetField(tablecolumn.FieldRepeat, field.TypeInt, value)
+	}
+	if value, ok := tcuo.mutation.AddedRepeat(); ok {
+		_spec.AddField(tablecolumn.FieldRepeat, field.TypeInt, value)
 	}
 	if tcuo.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{

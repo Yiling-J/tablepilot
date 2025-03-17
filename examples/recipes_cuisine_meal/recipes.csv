@@ -1,101 +1,101 @@
 Name,Ingredients,Cooking Time,Cuisine,Meal,Difficulty Level
-Baba Ghanoush,"[""Eggplant"",""Tahini"",""Lemon Juice"",""Garlic"",""Olive Oil""]",20,Lebanese,Appetizers,2
-Greek Frappe,"[""Instant Coffee"",""Sugar"",""Water"",""Milk""]",5,Mediterranean,Drinks,1
-Sambusas,"[""Lentils"",""Onion"",""Garlic"",""Ginger"",""Turmeric"",""Flour""]",15,Ethiopian,Appetizers,3
-Frittata,"[""Eggs"",""Cheese"",""Spinach"",""Tomatoes"",""Onion""]",25,Italian,Breakfast,2
-Tagine,"[""Chicken"",""Apricots"",""Almonds"",""Cinnamon"",""Ginger"",""Onion""]",45,Moroccan,Dinner,4
-Causa Rellena,"[""Potatoes"",""Chicken"",""Avocado"",""Mayonnaise"",""Lime""]",10,Peruvian,Appetizers,3
-Hotteok,"[""Flour"",""Sugar"",""Cinnamon"",""Yeast"",""Water""]",30,Korean,Desserts,3
-Pancakes,"[""Flour"",""Milk"",""Eggs"",""Sugar"",""Baking Powder""]",15,American,Breakfast,1
-Kir Royale,"[""Crème de Cassis"",""Champagne""]",5,French,Drinks,1
-Mochi,"[""Sweet Rice Flour"",""Sugar"",""Water"",""Red Bean Paste""]",20,Japanese,Desserts,3
-Paella,"[""Rice"",""Saffron"",""Seafood"",""Chicken"",""Vegetables""]",35,Spanish,Lunch,4
-Upma,"[""Semolina"",""Onion"",""Mustard Seeds"",""Curry Leaves"",""Vegetables""]",20,Indian,Breakfast,2
-Freddo Espresso,"[""Espresso"",""Ice"",""Sugar""]",5,Greek,Drinks,1
-Pão de Queijo,"[""Tapioca Flour"",""Cheese"",""Milk"",""Oil"",""Eggs""]",15,Brazilian,Appetizers,2
-Spring Rolls,"[""Rice Paper"",""Vegetables"",""Shrimp"",""Noodles"",""Peanut Sauce""]",25,Chinese,Appetizers,3
-Tacos,"[""Corn Tortillas"",""Ground Beef"",""Lettuce"",""Tomatoes"",""Cheese"",""Salsa""]",30,Mexican,Lunch,2
-Pho,"[""Rice Noodles"",""Beef"",""Broth"",""Herbs"",""Spices""]",10,Vietnamese,Breakfast,3
-Glühwein,"[""Red Wine"",""Cinnamon Sticks"",""Cloves"",""Orange Slices"",""Sugar""]",5,German,Drinks,1
-Kebab,"[""Lamb"",""Yogurt"",""Garlic"",""Spices"",""Onion""]",50,Turkish,Dinner,4
-Pad Thai,"[""Rice Noodles"",""Shrimp"",""Tofu"",""Peanuts"",""Bean Sprouts"",""Egg""]",35,Thai,Dinner,3
-Sangria,"[""Red wine"",""Chopped fruit"",""Brandy"",""Sugar""]",15,Spanish,Drinks,2
-Injera,"[""Teff flour"",""Water"",""Yeast""]",45,Ethiopian,Desserts,3
-Bibimbap,"[""Rice"",""Vegetables"",""Egg"",""Gochujang""]",30,Korean,Lunch,4
-Baklava,"[""Phyllo dough"",""Nuts"",""Butter"",""Syrup""]",60,Greek,Desserts,5
-Black Forest Cake,"[""Chocolate cake"",""Cherries"",""Whipped cream"",""Kirsch""]",90,German,Desserts,4
-Ca Phe Sua Da,"[""Coffee"",""Condensed milk"",""Hot water""]",5,Vietnamese,Drinks,1
-Butter Chicken,"[""Chicken"",""Tomato sauce"",""Butter"",""Cream"",""Spices""]",45,Indian,Dinner,3
-Dumplings,"[""Ground pork"",""Cabbage"",""Ginger"",""Soy sauce""]",35,Chinese,Lunch,3
-Pasta Carbonara,"[""Pasta"",""Eggs"",""Pancetta"",""Parmesan cheese"",""Black pepper""]",25,Italian,Lunch,2
-Greek Salad,"[""Tomatoes"",""Cucumbers"",""Onion"",""Olives"",""Feta cheese"",""Olive oil""]",10,Mediterranean,Drinks,1
-Iskender Kebab,"[""Lamb"",""Pita bread"",""Tomato sauce"",""Yogurt"",""Butter""]",50,Turkish,Dinner,4
-Croque Monsieur,"[""Bread"",""Ham"",""Cheese"",""Béchamel sauce""]",40,French,Lunch,2
-Margarita,"[""Tequila"",""Lime juice"",""Triple sec""]",5,Mexican,Drinks,1
-Causa Rellena,"[""Yellow potatoes"",""Avocado"",""Chicken"",""Mayonnaise""]",75,Peruvian,Desserts,3
-Tagine,"[""Meat"",""Vegetables"",""Spices"",""Dried fruit""]",80,Moroccan,Desserts,4
-Buffalo Wings,"[""Chicken wings"",""Hot sauce"",""Butter"",""Vinegar""]",10,American,Appetizers,2
-Falafel,"[""Chickpeas"",""Onion"",""Parsley"",""Spices""]",20,Lebanese,Lunch,3
-Mochi,"[""Glutinous rice flour"",""Sugar"",""Water"",""Filling""]",60,Japanese,Desserts,3
-Tom Yum Soup,"[""Lemongrass"",""Galangal"",""Lime leaves"",""Chili"",""Mushrooms"",""Shrimp""]",15,Thai,Appetizers,3
-Feijoada,"[""Black beans"",""Pork"",""Beef"",""Sausage"",""Rice""]",30,Brazilian,Lunch,4
-Greek Salad,"[""Feta cheese"",""Olive oil"",""Lemon juice"",""Oregano""]",15,Brazilian,Appetizers,2
-Gin Fizz,"[""Gin"",""Lemon juice"",""Sugar syrup"",""Soda water""]",5,Greek,Drinks,1
-Masala Chai,"[""Milk"",""Sugar"",""Cardamom"",""Almonds""]",10,Indian,Drinks,2
-Ethiopian Scrambled Eggs,"[""Eggs"",""Milk"",""Berbere spice"",""Onion"",""Tomato""]",20,Ethiopian,Breakfast,3
-Schweinshaxe,"[""Pork"",""Sauerkraut"",""Potatoes"",""Caraway seeds""]",120,German,Lunch,4
-Tangyuan,"[""Rice flour"",""Red bean paste"",""Sugar"",""Water""]",30,Chinese,Desserts,3
-Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil""]",15,Lebanese,Dinner,2
-Goi Cuon,"[""Rice paper"",""Shrimp"",""Pork"",""Vegetables"",""Noodles""]",30,Vietnamese,Breakfast,3
-Quiche Lorraine,"[""Eggs"",""Cream"",""Bacon"",""Gruyere cheese""]",50,French,Lunch,4
-Cappuccino,"[""Espresso"",""Steamed milk"",""Foamed milk""]",5,Italian,Drinks,1
-Moussaka,"[""Ground beef"",""Eggplant"",""Potatoes"",""Tomato sauce"",""Bechamel sauce""]",90,Turkish,Lunch,4
-Edamame,"[""Edamame"",""Soy sauce"",""Sesame oil"",""Salt""]",10,Japanese,Appetizers,1
-Briouats,"[""Almonds"",""Honey"",""Orange blossom water"",""Phyllo dough"",""Butter""]",60,Moroccan,Desserts,4
-Tortilla Española,"[""Eggs"",""Potatoes"",""Onions"",""Olive oil"",""Salt""]",40,Spanish,Breakfast,2
-Pad Thai,"[""Rice noodles"",""Shrimp"",""Tofu"",""Bean sprouts"",""Peanuts""]",30,Thai,Appetizers,3
-Full Breakfast,"[""Eggs"",""Bacon"",""Toast"",""Hash browns""]",25,American,Breakfast,2
-Somaek,"[""Soju"",""Beer"",""Sprite"",""Lemon""]",5,Korean,Drinks,1
-Enchiladas,"[""Corn tortillas"",""Chicken"",""Cheese"",""Salsa"",""Sour cream""]",40,Mexican,Lunch,2
-Ratatouille,"[""Eggplant"",""Zucchini"",""Bell peppers"",""Tomatoes"",""Olive oil""]",60,Mediterranean,Lunch,3
-Pisco Sour,"[""Pisco"",""Lime juice"",""Simple syrup"",""Egg white"",""Bitters""]",10,Peruvian,Drinks,2
-Tagine,"[""Chicken"",""Onions"",""Tomatoes"",""Spices"",""Olive Oil""]",90,Moroccan,Drinks,3
-Apple Pie,"[""Apples"",""Flour"",""Sugar"",""Butter"",""Cinnamon""]",75,American,Drinks,4
-Moussaka,"[""Eggplant"",""Ground Meat"",""Potatoes"",""Bechamel Sauce"",""Cheese""]",120,Mediterranean,Dinner,4
-Chicha Morada,"[""Purple Corn"",""Pineapple"",""Apples"",""Lime"",""Sugar""]",30,Peruvian,Drinks,1
-Paella,"[""Rice"",""Seafood"",""Chicken"",""Vegetables"",""Saffron""]",90,Spanish,Drinks,4
-Che Chuoi,"[""Bananas"",""Coconut Milk"",""Tapioca Pearls"",""Sugar"",""Peanuts""]",45,Vietnamese,Desserts,2
-Iskender Kebab,"[""Lamb"",""Pita Bread"",""Tomato Sauce"",""Yogurt"",""Butter""]",60,Turkish,Lunch,3
-Spanakopita,"[""Spinach"",""Feta Cheese"",""Phyllo Dough"",""Eggs"",""Onions""]",70,Greek,Breakfast,3
-Soupe à l'oignon gratinée,"[""Onions"",""Beef Broth"",""Bread"",""Cheese"",""Butter""]",50,French,Appetizers,3
-Mango Sticky Rice,"[""Sticky Rice"",""Mango"",""Coconut Milk"",""Sugar"",""Sesame Seeds""]",40,Thai,Desserts,2
-Glühwein,"[""Red Wine"",""Cinnamon Sticks"",""Cloves"",""Orange"",""Sugar""]",20,German,Drinks,1
-Congee,"[""Rice"",""Water"",""Chicken"",""Ginger"",""Scallions""]",60,Chinese,Breakfast,2
-Caipirinha,"[""Cachaça"",""Sugar"",""Lime"",""Ice""]",5,Brazilian,Drinks,1
-Samosa,"[""Potatoes"",""Peas"",""Spices"",""Flour"",""Oil""]",45,Indian,Appetizers,3
-Tamagoyaki,"[""Eggs"",""Soy Sauce"",""Sugar"",""Mirin"",""Dashi""]",15,Japanese,Breakfast,2
-Falafel,"[""Chickpeas"",""Onions"",""Parsley"",""Cilantro"",""Spices""]",50,Lebanese,Lunch,3
-Guacamole,"[""Avocados"",""Onion"",""Tomato"",""Lime Juice"",""Cilantro""]",10,Mexican,Appetizers,1
-Dabo Kolo,"[""Barley Flour"",""Water"",""Salt"",""Oil"",""Spices""]",30,Ethiopian,Desserts,2
-Lasagna,"[""Pasta Sheets"",""Ground Beef"",""Ricotta Cheese"",""Tomato Sauce"",""Mozzarella Cheese""]",90,Italian,Lunch,4
-Bibimbap,"[""Rice"",""Vegetables"",""Beef"",""Egg"",""Gochujang""]",45,Korean,Dinner,3
-Kimchi Pancakes,"[""Kimchi"",""Sesame oil"",""Soy sauce"",""Green onions""]",25,Korean,Appetizers,3
-Black Forest Cake,"[""Flour"",""Sugar"",""Eggs"",""Milk"",""Butter"",""Vanilla extract""]",60,German,Desserts,2
-Churros,"[""Flour"",""Sugar"",""Cinnamon"",""Eggs"",""Oil""]",30,Mexican,Desserts,2
-Shakshuka,"[""Eggs"",""Tomatoes"",""Onions"",""Bell peppers"",""Feta cheese"",""Olives"",""Olive oil""]",20,Mediterranean,Breakfast,2
-Samosa,"[""Potatoes"",""Peas"",""Carrots"",""Onions"",""Spices"",""Puff pastry""]",45,Indian,Appetizers,3
-Wat,"[""Berbere spice"",""Beef cubes"",""Onions"",""Garlic"",""Ginger"",""Tomato paste""]",90,Ethiopian,Dinner,4
-Torrijas,"[""Eggs"",""Milk"",""Sugar"",""Lemon zest"",""Cinnamon""]",30,Spanish,Desserts,2
-Ayran,"[""Yogurt"",""Water"",""Salt"",""Mint""]",5,Turkish,Drinks,1
-Briouats,"[""Phyllo dough"",""Spinach"",""Feta cheese"",""Onions"",""Eggs"",""Olive oil""]",40,Moroccan,Appetizers,3
-Mint Julep,"[""Bourbon"",""Sugar"",""Mint leaves"",""Water""]",5,American,Drinks,1
-Fried Rice,"[""Rice"",""Eggs"",""Green onions"",""Soy sauce"",""Vegetables""]",15,Chinese,Breakfast,2
-Baklava,"[""Phyllo dough"",""Walnuts"",""Honey"",""Cinnamon"",""Butter""]",75,Greek,Desserts,4
-Matcha Latte,"[""Matcha powder"",""Hot water"",""Milk"",""Sugar""]",10,Japanese,Drinks,1
-Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil"",""Pita bread""]",20,Lebanese,Appetizers,2
-Papa a la Huancaina,"[""Potatoes"",""Yellow chili paste"",""Lime juice"",""Vegetable oil""]",30,Peruvian,Appetizers,3
-Cappuccino,"[""Espresso"",""Steamed milk"",""Foamed milk""]",5,Italian,Drinks,1
-Pho,"[""Rice noodles"",""Beef"",""Bean sprouts"",""Cilantro"",""Lime"",""Hoisin sauce""]",60,Vietnamese,Dinner,3
-Thai Iced Tea,"[""Coconut milk"",""Lime juice"",""Sugar"",""Tea""]",10,Thai,Drinks,1
-Croissant,"[""Flour"",""Butter"",""Eggs"",""Sugar"",""Almonds""]",45,French,Lunch,3
+Kung Pao Chicken,"[""Chicken"",""Peanuts"",""Soy Sauce"",""Chili Peppers""]",30,Chinese,Lunch,3
+Beef Bourguignon,"[""Beef"",""Red Wine"",""Mushrooms"",""Onions""]",180,French,Dinner,4
+Hummus with Pita,"[""Chickpeas"",""Tahini"",""Lemon Juice"",""Olive Oil"",""Pita Bread""]",15,Lebanese,Appetizers,1
+Coxinha,"[""Chicken"",""Cream Cheese"",""Breadcrumbs"",""Onion""]",45,Brazilian,Appetizers,3
+Margarita,"[""Tequila"",""Lime Juice"",""Orange Liqueur"",""Salt""]",5,Mexican,Drinks,1
+Greek Salad,"[""Tomatoes"",""Cucumbers"",""Olives"",""Feta Cheese"",""Olive Oil""]",20,Mediterranean,Lunch,1
+Sushi Rolls,"[""Sushi Rice"",""Nori"",""Fish"",""Vegetables""]",60,Japanese,Dinner,4
+Injera with Wat,"[""Injera Bread"",""Meat Stew"",""Spices""]",90,Ethiopian,Lunch,3
+Moussaka,"[""Eggplant"",""Ground Meat"",""Potatoes"",""Bechamel Sauce""]",120,Greek,Dinner,4
+Sauerbraten,"[""Beef"",""Vinegar"",""Gingerbread"",""Raisins""]",150,German,Lunch,4
+Turkish Delight,"[""Milk"",""Sugar"",""Pistachios"",""Rosewater""]",60,Turkish,Desserts,2
+Che Chuoi,"[""Tapioca pearls"",""Coconut milk"",""Sugar"",""Mango"",""Pandan leaves""]",45,Vietnamese,Desserts,3
+Tortilla Espanola,"[""Eggs"",""Potatoes"",""Onions"",""Olive oil"",""Salt""]",35,Spanish,Breakfast,2
+Lemonade,"[""Lemon"",""Sugar"",""Water"",""Mint""]",5,American,Drinks,1
+Samosas,"[""Samosa pastry"",""Potatoes"",""Peas"",""Spices"",""Oil""]",50,Indian,Appetizers,3
+Moroccan Mint Tea,"[""Mint leaves"",""Sugar"",""Lime"",""Sparkling water""]",10,Moroccan,Drinks,2
+Causa Rellena,"[""Potatoes"",""Yellow chili"",""Lime juice"",""Vegetable oil"",""Salt"",""Pepper""]",40,Peruvian,Lunch,4
+Aperol Spritz,"[""Prosecco"",""Aperol"",""Soda water"",""Orange slice""]",5,Italian,Drinks,1
+Bibimbap,"[""Rice"",""Vegetables"",""Beef"",""Egg"",""Soy sauce"",""Sesame oil""]",45,Korean,Lunch,3
+Pad Thai,"[""Rice noodles"",""Shrimp"",""Tofu"",""Bean sprouts"",""Peanuts"",""Tamarind paste""]",60,Thai,Dinner,4
+Masala Dosa,"[""Rice"",""Urad Dal"",""Fenugreek Seeds"",""Potatoes"",""Onions"",""Spices""]",45,Indian,Breakfast,3
+Hummus,"[""Chickpeas"",""Tahini"",""Lemon Juice"",""Garlic"",""Olive Oil""]",10,Lebanese,Appetizers,1
 Caipirinha,"[""Cachaça"",""Sugar"",""Lime""]",5,Brazilian,Drinks,1
+Pisco Sour,"[""Pisco"",""Lime Juice"",""Simple Syrup"",""Egg White"",""Angostura Bitters""]",7,Peruvian,Drinks,2
+Greek Salad,"[""Tomatoes"",""Cucumbers"",""Onion"",""Olives"",""Feta Cheese"",""Olive Oil"",""Oregano""]",15,Mediterranean,Lunch,2
+Tej,"[""Honey"",""Water"",""Gesho""]",1440,Ethiopian,Drinks,3
+Bruschetta,"[""Bread"",""Tomatoes"",""Garlic"",""Basil"",""Olive Oil""]",10,Italian,Appetizers,1
+Mint Lemonade,"[""Mint"",""Lemon"",""Sugar"",""Water""]",5,Moroccan,Drinks,1
+Kimchi Fried Rice,"[""Kimchi"",""Rice"",""Egg"",""Gochujang"",""Sesame Oil"",""Vegetables""]",20,Korean,Lunch,2
+Tzatziki,"[""Greek Yogurt"",""Cucumber"",""Garlic"",""Olive Oil"",""Lemon Juice"",""Dill""]",10,Greek,Appetizers,1
+Sauerbraten,"[""Beef"",""Vinegar"",""Gingerbread"",""Raisins""]",180,German,Lunch,4
+Mango Sticky Rice,"[""Mango"",""Sticky Rice"",""Coconut Milk"",""Sugar""]",45,Chinese,Desserts,2
+Pad See Ew,"[""Rice Noodles"",""Chinese Broccoli"",""Egg"",""Soy Sauce""]",25,Thai,Dinner,3
+Croque Monsieur,"[""Bread"",""Ham"",""Cheese"",""Bechamel Sauce""]",20,French,Lunch,2
+Goi Cuon,"[""Rice Paper"",""Shrimp"",""Pork"",""Vegetables"",""Rice Noodles""]",30,Vietnamese,Appetizers,3
+Paella,"[""Rice"",""Saffron"",""Seafood"",""Chicken"",""Vegetables""]",60,Spanish,Lunch,4
+Churros,"[""Flour"",""Water"",""Sugar"",""Cinnamon""]",35,Mexican,Desserts,2
+Tamagoyaki,"[""Eggs"",""Soy Sauce"",""Sugar"",""Mirin""]",15,Japanese,Breakfast,1
+Menemen,"[""Tomatoes"",""Peppers"",""Eggs"",""Onion"",""Spices""]",25,Turkish,Lunch,2
+Buffalo Wings,"[""Chicken Wings"",""Hot Sauce"",""Butter"",""Vinegar""]",40,American,Appetizers,2
+Lemonade,"[""ice"",""soda"",""lemon""]",5,American,Drinks,1
+Gavurdagi Salad,"[""feta cheese"",""olives"",""tomatoes"",""cucumber""]",10,Turkish,Appetizers,2
+Quesadillas,"[""tortillas"",""chicken"",""cheese"",""salsa""]",30,Mexican,Lunch,3
+Baklava,"[""phyllo dough"",""walnuts"",""cinnamon"",""sugar syrup""]",45,Lebanese,Desserts,4
+Éclair,"[""puff pastry"",""cream"",""chocolate""]",60,French,Lunch,3
+Pad Thai,"[""rice noodles"",""shrimp"",""vegetables"",""peanut sauce""]",20,Thai,Dinner,2
+Sushi,"[""rice"",""seaweed"",""tuna"",""avocado""]",15,Japanese,Lunch,2
+Bibimbap,"[""rice"",""vegetables"",""beef"",""gochujang""]",25,Korean,Lunch,3
+Spanakopita,"[""phyllo dough"",""spinach"",""feta cheese"",""eggs""]",35,Greek,Desserts,4
+Injera with Wat,"[""injera"",""stew"",""vegetables"",""spices""]",40,Ethiopian,Lunch,3
+Frappe,"[""Espresso"",""Ice"",""Milk"",""Sugar""]",5,Mediterranean,Drinks,1
+Sesame Balls,"[""Glutinous rice flour"",""Sesame seeds"",""Red bean paste"",""Sugar"",""Oil""]",40,Chinese,Desserts,3
+Brigadeiro,"[""Condensed milk"",""Cocoa powder"",""Butter"",""Chocolate sprinkles""]",20,Brazilian,Desserts,2
+Paella,"[""Rice"",""Saffron"",""Chicken"",""Seafood"",""Vegetables""]",60,Spanish,Dinner,3
+Gulab Jamun,"[""Milk powder"",""All-purpose flour"",""Ghee"",""Sugar"",""Cardamom"",""Rose water""]",50,Indian,Desserts,4
+Radler,"[""Beer"",""Lemonade""]",3,German,Drinks,1
+Ceviche,"[""White fish"",""Lime juice"",""Red onion"",""Cilantro"",""Aji peppers""]",25,Peruvian,Lunch,3
+Tiramisu,"[""Ladyfingers"",""Espresso"",""Mascarpone cheese"",""Eggs"",""Sugar"",""Cocoa powder""]",30,Italian,Desserts,2
+Chebakia,"[""Flour"",""Sesame seeds"",""Anise"",""Saffron"",""Cinnamon"",""Honey""]",60,Moroccan,Desserts,3
+Pho,"[""Beef bones"",""Rice noodles"",""Beef"",""Spices"",""Herbs""]",90,Vietnamese,Dinner,4
+Baklava,"[""Filo pastry"",""Walnuts"",""Butter"",""Sugar"",""Lemon juice""]",60,Turkish,Desserts,3
+Kartoffelpuffer,"[""Potatoes"",""Salt"",""Pepper"",""Oil""]",20,German,Appetizers,1
+Chicken Biryani,"[""Chicken"",""Basmati rice"",""Yogurt"",""Spices""]",90,Indian,Dinner,4
+Tzatziki,"[""Yogurt"",""Cucumber"",""Garlic"",""Olive oil""]",10,Greek,Drinks,2
+Che Chuoi,"[""Tapioca starch"",""Coconut milk"",""Sugar"",""Pandan leaves""]",45,Vietnamese,Desserts,3
+Hummus,"[""Chickpeas"",""Tahini"",""Lemon juice"",""Garlic"",""Olive oil""]",15,Lebanese,Lunch,2
+Mazamorra Morada,"[""Purple corn"",""Pineapple"",""Quince"",""Apple"",""Lime"",""Cinnamon"",""Clove""]",70,Peruvian,Desserts,4
+Paella,"[""Rice"",""Chicken"",""Seafood"",""Peas"",""Peppers"",""Saffron""]",50,Spanish,Dinner,3
+Caprese Salad,"[""Tomatoes"",""Mozzarella"",""Basil"",""Olive oil""]",20,Italian,Lunch,2
+Lemonade,"[""Lemon"",""Sugar"",""Water""]",5,American,Drinks,1
+Orange Juice,"[""Orange juice"",""Oranges"",""Ice""]",5,Mediterranean,Drinks,1
+Doro Wat,"[""Injera"",""Doro Wat"",""Berbere spice""]",90,Ethiopian,Dinner,4
+Mango Sticky Rice,"[""Mango"",""Sticky Rice"",""Coconut Milk""]",45,Thai,Desserts,3
+Sake,"[""Sake"",""Rice"",""Water""]",60,Japanese,Drinks,2
+Tangyuan,"[""Red Bean Paste"",""Glutinous Rice Flour"",""Sugar""]",30,Chinese,Desserts,3
+Couscous,"[""Couscous"",""Vegetables"",""Spices""]",40,Moroccan,Lunch,2
+Croissant,"[""Croissant"",""Butter"",""Sugar""]",25,French,Breakfast,3
+Huevos Rancheros,"[""Eggs"",""Tortillas"",""Salsa""]",20,Mexican,Breakfast,2
+Kimchi Fried Rice,"[""Kimchi"",""Rice"",""Eggs""]",30,Korean,Dinner,2
+Pão de Queijo,"[""Pão de Queijo"",""Cheese"",""Tapioca Flour""]",35,Brazilian,Appetizers,1
+Tabbouleh,"[""Bulgur"",""Parsley"",""Mint"",""Tomato"",""Onion"",""Lemon juice"",""Olive oil""]",45,Lebanese,Dinner,3
+Gyeran Mari,"[""Eggs"",""Rice"",""Seaweed"",""Vegetables"",""Soy sauce""]",20,Korean,Breakfast,2
+Aperol Spritz,"[""Prosecco"",""Aperol"",""Soda water"",""Orange slice""]",5,Italian,Drinks,1
+Goi Cuon,"[""Rice paper"",""Shrimp"",""Vermicelli noodles"",""Vegetables"",""Peanut sauce""]",10,Vietnamese,Drinks,2
+Apfelstrudel,"[""Apples"",""Flour"",""Butter"",""Sugar"",""Cinnamon""]",60,German,Desserts,3
+Chicken Biryani,"[""Chicken"",""Rice"",""Spices"",""Yogurt"",""Onions""]",90,Indian,Dinner,4
+Papa a la Huancaína,"[""Potatoes"",""Aji Amarillo"",""Lime juice"",""Vegetable oil""]",25,Peruvian,Appetizers,2
+Greek Salad,"[""Tomatoes"",""Cucumber"",""Feta cheese"",""Olives"",""Onion"",""Olive oil""]",35,Mediterranean,Lunch,3
+Beef Bourguignon,"[""Beef"",""Red wine"",""Carrots"",""Onions"",""Mushrooms"",""Bacon""]",120,French,Dinner,4
+Menemen,"[""Eggs"",""Tomatoes"",""Green peppers"",""Onions"",""Spices""]",30,Turkish,Breakfast,2
+Sangria,"[""Red wine"",""Orange"",""Lemon"",""Sugar"",""Cinnamon""]",10,Spanish,Drinks,2
+Mango Sticky Rice,"[""Sticky rice"",""Mango"",""Coconut milk"",""Sugar"",""Salt""]",40,Thai,Breakfast,3
+Souffle,"[""Egg"",""Flour"",""Sugar"",""Milk"",""Vanilla extract""]",50,Chinese,Desserts,4
+Black Bean Dip,"[""Black beans"",""Onion"",""Garlic"",""Olive oil"",""Lime""]",20,Brazilian,Appetizers,2
+Misir Wot,"[""Lentils"",""Onion"",""Garlic"",""Tomato paste"",""Berbere spice""]",60,Ethiopian,Lunch,3
+Margarita,"[""Tequila"",""Lime juice"",""Agave nectar"",""Salt""]",5,Mexican,Drinks,1
+Ouzo,"[""Ouzo"",""Water"",""Ice""]",2,Greek,Drinks,1
+Mochi,"[""Mochi"",""Red bean paste"",""Sugar"",""Water""]",30,Japanese,Desserts,3
+Pancakes,"[""Pancake mix"",""Milk"",""Eggs"",""Butter"",""Syrup""]",20,American,Breakfast,1
+Harcha,"[""Semolina"",""Milk"",""Honey"",""Butter"",""Cinnamon""]",35,Moroccan,Breakfast,2

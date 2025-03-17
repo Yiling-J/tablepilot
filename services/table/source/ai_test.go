@@ -42,9 +42,8 @@ func TestSource_AI(t *testing.T) {
 				},
 			}
 			so := &AISource{
-				indexer: newIndexer(false, false, 20, 0),
-				Type:    "ai",
-				Prompt:  "aiai",
+				Type:   "ai",
+				Prompt: "aiai",
 			}
 			if hasOption {
 				so.Options = []string{"go"}
@@ -56,7 +55,9 @@ func TestSource_AI(t *testing.T) {
 			} else {
 				require.Equal(t, so.Options, []string{"foo", "bar"})
 			}
-			v, err := so.Next(ctx)
+			indexer := NewIndexer(so, false, false, 0)
+
+			v, err := indexer.Next(ctx)
 			require.NoError(t, err)
 			if hasOption {
 				require.Equal(t, "go", v.Value)

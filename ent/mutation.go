@@ -46,10 +46,13 @@ type TableColumnMutation struct {
 	description       *string
 	_type             *tablecolumn.Type
 	fill_mode         *tablecolumn.FillMode
-	source            *json.RawMessage
-	appendsource      json.RawMessage
+	source            *string
 	context_length    *int
 	addcontext_length *int
+	random            *bool
+	replacement       *bool
+	repeat            *int
+	addrepeat         *int
 	clearedFields     map[string]struct{}
 	tablemeta         *int
 	clearedtablemeta  bool
@@ -461,13 +464,12 @@ func (m *TableColumnMutation) ResetFillMode() {
 }
 
 // SetSource sets the "source" field.
-func (m *TableColumnMutation) SetSource(jm json.RawMessage) {
-	m.source = &jm
-	m.appendsource = nil
+func (m *TableColumnMutation) SetSource(s string) {
+	m.source = &s
 }
 
 // Source returns the value of the "source" field in the mutation.
-func (m *TableColumnMutation) Source() (r json.RawMessage, exists bool) {
+func (m *TableColumnMutation) Source() (r string, exists bool) {
 	v := m.source
 	if v == nil {
 		return
@@ -478,7 +480,7 @@ func (m *TableColumnMutation) Source() (r json.RawMessage, exists bool) {
 // OldSource returns the old "source" field's value of the TableColumn entity.
 // If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TableColumnMutation) OldSource(ctx context.Context) (v json.RawMessage, err error) {
+func (m *TableColumnMutation) OldSource(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSource is only allowed on UpdateOne operations")
 	}
@@ -492,23 +494,9 @@ func (m *TableColumnMutation) OldSource(ctx context.Context) (v json.RawMessage,
 	return oldValue.Source, nil
 }
 
-// AppendSource adds jm to the "source" field.
-func (m *TableColumnMutation) AppendSource(jm json.RawMessage) {
-	m.appendsource = append(m.appendsource, jm...)
-}
-
-// AppendedSource returns the list of values that were appended to the "source" field in this mutation.
-func (m *TableColumnMutation) AppendedSource() (json.RawMessage, bool) {
-	if len(m.appendsource) == 0 {
-		return nil, false
-	}
-	return m.appendsource, true
-}
-
 // ClearSource clears the value of the "source" field.
 func (m *TableColumnMutation) ClearSource() {
 	m.source = nil
-	m.appendsource = nil
 	m.clearedFields[tablecolumn.FieldSource] = struct{}{}
 }
 
@@ -521,7 +509,6 @@ func (m *TableColumnMutation) SourceCleared() bool {
 // ResetSource resets all changes to the "source" field.
 func (m *TableColumnMutation) ResetSource() {
 	m.source = nil
-	m.appendsource = nil
 	delete(m.clearedFields, tablecolumn.FieldSource)
 }
 
@@ -617,6 +604,134 @@ func (m *TableColumnMutation) ResetTableID() {
 	m.tablemeta = nil
 }
 
+// SetRandom sets the "random" field.
+func (m *TableColumnMutation) SetRandom(b bool) {
+	m.random = &b
+}
+
+// Random returns the value of the "random" field in the mutation.
+func (m *TableColumnMutation) Random() (r bool, exists bool) {
+	v := m.random
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRandom returns the old "random" field's value of the TableColumn entity.
+// If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableColumnMutation) OldRandom(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRandom is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRandom requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRandom: %w", err)
+	}
+	return oldValue.Random, nil
+}
+
+// ResetRandom resets all changes to the "random" field.
+func (m *TableColumnMutation) ResetRandom() {
+	m.random = nil
+}
+
+// SetReplacement sets the "replacement" field.
+func (m *TableColumnMutation) SetReplacement(b bool) {
+	m.replacement = &b
+}
+
+// Replacement returns the value of the "replacement" field in the mutation.
+func (m *TableColumnMutation) Replacement() (r bool, exists bool) {
+	v := m.replacement
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReplacement returns the old "replacement" field's value of the TableColumn entity.
+// If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableColumnMutation) OldReplacement(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReplacement is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReplacement requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReplacement: %w", err)
+	}
+	return oldValue.Replacement, nil
+}
+
+// ResetReplacement resets all changes to the "replacement" field.
+func (m *TableColumnMutation) ResetReplacement() {
+	m.replacement = nil
+}
+
+// SetRepeat sets the "repeat" field.
+func (m *TableColumnMutation) SetRepeat(i int) {
+	m.repeat = &i
+	m.addrepeat = nil
+}
+
+// Repeat returns the value of the "repeat" field in the mutation.
+func (m *TableColumnMutation) Repeat() (r int, exists bool) {
+	v := m.repeat
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRepeat returns the old "repeat" field's value of the TableColumn entity.
+// If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableColumnMutation) OldRepeat(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRepeat is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRepeat requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRepeat: %w", err)
+	}
+	return oldValue.Repeat, nil
+}
+
+// AddRepeat adds i to the "repeat" field.
+func (m *TableColumnMutation) AddRepeat(i int) {
+	if m.addrepeat != nil {
+		*m.addrepeat += i
+	} else {
+		m.addrepeat = &i
+	}
+}
+
+// AddedRepeat returns the value that was added to the "repeat" field in this mutation.
+func (m *TableColumnMutation) AddedRepeat() (r int, exists bool) {
+	v := m.addrepeat
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRepeat resets all changes to the "repeat" field.
+func (m *TableColumnMutation) ResetRepeat() {
+	m.repeat = nil
+	m.addrepeat = nil
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by id.
 func (m *TableColumnMutation) SetTablemetaID(id int) {
 	m.tablemeta = &id
@@ -691,7 +806,7 @@ func (m *TableColumnMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TableColumnMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, tablecolumn.FieldCreatedAt)
 	}
@@ -722,6 +837,15 @@ func (m *TableColumnMutation) Fields() []string {
 	if m.tablemeta != nil {
 		fields = append(fields, tablecolumn.FieldTableID)
 	}
+	if m.random != nil {
+		fields = append(fields, tablecolumn.FieldRandom)
+	}
+	if m.replacement != nil {
+		fields = append(fields, tablecolumn.FieldReplacement)
+	}
+	if m.repeat != nil {
+		fields = append(fields, tablecolumn.FieldRepeat)
+	}
 	return fields
 }
 
@@ -750,6 +874,12 @@ func (m *TableColumnMutation) Field(name string) (ent.Value, bool) {
 		return m.ContextLength()
 	case tablecolumn.FieldTableID:
 		return m.TableID()
+	case tablecolumn.FieldRandom:
+		return m.Random()
+	case tablecolumn.FieldReplacement:
+		return m.Replacement()
+	case tablecolumn.FieldRepeat:
+		return m.Repeat()
 	}
 	return nil, false
 }
@@ -779,6 +909,12 @@ func (m *TableColumnMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldContextLength(ctx)
 	case tablecolumn.FieldTableID:
 		return m.OldTableID(ctx)
+	case tablecolumn.FieldRandom:
+		return m.OldRandom(ctx)
+	case tablecolumn.FieldReplacement:
+		return m.OldReplacement(ctx)
+	case tablecolumn.FieldRepeat:
+		return m.OldRepeat(ctx)
 	}
 	return nil, fmt.Errorf("unknown TableColumn field %s", name)
 }
@@ -838,7 +974,7 @@ func (m *TableColumnMutation) SetField(name string, value ent.Value) error {
 		m.SetFillMode(v)
 		return nil
 	case tablecolumn.FieldSource:
-		v, ok := value.(json.RawMessage)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -858,6 +994,27 @@ func (m *TableColumnMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTableID(v)
 		return nil
+	case tablecolumn.FieldRandom:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRandom(v)
+		return nil
+	case tablecolumn.FieldReplacement:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReplacement(v)
+		return nil
+	case tablecolumn.FieldRepeat:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRepeat(v)
+		return nil
 	}
 	return fmt.Errorf("unknown TableColumn field %s", name)
 }
@@ -869,6 +1026,9 @@ func (m *TableColumnMutation) AddedFields() []string {
 	if m.addcontext_length != nil {
 		fields = append(fields, tablecolumn.FieldContextLength)
 	}
+	if m.addrepeat != nil {
+		fields = append(fields, tablecolumn.FieldRepeat)
+	}
 	return fields
 }
 
@@ -879,6 +1039,8 @@ func (m *TableColumnMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case tablecolumn.FieldContextLength:
 		return m.AddedContextLength()
+	case tablecolumn.FieldRepeat:
+		return m.AddedRepeat()
 	}
 	return nil, false
 }
@@ -894,6 +1056,13 @@ func (m *TableColumnMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddContextLength(v)
+		return nil
+	case tablecolumn.FieldRepeat:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRepeat(v)
 		return nil
 	}
 	return fmt.Errorf("unknown TableColumn numeric field %s", name)
@@ -985,6 +1154,15 @@ func (m *TableColumnMutation) ResetField(name string) error {
 	case tablecolumn.FieldTableID:
 		m.ResetTableID()
 		return nil
+	case tablecolumn.FieldRandom:
+		m.ResetRandom()
+		return nil
+	case tablecolumn.FieldReplacement:
+		m.ResetReplacement()
+		return nil
+	case tablecolumn.FieldRepeat:
+		m.ResetRepeat()
+		return nil
 	}
 	return fmt.Errorf("unknown TableColumn field %s", name)
 }
@@ -1075,6 +1253,7 @@ type TableMetaMutation struct {
 	name           *string
 	description    *string
 	model          *string
+	sources        *map[string]json.RawMessage
 	clearedFields  map[string]struct{}
 	columns        map[int]struct{}
 	removedcolumns map[int]struct{}
@@ -1440,6 +1619,55 @@ func (m *TableMetaMutation) ResetModel() {
 	m.model = nil
 }
 
+// SetSources sets the "sources" field.
+func (m *TableMetaMutation) SetSources(mm map[string]json.RawMessage) {
+	m.sources = &mm
+}
+
+// Sources returns the value of the "sources" field in the mutation.
+func (m *TableMetaMutation) Sources() (r map[string]json.RawMessage, exists bool) {
+	v := m.sources
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSources returns the old "sources" field's value of the TableMeta entity.
+// If the TableMeta object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableMetaMutation) OldSources(ctx context.Context) (v map[string]json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSources is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSources requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSources: %w", err)
+	}
+	return oldValue.Sources, nil
+}
+
+// ClearSources clears the value of the "sources" field.
+func (m *TableMetaMutation) ClearSources() {
+	m.sources = nil
+	m.clearedFields[tablemeta.FieldSources] = struct{}{}
+}
+
+// SourcesCleared returns if the "sources" field was cleared in this mutation.
+func (m *TableMetaMutation) SourcesCleared() bool {
+	_, ok := m.clearedFields[tablemeta.FieldSources]
+	return ok
+}
+
+// ResetSources resets all changes to the "sources" field.
+func (m *TableMetaMutation) ResetSources() {
+	m.sources = nil
+	delete(m.clearedFields, tablemeta.FieldSources)
+}
+
 // AddColumnIDs adds the "columns" edge to the TableColumn entity by ids.
 func (m *TableMetaMutation) AddColumnIDs(ids ...int) {
 	if m.columns == nil {
@@ -1582,7 +1810,7 @@ func (m *TableMetaMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TableMetaMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, tablemeta.FieldCreatedAt)
 	}
@@ -1600,6 +1828,9 @@ func (m *TableMetaMutation) Fields() []string {
 	}
 	if m.model != nil {
 		fields = append(fields, tablemeta.FieldModel)
+	}
+	if m.sources != nil {
+		fields = append(fields, tablemeta.FieldSources)
 	}
 	return fields
 }
@@ -1621,6 +1852,8 @@ func (m *TableMetaMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case tablemeta.FieldModel:
 		return m.Model()
+	case tablemeta.FieldSources:
+		return m.Sources()
 	}
 	return nil, false
 }
@@ -1642,6 +1875,8 @@ func (m *TableMetaMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldDescription(ctx)
 	case tablemeta.FieldModel:
 		return m.OldModel(ctx)
+	case tablemeta.FieldSources:
+		return m.OldSources(ctx)
 	}
 	return nil, fmt.Errorf("unknown TableMeta field %s", name)
 }
@@ -1693,6 +1928,13 @@ func (m *TableMetaMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetModel(v)
 		return nil
+	case tablemeta.FieldSources:
+		v, ok := value.(map[string]json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSources(v)
+		return nil
 	}
 	return fmt.Errorf("unknown TableMeta field %s", name)
 }
@@ -1732,6 +1974,9 @@ func (m *TableMetaMutation) ClearedFields() []string {
 	if m.FieldCleared(tablemeta.FieldNanoid) {
 		fields = append(fields, tablemeta.FieldNanoid)
 	}
+	if m.FieldCleared(tablemeta.FieldSources) {
+		fields = append(fields, tablemeta.FieldSources)
+	}
 	return fields
 }
 
@@ -1754,6 +1999,9 @@ func (m *TableMetaMutation) ClearField(name string) error {
 		return nil
 	case tablemeta.FieldNanoid:
 		m.ClearNanoid()
+		return nil
+	case tablemeta.FieldSources:
+		m.ClearSources()
 		return nil
 	}
 	return fmt.Errorf("unknown TableMeta nullable field %s", name)
@@ -1780,6 +2028,9 @@ func (m *TableMetaMutation) ResetField(name string) error {
 		return nil
 	case tablemeta.FieldModel:
 		m.ResetModel()
+		return nil
+	case tablemeta.FieldSources:
+		m.ResetSources()
 		return nil
 	}
 	return fmt.Errorf("unknown TableMeta field %s", name)

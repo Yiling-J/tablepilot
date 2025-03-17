@@ -3,7 +3,6 @@
 package ent
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -34,11 +33,17 @@ type TableColumn struct {
 	// FillMode holds the value of the "fill_mode" field.
 	FillMode tablecolumn.FillMode `json:"fill_mode,omitempty"`
 	// Source holds the value of the "source" field.
-	Source json.RawMessage `json:"source,omitempty"`
+	Source string `json:"source,omitempty"`
 	// ContextLength holds the value of the "context_length" field.
 	ContextLength int `json:"context_length,omitempty"`
 	// TableID holds the value of the "table_id" field.
 	TableID int `json:"table_id,omitempty"`
+	// Random holds the value of the "random" field.
+	Random bool `json:"random,omitempty"`
+	// Replacement holds the value of the "replacement" field.
+	Replacement bool `json:"replacement,omitempty"`
+	// Repeat holds the value of the "repeat" field.
+	Repeat int `json:"repeat,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TableColumnQuery when eager-loading is set.
 	Edges        TableColumnEdges `json:"edges"`
@@ -70,11 +75,11 @@ func (*TableColumn) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tablecolumn.FieldSource:
-			values[i] = new([]byte)
-		case tablecolumn.FieldID, tablecolumn.FieldContextLength, tablecolumn.FieldTableID:
+		case tablecolumn.FieldRandom, tablecolumn.FieldReplacement:
+			values[i] = new(sql.NullBool)
+		case tablecolumn.FieldID, tablecolumn.FieldContextLength, tablecolumn.FieldTableID, tablecolumn.FieldRepeat:
 			values[i] = new(sql.NullInt64)
-		case tablecolumn.FieldNanoid, tablecolumn.FieldName, tablecolumn.FieldDescription, tablecolumn.FieldType, tablecolumn.FieldFillMode:
+		case tablecolumn.FieldNanoid, tablecolumn.FieldName, tablecolumn.FieldDescription, tablecolumn.FieldType, tablecolumn.FieldFillMode, tablecolumn.FieldSource:
 			values[i] = new(sql.NullString)
 		case tablecolumn.FieldCreatedAt, tablecolumn.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -142,12 +147,10 @@ func (tc *TableColumn) assignValues(columns []string, values []any) error {
 				tc.FillMode = tablecolumn.FillMode(value.String)
 			}
 		case tablecolumn.FieldSource:
-			if value, ok := values[i].(*[]byte); !ok {
+			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field source", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &tc.Source); err != nil {
-					return fmt.Errorf("unmarshal field source: %w", err)
-				}
+			} else if value.Valid {
+				tc.Source = value.String
 			}
 		case tablecolumn.FieldContextLength:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -160,6 +163,24 @@ func (tc *TableColumn) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field table_id", values[i])
 			} else if value.Valid {
 				tc.TableID = int(value.Int64)
+			}
+		case tablecolumn.FieldRandom:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field random", values[i])
+			} else if value.Valid {
+				tc.Random = value.Bool
+			}
+		case tablecolumn.FieldReplacement:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field replacement", values[i])
+			} else if value.Valid {
+				tc.Replacement = value.Bool
+			}
+		case tablecolumn.FieldRepeat:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field repeat", values[i])
+			} else if value.Valid {
+				tc.Repeat = int(value.Int64)
 			}
 		default:
 			tc.selectValues.Set(columns[i], values[i])
@@ -224,13 +245,22 @@ func (tc *TableColumn) String() string {
 	builder.WriteString(fmt.Sprintf("%v", tc.FillMode))
 	builder.WriteString(", ")
 	builder.WriteString("source=")
-	builder.WriteString(fmt.Sprintf("%v", tc.Source))
+	builder.WriteString(tc.Source)
 	builder.WriteString(", ")
 	builder.WriteString("context_length=")
 	builder.WriteString(fmt.Sprintf("%v", tc.ContextLength))
 	builder.WriteString(", ")
 	builder.WriteString("table_id=")
 	builder.WriteString(fmt.Sprintf("%v", tc.TableID))
+	builder.WriteString(", ")
+	builder.WriteString("random=")
+	builder.WriteString(fmt.Sprintf("%v", tc.Random))
+	builder.WriteString(", ")
+	builder.WriteString("replacement=")
+	builder.WriteString(fmt.Sprintf("%v", tc.Replacement))
+	builder.WriteString(", ")
+	builder.WriteString("repeat=")
+	builder.WriteString(fmt.Sprintf("%v", tc.Repeat))
 	builder.WriteByte(')')
 	return builder.String()
 }

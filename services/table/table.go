@@ -80,18 +80,22 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 	if req.Name == "" {
 		return "", ent.Rollback(tx, errors.New("table name is empty"))
 	}
-	sources := map[string]source.Source{}
+	sources := map[string]json.RawMessage{}
 	if len(req.Sources) > 0 {
 		for _, raw := range req.Sources {
-			s, err := source.ValidateSource(ctx, raw, tx.Client())
+			vs, err := source.ValidateSource(ctx, raw, tx.Client())
 			if err != nil {
 				return "", ent.Rollback(tx, err)
 			}
-			sources[gjson.GetBytes(raw, "name").String()] = s
+			bs, err := json.Marshal(vs)
+			if err != nil {
+				return "", ent.Rollback(tx, err)
+			}
+			sources[gjson.GetBytes(raw, "name").String()] = bs
 		}
 	}
 
-	table, err := tx.TableMeta.Create().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).Save(ctx)
+	table, err := tx.TableMeta.Create().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).SetSources(sources).Save(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, err)
 	}
@@ -158,12 +162,10 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 			SetContextLength(col.ContextLength)
 
 		if col.Source != "" && col.FillMode == "pick" {
-			if s, ok := sources[col.Source]; ok {
-				v, err := json.Marshal(s)
-				if err != nil {
-					return "", ent.Rollback(tx, err)
-				}
-				cc.SetSource(v)
+			if _, ok := sources[col.Source]; ok {
+				cc.SetSource(col.Source).SetRandom(col.Random).
+					SetReplacement(col.Replacement).
+					SetRepeat(col.Repeat)
 			} else {
 				return "", ent.Rollback(tx, fmt.Errorf("source %s not dound", col.Source))
 			}

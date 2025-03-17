@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumberInput } from "@/components/ui/number-input";
 import {
     Select,
     SelectContent,
@@ -21,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -46,6 +48,9 @@ export function ColumnsForm({
   const [source, setSource] = useState<string | undefined>(undefined);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [random, setRandom] = useState(true);
+  const [replacement, setReplacement] = useState(false);
+  const [repeat, setRepeat] = useState(1);
 
   const resetForm = () => {
     setColumnName("");
@@ -55,6 +60,9 @@ export function ColumnsForm({
     setContextLength(undefined);
     setSource(undefined);
     setEditIndex(null);
+    setRandom(true);
+    setReplacement(false);
+    setRepeat(1);
   };
 
   const handleAddColumn = () => {
@@ -63,6 +71,9 @@ export function ColumnsForm({
       description: columnDescription,
       type: columnType,
       fill_mode: fillMode,
+      random: random,
+      replacement: replacement,
+      repeat: repeat,
       ...(contextLength ? { context_length: contextLength } : {}),
       ...(source ? { source } : {}),
     };
@@ -89,6 +100,9 @@ export function ColumnsForm({
     setContextLength(column.context_length);
     setSource(column.source);
     setEditIndex(index);
+    setRandom(column.random);
+    setReplacement(column.replacement);
+    setRepeat(column.repeat);
     setIsDialogOpen(true);
   };
 
@@ -217,6 +231,34 @@ export function ColumnsForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="random"
+                      checked={random}
+                      onCheckedChange={setRandom}
+                    />
+                    <Label htmlFor="random">Random Selection</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="replacement"
+                      checked={replacement}
+                      onCheckedChange={setReplacement}
+                    />
+                    <Label htmlFor="replacement">
+                      Selection with Replacement
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-2">
+                    <NumberInput
+                      id="repeat"
+                      value={repeat > 0 ? repeat : 1}
+                      onValueChange={(v) => setRepeat(v ?? 1)}
+                    />
+                    <Label htmlFor="reppeat">Repeat selection</Label>
+                  </div>
                   {formData.sources.length === 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Add sources in the previous step to use this fill mode

@@ -21,7 +21,6 @@ var reflector = jsonschema.Reflector{
 }
 
 type AISource struct {
-	indexer
 	Type    string   `json:"type"`
 	Prompt  string   `json:"prompt"`
 	Options []string `json:"options"`
@@ -31,7 +30,7 @@ type data struct {
 	Options []string
 }
 
-func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.TableColumn) error {
+func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.TableColumn, model string) error {
 	builder := promptbuilder.NewColumnOptionsBuilder(column.Name, column.Description, as.Prompt)
 
 	if len(as.Options) > 0 {
@@ -47,6 +46,7 @@ func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.Table
 		Temperature:     0.8,
 		PresencePenalty: 1.0,
 		MaxOutputTokens: OptionGenMaxTokens,
+		Model:           model,
 	})
 	if err != nil {
 		return err
@@ -57,10 +57,13 @@ func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.Table
 		return err
 	}
 	as.Options = append(as.Options, d.Options...)
-	as.indexer = newIndexer(as.Random, as.Replacement, len(as.Options), as.Repeat)
 	return nil
 }
 
-func (as *AISource) Next(ctx context.Context) (*schema.CellValue, error) {
-	return &schema.CellValue{Value: as.Options[as.nextIndex()]}, nil
+func (as *AISource) Next(ctx context.Context, idx int) (*schema.CellValue, error) {
+	return &schema.CellValue{Value: as.Options[idx]}, nil
+}
+
+func (as *AISource) Total() int {
+	return len(as.Options)
 }

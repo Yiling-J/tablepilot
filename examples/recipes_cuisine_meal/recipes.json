@@ -5,9 +5,7 @@
     {
       "name": "cuisines",
       "type": "ai",
-      "prompt": "Generate 20 recipe cuisines.",
-      "random": true,
-      "replacement": false
+      "prompt": "Generate 20 recipe cuisines."
     },
     {
       "name": "meals",
@@ -19,9 +17,7 @@
         "Desserts",
         "Appetizers",
         "Drinks"
-      ],
-      "random": true,
-      "replacement": true
+      ]
     }
   ],
   "columns": [
@@ -49,14 +45,18 @@
       "description": "type of cuisine",
       "type": "string",
       "fill_mode": "pick",
-      "source": "cuisines"
+      "source": "cuisines",
+      "random": true,
+      "replacement": false
     },
     {
       "name": "Meal",
       "description": "meal of the recipe",
       "type": "string",
       "fill_mode": "pick",
-      "source": "meals"
+      "source": "meals",
+      "random": true,
+      "replacement": true
     },
     {
       "name": "Difficulty Level",

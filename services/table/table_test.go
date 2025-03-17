@@ -29,10 +29,11 @@ func requireColumnEqual(t *testing.T, expcted, column *ent.TableColumn) {
 	require.Equal(t, expcted.Description, column.Description)
 	require.Equal(t, expcted.Type, column.Type)
 	require.Equal(t, expcted.FillMode, column.FillMode)
-	if len(expcted.Source) > 0 {
-		require.JSONEq(t, string(expcted.Source), string(column.Source))
-	} else {
-		require.Equal(t, expcted.Source, column.Source)
+	require.Equal(t, expcted.Source, column.Source)
+	if column.Source != "" {
+		require.Equal(t, expcted.Random, column.Random)
+		require.Equal(t, expcted.Replacement, column.Replacement)
+		require.Equal(t, expcted.Repeat, column.Repeat)
 	}
 	require.Equal(t, expcted.ContextLength, column.ContextLength)
 }
@@ -67,7 +68,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		},
 		{
 			Name: "tag", Description: "recipe tag", Type: "array",
-			FillMode: "pick", Source: "tags",
+			FillMode: "pick", Source: "tags", Random: true, Replacement: true, Repeat: 3,
 		},
 		{
 			Name: "country", Description: "recipe country", Type: "string",
@@ -112,16 +113,13 @@ func TestTableService_CreateTable(t *testing.T) {
 		[]byte(`{
       "name": "countries",
       "type": "list",
-      "options": ["China", "Japan", "England", "Thai", "France"],
-      "random": true,
-      "replacement": true
+      "options": ["China", "Japan", "England", "Thai", "France"]
     }`),
 		[]byte(`
     {
       "name": "tags",
       "type": "ai",
-      "prompt": "Generate 20 tags.",
-      "random": true
+      "prompt": "Generate 20 tags."
     }`),
 		[]byte(`
     {
@@ -131,9 +129,7 @@ func TestTableService_CreateTable(t *testing.T) {
       "column": "name",
       "context_columns": ["age"],
       "filters": { "must": [{ "name": "a" }, { "age": 12 }, { "should": [] }] },
-      "sorts": [{ "column": "name", "desc": true }],
-      "random": true,
-      "replacement": true
+      "sorts": [{ "column": "name", "desc": true }]
     }
 `),
 	}
@@ -150,30 +146,10 @@ func TestTableService_CreateTable(t *testing.T) {
 	).Save(ctx)
 	require.NoError(t, err)
 
-	savedSources := []json.RawMessage{
-		[]byte(`{
-      "type": "list",
-      "options": ["China", "Japan", "England", "Thai", "France"],
-      "random": true,
-      "replacement": true
-    }`),
-		[]byte(`
-    {
-      "type": "ai",
-      "prompt": "Generate 20 tags.",
-      "random": true,
-      "options": null
-    }`),
-		[]byte(fmt.Sprintf(`
-    {
-      "type": "linked",
-      "table": "%s",
-      "column": "%s",
-      "context_columns": ["%s"],
-      "random": true,
-      "replacement": true
-    }
-`, userTable.Nanoid, userColumns[0].Nanoid, userColumns[1].Nanoid)),
+	savedSources := map[string]json.RawMessage{
+		"countries": []byte(`{"type":"list","options":["China","Japan","England","Thai","France"]}`),
+		"tags":      []byte(`{"type":"ai","prompt":"Generate 20 tags.","options":null}`),
+		"users":     []byte(fmt.Sprintf(`{"type":"linked","table":"%s","column":"%s","context_columns":["%s"]}`, userTable.Nanoid, userColumns[0].Nanoid, userColumns[1].Nanoid)),
 	}
 
 	id, err := srv.CreateTable(ctx, &TableGenRequest{
@@ -190,11 +166,12 @@ func TestTableService_CreateTable(t *testing.T) {
 	require.Equal(t, "test table", table.Description)
 	require.Equal(t, id, table.Nanoid)
 	require.Equal(t, 6, len(table.Edges.Columns))
+	require.Equal(t, savedSources, table.Sources)
 	requireColumnEqual(
 		t,
 		&ent.TableColumn{
 			Name: "name", Description: "recipe name", ContextLength: 5,
-			Type: tablecolumn.TypeString, FillMode: tablecolumn.FillModeAi, Source: nil,
+			Type: tablecolumn.TypeString, FillMode: tablecolumn.FillModeAi, Source: "",
 		},
 		table.Edges.Columns[0],
 	)
@@ -202,7 +179,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		t,
 		&ent.TableColumn{
 			Name: "count", Description: "recipe count", ContextLength: 3,
-			Type: tablecolumn.TypeInteger, FillMode: tablecolumn.FillModeAi, Source: nil,
+			Type: tablecolumn.TypeInteger, FillMode: tablecolumn.FillModeAi, Source: "",
 		},
 		table.Edges.Columns[1],
 	)
@@ -211,7 +188,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		&ent.TableColumn{
 			Name: "tag", Description: "recipe tag", ContextLength: 0,
 			Type: tablecolumn.TypeArray, FillMode: tablecolumn.FillModePick,
-			Source: savedSources[1],
+			Source: "tags", Random: true, Replacement: true, Repeat: 3,
 		},
 		table.Edges.Columns[2],
 	)
@@ -220,7 +197,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		&ent.TableColumn{
 			Name: "country", Description: "recipe country", ContextLength: 0,
 			Type: tablecolumn.TypeString, FillMode: tablecolumn.FillModePick,
-			Source: savedSources[0],
+			Source: "countries",
 		},
 		table.Edges.Columns[3],
 	)
@@ -229,7 +206,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		&ent.TableColumn{
 			Name: "user", Description: "recipe user", ContextLength: 0,
 			Type: tablecolumn.TypeBoolean, FillMode: tablecolumn.FillModePick,
-			Source: savedSources[2],
+			Source: "users",
 		},
 		table.Edges.Columns[4],
 	)

@@ -2,7 +2,6 @@ package source
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -44,19 +43,11 @@ func TestSource_LinkedContextColumns(t *testing.T) {
 		ContextColumns: []string{c1.Nanoid, c2.Nanoid},
 	}
 
-	b, err := json.Marshal(so)
 	require.NoError(t, err)
-	col, err := db.TableColumn.Create().
-		SetName("c3").
-		SetType(tablecolumn.TypeString).
-		SetFillMode(tablecolumn.FillModePick).
-		SetSource(b).
-		SetTablemeta(tb).
-		Save(ctx)
+	err = so.Init(ctx, db)
 	require.NoError(t, err)
-	err = so.Init(ctx, db, col)
-	require.NoError(t, err)
-	v, err := so.Next(ctx)
+	indexer := NewIndexer(so, false, false, 0)
+	v, err := indexer.Next(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "foo", v.Value)
 	require.Equal(t, map[string]any{
@@ -64,7 +55,7 @@ func TestSource_LinkedContextColumns(t *testing.T) {
 		"c2": map[string]any{"data": float64(1), "description": "c2d"},
 	}, v.ContextValue)
 
-	v, err = so.Next(ctx)
+	v, err = indexer.Next(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "bar", v.Value)
 	require.Equal(t, map[string]any{

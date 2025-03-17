@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -99,8 +98,16 @@ func (tcc *TableColumnCreate) SetFillMode(tm tablecolumn.FillMode) *TableColumnC
 }
 
 // SetSource sets the "source" field.
-func (tcc *TableColumnCreate) SetSource(jm json.RawMessage) *TableColumnCreate {
-	tcc.mutation.SetSource(jm)
+func (tcc *TableColumnCreate) SetSource(s string) *TableColumnCreate {
+	tcc.mutation.SetSource(s)
+	return tcc
+}
+
+// SetNillableSource sets the "source" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableSource(s *string) *TableColumnCreate {
+	if s != nil {
+		tcc.SetSource(*s)
+	}
 	return tcc
 }
 
@@ -121,6 +128,48 @@ func (tcc *TableColumnCreate) SetNillableContextLength(i *int) *TableColumnCreat
 // SetTableID sets the "table_id" field.
 func (tcc *TableColumnCreate) SetTableID(i int) *TableColumnCreate {
 	tcc.mutation.SetTableID(i)
+	return tcc
+}
+
+// SetRandom sets the "random" field.
+func (tcc *TableColumnCreate) SetRandom(b bool) *TableColumnCreate {
+	tcc.mutation.SetRandom(b)
+	return tcc
+}
+
+// SetNillableRandom sets the "random" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableRandom(b *bool) *TableColumnCreate {
+	if b != nil {
+		tcc.SetRandom(*b)
+	}
+	return tcc
+}
+
+// SetReplacement sets the "replacement" field.
+func (tcc *TableColumnCreate) SetReplacement(b bool) *TableColumnCreate {
+	tcc.mutation.SetReplacement(b)
+	return tcc
+}
+
+// SetNillableReplacement sets the "replacement" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableReplacement(b *bool) *TableColumnCreate {
+	if b != nil {
+		tcc.SetReplacement(*b)
+	}
+	return tcc
+}
+
+// SetRepeat sets the "repeat" field.
+func (tcc *TableColumnCreate) SetRepeat(i int) *TableColumnCreate {
+	tcc.mutation.SetRepeat(i)
+	return tcc
+}
+
+// SetNillableRepeat sets the "repeat" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableRepeat(i *int) *TableColumnCreate {
+	if i != nil {
+		tcc.SetRepeat(*i)
+	}
 	return tcc
 }
 
@@ -182,6 +231,18 @@ func (tcc *TableColumnCreate) defaults() {
 		v := tablecolumn.DefaultContextLength
 		tcc.mutation.SetContextLength(v)
 	}
+	if _, ok := tcc.mutation.Random(); !ok {
+		v := tablecolumn.DefaultRandom
+		tcc.mutation.SetRandom(v)
+	}
+	if _, ok := tcc.mutation.Replacement(); !ok {
+		v := tablecolumn.DefaultReplacement
+		tcc.mutation.SetReplacement(v)
+	}
+	if _, ok := tcc.mutation.Repeat(); !ok {
+		v := tablecolumn.DefaultRepeat
+		tcc.mutation.SetRepeat(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -215,6 +276,15 @@ func (tcc *TableColumnCreate) check() error {
 	}
 	if _, ok := tcc.mutation.TableID(); !ok {
 		return &ValidationError{Name: "table_id", err: errors.New(`ent: missing required field "TableColumn.table_id"`)}
+	}
+	if _, ok := tcc.mutation.Random(); !ok {
+		return &ValidationError{Name: "random", err: errors.New(`ent: missing required field "TableColumn.random"`)}
+	}
+	if _, ok := tcc.mutation.Replacement(); !ok {
+		return &ValidationError{Name: "replacement", err: errors.New(`ent: missing required field "TableColumn.replacement"`)}
+	}
+	if _, ok := tcc.mutation.Repeat(); !ok {
+		return &ValidationError{Name: "repeat", err: errors.New(`ent: missing required field "TableColumn.repeat"`)}
 	}
 	if len(tcc.mutation.TablemetaIDs()) == 0 {
 		return &ValidationError{Name: "tablemeta", err: errors.New(`ent: missing required edge "TableColumn.tablemeta"`)}
@@ -275,12 +345,24 @@ func (tcc *TableColumnCreate) createSpec() (*TableColumn, *sqlgraph.CreateSpec) 
 		_node.FillMode = value
 	}
 	if value, ok := tcc.mutation.Source(); ok {
-		_spec.SetField(tablecolumn.FieldSource, field.TypeJSON, value)
+		_spec.SetField(tablecolumn.FieldSource, field.TypeString, value)
 		_node.Source = value
 	}
 	if value, ok := tcc.mutation.ContextLength(); ok {
 		_spec.SetField(tablecolumn.FieldContextLength, field.TypeInt, value)
 		_node.ContextLength = value
+	}
+	if value, ok := tcc.mutation.Random(); ok {
+		_spec.SetField(tablecolumn.FieldRandom, field.TypeBool, value)
+		_node.Random = value
+	}
+	if value, ok := tcc.mutation.Replacement(); ok {
+		_spec.SetField(tablecolumn.FieldReplacement, field.TypeBool, value)
+		_node.Replacement = value
+	}
+	if value, ok := tcc.mutation.Repeat(); ok {
+		_spec.SetField(tablecolumn.FieldRepeat, field.TypeInt, value)
+		_node.Repeat = value
 	}
 	if nodes := tcc.mutation.TablemetaIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -442,7 +524,7 @@ func (u *TableColumnUpsert) UpdateFillMode() *TableColumnUpsert {
 }
 
 // SetSource sets the "source" field.
-func (u *TableColumnUpsert) SetSource(v json.RawMessage) *TableColumnUpsert {
+func (u *TableColumnUpsert) SetSource(v string) *TableColumnUpsert {
 	u.Set(tablecolumn.FieldSource, v)
 	return u
 }
@@ -486,6 +568,48 @@ func (u *TableColumnUpsert) SetTableID(v int) *TableColumnUpsert {
 // UpdateTableID sets the "table_id" field to the value that was provided on create.
 func (u *TableColumnUpsert) UpdateTableID() *TableColumnUpsert {
 	u.SetExcluded(tablecolumn.FieldTableID)
+	return u
+}
+
+// SetRandom sets the "random" field.
+func (u *TableColumnUpsert) SetRandom(v bool) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldRandom, v)
+	return u
+}
+
+// UpdateRandom sets the "random" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateRandom() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldRandom)
+	return u
+}
+
+// SetReplacement sets the "replacement" field.
+func (u *TableColumnUpsert) SetReplacement(v bool) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldReplacement, v)
+	return u
+}
+
+// UpdateReplacement sets the "replacement" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateReplacement() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldReplacement)
+	return u
+}
+
+// SetRepeat sets the "repeat" field.
+func (u *TableColumnUpsert) SetRepeat(v int) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldRepeat, v)
+	return u
+}
+
+// UpdateRepeat sets the "repeat" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateRepeat() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldRepeat)
+	return u
+}
+
+// AddRepeat adds v to the "repeat" field.
+func (u *TableColumnUpsert) AddRepeat(v int) *TableColumnUpsert {
+	u.Add(tablecolumn.FieldRepeat, v)
 	return u
 }
 
@@ -640,7 +764,7 @@ func (u *TableColumnUpsertOne) UpdateFillMode() *TableColumnUpsertOne {
 }
 
 // SetSource sets the "source" field.
-func (u *TableColumnUpsertOne) SetSource(v json.RawMessage) *TableColumnUpsertOne {
+func (u *TableColumnUpsertOne) SetSource(v string) *TableColumnUpsertOne {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.SetSource(v)
 	})
@@ -692,6 +816,55 @@ func (u *TableColumnUpsertOne) SetTableID(v int) *TableColumnUpsertOne {
 func (u *TableColumnUpsertOne) UpdateTableID() *TableColumnUpsertOne {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.UpdateTableID()
+	})
+}
+
+// SetRandom sets the "random" field.
+func (u *TableColumnUpsertOne) SetRandom(v bool) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetRandom(v)
+	})
+}
+
+// UpdateRandom sets the "random" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateRandom() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateRandom()
+	})
+}
+
+// SetReplacement sets the "replacement" field.
+func (u *TableColumnUpsertOne) SetReplacement(v bool) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetReplacement(v)
+	})
+}
+
+// UpdateReplacement sets the "replacement" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateReplacement() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateReplacement()
+	})
+}
+
+// SetRepeat sets the "repeat" field.
+func (u *TableColumnUpsertOne) SetRepeat(v int) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetRepeat(v)
+	})
+}
+
+// AddRepeat adds v to the "repeat" field.
+func (u *TableColumnUpsertOne) AddRepeat(v int) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.AddRepeat(v)
+	})
+}
+
+// UpdateRepeat sets the "repeat" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateRepeat() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateRepeat()
 	})
 }
 
@@ -1012,7 +1185,7 @@ func (u *TableColumnUpsertBulk) UpdateFillMode() *TableColumnUpsertBulk {
 }
 
 // SetSource sets the "source" field.
-func (u *TableColumnUpsertBulk) SetSource(v json.RawMessage) *TableColumnUpsertBulk {
+func (u *TableColumnUpsertBulk) SetSource(v string) *TableColumnUpsertBulk {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.SetSource(v)
 	})
@@ -1064,6 +1237,55 @@ func (u *TableColumnUpsertBulk) SetTableID(v int) *TableColumnUpsertBulk {
 func (u *TableColumnUpsertBulk) UpdateTableID() *TableColumnUpsertBulk {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.UpdateTableID()
+	})
+}
+
+// SetRandom sets the "random" field.
+func (u *TableColumnUpsertBulk) SetRandom(v bool) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetRandom(v)
+	})
+}
+
+// UpdateRandom sets the "random" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateRandom() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateRandom()
+	})
+}
+
+// SetReplacement sets the "replacement" field.
+func (u *TableColumnUpsertBulk) SetReplacement(v bool) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetReplacement(v)
+	})
+}
+
+// UpdateReplacement sets the "replacement" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateReplacement() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateReplacement()
+	})
+}
+
+// SetRepeat sets the "repeat" field.
+func (u *TableColumnUpsertBulk) SetRepeat(v int) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetRepeat(v)
+	})
+}
+
+// AddRepeat adds v to the "repeat" field.
+func (u *TableColumnUpsertBulk) AddRepeat(v int) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.AddRepeat(v)
+	})
+}
+
+// UpdateRepeat sets the "repeat" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateRepeat() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateRepeat()
 	})
 }
 
