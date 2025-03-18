@@ -351,7 +351,10 @@ export function ColumnsForm({
                                       className="mr-1 mb-1"
                                     >
                                       {column}
-                                      <button
+                                      <Button
+                                        asChild
+                                        variant="ghost"
+                                        size="icon"
                                         className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                         onKeyDown={(e) => {
                                           if (e.key === "Enter") {
@@ -372,8 +375,8 @@ export function ColumnsForm({
                                           );
                                         }}
                                       >
-                                        <X className="h-3 w-3" />
-                                      </button>
+                                        <X className="h-4 w-4" />
+                                      </Button>
                                     </Badge>
                                   ))}
                                 </div>
