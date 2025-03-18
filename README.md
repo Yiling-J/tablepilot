@@ -152,8 +152,8 @@ A number of examples demonstrating various use cases of Tablepilot are available
 	  Specifies the columns to autofill; existing values will be ignored and regenerated. This flag can be set multiple times to specify multiple columns (see example).
 
 	- `--context_columns string`
-	  Specifies the columns to autofill; existing values will be ignored and regenerated. This flag can be set multiple times to specify multiple columns (see example).
-	  If you don't want any context columns, just set it to a non-existent column (`--context_columns=nullll`).
+	  Specifies the columns to be used as context info when autofilling. This flag can be set multiple times to specify multiple columns (see example).
+	  If you don't want any context columns, just set it to a non-existent column (`--context_columns=notexists`).
 
 	- `-o, --offset int`
 	  Start offset for autofilling rows. (default 0)
