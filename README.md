@@ -272,13 +272,11 @@ Common fields:
 Special fields for different types:
 
 - **ai**:
-	- **prompt**: The prompt used to generate data from the AI model.
+	- **prompt**: The prompt used to generate options by AI, e.g., Give me 50 common ingredients.
 - **list**:
 	- **options**: A list of predefined options to pick from.
 - **linked**:
 	- **table**: The name of the linked table.
-	- **column**: The column used for display text in the generated cell(e.g., user name).
-	- **context_columns**: The columns providing context when generating data (e.g., user age, job, nationality).
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:
@@ -306,6 +304,11 @@ When `fill_mode` is set to `"pick"`, the following fields are available:
   - `false`: Once an item is selected, it cannot be chosen again.
   - Default: `false`.
 - **repeat**: Specifies how many times a picked value is reused before switching to the next one. The minimum and default value is `1`, meaning each value is used once before moving to the next.
+
+When `source` type is `linked`, the following fields are available:
+
+- **linked_column**: The linked-table column used for display text in the generated cell(e.g., user name).
+- **linked_context_columns**: The linked-table columns providing context when generating data (e.g., user age, job, nationality).
 
 **Shared Source Behavior**
 
