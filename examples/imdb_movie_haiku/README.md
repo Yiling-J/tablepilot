@@ -17,5 +17,5 @@ tablepilot create examples/imdb_movie_haiku/haiku.json
 
 ### Generate Haiku for 30 Random Movies
 ```shell
-generate imdb_haiku -c=30 -b=10 -t=0.9 --saveto=examples/imdb_movie_haiku/haiku.csv
+tablepilot generate imdb_haiku -c=30 -b=10 -t=0.9 --saveto=examples/imdb_movie_haiku/haiku.csv
 ```
