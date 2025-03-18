@@ -71,6 +71,8 @@ func (i *Indexer) Next(ctx context.Context) (*schema.CellValue, error) {
 	switch ts := i.source.(type) {
 	case *LinkedSource:
 		return ts.NextLinked(ctx, i.nextIndex(), i.column.LinkedColumn, i.column.LinkedContextColumns)
+	case *CsvSource:
+		return ts.NextLinked(ctx, i.nextIndex(), i.column.LinkedColumn, i.column.LinkedContextColumns)
 	default:
 		return i.source.Next(ctx, i.nextIndex())
 	}

@@ -83,14 +83,16 @@ For the API server, send a request with the schema as JSON in the request body. 
 
 ## Examples
 
-A number of examples demonstrating various use cases of Tablepilot are available in the [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples). Below are two of the most interesting ones:
+A number of examples demonstrating various use cases of Tablepilot are available in the [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples). Below are some interesting ones:
 
 - **recipes_for_customers**
   This example illustrating how to use another table as a reference. The `customers.json` file is used to generate a customer table, and then the recipes table is generated based on customer data. Each customer will receive a unique recipe tailored to their information.
   
 - **pokémons**
   This example demonstrates how to create a table, import an existing CSV of 1000 Pokémons, and autofill column data. Tablepilot will generate ecological information for each Pokémon based on the existing row data.
-
+  
+- **imdb_movie_haiku**
+  This example takes an IMDb movie CSV table and generates haiku poems inspired by movie titles and overviews, blending structured data with artistic expression.
 
 ## Usage
 
@@ -261,13 +263,20 @@ A description of what the table represents. It provides context for the data (e.
 #### model (Optional): 
 This section allows you to specify a default model for AI-generated columns. If not defined, the default model will be selected based on the configuration file.
 
-#### sources: 
-A list of sources from which `pick`-type columns can select values. Each source is an object with the following fields:
+#### sources:
+A list of sources from which `pick`-type columns can select values. Tablepilot currently 4 types of sources:
+
+- **AI**: Uses AI to generate a list of options dynamically. Each time a new generation starts (via the `generate` command, generate API call, or start button in UI), the options will be regenerated.
+- **LIST**: Uses a predefined list of options.
+- **LINKED**: Uses rows from another table as the source.
+- **CSV**: Uses rows from one or more CSV files as the source. All CSV files must have a header row with column names and share the same column structure.
+
+Each source is an object with the following fields:
 
 Common fields:
 
 - **name**: The name of the source (e.g., `"cuisines"`).
-- **type**: The type of the source, which can be `"ai"`, `"list"`, or `"linked"`.
+- **type**: The type of the source, which can be `"ai"`, `"list"`, `"linked"` or `"csv"`.
 
 Special fields for different types:
 
@@ -277,6 +286,11 @@ Special fields for different types:
 	- **options**: A list of predefined options to pick from.
 - **linked**:
 	- **table**: The name of the linked table.
+- **csv**:
+  - **paths**: A list of path patterns **relative to the current folder**. Supports exact matches, single asterisk (`*`), and double asterisk (`**`) patterns. Examples:
+    - Full match: `"data/cuisines.csv"`
+    - Single asterisk: `"data/*.csv"` (matches all CSV files in `data/`)
+    - Double asterisk: `"data/**/*.csv"` (matches all CSV files in `data/` and subdirectories)
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:

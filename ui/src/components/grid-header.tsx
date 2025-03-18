@@ -93,7 +93,7 @@ export function GridHeader({
               <Cross1Icon />
             )}
 
-            <div className="select-none">Truncate data</div>
+            <div className="select-none">Truncate table</div>
           </div>
         </div>
       </header>
