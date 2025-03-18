@@ -319,11 +319,11 @@ When `fill_mode` is set to `"pick"`, the following fields are available:
   - Default: `false`.
 - **repeat**: Specifies how many times a picked value is reused before switching to the next one. The minimum and default value is `1`, meaning each value is used once before moving to the next.
 
-When `source` type is `linked`, the following fields are available:
+When `source` type is `linked` or `csv`, the following fields are available:
 
 - **linked_column**: The linked-table column used for display text in the generated cell(e.g., user name).
 - **linked_context_columns**: The linked-table columns providing context when generating data (e.g., user age, job, nationality).
 
-**Shared Source Behavior**
+**Shared AI Type Source Behavior**
 
-If multiple columns use the same source but have different `random`, `replacement`, or `repeat` settings, the source is initialized only once. For example, if a `"tags"` source generates 20 tag options via AI and three columns reference it, the tag generation process runs once, and all three columns share the same selection pool.
+If multiple columns use the same AI source but have different `random`, `replacement`, or `repeat` settings, the source is initialized only once. For example, if a `"tags"` source generates 20 tag options via AI and three columns reference it, the tag generation process runs once, and all three columns share the same selection pool.
