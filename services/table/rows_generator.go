@@ -316,6 +316,17 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 			return nil, err
 		}
 		so = &ls
+	case "csv":
+		var ls source.CsvSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		err = ls.Init(ctx)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
 	default:
 		return nil, fmt.Errorf("unknow source type %s", sourceType)
 	}

@@ -56,6 +56,16 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 		}
 		ls.Table = tb.Nanoid
 		s = &ls
+	case "csv":
+		var ls CsvSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		if len(ls.Paths) == 0 {
+			return nil, errors.New("paths is empty")
+		}
+		s = &ls
 	}
 	return s, nil
 }
