@@ -81,9 +81,12 @@ func NewCSVIndexer(files []string) (*CSVIndexer, error) {
 func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 	start := 0
 	var pos *FileOffset
+	// the offset position relative to the chunk, used to get row data from chunk
+	offset := 0
 	for _, p := range r.positions {
 		if idx >= start && idx < start+int(p.Total) {
 			pos = &p
+			offset = idx - start
 			break
 		}
 		start += int(p.Total)
@@ -102,7 +105,6 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 		return nil, err
 	}
 	reader := csv.NewReader(f)
-	nth := idx % chunkSize
 	for i := 0; ; i++ {
 		if i >= r.total {
 			break
@@ -111,7 +113,7 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		if i == nth {
+		if i == offset {
 			return record, nil
 		}
 	}

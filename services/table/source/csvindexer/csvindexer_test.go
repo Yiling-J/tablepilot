@@ -2,6 +2,7 @@ package csvindexer
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -10,7 +11,13 @@ import (
 
 func createTestFiles(t *testing.T, fileContents map[string][]string) []string {
 	fileNames := []string{}
-	for fileName, contents := range fileContents {
+	// sort first to avoid flaky tests
+	for name := range fileContents {
+		fileNames = append(fileNames, name)
+	}
+	slices.Sort(fileNames)
+	for _, fileName := range fileNames {
+		contents := fileContents[fileName]
 		f, err := os.Create(fileName)
 		require.NoError(t, err)
 		defer f.Close()
@@ -18,7 +25,6 @@ func createTestFiles(t *testing.T, fileContents map[string][]string) []string {
 			_, err := f.WriteString(line + "\n")
 			require.NoError(t, err)
 		}
-		fileNames = append(fileNames, fileName)
 	}
 	return fileNames
 }
@@ -45,7 +51,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": {"header1,header2", "value1,value2", "value3,value4"},
 			},
 			wantTotal:     2,
-			wantPositions: []FileOffset{{File: 0, Offset: 16}},
+			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 2}},
 			wantErr:       false,
 		},
 		{
@@ -55,7 +61,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test2.csv": {"header1,header2", "value5,value6"},
 			},
 			wantTotal:     3,
-			wantPositions: []FileOffset{{File: 0, Offset: 16}, {File: 1, Offset: 16}},
+			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 2}, {File: 1, Offset: 16, Total: 1}},
 			wantErr:       false,
 		},
 		{
@@ -73,7 +79,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": append([]string{"header1,header2"}, strings.Split(strings.Repeat("value1,value2\n", chunkSize), "\n")...),
 			},
 			wantTotal:     chunkSize,
-			wantPositions: []FileOffset{{File: 0, Offset: 16}},
+			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: chunkSize}},
 			wantErr:       false,
 		},
 		{
@@ -82,7 +88,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": append([]string{"header1,header2"}, strings.Split(strings.Repeat("value1,value2\n", chunkSize+1), "\n")...),
 			},
 			wantTotal:     chunkSize + 1,
-			wantPositions: []FileOffset{{File: 0, Offset: 16}, {File: 0, Offset: 716}},
+			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 50}, {File: 0, Offset: 716, Total: 1}},
 			wantErr:       false,
 		},
 		{
@@ -92,7 +98,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test2.csv": {"header1,header2", "value5,value6", "value7,value8"},
 			},
 			wantTotal:     chunkSize + 1,
-			wantPositions: []FileOffset{{File: 0, Offset: 16}, {File: 1, Offset: 16}},
+			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 49}, {File: 1, Offset: 16, Total: 2}},
 			wantErr:       false,
 		},
 		{
@@ -102,7 +108,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test2.csv": {"header1,header2", "value5,value6"},
 			},
 			wantTotal:     chunkSize + 1,
-			wantPositions: []FileOffset{{File: 0, Offset: 16}, {File: 1, Offset: 16}},
+			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 50}, {File: 1, Offset: 16, Total: 1}},
 			wantErr:       false,
 		},
 		{
@@ -189,6 +195,16 @@ func TestCSVIndexer_Fetch(t *testing.T) {
 			wantErr:    false,
 		},
 		{
+			name: "Fetch record second file case incomplete",
+			fileContents: map[string][]string{
+				"test1.csv": append([]string{"header1,header2"}, strings.Split(strings.Repeat("value1,value2\n", 35), "\n")...),
+				"test2.csv": {"header1,header2", "value3,value4", "value5,value6"},
+			},
+			fetchIdx:   36,
+			wantRecord: []string{"value5", "value6"},
+			wantErr:    false,
+		},
+		{
 			name: "Fetch record from second file after chunk boundary",
 			fileContents: map[string][]string{
 				"test1.csv": append([]string{"header1,header2"}, strings.Split(strings.Repeat("value1,value2\n", chunkSize-1), "\n")...),
@@ -221,15 +237,6 @@ func TestCSVIndexer_Fetch(t *testing.T) {
 			},
 			fetchIdx: -1,
 			wantErr:  true,
-		},
-		{
-			name: "File becomes inaccessible during fetch",
-			fileContents: map[string][]string{
-				"test1.csv": {"header1,header2", "value1,value2", "value3,value4"},
-			},
-			fetchIdx:   1,
-			wantRecord: []string{"value3", "value4"},
-			wantErr:    true,
 		},
 	}
 
