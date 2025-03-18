@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,6 +30,8 @@ type TableMeta struct {
 	Description string `json:"description,omitempty"`
 	// Model holds the value of the "model" field.
 	Model string `json:"model,omitempty"`
+	// Sources holds the value of the "sources" field.
+	Sources map[string]json.RawMessage `json:"sources,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TableMetaQuery when eager-loading is set.
 	Edges        TableMetaEdges `json:"edges"`
@@ -69,6 +72,8 @@ func (*TableMeta) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case tablemeta.FieldSources:
+			values[i] = new([]byte)
 		case tablemeta.FieldID:
 			values[i] = new(sql.NullInt64)
 		case tablemeta.FieldNanoid, tablemeta.FieldName, tablemeta.FieldDescription, tablemeta.FieldModel:
@@ -131,6 +136,14 @@ func (tm *TableMeta) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field model", values[i])
 			} else if value.Valid {
 				tm.Model = value.String
+			}
+		case tablemeta.FieldSources:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field sources", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &tm.Sources); err != nil {
+					return fmt.Errorf("unmarshal field sources: %w", err)
+				}
 			}
 		default:
 			tm.selectValues.Set(columns[i], values[i])
@@ -195,6 +208,9 @@ func (tm *TableMeta) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("model=")
 	builder.WriteString(tm.Model)
+	builder.WriteString(", ")
+	builder.WriteString("sources=")
+	builder.WriteString(fmt.Sprintf("%v", tm.Sources))
 	builder.WriteByte(')')
 	return builder.String()
 }

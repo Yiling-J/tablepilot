@@ -89,7 +89,7 @@ export default function CreateTableForm({
   const isStep3Valid = formData.columns.length > 0;
 
   return (
-    <div className="mx-0 scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background">
+    <div className="mx-0">
       <div
         className={cn(
           "container mx-auto py-2 px-2 overflow-y-auto scrollbar-thin grow pl-3",

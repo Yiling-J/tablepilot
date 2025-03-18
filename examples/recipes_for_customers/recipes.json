@@ -5,9 +5,7 @@
     {
       "name": "customer",
       "type": "linked",
-      "table": "customers",
-      "column": "Name",
-      "context_columns": ["Name", "Age", "Job", "Country", "Taste Preference"]
+      "table": "customers"
     }
   ],
   "columns": [
@@ -28,7 +26,15 @@
       "description": "The customer for whom this recipe is created",
       "type": "string",
       "fill_mode": "pick",
-      "source": "customer"
+      "source": "customer",
+      "linked_column": "Name",
+      "linked_context_columns": [
+        "Name",
+        "Age",
+        "Job",
+        "Country",
+        "Taste Preference"
+      ]
     },
     {
       "name": "Reason",

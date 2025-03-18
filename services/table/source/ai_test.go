@@ -42,21 +42,22 @@ func TestSource_AI(t *testing.T) {
 				},
 			}
 			so := &AISource{
-				indexer: newIndexer(false, false, 20, 0),
-				Type:    "ai",
-				Prompt:  "aiai",
+				Type:   "ai",
+				Prompt: "aiai",
 			}
 			if hasOption {
 				so.Options = []string{"go"}
 			}
-			err = so.Init(ctx, aiService, &ent.TableColumn{Name: "table", Description: "a table"})
+			err = so.Init(ctx, aiService, &ent.TableColumn{Name: "table", Description: "a table"}, "")
 			require.NoError(t, err)
 			if hasOption {
 				require.Equal(t, so.Options, []string{"go", "foo", "bar"})
 			} else {
 				require.Equal(t, so.Options, []string{"foo", "bar"})
 			}
-			v, err := so.Next(ctx)
+			indexer := NewIndexer(so, &ent.TableColumn{Random: false})
+
+			v, err := indexer.Next(ctx)
 			require.NoError(t, err)
 			if hasOption {
 				require.Equal(t, "go", v.Value)

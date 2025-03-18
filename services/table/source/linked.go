@@ -2,7 +2,7 @@ package source
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -13,17 +13,14 @@ import (
 )
 
 type LinkedSource struct {
-	indexer
-	Type           string `json:"type"`
-	db             *ent.Client
-	Table          string   `json:"table"`
-	Column         string   `json:"column"`
-	ContextColumns []string `json:"context_columns"`
-	data           []*ent.TableRow
-	_column        *ent.TableColumn // the column which need to be get
+	Type    string `json:"type"`
+	db      *ent.Client
+	Table   string `json:"table"`
+	data    []*ent.TableRow
+	columns []*ent.TableColumn
 }
 
-func (ls *LinkedSource) Init(ctx context.Context, db *ent.Client, column *ent.TableColumn) error {
+func (ls *LinkedSource) Init(ctx context.Context, db *ent.Client) error {
 	ls.db = db
 	data, err := ls.db.TableRow.Query().Where(
 		tablerow.HasTablemetaWith(tablemeta.Nanoid(ls.Table)),
@@ -32,55 +29,29 @@ func (ls *LinkedSource) Init(ctx context.Context, db *ent.Client, column *ent.Ta
 		return err
 	}
 	ls.data = data
-	ls._column = column
-	ls.indexer = newIndexer(ls.Random, ls.Replacement, len(ls.data), ls.Repeat)
+	columns, err := ls.db.TableColumn.Query().Where(
+		tablecolumn.HasTablemetaWith(tablemeta.Nanoid(ls.Table)),
+	).Order(ent.Asc(tablerow.FieldID)).All(ctx)
+	if err != nil {
+		return err
+	}
+	ls.columns = columns
 	return nil
 }
 
-func linkedSource(ctx context.Context, db *ent.Client, column *ent.TableColumn) (*LinkedSource, error) {
-	var s LinkedSource
-	err := json.Unmarshal(column.Source, &s)
-	if err != nil {
-		return nil, err
-	}
-	s.db = db
-	err = s.Init(ctx, db, column)
-	if err != nil {
-		return nil, err
-	}
-	return &s, nil
-}
-
-func GetLinkedCellValue(ctx context.Context, db *ent.Client, column *ent.TableColumn, linkedRow string) (*schema.CellValue, error) {
-	so, err := linkedSource(ctx, db, column)
-	if err != nil {
-		return nil, err
-	}
-	linkedTable := so.Table
-	columns, err := db.TableColumn.Query().Where(
-		tablecolumn.HasTablemetaWith(tablemeta.Nanoid(linkedTable)),
-	).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	indexer := util.NewColumnIndexer(columns)
-	row, err := db.TableRow.Query().Where(
-		tablerow.HasTablemetaWith(tablemeta.Nanoid(linkedTable)),
-		tablerow.Nanoid(linkedRow),
-	).First(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (ls *LinkedSource) getLinkedCellValue(idx int, column string, contextColumns []string) (*schema.CellValue, error) {
+	indexer := util.NewColumnIndexer(ls.columns)
+	row := ls.data[idx]
 	lv := &schema.CellValue{}
-	idx, err := indexer.GetColumnIndexByNanoid(so.Column)
+	idx, err := indexer.GetColumnIndexByNanoid(column)
 	if err != nil {
 		return nil, err
 	}
 	lv.Value = row.Cells[idx].Value
 
-	if len(so.ContextColumns) > 0 {
+	if len(contextColumns) > 0 {
 		values := map[string]any{}
-		for _, c := range so.ContextColumns {
+		for _, c := range contextColumns {
 			cc, err := indexer.GetColumnByNanoid(c)
 			if err != nil {
 				return nil, err
@@ -103,7 +74,31 @@ func GetLinkedCellValue(ctx context.Context, db *ent.Client, column *ent.TableCo
 	return lv, nil
 }
 
-func (ls *LinkedSource) Next(ctx context.Context) (*schema.CellValue, error) {
-	row := ls.data[ls.nextIndex()]
-	return GetLinkedCellValue(ctx, ls.db, ls._column, row.Nanoid)
+func (ls *LinkedSource) Next(ctx context.Context, idx int) (*schema.CellValue, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (ls *LinkedSource) NextLinked(ctx context.Context, idx int, column string, contextColumns []string) (*schema.CellValue, error) {
+	ids := map[string]bool{}
+	names := map[string]string{}
+	for _, col := range ls.columns {
+		ids[col.Nanoid] = true
+		names[col.Name] = col.Nanoid
+	}
+
+	// column name -> column id
+	if v, ok := names[column]; ok {
+		column = v
+	}
+	for i, c := range contextColumns {
+		if v, ok := names[c]; ok {
+			contextColumns[i] = v
+		}
+	}
+
+	return ls.getLinkedCellValue(idx, column, contextColumns)
+}
+
+func (ls *LinkedSource) Total() int {
+	return len(ls.data)
 }

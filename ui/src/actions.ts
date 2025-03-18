@@ -88,9 +88,6 @@ export async function getTable(id: string): Promise<TableInfo> {
 interface BaseSource {
   name: string;
   type: string;
-  random: boolean;
-  replacement: boolean;
-  repeat: number;
 }
 
 export interface AiSource extends BaseSource {
@@ -106,8 +103,6 @@ export interface ListSource extends BaseSource {
 export interface LinkedSource extends BaseSource {
   type: "linked";
   table: string;
-  column: string;
-  context_columns: string[];
 }
 
 export type Source = AiSource | ListSource | LinkedSource;
@@ -123,6 +118,11 @@ export interface TableCreateRequest {
     fill_mode: string;
     context_length?: number;
     source?: string;
+    random: boolean;
+    replacement: boolean;
+    repeat: number;
+    linked_column: string;
+    linked_context_columns: string[];
   }[];
 }
 

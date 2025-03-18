@@ -14,14 +14,12 @@
         "Italy",
         "Spain",
         "India"
-      ],
-      "repeat": 6
+      ]
     },
     {
       "name": "meals",
       "type": "list",
-      "options": ["Breakfast", "Lunch", "Dinner"],
-      "repeat": 2
+      "options": ["Breakfast", "Lunch", "Dinner"]
     }
   ],
   "columns": [
@@ -49,14 +47,16 @@
       "description": "The country of origin of the recipe.",
       "type": "string",
       "fill_mode": "pick",
-      "source": "country"
+      "source": "country",
+      "repeat": 6
     },
     {
       "name": "Meals",
       "description": "The meal type (e.g., Breakfast, Lunch, Dinner) for which the recipe is intended.",
       "type": "string",
       "fill_mode": "pick",
-      "source": "meals"
+      "source": "meals",
+      "repeat": 2
     }
   ]
 }

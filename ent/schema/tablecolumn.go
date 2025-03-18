@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"encoding/json"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -28,9 +26,14 @@ func (TableColumn) Fields() []ent.Field {
 		field.String("description").Optional(),
 		field.Enum("type").Values("string", "number", "integer", "boolean", "array"),
 		field.Enum("fill_mode").Values("ai", "pick"),
-		field.JSON("source", json.RawMessage{}).Optional(),
+		field.String("source").Optional(),
 		field.Int("context_length").Default(0),
 		field.Int("table_id"),
+		field.Bool("random").Default(false),
+		field.Bool("replacement").Default(false),
+		field.Int("repeat").Default(1),
+		field.String("linked_column").Default(""),
+		field.Strings("linked_context_columns").Default([]string{}),
 	}
 }
 

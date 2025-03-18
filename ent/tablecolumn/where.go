@@ -80,6 +80,11 @@ func Description(v string) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldDescription, v))
 }
 
+// Source applies equality check predicate on the "source" field. It's identical to SourceEQ.
+func Source(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldSource, v))
+}
+
 // ContextLength applies equality check predicate on the "context_length" field. It's identical to ContextLengthEQ.
 func ContextLength(v int) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldContextLength, v))
@@ -88,6 +93,26 @@ func ContextLength(v int) predicate.TableColumn {
 // TableID applies equality check predicate on the "table_id" field. It's identical to TableIDEQ.
 func TableID(v int) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldTableID, v))
+}
+
+// Random applies equality check predicate on the "random" field. It's identical to RandomEQ.
+func Random(v bool) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldRandom, v))
+}
+
+// Replacement applies equality check predicate on the "replacement" field. It's identical to ReplacementEQ.
+func Replacement(v bool) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldReplacement, v))
+}
+
+// Repeat applies equality check predicate on the "repeat" field. It's identical to RepeatEQ.
+func Repeat(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldRepeat, v))
+}
+
+// LinkedColumn applies equality check predicate on the "linked_column" field. It's identical to LinkedColumnEQ.
+func LinkedColumn(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldLinkedColumn, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -445,6 +470,61 @@ func FillModeNotIn(vs ...FillMode) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldNotIn(FieldFillMode, vs...))
 }
 
+// SourceEQ applies the EQ predicate on the "source" field.
+func SourceEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldSource, v))
+}
+
+// SourceNEQ applies the NEQ predicate on the "source" field.
+func SourceNEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldSource, v))
+}
+
+// SourceIn applies the In predicate on the "source" field.
+func SourceIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIn(FieldSource, vs...))
+}
+
+// SourceNotIn applies the NotIn predicate on the "source" field.
+func SourceNotIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotIn(FieldSource, vs...))
+}
+
+// SourceGT applies the GT predicate on the "source" field.
+func SourceGT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGT(FieldSource, v))
+}
+
+// SourceGTE applies the GTE predicate on the "source" field.
+func SourceGTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGTE(FieldSource, v))
+}
+
+// SourceLT applies the LT predicate on the "source" field.
+func SourceLT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLT(FieldSource, v))
+}
+
+// SourceLTE applies the LTE predicate on the "source" field.
+func SourceLTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLTE(FieldSource, v))
+}
+
+// SourceContains applies the Contains predicate on the "source" field.
+func SourceContains(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContains(FieldSource, v))
+}
+
+// SourceHasPrefix applies the HasPrefix predicate on the "source" field.
+func SourceHasPrefix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasPrefix(FieldSource, v))
+}
+
+// SourceHasSuffix applies the HasSuffix predicate on the "source" field.
+func SourceHasSuffix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasSuffix(FieldSource, v))
+}
+
 // SourceIsNil applies the IsNil predicate on the "source" field.
 func SourceIsNil() predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldIsNull(FieldSource))
@@ -453,6 +533,16 @@ func SourceIsNil() predicate.TableColumn {
 // SourceNotNil applies the NotNil predicate on the "source" field.
 func SourceNotNil() predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldNotNull(FieldSource))
+}
+
+// SourceEqualFold applies the EqualFold predicate on the "source" field.
+func SourceEqualFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEqualFold(FieldSource, v))
+}
+
+// SourceContainsFold applies the ContainsFold predicate on the "source" field.
+func SourceContainsFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContainsFold(FieldSource, v))
 }
 
 // ContextLengthEQ applies the EQ predicate on the "context_length" field.
@@ -513,6 +603,131 @@ func TableIDIn(vs ...int) predicate.TableColumn {
 // TableIDNotIn applies the NotIn predicate on the "table_id" field.
 func TableIDNotIn(vs ...int) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldNotIn(FieldTableID, vs...))
+}
+
+// RandomEQ applies the EQ predicate on the "random" field.
+func RandomEQ(v bool) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldRandom, v))
+}
+
+// RandomNEQ applies the NEQ predicate on the "random" field.
+func RandomNEQ(v bool) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldRandom, v))
+}
+
+// ReplacementEQ applies the EQ predicate on the "replacement" field.
+func ReplacementEQ(v bool) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldReplacement, v))
+}
+
+// ReplacementNEQ applies the NEQ predicate on the "replacement" field.
+func ReplacementNEQ(v bool) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldReplacement, v))
+}
+
+// RepeatEQ applies the EQ predicate on the "repeat" field.
+func RepeatEQ(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldRepeat, v))
+}
+
+// RepeatNEQ applies the NEQ predicate on the "repeat" field.
+func RepeatNEQ(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldRepeat, v))
+}
+
+// RepeatIn applies the In predicate on the "repeat" field.
+func RepeatIn(vs ...int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIn(FieldRepeat, vs...))
+}
+
+// RepeatNotIn applies the NotIn predicate on the "repeat" field.
+func RepeatNotIn(vs ...int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotIn(FieldRepeat, vs...))
+}
+
+// RepeatGT applies the GT predicate on the "repeat" field.
+func RepeatGT(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGT(FieldRepeat, v))
+}
+
+// RepeatGTE applies the GTE predicate on the "repeat" field.
+func RepeatGTE(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGTE(FieldRepeat, v))
+}
+
+// RepeatLT applies the LT predicate on the "repeat" field.
+func RepeatLT(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLT(FieldRepeat, v))
+}
+
+// RepeatLTE applies the LTE predicate on the "repeat" field.
+func RepeatLTE(v int) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLTE(FieldRepeat, v))
+}
+
+// LinkedColumnEQ applies the EQ predicate on the "linked_column" field.
+func LinkedColumnEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldLinkedColumn, v))
+}
+
+// LinkedColumnNEQ applies the NEQ predicate on the "linked_column" field.
+func LinkedColumnNEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldLinkedColumn, v))
+}
+
+// LinkedColumnIn applies the In predicate on the "linked_column" field.
+func LinkedColumnIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIn(FieldLinkedColumn, vs...))
+}
+
+// LinkedColumnNotIn applies the NotIn predicate on the "linked_column" field.
+func LinkedColumnNotIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotIn(FieldLinkedColumn, vs...))
+}
+
+// LinkedColumnGT applies the GT predicate on the "linked_column" field.
+func LinkedColumnGT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGT(FieldLinkedColumn, v))
+}
+
+// LinkedColumnGTE applies the GTE predicate on the "linked_column" field.
+func LinkedColumnGTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGTE(FieldLinkedColumn, v))
+}
+
+// LinkedColumnLT applies the LT predicate on the "linked_column" field.
+func LinkedColumnLT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLT(FieldLinkedColumn, v))
+}
+
+// LinkedColumnLTE applies the LTE predicate on the "linked_column" field.
+func LinkedColumnLTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLTE(FieldLinkedColumn, v))
+}
+
+// LinkedColumnContains applies the Contains predicate on the "linked_column" field.
+func LinkedColumnContains(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContains(FieldLinkedColumn, v))
+}
+
+// LinkedColumnHasPrefix applies the HasPrefix predicate on the "linked_column" field.
+func LinkedColumnHasPrefix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasPrefix(FieldLinkedColumn, v))
+}
+
+// LinkedColumnHasSuffix applies the HasSuffix predicate on the "linked_column" field.
+func LinkedColumnHasSuffix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasSuffix(FieldLinkedColumn, v))
+}
+
+// LinkedColumnEqualFold applies the EqualFold predicate on the "linked_column" field.
+func LinkedColumnEqualFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEqualFold(FieldLinkedColumn, v))
+}
+
+// LinkedColumnContainsFold applies the ContainsFold predicate on the "linked_column" field.
+func LinkedColumnContainsFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContainsFold(FieldLinkedColumn, v))
 }
 
 // HasTablemeta applies the HasEdge predicate on the "tablemeta" edge.

@@ -26,6 +26,8 @@ const (
 	FieldDescription = "description"
 	// FieldModel holds the string denoting the model field in the database.
 	FieldModel = "model"
+	// FieldSources holds the string denoting the sources field in the database.
+	FieldSources = "sources"
 	// EdgeColumns holds the string denoting the columns edge name in mutations.
 	EdgeColumns = "columns"
 	// EdgeRows holds the string denoting the rows edge name in mutations.
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldModel,
+	FieldSources,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

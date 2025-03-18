@@ -8,6 +8,11 @@
       "prompt": "Generate 20 recipe cuisines."
     },
     {
+      "name": "ingredients",
+      "type": "ai",
+      "prompt": "Generate 50 common ingredients."
+    },
+    {
       "name": "meals",
       "type": "list",
       "options": [
@@ -27,6 +32,24 @@
       "type": "string",
       "fill_mode": "ai",
       "context_length": 5
+    },
+    {
+      "name": "Ing1",
+      "description": "the first ingredient recipe must include",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "ingredients",
+      "random": true,
+      "replacement": false
+    },
+    {
+      "name": "Ing2",
+      "description": "the second ingredient recipe must include",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "ingredients",
+      "random": true,
+      "replacement": false
     },
     {
       "name": "Ingredients",

@@ -1,6 +1,5 @@
 import {
     AiSource,
-    Column,
     LinkedSource,
     ListSource,
     Source,
@@ -8,17 +7,9 @@ import {
     TableInfo,
     getTables,
 } from "@/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
+
 import {
     Dialog,
     DialogContent,
@@ -30,11 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+
 import {
     Select,
     SelectContent,
@@ -42,12 +29,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Edit, Plus, Trash2, X } from "lucide-react";
+import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { NumberInput } from "../ui/number-input";
 
 interface SourcesFormProps {
   formData: TableCreateRequest;
@@ -66,21 +50,11 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
   const [sourceType, setSourceType] = useState<SourceType>("ai");
   const [prompt, setPrompt] = useState("");
   const [options, setOptions] = useState("");
-  const [random, setRandom] = useState(true);
-  const [replacement, setReplacement] = useState(false);
-  const [repeat, setRepeat] = useState(1);
 
   // Add new state for linked source type
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [isLoadingTables, setIsLoadingTables] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string>("");
-  const [tableColumns, setTableColumns] = useState<Column[]>([]);
-  const [selectedColumn, setSelectedColumn] = useState<string>("");
-  const [selectedContextColumns, setSelectedContextColumns] = useState<
-    string[]
-  >([]);
-  const [openContextColumnsPopover, setOpenContextColumnsPopover] =
-    useState(false);
 
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -109,10 +83,6 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     const table = tables.find((t) => t.name === selected);
     if (table) {
       setSelectedTable(selected);
-      setTableColumns(table.columns);
-      // Reset column selections when table changes
-      setSelectedColumn("");
-      setSelectedContextColumns([]);
     }
   };
 
@@ -121,15 +91,9 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     setSourceType("ai");
     setPrompt("");
     setOptions("");
-    setRandom(true);
-    setReplacement(false);
     // Reset linked source fields
     setSelectedTable("");
-    setSelectedColumn("");
-    setSelectedContextColumns([]);
-    setTableColumns([]);
     setEditIndex(null);
-    setRepeat(1);
   };
 
   const handleAddSource = () => {
@@ -140,29 +104,18 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
         name: sourceName,
         type: "ai",
         prompt,
-        random,
-        replacement,
-        repeat,
       };
     } else if (sourceType === "list") {
       newSource = {
         name: sourceName,
         type: "list",
         options: options.split("\n").filter(Boolean),
-        random,
-        replacement,
-        repeat,
       };
     } else {
       newSource = {
         name: sourceName,
         type: "linked",
         table: selectedTable,
-        column: selectedColumn,
-        context_columns: selectedContextColumns,
-        random,
-        replacement,
-        repeat,
       };
     }
 
@@ -183,9 +136,6 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     const source = formData.sources[index];
     setSourceName(source.name);
     setSourceType(source.type as SourceType);
-    setRandom(source.random);
-    setReplacement(source.replacement);
-    setRepeat(source.repeat);
 
     if (source.type === "ai") {
       const aiSource = source as AiSource;
@@ -196,14 +146,6 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
     } else if (source.type === "linked") {
       const linkedSource = source as LinkedSource;
       setSelectedTable(linkedSource.table);
-      setSelectedColumn(linkedSource.column);
-      setSelectedContextColumns(linkedSource.context_columns || []);
-
-      // Set table columns based on the selected table
-      const table = tables.find((t) => t.name === linkedSource.table);
-      if (table) {
-        setTableColumns(table.columns);
-      }
     }
 
     setEditIndex(index);
@@ -220,8 +162,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
 
     if (sourceType === "ai" && !prompt) return false;
     if (sourceType === "list" && !options) return false;
-    if (sourceType === "linked" && (!selectedTable || !selectedColumn))
-      return false;
+    if (sourceType === "linked" && !selectedTable) return false;
 
     return true;
   };
@@ -255,17 +196,6 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
             <span className="font-medium">Table:</span>
             <span>{linkedSource.table}</span>
           </div>
-          <div className="flex gap-2 mb-1">
-            <span className="font-medium">Column:</span>
-            <span>{linkedSource.column}</span>
-          </div>
-          {linkedSource.context_columns &&
-            linkedSource.context_columns.length > 0 && (
-              <div className="flex gap-2 mb-1">
-                <span className="font-medium">Context Columns:</span>
-                <span>{linkedSource.context_columns.join(", ")}</span>
-              </div>
-            )}
         </>
       );
     }
@@ -377,163 +307,8 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {selectedTable && (
-                    <>
-                      <div className="grid gap-2">
-                        <Label htmlFor="column">Select Column</Label>
-                        <Select
-                          value={selectedColumn}
-                          onValueChange={setSelectedColumn}
-                          disabled={tableColumns.length === 0}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tableColumns.map((column) => (
-                              <SelectItem key={column.id} value={column.name}>
-                                {column.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label>Context Columns</Label>
-                        <Popover
-                          open={openContextColumnsPopover}
-                          onOpenChange={setOpenContextColumnsPopover}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openContextColumnsPopover}
-                              className="justify-between h-auto min-h-10"
-                            >
-                              {selectedContextColumns.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {selectedContextColumns.map((column) => (
-                                    <Badge
-                                      key={column}
-                                      variant="secondary"
-                                      className="mr-1 mb-1"
-                                    >
-                                      {column}
-                                      <button
-                                        className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            setSelectedContextColumns(
-                                              selectedContextColumns.filter(
-                                                (c) => c !== column,
-                                              ),
-                                            );
-                                          }
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setSelectedContextColumns(
-                                            selectedContextColumns.filter(
-                                              (c) => c !== column,
-                                            ),
-                                          );
-                                        }}
-                                      >
-                                        <X className="h-3 w-3" />
-                                      </button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : (
-                                "Select context columns"
-                              )}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="p-0 w-[300px]">
-                            <Command>
-                              <CommandInput placeholder="Search columns..." />
-                              <CommandList>
-                                <CommandEmpty>No columns found.</CommandEmpty>
-                                <CommandGroup>
-                                  {tableColumns.map((column) => (
-                                    <CommandItem
-                                      key={column.id}
-                                      value={column.name}
-                                      onSelect={() => {
-                                        setSelectedContextColumns((prev) =>
-                                          prev.includes(column.name)
-                                            ? prev.filter(
-                                                (c) => c !== column.name,
-                                              )
-                                            : [...prev, column.name],
-                                        );
-                                      }}
-                                    >
-                                      <div
-                                        className={cn(
-                                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                          selectedContextColumns.includes(
-                                            column.name,
-                                          )
-                                            ? "bg-primary text-primary-foreground"
-                                            : "opacity-50 [&_svg]:invisible",
-                                        )}
-                                      >
-                                        <Check className="h-4 w-4" />
-                                      </div>
-                                      {column.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        <p className="text-xs text-muted-foreground">
-                          Select columns to provide context when using this
-                          source
-                        </p>
-                      </div>
-                    </>
-                  )}
                 </>
               )}
-
-              <>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="random"
-                    checked={random}
-                    onCheckedChange={setRandom}
-                  />
-                  <Label htmlFor="random">Random Selection</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="replacement"
-                    checked={replacement}
-                    onCheckedChange={setReplacement}
-                  />
-                  <Label htmlFor="replacement">
-                    Selection with Replacement
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <NumberInput
-                    id="repeat"
-                    value={repeat > 0 ? repeat : 1}
-                    onValueChange={(v) => setRepeat(v ?? 1)}
-                  />
-                  <Label htmlFor="reppeat">Repeat selection</Label>
-                </div>
-              </>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -555,7 +330,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
         <div className="grid gap-4 mt-4">
           {formData.sources.map((source, index) => (
             <Card key={index}>
-              <CardHeader className="py-4 px-6">
+              <CardHeader className="py-1 px-6">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-base font-medium">
                     {source.name}
@@ -578,7 +353,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="py-2 px-6">
+              <CardContent className="pt-0 pb-2 px-6">
                 <div className="text-sm">
                   <div className="flex gap-2 mb-1">
                     <span className="font-medium">Type:</span>

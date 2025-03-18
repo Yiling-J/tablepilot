@@ -37,6 +37,7 @@ type AIRowsGenerator struct {
 	table          *ent.TableMeta
 	missingColumns []*ent.TableColumn
 	contextColumns []*ent.TableColumn
+	indexerMap     map[string]*source.Indexer
 	sourceMap      map[string]source.Source
 	generated      []map[string]*schema.CellValue
 	contextLength  int
@@ -63,6 +64,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 
 		total:       params.Count,
 		batchSize:   params.Batch,
+		indexerMap:  make(map[string]*source.Indexer),
 		sourceMap:   make(map[string]source.Source),
 		saveTo:      params.SaveTo,
 		temperature: params.Temperature,
@@ -108,12 +110,11 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 			if len(c.Source) == 0 {
 				return nil, errors.New("invalid source")
 			}
-			var so source.Source
-			so, err := generator.columnSource(ctx, c)
+			idx, err := generator.columnSourceIndexer(ctx, meta.Sources[c.Source], c)
 			if err != nil {
 				return nil, err
 			}
-			generator.sourceMap[c.Nanoid] = so
+			generator.indexerMap[c.Nanoid] = idx
 			continue
 		}
 		generator.missingColumns = append(generator.missingColumns, c)
@@ -201,9 +202,9 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 		for n := 0; n < batch; n++ {
 			row := map[string]*schema.CellValue{}
 			for _, col := range g.table.Edges.Columns {
-				so, ok := g.sourceMap[col.Nanoid]
+				idx, ok := g.indexerMap[col.Nanoid]
 				if ok {
-					v, err := so.Next(ctx)
+					v, err := idx.Next(ctx)
 					if err != nil {
 						return err
 					}
@@ -275,13 +276,16 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 	})
 }
 
-func (g *AIRowsGenerator) columnSource(ctx context.Context, column *ent.TableColumn) (source.Source, error) {
+func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawMessage, column *ent.TableColumn) (*source.Indexer, error) {
+	if so, ok := g.sourceMap[column.Source]; ok {
+		return source.NewIndexer(so, column), nil
+	}
 	var so source.Source
-	sourceType := gjson.GetBytes(column.Source, "type").String()
+	sourceType := gjson.GetBytes(raw, "type").String()
 	switch sourceType {
 	case "list":
 		var ls source.ListSource
-		err := json.Unmarshal(column.Source, &ls)
+		err := json.Unmarshal(raw, &ls)
 		if err != nil {
 			return nil, err
 		}
@@ -292,22 +296,22 @@ func (g *AIRowsGenerator) columnSource(ctx context.Context, column *ent.TableCol
 		so = &ls
 	case "ai":
 		var ls source.AISource
-		err := json.Unmarshal(column.Source, &ls)
+		err := json.Unmarshal(raw, &ls)
 		if err != nil {
 			return nil, err
 		}
-		err = ls.Init(ctx, g.ai, column)
+		err = ls.Init(ctx, g.ai, column, g.model)
 		if err != nil {
 			return nil, err
 		}
 		so = &ls
 	case "linked":
 		var ls source.LinkedSource
-		err := json.Unmarshal(column.Source, &ls)
+		err := json.Unmarshal(raw, &ls)
 		if err != nil {
 			return nil, err
 		}
-		err = ls.Init(ctx, g.db, column)
+		err = ls.Init(ctx, g.db)
 		if err != nil {
 			return nil, err
 		}
@@ -315,7 +319,8 @@ func (g *AIRowsGenerator) columnSource(ctx context.Context, column *ent.TableCol
 	default:
 		return nil, fmt.Errorf("unknow source type %s", sourceType)
 	}
-	return so, nil
+	g.sourceMap[column.Source] = so
+	return source.NewIndexer(so, column), nil
 }
 
 func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*schema.CellValue, error) {

@@ -27,7 +27,7 @@ Pre-built binaries for different operating systems are available on the [Release
 Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot@latest`. Only CLI/API are supported.
 
 #### Install from Source
-Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.  This includes CLI, API, and WebUI. However, to use the WebUI, you need to build the frontend first. Ensure you have `pnpm` and `node` installed, then run `make build-ui`, Once built, you can start the server using `serve` command.
+Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.  This includes CLI, API, and WebUI. However, to use the WebUI, you need to build the frontend first. Ensure you have `pnpm`, `tsc` and `node` installed, then run `make build-ui`, Once built, you can start the server using `serve` command.
 
 ## How to Use
 
@@ -268,9 +268,6 @@ Common fields:
 
 - **name**: The name of the source (e.g., `"cuisines"`).
 - **type**: The type of the source, which can be `"ai"`, `"list"`, or `"linked"`.
-- **random**: When set to `true`, each row generation will pick a random value from all available values in the source.
-- **replacement**: Defines whether the sampling is with or without replacement. When set to `true`, items can be selected multiple times; when set to `false`, once an item is selected, it cannot be chosen again.
-- **repeat**: The number of times the picked value is reused before switching to the next one. The default and minimum value is 1, meaning each value is used once.
 
 Special fields for different types:
 
@@ -298,3 +295,18 @@ A list of column definitions. Each column is an object that can contain the foll
 	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
 - **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation.
 - **source** (Optional): Specifies the source to pull data from when `fill_mode` is set to `"pick"`. This should match a source name defined in the `sources` section (e.g., `"cuisines"`).
+
+**Additional Fields for `pick` Mode**
+
+When `fill_mode` is set to `"pick"`, the following fields are available:
+
+- **random**: If `true`, a random value is selected for each row from all available options in the source. Default: `false`.
+- **replacement**: Determines whether sampling is with or without replacement:
+  - `true`: Items can be selected multiple times.
+  - `false`: Once an item is selected, it cannot be chosen again.
+  - Default: `false`.
+- **repeat**: Specifies how many times a picked value is reused before switching to the next one. The minimum and default value is `1`, meaning each value is used once before moving to the next.
+
+**Shared Source Behavior**
+
+If multiple columns use the same source but have different `random`, `replacement`, or `repeat` settings, the source is initialized only once. For example, if a `"tags"` source generates 20 tag options via AI and three columns reference it, the tag generation process runs once, and all three columns share the same selection pool.

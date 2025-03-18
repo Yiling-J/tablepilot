@@ -18,8 +18,13 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"string", "number", "integer", "boolean", "array"}},
 		{Name: "fill_mode", Type: field.TypeEnum, Enums: []string{"ai", "pick"}},
-		{Name: "source", Type: field.TypeJSON, Nullable: true},
+		{Name: "source", Type: field.TypeString, Nullable: true},
 		{Name: "context_length", Type: field.TypeInt, Default: 0},
+		{Name: "random", Type: field.TypeBool, Default: false},
+		{Name: "replacement", Type: field.TypeBool, Default: false},
+		{Name: "repeat", Type: field.TypeInt, Default: 1},
+		{Name: "linked_column", Type: field.TypeString, Default: ""},
+		{Name: "linked_context_columns", Type: field.TypeJSON},
 		{Name: "table_id", Type: field.TypeInt},
 	}
 	// TableColumnsTable holds the schema information for the "table_columns" table.
@@ -30,7 +35,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "table_columns_table_meta_columns",
-				Columns:    []*schema.Column{TableColumnsColumns[10]},
+				Columns:    []*schema.Column{TableColumnsColumns[15]},
 				RefColumns: []*schema.Column{TableMetaColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -39,7 +44,7 @@ var (
 			{
 				Name:    "tablecolumn_name_table_id",
 				Unique:  true,
-				Columns: []*schema.Column{TableColumnsColumns[4], TableColumnsColumns[10]},
+				Columns: []*schema.Column{TableColumnsColumns[4], TableColumnsColumns[15]},
 			},
 		},
 	}
@@ -52,6 +57,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Default: ""},
 		{Name: "model", Type: field.TypeString, Default: ""},
+		{Name: "sources", Type: field.TypeJSON, Nullable: true},
 	}
 	// TableMetaTable holds the schema information for the "table_meta" table.
 	TableMetaTable = &schema.Table{

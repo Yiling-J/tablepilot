@@ -7,13 +7,17 @@ import (
 )
 
 type TableGenColumn struct {
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Type          string `json:"type"`
-	FillMode      string `json:"fill_mode"`
-	Source        string `json:"source"`
-	Repeat        int    `json:"repeat"`
-	ContextLength int    `json:"context_length"`
+	Name                 string   `json:"name"`
+	Description          string   `json:"description"`
+	Type                 string   `json:"type"`
+	FillMode             string   `json:"fill_mode"`
+	Source               string   `json:"source"`
+	Random               bool     `json:"random"`
+	Replacement          bool     `json:"replacement"`
+	Repeat               int      `json:"repeat"`
+	ContextLength        int      `json:"context_length"`
+	LinkedColumn         string   `json:"linked_column"`
+	LinkedContextColumns []string `json:"linked_context_columns"`
 }
 
 type TableGenRequest struct {

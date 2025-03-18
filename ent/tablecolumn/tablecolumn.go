@@ -35,6 +35,16 @@ const (
 	FieldContextLength = "context_length"
 	// FieldTableID holds the string denoting the table_id field in the database.
 	FieldTableID = "table_id"
+	// FieldRandom holds the string denoting the random field in the database.
+	FieldRandom = "random"
+	// FieldReplacement holds the string denoting the replacement field in the database.
+	FieldReplacement = "replacement"
+	// FieldRepeat holds the string denoting the repeat field in the database.
+	FieldRepeat = "repeat"
+	// FieldLinkedColumn holds the string denoting the linked_column field in the database.
+	FieldLinkedColumn = "linked_column"
+	// FieldLinkedContextColumns holds the string denoting the linked_context_columns field in the database.
+	FieldLinkedContextColumns = "linked_context_columns"
 	// EdgeTablemeta holds the string denoting the tablemeta edge name in mutations.
 	EdgeTablemeta = "tablemeta"
 	// Table holds the table name of the tablecolumn in the database.
@@ -61,6 +71,11 @@ var Columns = []string{
 	FieldSource,
 	FieldContextLength,
 	FieldTableID,
+	FieldRandom,
+	FieldReplacement,
+	FieldRepeat,
+	FieldLinkedColumn,
+	FieldLinkedContextColumns,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -84,6 +99,16 @@ var (
 	NameValidator func(string) error
 	// DefaultContextLength holds the default value on creation for the "context_length" field.
 	DefaultContextLength int
+	// DefaultRandom holds the default value on creation for the "random" field.
+	DefaultRandom bool
+	// DefaultReplacement holds the default value on creation for the "replacement" field.
+	DefaultReplacement bool
+	// DefaultRepeat holds the default value on creation for the "repeat" field.
+	DefaultRepeat int
+	// DefaultLinkedColumn holds the default value on creation for the "linked_column" field.
+	DefaultLinkedColumn string
+	// DefaultLinkedContextColumns holds the default value on creation for the "linked_context_columns" field.
+	DefaultLinkedContextColumns []string
 )
 
 // Type defines the type for the "type" enum field.
@@ -178,6 +203,11 @@ func ByFillMode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFillMode, opts...).ToFunc()
 }
 
+// BySource orders the results by the source field.
+func BySource(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSource, opts...).ToFunc()
+}
+
 // ByContextLength orders the results by the context_length field.
 func ByContextLength(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldContextLength, opts...).ToFunc()
@@ -186,6 +216,26 @@ func ByContextLength(opts ...sql.OrderTermOption) OrderOption {
 // ByTableID orders the results by the table_id field.
 func ByTableID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTableID, opts...).ToFunc()
+}
+
+// ByRandom orders the results by the random field.
+func ByRandom(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRandom, opts...).ToFunc()
+}
+
+// ByReplacement orders the results by the replacement field.
+func ByReplacement(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReplacement, opts...).ToFunc()
+}
+
+// ByRepeat orders the results by the repeat field.
+func ByRepeat(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRepeat, opts...).ToFunc()
+}
+
+// ByLinkedColumn orders the results by the linked_column field.
+func ByLinkedColumn(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLinkedColumn, opts...).ToFunc()
 }
 
 // ByTablemetaField orders the results by tablemeta field.

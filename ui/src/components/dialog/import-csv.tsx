@@ -66,6 +66,11 @@ export function ImportCSVDialog({
             description: "",
             type: "string",
             fill_mode: "ai",
+            random: true,
+            replacement: false,
+            repeat: 1,
+            linked_column: "",
+            linked_context_columns: [],
           };
         }),
       };
