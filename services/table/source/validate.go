@@ -21,7 +21,7 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 		if err != nil {
 			return nil, err
 		}
-		if len(ls.Options) == 0 {
+		if len(ls.Options) == 0 && ls.File == "" {
 			return nil, errors.New("no options")
 		}
 		s = &ls

@@ -2,6 +2,7 @@ package source
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -10,13 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSource_ValidateLinked(t *testing.T) {
+func TestSource_Validate(t *testing.T) {
 	cases := []struct {
 		source string
 		error  error
 	}{
 		{`{"type":"linked","table":""}`, ErrTableNameOrIdEmpty()},
 		{`{"type":"linked","table":"abc"}`, ErrTableNotFound("abc")},
+		{`{"type":"linked","table":"table"}`, nil},
+		{`{"type":"list"}`, errors.New("no options")},
+		{`{"type":"list","file":"z.txt"}`, nil},
 	}
 
 	for _, c := range cases {
@@ -29,8 +33,10 @@ func TestSource_ValidateLinked(t *testing.T) {
 			s, err := ValidateSource(ctx, []byte(c.source), db)
 			require.Equal(t, c.error, err)
 			if err == nil {
-				st := s.(*LinkedSource)
-				require.Equal(t, tb.Nanoid, st.Table)
+				st, ok := s.(*LinkedSource)
+				if ok {
+					require.Equal(t, tb.Nanoid, st.Table)
+				}
 			}
 		})
 	}
