@@ -210,7 +210,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 ## Configuration
 
-Tablepilot uses a TOML configuration file to customize its behavior. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
+Tablepilot requires a TOML configuration file. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
 
 The configuration consists of four main sections: `database`, `clients`, `server` and `models`.
 
@@ -246,6 +246,21 @@ You can define multiple models and assign them to different clients or different
 - **rpm**: The rate limit for this model, specified in requests per minute. This is used to control the rate of API calls and enforce a model-specific rate limiter (default no limit). Optional.
 
 **Important**: All models must support [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).
+
+### Sources (Optional)
+
+You can also define shared sources here. These sources will be accessible to all tables. For more details on source definitions, see [Sources](#sources). Example:
+```toml
+[[sources]]
+name = "customers"
+type = "linked"
+table = "customers"
+
+[[sources]]
+name = "movies"
+type = "csv"
+paths = ["movies/*.csv"]
+```
 
 ## Table Schema
 
