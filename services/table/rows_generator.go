@@ -81,6 +81,16 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 	if err != nil {
 		return nil, err
 	}
+	// add shared sources
+	if meta.Sources == nil {
+		meta.Sources = map[string]json.RawMessage{}
+	}
+	for name, source := range params.sharedSources {
+		if _, ok := meta.Sources[name]; !ok {
+			meta.Sources[name] = source
+		}
+	}
+
 	generator.table = meta
 	// in autofill mode, is ContextColumns is empty, add all other columns as context columns
 	if generator.autofill.Enable && len(generator.autofill.ContextColumns) == 0 {

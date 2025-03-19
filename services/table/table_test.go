@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -109,7 +110,8 @@ func TestTableService_CreateTable(t *testing.T) {
 			}, nil
 		},
 	}
-	srv := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
 
 	sources := []json.RawMessage{
 		[]byte(`{
@@ -220,6 +222,66 @@ func TestTableService_CreateTable(t *testing.T) {
 	)
 }
 
+func TestTableService_CreateTableSharedSource(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	columns := []TableGenColumn{
+		{
+			Name: "user", Description: "recipe user", Type: "boolean",
+			FillMode: "pick", Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
+		},
+	}
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			return &client.ChatResponse{
+				Content: `[{"name":"extra","type":"string"},{"name":"extra2","type":"string"}]`,
+				Tokens:  100,
+			}, nil
+		},
+	}
+	userTable, err := db.TableMeta.Create().SetName("user").Save(ctx)
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{
+		Sources: []map[string]any{{
+			"name":  "users",
+			"type":  "linked",
+			"table": "user",
+		}},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(ctx)
+	require.NoError(t, err)
+
+	id, err := srv.CreateTable(ctx, &TableGenRequest{
+		Name:        "test",
+		Description: "test table",
+		Columns:     columns,
+		Model:       "aiai",
+	})
+	require.NoError(t, err)
+	table, err := db.TableMeta.Query().WithColumns().Where(tablemeta.Nanoid(id)).Only(ctx)
+	require.NoError(t, err)
+	requireColumnEqual(
+		t,
+		&ent.TableColumn{
+			Name: "user", Description: "recipe user", ContextLength: 0,
+			Type: tablecolumn.TypeBoolean, FillMode: tablecolumn.FillModePick,
+			Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
+		},
+		table.Edges.Columns[0],
+	)
+}
+
 func TestTableService_LinkedContextRow(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
@@ -289,9 +351,10 @@ func TestTableService_Rows(t *testing.T) {
 		db.TableRow.Create().SetCells(toCells([]any{"4"})).SetTablemeta(tb),
 	).Exec(ctx)
 	require.NoError(t, err)
-	srv := NewTableService(
+	srv, err := NewTableService(
 		&config.Config{}, db, nil, zap.NewNop().Sugar(),
 	)
+	require.NoError(t, err)
 	rows, err := srv.Rows(ctx, "table")
 	require.NoError(t, err)
 	require.Equal(t, "c1", rows.Columns[0].Name)
@@ -318,9 +381,10 @@ func TestTableService_Truncate(t *testing.T) {
 	).Exec(ctx)
 	require.NoError(t, err)
 
-	srv := NewTableService(
+	srv, err := NewTableService(
 		&config.Config{}, db, nil, zap.NewNop().Sugar(),
 	)
+	require.NoError(t, err)
 	count, err := srv.Truncate(ctx, "table1")
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -362,9 +426,10 @@ func TestTableService_Delete(t *testing.T) {
 	).Exec(ctx)
 	require.NoError(t, err)
 
-	srv := NewTableService(
+	srv, err := NewTableService(
 		&config.Config{}, db, nil, zap.NewNop().Sugar(),
 	)
+	require.NoError(t, err)
 	count, err := srv.Delete(ctx, "table1")
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -391,7 +456,8 @@ func TestTableService_Delete(t *testing.T) {
 func TestTableService_Import(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
-	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
 	records := [][]string{
 		{"col1", "col2"},
 		{"a", "1"},
@@ -481,7 +547,8 @@ func TestTableService_ImportAutoType(t *testing.T) {
 	err = db.TableColumn.CreateBulk(creates...).Exec(ctx)
 	require.NoError(t, err)
 
-	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
 	records := [][]string{
 		{"int", "string", "number", "array"},
 		{"1", "2", "3.2", `["a", "b"]`},
@@ -523,7 +590,8 @@ func TestTableService_ImportAutoType(t *testing.T) {
 func TestTableService_ListTables(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
-	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
 	tb1, err := db.TableMeta.Create().SetName("t1").SetDescription("tt1").SetModel("m1").Save(ctx)
 	require.NoError(t, err)
 	col1, err := db.TableColumn.Create().
@@ -559,7 +627,8 @@ func TestTableService_ListTables(t *testing.T) {
 func TestTableService_GetTableDetail(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
-	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
 	tb1, err := db.TableMeta.Create().SetName("t1").SetDescription("tt1").SetModel("m1").Save(ctx)
 	require.NoError(t, err)
 	col1, err := db.TableColumn.Create().
@@ -580,7 +649,8 @@ func TestTableService_GetTableDetail(t *testing.T) {
 func TestTableService_CreateRows(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
-	srv := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
 	tb, err := db.TableMeta.Create().SetName("t1").Save(ctx)
 	require.NoError(t, err)
 	col1, err := db.TableColumn.Create().
@@ -617,4 +687,31 @@ func TestTableService_CreateRows(t *testing.T) {
 		data = append(data, r)
 	}
 	require.Equal(t, expected, data)
+}
+
+func TestTableService_NewServiceSharedSource(t *testing.T) {
+	tmpFile, err := os.CreateTemp("./", "test_*.csv")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	writer := csv.NewWriter(tmpFile)
+	require.NoError(t, writer.Write([]string{"Name", "Job", "Age"}))
+	require.NoError(t, writer.Write([]string{"me", "Engineer", "1"}))
+	require.NoError(t, writer.Write([]string{"you", "Doctor", "2"}))
+	writer.Flush()
+	require.NoError(t, writer.Error())
+	require.NoError(t, tmpFile.Close())
+
+	db := db.NewTestDB()
+	srv, err := NewTableService(&config.Config{Sources: []map[string]any{
+		{"name": "s1", "type": "list", "options": []string{"a", "b"}},
+		{"name": "s2", "type": "csv", "paths": []string{strings.TrimPrefix(tmpFile.Name(), "./")}},
+	}}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	require.ElementsMatch(t, []*SharedSource{
+		{Name: "s1", Columns: nil, Data: json.RawMessage(`{"name":"s1","options":["a","b"],"type":"list"}`)},
+		{Name: "s2", Columns: []string{"Name", "Job", "Age"}, Data: json.RawMessage(
+			fmt.Sprintf(`{"name":"s2","paths":["%s"],"type":"csv"}`, strings.TrimPrefix(tmpFile.Name(), "./")),
+		)},
+	}, srv.sharedSources)
 }

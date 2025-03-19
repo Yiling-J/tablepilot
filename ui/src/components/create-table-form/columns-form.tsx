@@ -1,21 +1,14 @@
 import {
     Column,
     LinkedSource,
+    SourceData,
     TableCreateRequest,
     TableInfo,
+    getSources,
     getTables,
 } from "@/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
 import {
     Dialog,
     DialogContent,
@@ -29,11 +22,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import {
     Select,
     SelectContent,
     SelectItem,
@@ -42,9 +30,9 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Edit, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Edit, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { LinkedColumnSettings } from "./linked-column-settings";
 
 interface ColumnsFormProps {
   formData: TableCreateRequest;
@@ -76,8 +64,7 @@ export function ColumnsForm({
   const [selectedContextColumns, setSelectedContextColumns] = useState<
     string[]
   >([]);
-  const [openContextColumnsPopover, setOpenContextColumnsPopover] =
-    useState(false);
+  const sourcesRef = useRef<SourceData[]>([]);
 
   const resetForm = () => {
     setColumnName("");
@@ -105,6 +92,11 @@ export function ColumnsForm({
     try {
       const resp = await getTables();
       setTables(resp.tables);
+      const so = await getSources();
+      // if shared source has same name as form source, only keep form source
+      sourcesRef.current = so.filter(
+        (e) => formData.sources.find((s) => s.name == e.name) === undefined,
+      );
     } catch (error) {
       console.error("Error fetching tables:", error);
     }
@@ -176,6 +168,27 @@ export function ColumnsForm({
         const table = tables.find((t) => t.name === linkedSource.table);
         if (table) {
           setLinkedTableColumns(table.columns);
+        }
+      }
+      if (!ls) {
+        // try find from shared sources
+        const ss = sourcesRef.current.find((s) => s.name === source);
+        if (ss && ss.data.type === "linked") {
+          const table = tables.find((t) => t.name === ss.data.table);
+          if (table) {
+            setLinkedTableColumns(table.columns);
+          }
+        }
+        if (ss && ss.data.type === "csv") {
+          setLinkedTableColumns(
+            ss.columns.map((c) => ({
+              id: c,
+              name: c,
+              description: "",
+              type: "string",
+              fill_mode: "ai",
+            })),
+          );
         }
       }
     }
@@ -286,12 +299,16 @@ export function ColumnsForm({
                   <Select
                     value={source}
                     onValueChange={handleSelectSource}
-                    disabled={formData.sources.length === 0}
+                    disabled={
+                      formData.sources.length === 0 &&
+                      sourcesRef.current.length === 0
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue
                         placeholder={
-                          formData.sources.length === 0
+                          formData.sources.length === 0 &&
+                          sourcesRef.current.length === 0
                             ? "No sources available"
                             : "Select source"
                         }
@@ -303,131 +320,43 @@ export function ColumnsForm({
                           {src.name}
                         </SelectItem>
                       ))}
+                      {sourcesRef.current.map((src, index) => (
+                        <SelectItem key={index} value={src.name}>
+                          {src.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 
                   {formData.sources.find((s) => s.name === source)?.type ===
                     "linked" && (
-                    <>
-                      <div className="grid gap-2 pt-2">
-                        <Label htmlFor="column">Linked Column</Label>
-                        <Select
-                          value={selectedColumn}
-                          onValueChange={setSelectedColumn}
-                          disabled={linkedTableColumns.length === 0}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {linkedTableColumns.map((column) => (
-                              <SelectItem key={column.id} value={column.name}>
-                                {column.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid gap-2 pt-2">
-                        <Label>Linked Context Columns</Label>
-                        <Popover
-                          open={openContextColumnsPopover}
-                          onOpenChange={setOpenContextColumnsPopover}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openContextColumnsPopover}
-                              className="justify-between h-auto min-h-10"
-                            >
-                              {selectedContextColumns.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {selectedContextColumns.map((column) => (
-                                    <Badge
-                                      key={column}
-                                      variant="secondary"
-                                      className="mr-1 mb-1"
-                                    >
-                                      {column}
-                                      <Button
-                                        asChild
-                                        variant="ghost"
-                                        size="icon"
-                                        className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            setSelectedContextColumns(
-                                              selectedContextColumns.filter(
-                                                (c) => c !== column,
-                                              ),
-                                            );
-                                          }
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setSelectedContextColumns(
-                                            selectedContextColumns.filter(
-                                              (c) => c !== column,
-                                            ),
-                                          );
-                                        }}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </Badge>
-                                  ))}
-                                </div>
-                              ) : (
-                                "Select context columns"
-                              )}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="p-0 w-[300px]">
-                            <Command>
-                              <CommandInput placeholder="Search columns..." />
-                              <CommandList>
-                                <CommandEmpty>No columns found.</CommandEmpty>
-                                <CommandGroup>
-                                  {linkedTableColumns.map((column) => (
-                                    <CommandItem
-                                      key={column.id}
-                                      value={column.name}
-                                      onSelect={() => {
-                                        setSelectedContextColumns((prev) =>
-                                          prev.includes(column.name)
-                                            ? prev.filter(
-                                                (c) => c !== column.name,
-                                              )
-                                            : [...prev, column.name],
-                                        );
-                                      }}
-                                    >
-                                      <div
-                                        className={cn(
-                                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                          selectedContextColumns.includes(
-                                            column.name,
-                                          )
-                                            ? "bg-primary text-primary-foreground"
-                                            : "opacity-50 [&_svg]:invisible",
-                                        )}
-                                      >
-                                        <Check className="h-4 w-4" />
-                                      </div>
-                                      {column.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </>
+                    <LinkedColumnSettings
+                      linkedTableColumns={linkedTableColumns}
+                      selectedColumn={selectedColumn}
+                      setSelectedColumn={setSelectedColumn}
+                      selectedContextColumns={selectedContextColumns}
+                      setSelectedContextColumns={setSelectedContextColumns}
+                    />
+                  )}
+                  {sourcesRef.current.find((s) => s.name === source)?.data
+                    .type === "linked" && (
+                    <LinkedColumnSettings
+                      linkedTableColumns={linkedTableColumns}
+                      selectedColumn={selectedColumn}
+                      setSelectedColumn={setSelectedColumn}
+                      selectedContextColumns={selectedContextColumns}
+                      setSelectedContextColumns={setSelectedContextColumns}
+                    />
+                  )}
+                  {sourcesRef.current.find((s) => s.name === source)?.data
+                    .type === "csv" && (
+                    <LinkedColumnSettings
+                      linkedTableColumns={linkedTableColumns}
+                      selectedColumn={selectedColumn}
+                      setSelectedColumn={setSelectedColumn}
+                      selectedContextColumns={selectedContextColumns}
+                      setSelectedContextColumns={setSelectedContextColumns}
+                    />
                   )}
 
                   <div className="flex items-center space-x-2 pt-2">

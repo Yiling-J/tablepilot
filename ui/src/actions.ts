@@ -5,6 +5,7 @@ import {
     generateUrl,
     modelsUrl,
     rowsUrl,
+    sourcesUrl,
     tableUrl,
     tablesUrl,
     truncateUrl,
@@ -251,4 +252,23 @@ export async function createRows(table: string, rows: JSONObject[]) {
   if (!res.ok) {
     throw new Error("Failed to truncate table");
   }
+}
+
+export interface SourceData {
+  name: string;
+  data: JSONObject;
+  columns: string[];
+}
+
+export async function getSources(): Promise<SourceData[]> {
+  const res = await fetch(sourcesUrl(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json().then((v) => v.sources);
 }

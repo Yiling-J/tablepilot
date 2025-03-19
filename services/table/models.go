@@ -42,10 +42,12 @@ type GenerateRowsRequest struct {
 	Batch       int     `json:"batch"`
 	Temperature float64 `json:"temperature"`
 	Model       string  `json:"model"`
-	// used `json:""` in API only to send streaming results
+	// used in API only to send streaming results
 	Stream bool `json:"stream"`
 
 	Autofill AutofillRequest `json:"autofill"`
+	// shared sources from config file
+	sharedSources map[string]json.RawMessage
 }
 
 type ColumnSchema struct {
@@ -84,4 +86,11 @@ type TableInfo struct {
 
 type CreateRowsRequest struct {
 	Rows []map[string]any `json:"rows"`
+}
+
+type SharedSource struct {
+	Name string          `json:"name"`
+	Data json.RawMessage `json:"data"`
+	// only used in csv type source, this is required by API+WebUI, so user can select csv columns
+	Columns []string `json:"columns"`
 }

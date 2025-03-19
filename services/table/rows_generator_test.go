@@ -46,6 +46,34 @@ func TestRowsGenerator_PrepareRows(t *testing.T) {
 	require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "foo"}, "id": {Value: 0}}, generator.rows[0])
 }
 
+func TestRowsGenerator_PrepareRowsSharedSource(t *testing.T) {
+	ctx := context.TODO()
+	db := db.NewTestDB()
+	tb, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	col, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModePick).
+		SetSource("so").
+		SetTablemeta(tb).
+		SetContextLength(5).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: "foo",
+		Batch: 5,
+		Count: 5,
+		sharedSources: map[string]json.RawMessage{
+			"so": json.RawMessage(`{"type":"list","options":["o1"]}`),
+		},
+	}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	err = generator.prepareRows(context.TODO(), 1)
+	require.NoError(t, err)
+	require.Equal(t, map[string]*schema.CellValue{col.Nanoid: {Value: "o1"}, "id": {Value: 0}}, generator.rows[0])
+}
+
 func TestRowsGenerator_PrepareContextRows(t *testing.T) {
 	cases := []struct {
 		generated int

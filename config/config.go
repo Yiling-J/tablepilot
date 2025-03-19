@@ -44,6 +44,7 @@ type Config struct {
 	Database *Database
 	Models   []Model
 	Clients  []Client
+	Sources  []map[string]any
 }
 
 func NewConfig(name string) (config *Config, err error) {

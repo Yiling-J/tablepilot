@@ -49,6 +49,7 @@ func NewCSVIndexer(files []string) (*CSVIndexer, error) {
 		} else if !reflect.DeepEqual(columns, fileColumns) {
 			return nil, fmt.Errorf("headers in file %s do not match previous files. Expected: %v, Got: %v", file, columns, fileColumns)
 		}
+
 		currentPosition := FileOffset{File: cast.ToUint16(i), Offset: r.InputOffset()}
 		for {
 			_, err := r.Read()
@@ -126,4 +127,30 @@ func (r *CSVIndexer) Total() int {
 
 func (r *CSVIndexer) Columns() []string {
 	return r.columns
+}
+
+func GetColumnsFromFiles(files []string) ([]string, error) {
+	var columns []string
+
+	for _, file := range files {
+		f, err := os.Open(file)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		r := csv.NewReader(f)
+
+		fileColumns, err := r.Read()
+		if err != nil {
+			return nil, fmt.Errorf("error reading header from file %s: %w", file, err)
+		}
+
+		if columns == nil {
+			columns = fileColumns
+		} else if !reflect.DeepEqual(columns, fileColumns) {
+			return nil, fmt.Errorf("headers in file %s do not match previous files. Expected: %v, Got: %v", file, columns, fileColumns)
+		}
+	}
+
+	return columns, nil
 }
