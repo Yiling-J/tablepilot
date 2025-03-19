@@ -19,6 +19,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 	"github.com/Yiling-J/tablepilot/services/table/source"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/spf13/cast"
 
 	"github.com/invopop/jsonschema"
 	"github.com/tidwall/gjson"
@@ -48,21 +49,48 @@ type TableService interface {
 	Delete(ctx context.Context, table string) (int, error)
 	Import(ctx context.Context, table string, reader io.Reader) (string, error)
 	CreateRows(ctx context.Context, table string, rows []map[string]any) error
+	SharedSources(ctx context.Context) []*SharedSource
 }
 
 type TableServiceImpl struct {
-	db     *ent.Client
-	ai     ai.AiService
-	logger *zap.SugaredLogger
+	db            *ent.Client
+	ai            ai.AiService
+	sharedSources []*SharedSource
+	logger        *zap.SugaredLogger
 }
 
-func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) *TableServiceImpl {
+func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*TableServiceImpl, error) {
 	ts := &TableServiceImpl{
-		db:     db,
-		ai:     ai,
-		logger: logger.With("service", "table"),
+		db:            db,
+		ai:            ai,
+		sharedSources: []*SharedSource{},
+		logger:        logger.With("service", "table"),
 	}
-	return ts
+	for _, s := range config.Sources {
+		name := cast.ToString(s["name"])
+		if name != "" {
+			bs, err := json.Marshal(s)
+			if err != nil {
+				return nil, err
+			}
+			so, err := source.ValidateSource(context.Background(), json.RawMessage(bs), db)
+			if err != nil {
+				return nil, err
+			}
+			ss := &SharedSource{Name: name}
+			switch st := so.(type) {
+			case *source.CsvSource:
+				columns, err := st.GetColumns(context.Background())
+				if err != nil {
+					return nil, err
+				}
+				ss.Columns = columns
+			}
+			ss.Data = json.RawMessage(bs)
+			ts.sharedSources = append(ts.sharedSources, ss)
+		}
+	}
+	return ts, nil
 }
 
 type TableGenColumnSchema struct {
@@ -254,6 +282,9 @@ func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*T
 }
 
 func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
+	for _, so := range t.sharedSources {
+		params.sharedSources[so.Name] = so.Data
+	}
 	return NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
 }
 
@@ -441,4 +472,8 @@ func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []
 		return ent.Rollback(tx, err)
 	}
 	return tx.Commit()
+}
+
+func (t *TableServiceImpl) SharedSources(ctx context.Context) []*SharedSource {
+	return t.sharedSources
 }

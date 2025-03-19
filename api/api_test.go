@@ -391,3 +391,21 @@ func TestAPI_CreateRows(t *testing.T) {
 	resp := server.Send(req)
 	resp.ResponseEq(t, 200, "")
 }
+
+func TestAPI_Sources(t *testing.T) {
+	sources := []*table.SharedSource{
+		{Name: "s1", Columns: []string{"c1"}, Data: json.RawMessage(`{"foo": "bar"}`)},
+	}
+	tableMock := &table.TableServiceMock{
+		SharedSourcesFunc: func(ctx context.Context) []*table.SharedSource {
+			return sources
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewGetRequest("/api/v1/sources")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, map[string]any{"sources": sources})
+}

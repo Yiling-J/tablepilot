@@ -34,6 +34,15 @@ func (cs *CsvSource) Init(ctx context.Context) error {
 	return nil
 }
 
+func (cs *CsvSource) GetColumns(ctx context.Context) ([]string, error) {
+	fileSystem := os.DirFS("./")
+	files, err := parsePaths(fileSystem, cs.Paths)
+	if err != nil {
+		return nil, err
+	}
+	return csvindexer.GetColumnsFromFiles(files)
+}
+
 func (cs *CsvSource) NextLinked(ctx context.Context, idx int, column string, contextColumns []string) (*schema.CellValue, error) {
 	row, err := cs.randomCSV.Fetch(idx)
 	if err != nil {
