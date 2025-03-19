@@ -27,3 +27,7 @@ export function autofillUrl(id: string) {
 export function truncateUrl(id: string) {
   return `${address}/api/v1/tables/${id}/truncate`;
 }
+
+export function sourcesUrl() {
+  return `${address}/api/v1/sources`;
+}

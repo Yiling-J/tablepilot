@@ -122,6 +122,21 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 			sources[gjson.GetBytes(raw, "name").String()] = bs
 		}
 	}
+	if len(t.sharedSources) > 0 {
+		for _, so := range t.sharedSources {
+			if _, ok := sources[so.Name]; !ok {
+				vs, err := source.ValidateSource(ctx, so.Data, tx.Client())
+				if err != nil {
+					return "", ent.Rollback(tx, err)
+				}
+				bs, err := json.Marshal(vs)
+				if err != nil {
+					return "", ent.Rollback(tx, err)
+				}
+				sources[so.Name] = bs
+			}
+		}
+	}
 
 	table, err := tx.TableMeta.Create().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).SetSources(sources).Save(ctx)
 	if err != nil {
@@ -282,6 +297,7 @@ func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*T
 }
 
 func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
+	params.sharedSources = map[string]json.RawMessage{}
 	for _, so := range t.sharedSources {
 		params.sharedSources[so.Name] = so.Data
 	}

@@ -222,6 +222,66 @@ func TestTableService_CreateTable(t *testing.T) {
 	)
 }
 
+func TestTableService_CreateTableSharedSource(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	columns := []TableGenColumn{
+		{
+			Name: "user", Description: "recipe user", Type: "boolean",
+			FillMode: "pick", Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
+		},
+	}
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			return &client.ChatResponse{
+				Content: `[{"name":"extra","type":"string"},{"name":"extra2","type":"string"}]`,
+				Tokens:  100,
+			}, nil
+		},
+	}
+	userTable, err := db.TableMeta.Create().SetName("user").Save(ctx)
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{
+		Sources: []map[string]any{{
+			"name":  "users",
+			"type":  "linked",
+			"table": "user",
+		}},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(ctx)
+	require.NoError(t, err)
+
+	id, err := srv.CreateTable(ctx, &TableGenRequest{
+		Name:        "test",
+		Description: "test table",
+		Columns:     columns,
+		Model:       "aiai",
+	})
+	require.NoError(t, err)
+	table, err := db.TableMeta.Query().WithColumns().Where(tablemeta.Nanoid(id)).Only(ctx)
+	require.NoError(t, err)
+	requireColumnEqual(
+		t,
+		&ent.TableColumn{
+			Name: "user", Description: "recipe user", ContextLength: 0,
+			Type: tablecolumn.TypeBoolean, FillMode: tablecolumn.FillModePick,
+			Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
+		},
+		table.Edges.Columns[0],
+	)
+}
+
 func TestTableService_LinkedContextRow(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
