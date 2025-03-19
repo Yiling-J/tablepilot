@@ -316,6 +316,7 @@ Special fields for different types:
 	- **prompt**: The prompt used to generate options by AI, e.g., Give me 50 common ingredients.
 - **list**:
 	- **options**: A list of predefined options to pick from.
+	- **file**: Use file content as options, each line in the file will be one option, if this field is not empty then `options` field will be ignored. File path is **relative to the current folder**, e.g., `countries.text` or `data/countries.txt`.
 - **linked**:
 	- **table**: The name of the linked table.
 - **csv**:

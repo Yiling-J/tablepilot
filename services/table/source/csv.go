@@ -21,7 +21,11 @@ type CsvSource struct {
 }
 
 func (cs *CsvSource) Init(ctx context.Context) error {
-	fileSystem := os.DirFS("./")
+	root, err := os.OpenRoot("./")
+	if err != nil {
+		return err
+	}
+	fileSystem := root.FS()
 	files, err := parsePaths(fileSystem, cs.Paths)
 	if err != nil {
 		return err

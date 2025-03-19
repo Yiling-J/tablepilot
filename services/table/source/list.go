@@ -1,7 +1,9 @@
 package source
 
 import (
+	"bufio"
 	"context"
+	"os"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
 )
@@ -9,9 +11,35 @@ import (
 type ListSource struct {
 	Type    string   `json:"type"`
 	Options []string `json:"options"`
+	File    string   `json:"file,omitempty"`
 }
 
 func (ls *ListSource) Init(ctx context.Context) error {
+	if ls.File != "" {
+		root, err := os.OpenRoot("./")
+		if err != nil {
+			return err
+		}
+
+		file, err := root.FS().Open(ls.File)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				ls.Options = append(ls.Options, scanner.Text())
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
