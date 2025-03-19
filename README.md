@@ -34,15 +34,27 @@ Ensure that Go is installed on your system. Then, clone the repository and run `
 To generate a table, you’ll need a **TOML config file**, and in the case of the CLI, a **table schema JSON file**:
 
 - **Config File (Required):** Defines the LLM clients for table generation and specifies the database for storing table schemas and data.
-- **Schema File (Only Required for CLI):** If using the CLI, you'll need a JSON schema file to define the table name, columns, and other details.
-- **For WebUI Users:** No need to create a schema file, you can build the schema interactively in the UI.
-- **For API Users:** No schema file is required. Instead, send the schema as JSON in the request body when calling the API.
+- **Schema File (Only Required for CLI):** If using the CLI, you'll need a JSON schema file to define the table name, columns, and other details. For WebUI users, you can build the schema interactively in the UI. For API users, send the schema as JSON in the request body when calling the API.
 
-Below is an example TOML config for using OpenAI GPT-4o and an SQLite3 database. Replace the `key` field with your OpenAI API key and save the file as `config.toml`:
+Below is an example `config.toml` file using an SQLite3 database (`data.db`). This configuration defines two clients, **OpenAI** and **Gemini**, and assigns two models to them:  
+
+- **Gemini** → `gemini-2.0-flash-001` (default)  
+- **OpenAI** → `gpt-4o`  
+
+You can modify the configuration by selecting a single client/model pair, removing the other, or adjusting the settings to fit your needs.  
+
+Make sure to replace the `key` field with your actual OpenAI/Gemini API key before saving the file as `config.toml`.
+
 ```toml
 [database]
 driver = "sqlite3"
 dsn = "data.db?_pragma=foreign_keys(1)"
+
+[[clients]]
+name = "gemini"
+type = "openai"
+key = "your_api_key"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 [[clients]]
 name = "openai"
@@ -51,9 +63,14 @@ key = "your_api_key"
 base_url = "https://api.openai.com/v1/"
 
 [[models]]
+model = "gemini-2.0-flash-001"
+client = "gemini"
+rpm = 20
+
+[[models]]
 model = "gpt-4o"
 client = "openai"
-rpm = 10
+rpm = 5
 ```
 For CLI, we'll use the schema file located at `examples/recipes_simple/recipes.json`.
 
