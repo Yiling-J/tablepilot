@@ -19,7 +19,7 @@ func TestSource_List(t *testing.T) {
 		Type:    "list",
 		Options: []string{"a", "b", "c"},
 	}
-	err := so.Init(ctx)
+	err := so.Init(ctx, "./")
 	require.NoError(t, err)
 	indexer := NewIndexer(so, &ent.TableColumn{Random: false})
 	v, err := indexer.Next(ctx)
@@ -43,7 +43,7 @@ func TestSource_ListFile(t *testing.T) {
 		Type: "list",
 		File: strings.TrimPrefix(tmpFile.Name(), "./"),
 	}
-	err = so.Init(ctx)
+	err = so.Init(ctx, "./")
 	require.NoError(t, err)
 	require.Equal(t, []string{"a", "b", "c"}, so.Options)
 	indexer := NewIndexer(so, &ent.TableColumn{Random: false})

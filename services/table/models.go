@@ -48,6 +48,8 @@ type GenerateRowsRequest struct {
 	Autofill AutofillRequest `json:"autofill"`
 	// shared sources from config file
 	sharedSources map[string]json.RawMessage
+	// used in file list source and csv source, the root fs for files
+	sourceDataDir string
 }
 
 type ColumnSchema struct {

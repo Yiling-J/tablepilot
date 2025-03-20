@@ -14,9 +14,9 @@ type ListSource struct {
 	File    string   `json:"file,omitempty"`
 }
 
-func (ls *ListSource) Init(ctx context.Context) error {
+func (ls *ListSource) Init(ctx context.Context, dir string) error {
 	if ls.File != "" {
-		root, err := os.OpenRoot("./")
+		root, err := os.OpenRoot(dir)
 		if err != nil {
 			return err
 		}

@@ -53,6 +53,7 @@ type TableService interface {
 }
 
 type TableServiceImpl struct {
+	config        *config.Config
 	db            *ent.Client
 	ai            ai.AiService
 	sharedSources []*SharedSource
@@ -61,6 +62,7 @@ type TableServiceImpl struct {
 
 func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*TableServiceImpl, error) {
 	ts := &TableServiceImpl{
+		config:        config,
 		db:            db,
 		ai:            ai,
 		sharedSources: []*SharedSource{},
@@ -80,7 +82,7 @@ func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, log
 			ss := &SharedSource{Name: name}
 			switch st := so.(type) {
 			case *source.CsvSource:
-				columns, err := st.GetColumns(context.Background())
+				columns, err := st.GetColumns(context.Background(), config.Common.SourceDataDir)
 				if err != nil {
 					return nil, err
 				}
@@ -301,6 +303,7 @@ func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequ
 	for _, so := range t.sharedSources {
 		params.sharedSources[so.Name] = so.Data
 	}
+	params.sourceDataDir = t.config.Common.SourceDataDir
 	return NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
 }
 

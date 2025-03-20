@@ -706,7 +706,7 @@ func TestTableService_NewServiceSharedSource(t *testing.T) {
 	srv, err := NewTableService(&config.Config{Sources: []map[string]any{
 		{"name": "s1", "type": "list", "options": []string{"a", "b"}},
 		{"name": "s2", "type": "csv", "paths": []string{strings.TrimPrefix(tmpFile.Name(), "./")}},
-	}}, db, nil, zap.NewNop().Sugar())
+	}, Common: config.Common{SourceDataDir: "./"}}, db, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	require.ElementsMatch(t, []*SharedSource{
 		{Name: "s1", Columns: nil, Data: json.RawMessage(`{"name":"s1","options":["a","b"],"type":"list"}`)},

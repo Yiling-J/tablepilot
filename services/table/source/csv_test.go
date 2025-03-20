@@ -90,7 +90,7 @@ func TestSource_CSV(t *testing.T) {
 	require.NoError(t, tmpFile.Close())
 
 	so := &CsvSource{Paths: []string{"test*.csv"}}
-	err = so.Init(ctx)
+	err = so.Init(ctx, "./")
 	require.NoError(t, err)
 	indexer := NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: "Name", LinkedContextColumns: []string{}})
 	v, err := indexer.Next(ctx)
@@ -103,7 +103,7 @@ func TestSource_CSV(t *testing.T) {
 	require.Equal(t, map[string]any{}, v.ContextValue)
 
 	so = &CsvSource{Paths: []string{"test*.csv"}}
-	err = so.Init(ctx)
+	err = so.Init(ctx, "./")
 	require.NoError(t, err)
 	indexer = NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: "Name", LinkedContextColumns: []string{"Name", "Job"}})
 	v, err = indexer.Next(ctx)
