@@ -20,6 +20,7 @@ func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 		errorResponse(ctx, 400, err)
 		return
 	}
+	request.MarkAPIRequest()
 
 	uid, err := hs.TableService.CreateTable(ctx.Request.Context(), &request)
 	if err != nil {

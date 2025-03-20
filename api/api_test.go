@@ -25,6 +25,7 @@ func TestAPI_CreateTable(t *testing.T) {
 		},
 		Sources: []json.RawMessage{[]byte(`{"source":"s"}`)},
 	}
+	expectedRequest.MarkAPIRequest()
 	tableMock := &table.TableServiceMock{
 		CreateTableFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
 			require.Equal(t, expectedRequest, req)

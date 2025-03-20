@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
@@ -66,6 +67,8 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 			return nil, errors.New("paths is empty")
 		}
 		s = &ls
+	default:
+		return nil, fmt.Errorf("invalid source type %s", sourceType)
 	}
 	return s, nil
 }

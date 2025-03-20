@@ -26,6 +26,15 @@ type TableGenRequest struct {
 	Description string            `json:"description"`
 	Columns     []TableGenColumn  `json:"columns"`
 	Sources     []json.RawMessage `json:"sources"`
+	apiRequest  bool
+}
+
+func (r *TableGenRequest) MarkAPIRequest() {
+	r.apiRequest = true
+}
+
+func (r *TableGenRequest) APIRequest() bool {
+	return r.apiRequest
 }
 
 type AutofillRequest struct {

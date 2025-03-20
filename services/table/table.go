@@ -117,6 +117,18 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 			if err != nil {
 				return "", ent.Rollback(tx, err)
 			}
+			if req.APIRequest() {
+				switch st := vs.(type) {
+				case *source.CsvSource:
+					if len(st.Paths) > 0 {
+						return "", errors.New("paths field for csv source is only allowed in CLI")
+					}
+				case *source.ListSource:
+					if st.File != "" {
+						return "", errors.New("file field for list source is only allowed in CLI")
+					}
+				}
+			}
 			bs, err := json.Marshal(vs)
 			if err != nil {
 				return "", ent.Rollback(tx, err)
