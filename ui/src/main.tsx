@@ -1,10 +1,10 @@
+import "@material-symbols/font-400/rounded.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import TablePage from "./components/table.tsx";
 import TablesPage from "./components/tables.tsx";
 import { CreateTableDialogProvider } from "./context/create-table.tsx";
 import "./index.css";
-import "./material-symbols.css";
 
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "react-hot-toast";

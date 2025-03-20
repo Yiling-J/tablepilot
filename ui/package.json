@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@material-symbols/font-400": "^0.29.1",
     "@microsoft/fetch-event-source": "^2.0.1",
     "@radix-ui/react-avatar": "^1.1.3",
     "@radix-ui/react-checkbox": "^1.1.4",
@@ -33,13 +34,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
-    "csv-parse": "^5.6.0",
     "export-to-csv": "^1.4.0",
-    "firebase": "^10.14.1",
     "lucide-react": "^0.395.0",
     "nanoid": "^5.1.3",
     "papaparse": "^5.5.2",
-    "rc-input-number": "^9.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-error-boundary": "^4.1.2",
@@ -47,15 +45,10 @@
     "react-number-format": "^5.4.3",
     "react-pro-sidebar": "^1.1.0",
     "react-router-dom": "^6.30.0",
-    "react-textarea-autosize": "^8.5.7",
-    "reconnecting-websocket": "^4.4.0",
-    "swr": "^2.3.3",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "use-debounce": "^10.0.4"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@types/gtag.js": "^0.0.20",
     "@types/node": "^20.17.24",
     "@types/papaparse": "^5.3.15",
     "@types/react": "^18.3.18",
