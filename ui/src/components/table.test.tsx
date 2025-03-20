@@ -72,7 +72,7 @@ describe("Table", () => {
         <Table id="foo" />
       </TestProvider>,
     );
-    let b = screen.getByRole("button", { name: /Start/i });
+    const b = screen.getByRole("button", { name: /Start/i });
     expect(b).toBeDefined();
     expect((b as HTMLButtonElement).disabled).toBe(true);
 
