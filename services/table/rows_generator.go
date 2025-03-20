@@ -53,7 +53,8 @@ type AIRowsGenerator struct {
 	rows    []map[string]*schema.CellValue
 	builder *promptbuilder.RowsBuilder
 
-	autofill AutofillRequest
+	autofill      AutofillRequest
+	sourceDataDir string
 }
 
 func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
@@ -72,6 +73,10 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		autofill:    params.Autofill,
 		offset:      params.Autofill.Offset,
 	}
+	if params.sourceDataDir == "" {
+		params.sourceDataDir = "./"
+	}
+	generator.sourceDataDir = params.sourceDataDir
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Where(tablemeta.Or(
@@ -299,7 +304,7 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 		if err != nil {
 			return nil, err
 		}
-		err = ls.Init(ctx)
+		err = ls.Init(ctx, g.sourceDataDir)
 		if err != nil {
 			return nil, err
 		}
@@ -332,7 +337,7 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 		if err != nil {
 			return nil, err
 		}
-		err = ls.Init(ctx)
+		err = ls.Init(ctx, g.sourceDataDir)
 		if err != nil {
 			return nil, err
 		}

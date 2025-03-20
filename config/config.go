@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Common struct {
+	SourceDataDir string `mapstructure:"source_data_dir"`
+}
+
 type Database struct {
 	Driver string
 	DSN    string
@@ -40,6 +44,7 @@ type OpenAI struct {
 }
 
 type Config struct {
+	Common   Common
 	Server   Server
 	Database *Database
 	Models   []Model
@@ -82,6 +87,9 @@ func NewConfig(name string) (config *Config, err error) {
 	config.Clients = clients
 	if config.Server.Address == "" {
 		config.Server.Address = ":8080"
+	}
+	if config.Common.SourceDataDir == "" {
+		config.Common.SourceDataDir = "./"
 	}
 	return config, nil
 }

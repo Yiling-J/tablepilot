@@ -229,7 +229,11 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 Tablepilot requires a TOML configuration file. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
 
-The configuration consists of four main sections: `database`, `clients`, `server` and `models`.
+The configuration consists of following sections:
+
+### Common
+
+- **source_data_dir**: The root search dir for CSV source `paths` field and List source `file` field. Default "./".
 
 ### Database
 
@@ -316,10 +320,11 @@ Special fields for different types:
 	- **prompt**: The prompt used to generate options by AI, e.g., Give me 50 common ingredients.
 - **list**:
 	- **options**: A list of predefined options to pick from.
+	- **file**: Use file content as options, each line in the file will be one option, if this field is not empty then `options` field will be ignored. File path is **relative to the source_data_dir config**, e.g., `countries.text` or `data/countries.txt`.
 - **linked**:
 	- **table**: The name of the linked table.
 - **csv**:
-  - **paths**: A list of path patterns **relative to the current folder**. Supports exact matches, single asterisk (`*`), and double asterisk (`**`) patterns. Examples:
+  - **paths**: A list of path patterns **relative to the source_data_dir config**. Supports exact matches, single asterisk (`*`), and double asterisk (`**`) patterns. Examples:
     - Full match: `"data/cuisines.csv"`
     - Single asterisk: `"data/*.csv"` (matches all CSV files in `data/`)
     - Double asterisk: `"data/**/*.csv"` (matches all CSV files in `data/` and subdirectories)

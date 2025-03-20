@@ -26,6 +26,15 @@ type TableGenRequest struct {
 	Description string            `json:"description"`
 	Columns     []TableGenColumn  `json:"columns"`
 	Sources     []json.RawMessage `json:"sources"`
+	apiRequest  bool
+}
+
+func (r *TableGenRequest) MarkAPIRequest() {
+	r.apiRequest = true
+}
+
+func (r *TableGenRequest) APIRequest() bool {
+	return r.apiRequest
 }
 
 type AutofillRequest struct {
@@ -48,6 +57,8 @@ type GenerateRowsRequest struct {
 	Autofill AutofillRequest `json:"autofill"`
 	// shared sources from config file
 	sharedSources map[string]json.RawMessage
+	// used in file list source and csv source, the root fs for files
+	sourceDataDir string
 }
 
 type ColumnSchema struct {

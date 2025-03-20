@@ -20,8 +20,12 @@ type CsvSource struct {
 	ContextColumns []string `json:"context_columns"`
 }
 
-func (cs *CsvSource) Init(ctx context.Context) error {
-	fileSystem := os.DirFS("./")
+func (cs *CsvSource) Init(ctx context.Context, dir string) error {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return err
+	}
+	fileSystem := root.FS()
 	files, err := parsePaths(fileSystem, cs.Paths)
 	if err != nil {
 		return err
@@ -34,8 +38,8 @@ func (cs *CsvSource) Init(ctx context.Context) error {
 	return nil
 }
 
-func (cs *CsvSource) GetColumns(ctx context.Context) ([]string, error) {
-	fileSystem := os.DirFS("./")
+func (cs *CsvSource) GetColumns(ctx context.Context, dir string) ([]string, error) {
+	fileSystem := os.DirFS(dir)
 	files, err := parsePaths(fileSystem, cs.Paths)
 	if err != nil {
 		return nil, err

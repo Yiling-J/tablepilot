@@ -706,7 +706,7 @@ func TestTableService_NewServiceSharedSource(t *testing.T) {
 	srv, err := NewTableService(&config.Config{Sources: []map[string]any{
 		{"name": "s1", "type": "list", "options": []string{"a", "b"}},
 		{"name": "s2", "type": "csv", "paths": []string{strings.TrimPrefix(tmpFile.Name(), "./")}},
-	}}, db, nil, zap.NewNop().Sugar())
+	}, Common: config.Common{SourceDataDir: "./"}}, db, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	require.ElementsMatch(t, []*SharedSource{
 		{Name: "s1", Columns: nil, Data: json.RawMessage(`{"name":"s1","options":["a","b"],"type":"list"}`)},
@@ -714,4 +714,61 @@ func TestTableService_NewServiceSharedSource(t *testing.T) {
 			fmt.Sprintf(`{"name":"s2","paths":["%s"],"type":"csv"}`, strings.TrimPrefix(tmpFile.Name(), "./")),
 		)},
 	}, srv.sharedSources)
+}
+
+func TestTableService_CreateTableAPIRequest(t *testing.T) {
+	for _, tc := range []struct {
+		source string
+		error  string
+	}{
+		{`{"name":"so","type":"list","file":"go.txt"}`, "file field for list source is only allowed in CLI"},
+		{`{"name":"so","type":"csv","paths":["z.csv"]}`, "paths field for csv source is only allowed in CLI"},
+	} {
+		t.Run(tc.source, func(t *testing.T) {
+			db := db.NewTestDB()
+			ctx := context.Background()
+			columns := []TableGenColumn{
+				{
+					Name: "user", Description: "recipe user", Type: "boolean",
+					FillMode: "ai",
+				},
+			}
+			aiService := &ai.AiServiceMock{
+				ChatFunc: func(
+					ctx context.Context, request *client.ChatRequest,
+				) (*client.ChatResponse, error) {
+					return &client.ChatResponse{
+						Content: `[{"name":"extra","type":"string"},{"name":"extra2","type":"string"}]`,
+						Tokens:  100,
+					}, nil
+				},
+			}
+			userTable, err := db.TableMeta.Create().SetName("user").Save(ctx)
+			require.NoError(t, err)
+			srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+			require.NoError(t, err)
+
+			_, err = db.TableColumn.CreateBulk(
+				db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+					tablecolumn.TypeString,
+				).SetFillMode(tablecolumn.FillModeAi),
+				db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+					tablecolumn.TypeInteger,
+				).SetFillMode(tablecolumn.FillModeAi),
+			).Save(ctx)
+			require.NoError(t, err)
+
+			_, err = srv.CreateTable(ctx, &TableGenRequest{
+				Name:        "test",
+				Description: "test table",
+				Columns:     columns,
+				Sources: []json.RawMessage{
+					[]byte(tc.source),
+				},
+				Model:      "aiai",
+				apiRequest: true,
+			})
+			require.Equal(t, tc.error, err.Error())
+		})
+	}
 }
