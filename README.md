@@ -231,7 +231,7 @@ Tablepilot requires a TOML configuration file. The default config file is `confi
 
 The configuration consists of following sections:
 
-### Common
+### Common (Optional)
 
 - **source_data_dir**: The root search dir for CSV source `paths` field and List source `file` field. Default "./".
 
