@@ -438,7 +438,10 @@ export function Table({ id }: TableProps) {
 
       <div className="pt-3 pb-5 border-t-2 border-t-teal-500/50 px-4 flex flex-wrap justify-between bg-secondary">
         <div className="flex items-center">
-          <p className="align-bottom pr-3 font-semibold text-slate-500">
+          <p
+            className="align-bottom pr-3 font-semibold text-slate-500"
+            data-testid="rows-counter"
+          >
             Rows: {rows.length}
           </p>
         </div>

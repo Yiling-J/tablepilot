@@ -91,13 +91,13 @@ describe("Table", () => {
 
     await screen.findByText("users");
     b = screen.getByRole("button", { name: /Start/i });
-    expect(b).toBeDefined();
+    expect(b).toBeInTheDocument();
     expect((b as HTMLButtonElement).disabled).toBe(false);
 
-    expect(screen.getByText("name")).toBeDefined();
-    expect(screen.getByText("job")).toBeDefined();
-    expect(screen.getByText("v1")).toBeDefined();
-    expect(screen.getByText("v2")).toBeDefined();
+    expect(screen.getByText("name")).toBeInTheDocument();
+    expect(screen.getByText("job")).toBeInTheDocument();
+    expect(screen.getByText("v1")).toBeInTheDocument();
+    expect(screen.getByText("v2")).toBeInTheDocument();
   });
 
   it("should call generate API with default params", async () => {
@@ -107,7 +107,7 @@ describe("Table", () => {
       </TestProvider>,
     );
     const b = screen.getByRole("button", { name: /Start/i });
-    expect(b).toBeDefined();
+    expect(b).toBeInTheDocument();
     expect((b as HTMLButtonElement).disabled).toBe(true);
 
     await screen.findByText("users");
@@ -133,7 +133,7 @@ describe("Table", () => {
       </TestProvider>,
     );
     const b = screen.getByRole("button", { name: /Start/i });
-    expect(b).toBeDefined();
+    expect(b).toBeInTheDocument();
     expect((b as HTMLButtonElement).disabled).toBe(true);
 
     await screen.findByText("users");
@@ -142,6 +142,8 @@ describe("Table", () => {
     await userEvent.keyboard("35");
     await userEvent.dblClick(screen.getByDisplayValue("50"));
     await userEvent.keyboard("100");
+    await userEvent.click(screen.getByText("ai").closest("button")!);
+    await userEvent.click(screen.getByText("bi"));
     await userEvent.click(screen.getByRole("button", { name: /Start/i }));
     expect(mockedGenerate).toHaveBeenCalledWith(
       "foo",
@@ -151,7 +153,7 @@ describe("Table", () => {
         batch: 35,
         count: 100,
         temperature: 0.6,
-        model: "ai",
+        model: "bi",
       },
     );
   });
@@ -163,7 +165,7 @@ describe("Table", () => {
       </TestProvider>,
     );
     const b = screen.getByRole("button", { name: /Start/i });
-    expect(b).toBeDefined();
+    expect(b).toBeInTheDocument();
     expect((b as HTMLButtonElement).disabled).toBe(true);
 
     await screen.findByText("users");
@@ -176,14 +178,20 @@ describe("Table", () => {
         _genreq: GenerateRequest,
       ) => {
         callback(`{"data":[{"col1":"Alice","col2":"Software Engineer"}]}`);
+        await new Promise((f) => setTimeout(f, 100));
         callback(`{"data":[{"col1":"Marco","col2":"Chef"}]}`);
         callback("[DONE]");
       },
     );
     await userEvent.click(screen.getByRole("button", { name: /Start/i }));
+    await screen.findByRole("button", { name: /Stop/i });
     await screen.findByText("Marco");
     ["Alice", "Software Engineer", "Marco", "Chef"].forEach((v) =>
-      expect(screen.getByText(v)).toBeDefined(),
+      expect(screen.getByText(v)).toBeInTheDocument(),
     );
+    expect(screen.getByRole("button", { name: /Start/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /output.csv/i }),
+    ).toBeInTheDocument();
   });
 });
