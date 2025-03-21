@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "happy-dom",
+    mockReset: true,
   },
   resolve: {
     alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
