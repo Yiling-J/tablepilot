@@ -270,7 +270,7 @@ describe("Table", () => {
     );
 
     await screen.findByText("users");
-    let e = screen.getByText(/ll0/i);
+    const e = screen.getByText(/ll0/i);
     expect(e.outerHTML).toBe(`<div class="max-h-80 line-clamp-6">• ll0
 • ll1
 • ll2</div>`);
