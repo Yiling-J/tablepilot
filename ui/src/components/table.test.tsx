@@ -1,6 +1,7 @@
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { CsvOutput, download } from "export-to-csv";
 import { beforeEach } from "vitest";
 import {
     GenerateRequest,
@@ -10,6 +11,7 @@ import {
     getRows,
     getTable,
     getTables,
+    truncateTable,
 } from "../actions";
 import { Table } from "./table";
 
@@ -193,5 +195,101 @@ describe("Table", () => {
     expect(
       screen.getByRole("button", { name: /output.csv/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Rows: 3")).toBeInTheDocument();
+  });
+
+  it("should call truncate API and fetch data again when click truncate", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    const mockedTruncate = vi.mocked(truncateTable);
+    const mockedGetRows = vi.mocked(getRows);
+    mockedGetRows.mockReset();
+    mockedGetRows.mockResolvedValue([]);
+    await userEvent.click(screen.getByText(/Truncate table/i));
+    await screen.findByText("Confirm");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(mockedTruncate.mock.calls.length).toBe(1);
+    expect(mockedTruncate.mock.calls[0][0]).toBe("foo");
+    expect(mockedGetRows.mock.calls.length).toBe(1);
+    expect(screen.getByText("Rows: 0")).toBeInTheDocument();
+  });
+
+  it("should down the table in csv format", async () => {
+    vi.mock("export-to-csv", async () => {
+      const originalModule = await vi.importActual("export-to-csv");
+      return { ...originalModule, download: vi.fn() };
+    });
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    const mockedCSVDownload = vi.mocked(download);
+    let called = false;
+    mockedCSVDownload.mockReturnValue((v: CsvOutput) => {
+      called = true;
+      expect(String(v)).toBe(`\ufeff"name","job"\r\n"v1","v2"\r\n`);
+    });
+    await userEvent.click(screen.getByText(/output.csv/i));
+    expect(called).toBe(true);
+  });
+
+  it("array display as list", async () => {
+    const mockedGetTable = vi.mocked(getTable);
+    const table = {
+      id: "abc",
+      name: "users",
+      description: "users table",
+      columns: [
+        {
+          id: "col1",
+          name: "names",
+          description: "user names",
+          type: "array",
+          fill_mode: "ai",
+        },
+      ],
+      model: "",
+    } as TableInfo;
+    mockedGetTable.mockResolvedValue(table);
+    const mockedGetRows = vi.mocked(getRows);
+    mockedGetRows.mockResolvedValue([{ col1: ["ll0", "ll1", "ll2"] }]);
+
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    let e = screen.getByText(/ll0/i);
+    expect(e.outerHTML).toBe(`<div class="max-h-80 line-clamp-6">• ll0
+• ll1
+• ll2</div>`);
+  });
+
+  it("text cell should expand when click", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    await userEvent.hover(screen.getByText("v1"));
+    await userEvent.click(
+      screen.getByText("v1").parentNode?.parentNode?.children.item(1)
+        ?.lastElementChild as HTMLElement,
+    );
+    await screen.findByRole("dialog");
+    expect((await screen.findAllByText("v1")).length).toBe(2);
   });
 });
