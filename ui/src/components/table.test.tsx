@@ -292,4 +292,38 @@ describe("Table", () => {
     await screen.findByRole("dialog");
     expect((await screen.findAllByText("v1")).length).toBe(2);
   });
+
+  it("should abort when click stop", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+    const b = screen.getByRole("button", { name: /Start/i });
+    expect(b).toBeInTheDocument();
+    expect((b as HTMLButtonElement).disabled).toBe(true);
+
+    await screen.findByText("users");
+    const mockedGenerate = vi.mocked(generate);
+    mockedGenerate.mockImplementation(
+      async (
+        _table: string,
+        signal: AbortSignal,
+        callback: (data: string) => void,
+        _genreq: GenerateRequest,
+      ) => {
+        callback(`{"data":[{"col1":"Alice","col2":"Software Engineer"}]}`);
+        await new Promise((f) => setTimeout(f, 100));
+        expect(signal.aborted).toBe(true);
+        callback("[DONE]");
+      },
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Start/i }));
+    const stop = await screen.findByRole("button", { name: /Stop/i });
+    await userEvent.click(stop);
+    await screen.findByRole("button", { name: /Start/i });
+    ["Alice", "Software Engineer"].forEach((v) =>
+      expect(screen.getByText(v)).toBeInTheDocument(),
+    );
+  });
 });
