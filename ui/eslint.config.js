@@ -9,5 +9,19 @@ export default [
   {
     ignores: ["**/dist/*"],
   },
+  {
+    rules: {
+      // Allow unused variables starting with exactly one underscore.
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_[^_].*$|^_$",
+          varsIgnorePattern: "^_[^_].*$|^_$",
+          caughtErrorsIgnorePattern: "^_[^_].*$|^_$",
+        },
+      ],
+    },
+  },
   ...tseslint.configs.recommended,
 ];

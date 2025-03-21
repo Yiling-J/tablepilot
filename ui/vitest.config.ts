@@ -1,0 +1,14 @@
+import * as path from "path";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: "happy-dom",
+    mockReset: true,
+    setupFiles: ["./vitest-setup.ts"],
+  },
+  resolve: {
+    alias: [{ find: "@", replacement: path.resolve(__dirname, "./src") }],
+  },
+});

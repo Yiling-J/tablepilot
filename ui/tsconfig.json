@@ -5,6 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -25,9 +26,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src",
-    "../../../.emacs.d/emacs_backup/!Users!yiling!Projects!tablepilot!ui!src!components!dialog!import-csv.tsx~"
-  ],
+  "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

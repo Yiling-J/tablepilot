@@ -60,3 +60,7 @@ jobs:
       - name: Build
         working-directory: ./ui
         run: pnpm build
+
+      - name: Test
+        working-directory: ./ui
+        run: pnpm test run
