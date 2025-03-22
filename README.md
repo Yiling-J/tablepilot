@@ -6,16 +6,11 @@
 
 # Tablepilot
 
-Tablepilot is a CLI/API/WebUI tool designed to generate/autofill tables using AI.
+Tablepilot is a CLI/API/WebUI tool designed to generate and autofill tables using AI in a scalable and diverse way.
 
-- **AI-Native:** Built from the ground up with AI at its core. Every aspect is designed with AI-first principles.
-
-- **Flexible column data generation strategies:** Each column can have a different generation method: AI-generated, randomly selected from a predefined list, or even pulled from another table.
-
-- **Cross-table context:** Say you have a customers table and a gifts table. You want AI to generate a personalized gift and greeting message based on each customer's age, job, or other details. Tablepilot can use the customer table row as context when generating each row in the gifts table.
-
+- **Scalable:** Supports batch processing and allows fine-grained control over column context length to generate large datasets efficiently.  
+- **Diverse:** Easily integrates columns from other table or CSV files as context, enabling richer and more dynamic table generation.  
 - **Easily switch between different LLMs and models:** You can switch between models like OpenAI, Gemini or other OpenAI compatible models easily.
-
 - **Seamless API & WebUI:** With a single command: `tablepilot serve`, you can launch both the API server and the WebUI effortlessly. Everything is included by default in the released binary. Check out the WebUI in action! This demo showcases both table generation and autofill:
 
 ![Demo](./demo.gif)
@@ -342,7 +337,7 @@ A list of column definitions. Each column is an object that can contain the foll
 - **fill_mode**: Specifies how the column is populated. Possible values:
 	- `"ai"`: AI will generate values for this column.
 	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
-- **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation.
+- **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation. If you aim for diverse results, using tag-like columns from the source may be more effective than increasing the context length. The context_length parameter is best used to ensure consistency in generation format and should typically remain moderate rather than excessively large.
 - **source** (Optional): Specifies the source to pull data from when `fill_mode` is set to `"pick"`. This should match a source name defined in the `sources` section (e.g., `"cuisines"`).
 
 **Additional Fields for `pick` Mode**
