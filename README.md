@@ -337,7 +337,7 @@ A list of column definitions. Each column is an object that can contain the foll
 - **fill_mode**: Specifies how the column is populated. Possible values:
 	- `"ai"`: AI will generate values for this column.
 	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
-- **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new row. This helps provide context for the generation. If you aim for diverse results, using tag-like columns from the source may be more effective than increasing the context length. The context_length parameter is best used to ensure consistency in generation format and should typically remain moderate rather than excessively large.
+- **context_length** (Optional): Defines how many previous values in this column will be sent to the LLM when generating a new batch of rows. This helps provide context for the generation. If you aim for diverse results, using tag-like columns from the source may be more effective than increasing the context length. The context_length parameter is best used to ensure consistency in generation format and should typically remain moderate rather than excessively large.
 - **source** (Optional): Specifies the source to pull data from when `fill_mode` is set to `"pick"`. This should match a source name defined in the `sources` section (e.g., `"cuisines"`).
 
 **Additional Fields for `pick` Mode**
