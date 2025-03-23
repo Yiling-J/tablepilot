@@ -38,7 +38,7 @@ import { JSONObject } from "@/json.ts";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check } from "lucide-react";
 
-export default function TablePage() {
+export function TablePage() {
   const { id } = useParams();
 
   return <Table id={id as string} key={`${id}`} />;

@@ -1,8 +1,8 @@
 import "@material-symbols/font-400/rounded.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import TablePage from "./components/table.tsx";
-import TablesPage from "./components/tables.tsx";
+import { TablePage } from "./components/table.tsx";
+import { TableListPage } from "./components/tables.tsx";
 import { CreateTableDialogProvider } from "./context/create-table.tsx";
 import "./index.css";
 
@@ -41,7 +41,7 @@ const router = createBrowserRouter([
       },
       {
         path: "/",
-        element: <TablesPage />,
+        element: <TableListPage />,
       },
     ],
   },

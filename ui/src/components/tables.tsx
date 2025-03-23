@@ -22,11 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header.tsx";
 
-export default function TablesPage() {
-  return <Tables />;
-}
-
-function Tables() {
+export function TableListPage() {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
