@@ -55,7 +55,6 @@ export function ImportCSVDialog({
         });
         return obj;
       });
-
       const form = {
         name: file.name.substring(0, file.name.lastIndexOf(".")) || file.name,
         description: "",
@@ -99,9 +98,13 @@ export function ImportCSVDialog({
             <CardContent className="flex flex-col items-center justify-center py-12">
               <input
                 type="file"
+                data-testid="import-file-selector"
                 ref={fileInputRef}
                 className="hidden"
                 accept=".csv"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
