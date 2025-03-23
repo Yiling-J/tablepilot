@@ -1,7 +1,9 @@
 import {
     AiSource,
     LinkedSource,
+    TableCreateRequest,
     TableInfo,
+    createRows,
     createTable,
     getSources,
     getTables,
@@ -15,7 +17,7 @@ import CreateTableForm from "./create-table-form";
 describe("CreateTableForm", () => {
   beforeEach(() => {
     vi.mock("react-router-dom");
-    vi.mocked(useNavigate);
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
   });
 
   it("should render first tab", async () => {
@@ -416,5 +418,85 @@ bar`);
       });
       expect(mockedGetTables.mock.calls.length).toBe(1);
     });
+  });
+});
+
+describe("CreateTableFormWithRows", () => {
+  it("should call create rows API is rows is not empty", async () => {
+    vi.mock("react-router-dom");
+    const m = vi.mocked(useNavigate);
+    m.mockReturnValue(vi.fn());
+    vi.mock("@/actions");
+    const table = {
+      id: "abc",
+      name: "users",
+      description: "users table",
+      columns: [],
+      model: "",
+    } as TableInfo;
+    const mockedGetTables = vi.mocked(getTables);
+    mockedGetTables.mockResolvedValue({
+      tables: [table],
+      total: 1,
+    });
+    const mockedGetSources = vi.mocked(getSources);
+    mockedGetSources.mockResolvedValue([
+      {
+        name: "s1",
+        data: {},
+        columns: [],
+      },
+      {
+        name: "s3",
+        data: { name: "s3", type: "ai", prompt: "foo" },
+        columns: [],
+      },
+    ]);
+    const mockedCreateRows = vi.mocked(createRows);
+    const mockedCreateTable = vi.mocked(createTable);
+    mockedCreateTable.mockResolvedValue({
+      id: "t1",
+      name: "",
+      description: "",
+      model: "",
+      columns: [],
+    });
+
+    const form = {
+      name: "foo",
+      description: "bar",
+      sources: [],
+      columns: [
+        {
+          name: "c",
+          description: "",
+          type: "string",
+          fill_mode: "ai",
+          random: false,
+          replacement: false,
+          repeat: 1,
+          linked_column: "",
+          linked_context_columns: [],
+        },
+      ],
+    } as TableCreateRequest;
+    render(
+      <TestProvider>
+        <CreateTableForm
+          close={() => {}}
+          form={form}
+          rows={[{ name: "foo" }, { name: "bar" }]}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Table Configuration");
+    await userEvent.click(screen.getByText("Next"));
+    await userEvent.click(screen.getByText("Next"));
+    await userEvent.click(screen.getByText("Complete"));
+    expect(mockedCreateRows.mock.calls[0][0]).toBe("t1");
+    expect(mockedCreateRows.mock.calls[0][1]).toMatchObject([
+      { name: "foo" },
+      { name: "bar" },
+    ]);
   });
 });

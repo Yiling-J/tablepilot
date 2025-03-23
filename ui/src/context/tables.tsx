@@ -27,7 +27,9 @@ export function TablesProvider({ children }: TablesProviderProps) {
 
   const refreshTables = async () => {
     const response = await getTables();
-    setTables(response.tables);
+    if (response) {
+      setTables(response.tables);
+    }
   };
 
   return (

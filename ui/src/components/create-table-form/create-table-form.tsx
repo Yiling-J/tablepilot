@@ -75,7 +75,8 @@ export default function CreateTableForm({
       clearForm();
       clearRows();
       navigate(`/tables/${info.id}`);
-    } catch {
+    } catch (err) {
+      console.log("create table failed: ", err);
       toast.error("Creation failed. Please wait and try again.");
     } finally {
       setLoading(false);
