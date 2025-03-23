@@ -2,6 +2,7 @@ import {
     AiSource,
     LinkedSource,
     TableInfo,
+    createTable,
     getSources,
     getTables,
 } from "@/actions";
@@ -130,7 +131,12 @@ describe("CreateTableForm", () => {
         tables: [table],
         total: 1,
       });
-      const form = { name: "foo", description: "bar", sources: [], columns: [] };
+      const form = {
+        name: "foo",
+        description: "bar",
+        sources: [],
+        columns: [],
+      };
       render(
         <TestProvider>
           <CreateTableForm close={() => {}} form={form} />
@@ -301,6 +307,81 @@ bar`);
       expect(screen.getByText("s1")).toBeInTheDocument();
       expect(screen.getByText("s2")).toBeInTheDocument();
       expect(screen.getByText("s3")).toBeInTheDocument();
+    });
+    it("should create pick from ai list column", async () => {
+      await userEvent.click(screen.getByText("AI Generated").parentElement!);
+      await userEvent.click(screen.getByText("Pick from Source"));
+      await userEvent.click(screen.getByText("Select source").parentElement!);
+      await userEvent.click(screen.getByText("s1"));
+      await userEvent.click(
+        screen.getByText("Random Selection").parentElement!
+          .firstElementChild as HTMLElement,
+      );
+      await userEvent.click(
+        screen.getByText("Selection with Replacement").parentElement!
+          .firstElementChild as HTMLElement,
+      );
+      await userEvent.click(screen.getByDisplayValue("1"));
+      await userEvent.keyboard("2");
+      await userEvent.click(screen.getByText("Add"));
+      await userEvent.click(screen.getByText("Show JSON"));
+      await screen.findByText("JSON Preview");
+      expect(screen.getByTestId("json-preview")).toHaveTextContent(
+        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "", "linked_context_columns": [], "source": "s1" } ] }`,
+      );
+    });
+    it("should create pick from table column", async () => {
+      await userEvent.click(screen.getByText("AI Generated").parentElement!);
+      await userEvent.click(screen.getByText("Pick from Source"));
+      await userEvent.click(screen.getByText("Select source").parentElement!);
+      await userEvent.click(screen.getByText("s2"));
+      await userEvent.click(screen.getByText("Select a column").parentElement!);
+      await userEvent.click(screen.getByText("name"));
+      await userEvent.click(screen.getByText("Select context columns"));
+      await userEvent.click(screen.getByText("job"));
+      await userEvent.click(screen.getByText("Add"));
+      await userEvent.click(screen.getByText("Show JSON"));
+      await screen.findByText("JSON Preview");
+      expect(screen.getByTestId("json-preview")).toHaveTextContent(
+        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": true, "replacement": false, "repeat": 1, "linked_column": "name", "linked_context_columns": [ "job" ], "source": "s2" } ] }`,
+      );
+    });
+    it("should call create API when click complete", async () => {
+      const mockedCreateTable = vi.mocked(createTable);
+      mockedCreateTable.mockResolvedValue({
+        id: "t1",
+        name: "",
+        description: "",
+        model: "",
+        columns: [],
+      });
+      await userEvent.click(screen.getByText("Add"));
+      const mockedGetTables = vi.mocked(getTables);
+      mockedGetTables.mockReset();
+      expect(mockedGetTables.mock.calls.length).toBe(0);
+      await userEvent.click(screen.getByText("Complete"));
+      expect(mockedCreateTable.mock.calls[0][0]).toMatchObject({
+        name: "foo",
+        description: "bar",
+        sources: [
+          { name: "s1", type: "ai", prompt: "" },
+          { name: "s2", type: "linked", table: "users" },
+        ],
+        columns: [
+          {
+            name: "c1",
+            description: "recipe name",
+            type: "string",
+            fill_mode: "ai",
+            random: true,
+            replacement: false,
+            repeat: 1,
+            linked_column: "",
+            linked_context_columns: [],
+          },
+        ],
+      });
+      expect(mockedGetTables.mock.calls.length).toBe(1);
     });
   });
 });
