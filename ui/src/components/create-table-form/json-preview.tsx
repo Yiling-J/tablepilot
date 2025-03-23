@@ -29,7 +29,10 @@ export function JsonPreview({ formData }: JsonPreviewProps) {
         <Copy className="h-4 w-4 mr-2" />
         Copy
       </Button>
-      <pre className="bg-muted p-2 rounded-md text-sm">
+      <pre
+        className="bg-muted p-2 rounded-md text-sm"
+        data-testid="json-preview"
+      >
         {JSON.stringify(formData, null, 2)}
       </pre>
     </div>

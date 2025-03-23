@@ -15,32 +15,6 @@ import {
 } from "../actions";
 import { Table } from "./table";
 
-/**
- * JSDOM doesn't implement PointerEvent so we need to mock our own implementation
- * Default to mouse left click interaction
- * https://github.com/radix-ui/primitives/issues/1822
- * https://github.com/jsdom/jsdom/pull/2666
- */
-class MockPointerEvent extends Event {
-  button: number;
-  ctrlKey: boolean;
-  pointerType: string;
-
-  constructor(type: string, props: PointerEventInit) {
-    super(type, props);
-    this.button = props.button || 0;
-    this.ctrlKey = props.ctrlKey || false;
-    this.pointerType = props.pointerType || "mouse";
-  }
-}
-
-/* eslint-disable-next-line  @typescript-eslint/no-explicit-any */
-window.PointerEvent = MockPointerEvent as any;
-window.HTMLElement.prototype.scrollIntoView = vi.fn();
-window.HTMLElement.prototype.setPointerCapture = vi.fn();
-window.HTMLElement.prototype.releasePointerCapture = vi.fn();
-window.HTMLElement.prototype.hasPointerCapture = vi.fn();
-
 describe("Table", () => {
   beforeEach(() => {
     vi.mock("@/actions");
@@ -291,5 +265,39 @@ describe("Table", () => {
     );
     await screen.findByRole("dialog");
     expect((await screen.findAllByText("v1")).length).toBe(2);
+  });
+
+  it("should abort when click stop", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+    const b = screen.getByRole("button", { name: /Start/i });
+    expect(b).toBeInTheDocument();
+    expect((b as HTMLButtonElement).disabled).toBe(true);
+
+    await screen.findByText("users");
+    const mockedGenerate = vi.mocked(generate);
+    mockedGenerate.mockImplementation(
+      async (
+        _table: string,
+        signal: AbortSignal,
+        callback: (data: string) => void,
+        _genreq: GenerateRequest,
+      ) => {
+        callback(`{"data":[{"col1":"Alice","col2":"Software Engineer"}]}`);
+        await new Promise((f) => setTimeout(f, 100));
+        expect(signal.aborted).toBe(true);
+        callback("[DONE]");
+      },
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Start/i }));
+    const stop = await screen.findByRole("button", { name: /Stop/i });
+    await userEvent.click(stop);
+    await screen.findByRole("button", { name: /Start/i });
+    ["Alice", "Software Engineer"].forEach((v) =>
+      expect(screen.getByText(v)).toBeInTheDocument(),
+    );
   });
 });

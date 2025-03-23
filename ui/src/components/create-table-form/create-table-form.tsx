@@ -1,5 +1,3 @@
-"use client";
-
 import { TableCreateRequest, createRows, createTable } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +75,8 @@ export default function CreateTableForm({
       clearForm();
       clearRows();
       navigate(`/tables/${info.id}`);
-    } catch {
+    } catch (err) {
+      console.log("create table failed: ", err);
       toast.error("Creation failed. Please wait and try again.");
     } finally {
       setLoading(false);
@@ -114,7 +113,10 @@ export default function CreateTableForm({
                 <TabsTrigger value="step2" disabled={!isStep1Valid || loading}>
                   Sources
                 </TabsTrigger>
-                <TabsTrigger value="step3" disabled={!isStep2Valid || loading}>
+                <TabsTrigger
+                  value="step3"
+                  disabled={!isStep1Valid || !isStep2Valid || loading}
+                >
                   Columns
                 </TabsTrigger>
               </TabsList>
@@ -134,7 +136,7 @@ export default function CreateTableForm({
                 <ColumnsForm
                   formData={formData}
                   updateFormData={updateFormData}
-                  disabled={loading}
+                  disabled={!isStep1Valid || loading}
                 />
               </TabsContent>
             </Tabs>
