@@ -147,7 +147,7 @@ describe("CreateTableForm", () => {
       await userEvent.click(screen.getByText("Add Source"));
       await screen.findByText("Add New Source");
     });
-    it("should add a new ai type source", async () => {
+    it("should add a new ai type source, and can edit/delete", async () => {
       await userEvent.click(
         screen.getByPlaceholderText("e.g., cuisines, meals, customer"),
       );
@@ -164,6 +164,23 @@ describe("CreateTableForm", () => {
       );
       expect(screen.getByText("s1")).toBeInTheDocument();
       expect(screen.getByText("AI Generated")).toBeInTheDocument();
+
+      // edit
+      await userEvent.click(screen.getByTestId("source-ops").children.item(0)!);
+      await screen.findByText("Table Configuration");
+      expect(screen.getByDisplayValue("s1")).toBeInTheDocument();
+      await userEvent.click(screen.getByText("Update"));
+
+      // delete
+      await userEvent.click(screen.getByTestId("source-ops").children.item(1)!);
+      expect(
+        screen.getByText(
+          `No sources added yet. Click the "Add Source" button to create one.`,
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("json-preview")).toHaveTextContent(
+        `{ "name": "foo", "description": "bar", "sources": [], "columns": [] }`,
+      );
     });
 
     it("should add a new list type source", async () => {
@@ -277,7 +294,7 @@ bar`);
       );
       await userEvent.keyboard("recipe name");
     });
-    it("should add a new default type source", async () => {
+    it("should add a new default type source and can edit/delete", async () => {
       await userEvent.click(screen.getByText("Add"));
       await userEvent.click(screen.getByText("Show JSON"));
       await screen.findByText("JSON Preview");
@@ -285,6 +302,22 @@ bar`);
         `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "ai", "random": true, "replacement": false, "repeat": 1, "linked_column": "", "linked_context_columns": [] } ] }`,
       );
       expect(screen.getByText("c1")).toBeInTheDocument();
+      // edit
+      await userEvent.click(screen.getByTestId("column-ops").children.item(0)!);
+      await screen.findByText("Edit Column");
+      expect(screen.getByDisplayValue("c1")).toBeInTheDocument();
+      await userEvent.click(screen.getByText("Update"));
+
+      // delete
+      await userEvent.click(screen.getByTestId("column-ops").children.item(1)!);
+      expect(
+        screen.getByText(
+          `No columns added yet. Click the "Add Column" button to create one.`,
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("json-preview")).toHaveTextContent(
+        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [] }`,
+      );
     });
     it("should add a new integer type source with options", async () => {
       await userEvent.click(screen.getByText("String").parentElement!);

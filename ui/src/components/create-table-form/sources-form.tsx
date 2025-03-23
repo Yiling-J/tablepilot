@@ -335,7 +335,7 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
                   <CardTitle className="text-base font-medium">
                     {source.name}
                   </CardTitle>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" data-testid="source-ops">
                     <Button
                       variant="ghost"
                       size="icon"

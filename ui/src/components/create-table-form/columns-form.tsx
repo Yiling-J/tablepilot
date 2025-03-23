@@ -423,7 +423,7 @@ export function ColumnsForm({
                   <CardTitle className="text-base font-medium">
                     {column.name}
                   </CardTitle>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" data-testid="column-ops">
                     <Button
                       variant="ghost"
                       size="icon"
