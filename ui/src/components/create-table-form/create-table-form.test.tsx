@@ -58,7 +58,7 @@ describe("CreateTableForm", () => {
   });
 
   it("should update first tab form data", async () => {
-    let form = { name: "", description: "", sources: [], columns: [] };
+    const form = { name: "", description: "", sources: [], columns: [] };
     render(
       <TestProvider>
         <CreateTableForm close={() => {}} form={form} />
@@ -89,7 +89,7 @@ describe("CreateTableForm", () => {
       tables: [],
       total: 0,
     });
-    let form = { name: "foo", description: "bar", sources: [], columns: [] };
+    const form = { name: "foo", description: "bar", sources: [], columns: [] };
     render(
       <TestProvider>
         <CreateTableForm close={() => {}} form={form} />
@@ -130,7 +130,7 @@ describe("CreateTableForm", () => {
         tables: [table],
         total: 1,
       });
-      let form = { name: "foo", description: "bar", sources: [], columns: [] };
+      const form = { name: "foo", description: "bar", sources: [], columns: [] };
       render(
         <TestProvider>
           <CreateTableForm close={() => {}} form={form} />
@@ -243,7 +243,7 @@ bar`);
           columns: [],
         },
       ]);
-      let form = {
+      const form = {
         name: "foo",
         description: "bar",
         sources: [
