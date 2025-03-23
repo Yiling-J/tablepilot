@@ -56,6 +56,9 @@ export function NameDescriptionForm({
     const newName = data.name ?? "";
     if (validateName(newName)) {
       updateFormData({ name: newName });
+    } else {
+      // use empty string as name in form, which means invalid
+      updateFormData({ name: "" });
     }
   };
 
