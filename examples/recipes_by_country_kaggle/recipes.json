@@ -1,0 +1,57 @@
+{
+  "name": "recipes",
+  "description": "A table of recipes with their ingredients, cooking time, and meal types.",
+  "sources": [
+    {
+      "name": "country",
+      "type": "csv",
+      "kaggle": "fernandol/countries-of-the-world",
+      "paths": ["*.csv"]
+    },
+    {
+      "name": "meals",
+      "type": "list",
+      "options": ["Breakfast", "Lunch", "Dinner"]
+    }
+  ],
+  "columns": [
+    {
+      "name": "Name",
+      "description": "The name of the recipe.",
+      "type": "string",
+      "fill_mode": "ai",
+      "context_length": 5
+    },
+    {
+      "name": "Ingredients",
+      "description": "A list of ingredients required for the recipe.",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Cooking Time",
+      "description": "The time required to cook the recipe in minutes.",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Country",
+      "description": "The country of origin of the recipe.",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "country",
+      "linked_column": "Country",
+      "linked_context_columns": ["Country"],
+      "random": true,
+      "repeat": 6
+    },
+    {
+      "name": "Meals",
+      "description": "The meal type (e.g., Breakfast, Lunch, Dinner) for which the recipe is intended.",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "meals",
+      "repeat": 2
+    }
+  ]
+}

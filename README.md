@@ -33,10 +33,10 @@ To generate a table, you’ll need a **TOML config file**, and in the case of th
 
 Below is an example `config.toml` file using an SQLite3 database (`data.db`). This configuration defines two clients, **OpenAI** and **Gemini**, and assigns two models to them:  
 
-- **Gemini** → `gemini-2.0-flash-001` (default)  
-- **OpenAI** → `gpt-4o`  
+- **Gemini** → `gemini-2.0-flash-001` (default)
+- **OpenAI** → `gpt-4o`
 
-You can modify the configuration by selecting a single client/model pair, removing the other, or adjusting the settings to fit your needs.  
+You can modify the configuration by selecting a single client/model pair, removing the other, or adjusting the settings to fit your needs.
 
 Make sure to replace the `key` field with your actual OpenAI/Gemini API key before saving the file as `config.toml`.
 
@@ -323,6 +323,27 @@ Special fields for different types:
     - Full match: `"data/cuisines.csv"`
     - Single asterisk: `"data/*.csv"` (matches all CSV files in `data/`)
     - Double asterisk: `"data/**/*.csv"` (matches all CSV files in `data/` and subdirectories)
+  - **kaggle**: The Kaggle dataset name, e.g., `"fernandol/countries-of-the-world"`.
+
+    You can use a Kaggle dataset as a CSV data source. When doing so, Tablepilot first downloads the dataset into a cache folder:
+
+    ```
+    {source_data_dir}/tablepilot_kaggle_cache/{dataset_name (with `/` replaced by `--`)}
+    ```
+
+    Once downloaded, it functions like a local CSV source. The only difference is that the search root for `paths` is relative to the downloaded folder. The cached dataset will always be used unless you remove it manually.
+
+    **Example:**
+    ```json
+    {
+      "name": "countries",
+      "type": "csv",
+      "kaggle": "fernandol/countries-of-the-world",
+      "paths": ["*.csv"]
+    }
+    ```
+
+    You can find the dataset name by clicking the **Download** button in the top-right corner of the dataset page on Kaggle.
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:

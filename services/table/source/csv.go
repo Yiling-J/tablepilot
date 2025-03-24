@@ -5,28 +5,55 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"slices"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services/table/source/csvindexer"
+	"github.com/Yiling-J/tablepilot/services/table/source/kaggle"
 	"github.com/bmatcuk/doublestar/v4"
+	"go.uber.org/zap"
 )
 
 type CsvSource struct {
 	randomCSV      *csvindexer.CSVIndexer
 	Type           string   `json:"type"`
 	Paths          []string `json:"paths"`
+	Kaggle         string   `json:"kaggle"`
 	Column         string   `json:"column"`
 	ContextColumns []string `json:"context_columns"`
 }
 
-func (cs *CsvSource) Init(ctx context.Context, dir string) error {
-	root, err := os.OpenRoot(dir)
+func (cs *CsvSource) getRoot(ctx context.Context, logger *zap.SugaredLogger, dir string) (*os.Root, string, error) {
+	var root *os.Root
+	rootPath := dir
+	if cs.Kaggle != "" {
+		rp, err := kaggle.PrepareKaggleDataset(ctx, logger, cs.Kaggle, dir)
+		if err != nil {
+			return nil, "", err
+		}
+		root, err = os.OpenRoot(rp)
+		if err != nil {
+			return nil, "", err
+		}
+		rootPath = rp
+	} else {
+		var err error
+		root, err = os.OpenRoot(dir)
+		if err != nil {
+			return nil, "", err
+		}
+	}
+	return root, rootPath, nil
+}
+
+func (cs *CsvSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir string) error {
+	root, rootPath, err := cs.getRoot(ctx, logger, dir)
 	if err != nil {
 		return err
 	}
 	fileSystem := root.FS()
-	files, err := parsePaths(fileSystem, cs.Paths)
+	files, err := parsePaths(fileSystem, rootPath, cs.Paths)
 	if err != nil {
 		return err
 	}
@@ -35,12 +62,17 @@ func (cs *CsvSource) Init(ctx context.Context, dir string) error {
 		return err
 	}
 	cs.randomCSV = rs
+
 	return nil
 }
 
-func (cs *CsvSource) GetColumns(ctx context.Context, dir string) ([]string, error) {
-	fileSystem := os.DirFS(dir)
-	files, err := parsePaths(fileSystem, cs.Paths)
+func (cs *CsvSource) GetColumns(ctx context.Context, logger *zap.SugaredLogger, dir string) ([]string, error) {
+	root, rootPath, err := cs.getRoot(ctx, logger, dir)
+	if err != nil {
+		return nil, err
+	}
+	fileSystem := root.FS()
+	files, err := parsePaths(fileSystem, rootPath, cs.Paths)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +105,7 @@ func (cs *CsvSource) Total() int {
 	return cs.randomCSV.Total()
 }
 
-func parsePaths(fileSystem fs.FS, paths []string) ([]string, error) {
+func parsePaths(fileSystem fs.FS, root string, paths []string) ([]string, error) {
 	fm := map[string]bool{}
 	results := []string{}
 	for _, p := range paths {
@@ -84,7 +116,7 @@ func parsePaths(fileSystem fs.FS, paths []string) ([]string, error) {
 		for _, f := range files {
 			if _, ok := fm[f]; !ok {
 				fm[f] = true
-				results = append(results, f)
+				results = append(results, filepath.Join(root, f))
 			}
 		}
 	}

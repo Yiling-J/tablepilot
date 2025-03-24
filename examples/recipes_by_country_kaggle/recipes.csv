@@ -1,0 +1,61 @@
+Name,Ingredients,Cooking Time,Country,Meals
+Seychelles Banana Pancakes,"[""Ripe bananas"",""Flour"",""Milk"",""Eggs"",""Sugar"",""Vanilla extract""]",20,Seychelles ,Breakfast
+Seychelles Coconut French Toast,"[""Bread"",""Coconut milk"",""Eggs"",""Sugar"",""Cinnamon""]",25,Seychelles ,Breakfast
+Seychelles Fish Curry,"[""White Fish Fillets"",""Curry Powder"",""Coconut Milk"",""Onion"",""Garlic"",""Ginger"",""Tomatoes""]",45,Seychelles ,Lunch
+Seychelles Lentil Soup,"[""Red Lentils"",""Vegetable Broth"",""Carrots"",""Celery"",""Onion"",""Garlic"",""Spices""]",35,Seychelles ,Lunch
+Seychelles Grilled Fish with Creole Sauce,"[""Fish Fillets"",""Creole Sauce"",""Lime Juice"",""Garlic"",""Ginger"",""Spices""]",30,Seychelles ,Dinner
+Seychelles Chicken Curry,"[""Chicken Pieces"",""Curry Powder"",""Coconut Milk"",""Onion"",""Garlic"",""Ginger"",""Tomatoes""]",50,Seychelles ,Dinner
+Canadian Pancakes,"[""Flour"",""Eggs"",""Milk"",""Maple Syrup""]",25,Canada ,Breakfast
+Canadian Bacon and Eggs,"[""Bacon"",""Eggs"",""Toast""]",15,Canada ,Breakfast
+Maple Glazed Salmon,"[""Salmon"",""Maple Syrup"",""Soy Sauce"",""Ginger""]",30,Canada ,Lunch
+Poutine,"[""Potatoes"",""Cheese Curds"",""Gravy""]",40,Canada ,Lunch
+Canadian Tourtière,"[""Beef"",""Potatoes"",""Carrots"",""Turnip""]",60,Canada ,Dinner
+Canadian Pea Soup,"[""Pea Soup Mix"",""Ham Hock"",""Vegetables""]",50,Canada ,Dinner
+Argentine Empanadas,"[""Beef"",""Onions"",""Peppers"",""Spices""]",45,Argentina ,Breakfast
+Medialunas,"[""Flour"",""Yeast"",""Butter"",""Sugar""]",30,Argentina ,Breakfast
+Asado Sandwiches,"[""Asado"",""Bread"",""Chimichurri""]",20,Argentina ,Lunch
+Milanesa Sandwich,"[""Milanesa"",""Bread"",""Lettuce"",""Tomato""]",15,Argentina ,Lunch
+Carbonada Criolla,"[""Beef"",""Potatoes"",""Squash"",""Corn""]",60,Argentina ,Dinner
+Locro,"[""White corn"",""Beans"",""Squash"",""Meat""]",120,Argentina ,Dinner
+Beignets,"[""Flour"",""Sugar"",""Yeast"",""Milk"",""Eggs""]",15,Central African Rep. ,Breakfast
+Fried Plantains,"[""Plantains"",""Oil"",""Salt""]",10,Central African Rep. ,Breakfast
+Peanut Stew,"[""Peanut butter"",""Tomatoes"",""Onions"",""Chicken"",""Rice""]",25,Central African Rep. ,Lunch
+Cassava Leaves Stew,"[""Cassava leaves"",""Palm oil"",""Fish"",""Onions""]",30,Central African Rep. ,Lunch
+Grilled Fish,"[""Fish"",""Lemon"",""Garlic"",""Spices""]",45,Central African Rep. ,Dinner
+Beef Stew,"[""Beef"",""Potatoes"",""Carrots"",""Onions"",""Tomatoes""]",60,Central African Rep. ,Dinner
+Afghan Omelet,"[""Eggs"",""Tomatoes"",""Onions"",""Spices""]",25,Afghanistan ,Breakfast
+Afghan Cheese Naan,"[""Naan bread"",""Cheese"",""Grapes""]",20,Afghanistan ,Breakfast
+Kabuli Palaw,"[""Rice"",""Lamb"",""Carrots"",""Raisins""]",60,Afghanistan ,Lunch
+Chicken Tikka Masala,"[""Chicken"",""Tomatoes"",""Onions"",""Spices""]",45,Afghanistan ,Lunch
+Lamb Sabzi,"[""Lamb"",""Spinach"",""Yogurt"",""Spices""]",90,Afghanistan ,Dinner
+Maash Palaw,"[""Rice"",""Beef"",""Lentils"",""Spices""]",75,Afghanistan ,Dinner
+Pepperpot,"[""Beef"",""Cassareep"",""Pepper"",""Spices""]",60,Guyana ,Breakfast
+Bake and Saltfish,"[""Saltfish"",""Flour"",""Baking Powder"",""Oil""]",30,Guyana ,Breakfast
+Cook-up Rice,"[""Rice"",""Coconut Milk"",""Meat"",""Vegetables""]",45,Guyana ,Lunch
+Metemgee,"[""Coconut Milk"",""Dumplings"",""Cassava"",""Plantains"",""Meat""]",50,Guyana ,Lunch
+Chicken Curry,"[""Chicken"",""Curry Powder"",""Potatoes"",""Spices""]",55,Guyana ,Dinner
+Garlic Pork,"[""Pork"",""Garlic"",""Vinegar"",""Spices""]",70,Guyana ,Dinner
+Monaco Breakfast,"[""Eggs"",""Bacon"",""Toast"",""Coffee""]",15,Monaco ,Breakfast
+Croissant Breakfast,"[""Croissant"",""Jam"",""Butter"",""Tea""]",10,Monaco ,Breakfast
+Monaco Salad,"[""Salad"",""Bread"",""Cheese"",""Fruits""]",20,Monaco ,Lunch
+Pasta Lunch,"[""Pasta"",""Tomato Sauce"",""Meatballs"",""Vegetables""]",30,Monaco ,Lunch
+Steak Dinner,"[""Steak"",""Potatoes"",""Asparagus"",""Wine""]",45,Monaco ,Dinner
+Fish Dinner,"[""Fish"",""Rice"",""Vegetables"",""Lemon""]",35,Monaco ,Dinner
+Egg Tart,"[""Eggs"",""Sugar"",""Flour"",""Butter"",""Milk""]",30,Macau ,Breakfast
+Pork Chop Bun,"[""Pork Chop"",""Bun"",""Garlic"",""Soy Sauce""]",20,Macau ,Breakfast
+Almond Cookies,"[""Almond Flour"",""Sugar"",""Egg White"",""Almond Extract""]",25,Macau ,Lunch
+Shrimp Roe Noodles,"[""Noodles"",""Shrimp Roe"",""Soy Sauce"",""Green Onions""]",15,Macau ,Lunch
+African Chicken,"[""Chicken"",""Coconut Milk"",""Peanuts"",""Chili"",""Garlic""]",45,Macau ,Dinner
+Minchi,"[""Ground Meat"",""Molasses"",""Potatoes"",""Onions"",""Soy Sauce""]",35,Macau ,Dinner
+Nasi Lemak,"[""Eggs"",""Toast"",""Butter"",""Jam""]",15,Brunei ,Breakfast
+Kuih Mor,"[""Cereal"",""Milk"",""Fruits""]",5,Brunei ,Breakfast
+Ambuyat,"[""Rice"",""Chicken"",""Vegetables"",""Spices""]",45,Brunei ,Lunch
+Belutak,"[""Noodles"",""Beef"",""Vegetables"",""Soy Sauce""]",30,Brunei ,Lunch
+Udang Sambal Serai,"[""Fish"",""Rice"",""Vegetables"",""Sambal""]",60,Brunei ,Dinner
+Nasi Katok,"[""Chicken"",""Rice"",""Vegetables"",""Sauce""]",40,Brunei ,Dinner
+Rusks,"[""Flour"",""Sugar"",""Butter"",""Eggs"",""Baking Powder""]",15,South Africa ,Breakfast
+Biltong,"[""Beef"",""Vinegar"",""Salt"",""Pepper"",""Coriander""]",20,South Africa ,Breakfast
+Bunny Chow,"[""Bread"",""Curry"",""Potatoes"",""Meat"",""Spices""]",30,South Africa ,Lunch
+Bobotie,"[""Mince"",""Egg"",""Milk"",""Bread"",""Curry Powder""]",45,South Africa ,Lunch
+Potjiekos,"[""Meat"",""Vegetables"",""Potatoes"",""Carrots"",""Onions""]",60,South Africa ,Dinner
+Malva Pudding,"[""Flour"",""Sugar"",""Butter"",""Eggs"",""Apricot Jam""]",50,South Africa ,Dinner

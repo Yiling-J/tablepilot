@@ -20,6 +20,9 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 - **recipes_by_country**
   This example demonstrates how to repeat column values. The generated table will include 6 recipes for each country: 2 Breakfast recipes, 2 Lunch recipes, and 2 Dinner recipes.
 
+- **recipes_by_country_kaggle**
+  This example demonstrates how to use a kaggle country dataset(https://www.kaggle.com/datasets/fernandol/countries-of-the-world) as context. The generated table will include 6 recipes for each country: 2 Breakfast recipes, 2 Lunch recipes, and 2 Dinner recipes.
+
 - **recipes_for_customers**
   This is the most complex example, illustrating how to use another table as a reference. The `customers.json` file is used to generate a customer table, and then the recipes table is generated based on customer data. Each customer will receive a unique recipe tailored to their information.
   

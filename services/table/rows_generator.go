@@ -337,7 +337,7 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 		if err != nil {
 			return nil, err
 		}
-		err = ls.Init(ctx, g.sourceDataDir)
+		err = ls.Init(ctx, g.logger, g.sourceDataDir)
 		if err != nil {
 			return nil, err
 		}
