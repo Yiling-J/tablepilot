@@ -73,9 +73,6 @@ func (ps *ParquetSource) NextLinked(ctx context.Context, idx int, column string,
 	row := rows[0]
 	cv := &schema.CellValue{ContextValue: map[string]any{}}
 	columns := ps.reader.Columns()
-	if err != nil {
-		return nil, err
-	}
 
 	for i, col := range columns {
 		if col == column {
