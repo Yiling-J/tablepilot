@@ -12,6 +12,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/table/source/csvindexer"
 	"github.com/Yiling-J/tablepilot/services/table/source/kaggle"
 	"github.com/bmatcuk/doublestar/v4"
+	"go.uber.org/zap"
 )
 
 type CsvSource struct {
@@ -23,11 +24,11 @@ type CsvSource struct {
 	ContextColumns []string `json:"context_columns"`
 }
 
-func (cs *CsvSource) getRoot(ctx context.Context, dir string) (*os.Root, string, error) {
+func (cs *CsvSource) getRoot(ctx context.Context, logger *zap.SugaredLogger, dir string) (*os.Root, string, error) {
 	var root *os.Root
 	rootPath := dir
 	if cs.Kaggle != "" {
-		rp, err := kaggle.PrepareKaggleDataset(ctx, cs.Kaggle, dir)
+		rp, err := kaggle.PrepareKaggleDataset(ctx, logger, cs.Kaggle, dir)
 		if err != nil {
 			return nil, "", err
 		}
@@ -46,8 +47,8 @@ func (cs *CsvSource) getRoot(ctx context.Context, dir string) (*os.Root, string,
 	return root, rootPath, nil
 }
 
-func (cs *CsvSource) Init(ctx context.Context, dir string) error {
-	root, rootPath, err := cs.getRoot(ctx, dir)
+func (cs *CsvSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir string) error {
+	root, rootPath, err := cs.getRoot(ctx, logger, dir)
 	if err != nil {
 		return err
 	}
@@ -65,8 +66,8 @@ func (cs *CsvSource) Init(ctx context.Context, dir string) error {
 	return nil
 }
 
-func (cs *CsvSource) GetColumns(ctx context.Context, dir string) ([]string, error) {
-	root, rootPath, err := cs.getRoot(ctx, dir)
+func (cs *CsvSource) GetColumns(ctx context.Context, logger *zap.SugaredLogger, dir string) ([]string, error) {
+	root, rootPath, err := cs.getRoot(ctx, logger, dir)
 	if err != nil {
 		return nil, err
 	}

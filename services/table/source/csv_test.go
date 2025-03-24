@@ -13,6 +13,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestSource_CSVParsePaths(t *testing.T) {
@@ -94,7 +95,7 @@ func TestSource_CSV(t *testing.T) {
 		require.NoError(t, tmpFile.Close())
 
 		so := &CsvSource{Paths: []string{"test*.csv"}}
-		err = so.Init(ctx, "./")
+		err = so.Init(ctx, zap.NewNop().Sugar(), "./")
 		require.NoError(t, err)
 		indexer := NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: "Name", LinkedContextColumns: []string{}})
 		v, err := indexer.Next(ctx)
@@ -107,7 +108,7 @@ func TestSource_CSV(t *testing.T) {
 		require.Equal(t, map[string]any{}, v.ContextValue)
 
 		so = &CsvSource{Paths: []string{"test*.csv"}}
-		err = so.Init(ctx, "./")
+		err = so.Init(ctx, zap.NewNop().Sugar(), "./")
 		require.NoError(t, err)
 		indexer = NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: "Name", LinkedContextColumns: []string{"Name", "Job"}})
 		v, err = indexer.Next(ctx)
@@ -138,7 +139,7 @@ func TestSource_CSV(t *testing.T) {
 		require.NoError(t, tmpFile.Close())
 
 		so := &CsvSource{Paths: []string{"test*.csv"}}
-		err = so.Init(ctx, "./gogo")
+		err = so.Init(ctx, zap.NewNop().Sugar(), "./gogo")
 		require.NoError(t, err)
 		indexer := NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: "Name", LinkedContextColumns: []string{}})
 		v, err := indexer.Next(ctx)
@@ -169,7 +170,7 @@ func TestSource_GetColumns(t *testing.T) {
 		require.NoError(t, tmpFile.Close())
 
 		so := &CsvSource{Paths: []string{"test*.csv"}}
-		columns, err := so.GetColumns(ctx, "./")
+		columns, err := so.GetColumns(ctx, zap.NewNop().Sugar(), "./")
 		require.NoError(t, err)
 		require.Equal(t, []string{"Name", "Job", "Age"}, columns)
 	})
@@ -192,7 +193,7 @@ func TestSource_GetColumns(t *testing.T) {
 		require.NoError(t, tmpFile.Close())
 
 		so := &CsvSource{Paths: []string{"test*.csv"}}
-		columns, err := so.GetColumns(ctx, "./gogo")
+		columns, err := so.GetColumns(ctx, zap.NewNop().Sugar(), "./gogo")
 		require.NoError(t, err)
 		require.Equal(t, []string{"Name", "Job", "Age"}, columns)
 	})
@@ -228,7 +229,7 @@ func TestSource_KaggleCSV(t *testing.T) {
 		httpmock.NewBytesResponder(200, mockZip).Once())
 
 	so := &CsvSource{Paths: []string{"foo_*.csv"}, Kaggle: "foo/bar"}
-	err := so.Init(ctx, "./")
+	err := so.Init(ctx, zap.NewNop().Sugar(), "./")
 	defer func() { _ = os.RemoveAll("tablepilot_kaggle_cache/foo--bar") }()
 	require.NoError(t, err)
 	indexer := NewIndexer(so, &ent.TableColumn{Random: false, LinkedColumn: "Name", LinkedContextColumns: []string{}})
@@ -248,7 +249,7 @@ func TestSource_KaggleGetColumns(t *testing.T) {
 		httpmock.NewBytesResponder(200, mockZip).Once())
 
 	so := &CsvSource{Paths: []string{"foo_*.csv"}, Kaggle: "foo/bar"}
-	columns, err := so.GetColumns(ctx, "./")
+	columns, err := so.GetColumns(ctx, zap.NewNop().Sugar(), "./")
 	defer func() { _ = os.RemoveAll("tablepilot_kaggle_cache/foo--bar") }()
 	require.NoError(t, err)
 	require.Equal(t, []string{"Name", "Age"}, columns)

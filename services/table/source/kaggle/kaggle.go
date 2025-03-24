@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"go.uber.org/zap"
 )
 
 func download(dir string, url string) error {
@@ -94,22 +96,25 @@ func unzip(src string, dest string) error {
 }
 
 // PrepareKaggleDataset download zip file using kaggle API and unzip to tablepilot_kaggle_cache folder
-func PrepareKaggleDataset(ctx context.Context, dataset string, dir string) (string, error) {
+func PrepareKaggleDataset(ctx context.Context, logger *zap.SugaredLogger, dataset string, dir string) (string, error) {
 	path := strings.ReplaceAll(dataset, "/", "--")
 	cachePath := filepath.Join(dir, "tablepilot_kaggle_cache", path)
 	zipPath := filepath.Join(dir, "tablepilot_kaggle_cache/tmp", path)
 	_, err := os.Stat(cachePath)
 	// cache exists
 	if err == nil {
+		logger.Debug("find cached kaggle dataset", "path", cachePath)
 		return "", nil
 	}
 
 	// download kaggle dataset zip
 	url := fmt.Sprintf("https://www.kaggle.com/api/v1/datasets/download/%s", dataset)
+	logger.Debug("start downloading kaggle dataset", "dataset", dataset)
 	err = download(zipPath, url)
 	defer func() { _ = os.RemoveAll(zipPath) }()
 	if err != nil {
 		return "", err
 	}
+	logger.Debug("finish downloading kaggle dataset", "dataset", dataset)
 	return cachePath, unzip(filepath.Join(zipPath, "download.zip"), cachePath)
 }

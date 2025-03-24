@@ -33,10 +33,10 @@ To generate a table, you’ll need a **TOML config file**, and in the case of th
 
 Below is an example `config.toml` file using an SQLite3 database (`data.db`). This configuration defines two clients, **OpenAI** and **Gemini**, and assigns two models to them:  
 
-- **Gemini** → `gemini-2.0-flash-001` (default)  
-- **OpenAI** → `gpt-4o`  
+- **Gemini** → `gemini-2.0-flash-001` (default)
+- **OpenAI** → `gpt-4o`
 
-You can modify the configuration by selecting a single client/model pair, removing the other, or adjusting the settings to fit your needs.  
+You can modify the configuration by selecting a single client/model pair, removing the other, or adjusting the settings to fit your needs.
 
 Make sure to replace the `key` field with your actual OpenAI/Gemini API key before saving the file as `config.toml`.
 
@@ -323,6 +323,12 @@ Special fields for different types:
     - Full match: `"data/cuisines.csv"`
     - Single asterisk: `"data/*.csv"` (matches all CSV files in `data/`)
     - Double asterisk: `"data/**/*.csv"` (matches all CSV files in `data/` and subdirectories)
+  - **kaggle**: The kaggle dataset name, e.g., "fernandol/countries-of-the-world"
+  You can use kaggle dataset as csv data source, when you do this, Tablepilot will first download the dataset into a cache folder: {source_data_dir}/tablepilot_kaggle_cache/{dataset name(replace / to --)}. Then it works like a local csv source, the only difference is the search root for paths in related to the downloaded folder. The cache will alwasy be used unless you remove it manually. Example:
+  ```json
+  {"name": "countries", "type": "csv", "kaggle": "fernandol/countries-of-the-world", "paths": ["*.csv"]}
+  ```
+  You can find the dataset name when click the download button in the right top corner of the dataset page. 
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:

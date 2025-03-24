@@ -82,7 +82,7 @@ func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, log
 			ss := &SharedSource{Name: name}
 			switch st := so.(type) {
 			case *source.CsvSource:
-				columns, err := st.GetColumns(context.Background(), config.Common.SourceDataDir)
+				columns, err := st.GetColumns(context.Background(), ts.logger, config.Common.SourceDataDir)
 				if err != nil {
 					return nil, err
 				}
