@@ -104,7 +104,7 @@ func PrepareKaggleDataset(ctx context.Context, logger *zap.SugaredLogger, datase
 	// cache exists
 	if err == nil {
 		logger.Debug("find cached kaggle dataset", "path", cachePath)
-		return "", nil
+		return cachePath, nil
 	}
 
 	// download kaggle dataset zip

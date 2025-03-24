@@ -323,12 +323,27 @@ Special fields for different types:
     - Full match: `"data/cuisines.csv"`
     - Single asterisk: `"data/*.csv"` (matches all CSV files in `data/`)
     - Double asterisk: `"data/**/*.csv"` (matches all CSV files in `data/` and subdirectories)
-  - **kaggle**: The kaggle dataset name, e.g., "fernandol/countries-of-the-world"
-  You can use kaggle dataset as csv data source, when you do this, Tablepilot will first download the dataset into a cache folder: {source_data_dir}/tablepilot_kaggle_cache/{dataset name(replace / to --)}. Then it works like a local csv source, the only difference is the search root for paths in related to the downloaded folder. The cache will alwasy be used unless you remove it manually. Example:
-  ```json
-  {"name": "countries", "type": "csv", "kaggle": "fernandol/countries-of-the-world", "paths": ["*.csv"]}
-  ```
-  You can find the dataset name when click the download button in the right top corner of the dataset page. 
+  - **kaggle**: The Kaggle dataset name, e.g., `"fernandol/countries-of-the-world"`.
+
+    You can use a Kaggle dataset as a CSV data source. When doing so, Tablepilot first downloads the dataset into a cache folder:
+
+    ```
+    {source_data_dir}/tablepilot_kaggle_cache/{dataset_name (with `/` replaced by `--`)}
+    ```
+
+    Once downloaded, it functions like a local CSV source. The only difference is that the search root for `paths` is relative to the downloaded folder. The cached dataset will always be used unless you remove it manually.
+
+    **Example:**
+    ```json
+    {
+      "name": "countries",
+      "type": "csv",
+      "kaggle": "fernandol/countries-of-the-world",
+      "paths": ["*.csv"]
+    }
+    ```
+
+    You can find the dataset name by clicking the **Download** button in the top-right corner of the dataset page on Kaggle.
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:

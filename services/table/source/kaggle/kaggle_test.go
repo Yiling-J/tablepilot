@@ -67,6 +67,7 @@ func TestKaggle_PrepareKaggleDataset(t *testing.T) {
 	require.True(t, found)
 
 	// prepare again, not http request this time because files are cached
-	_, err = PrepareKaggleDataset(context.TODO(), zap.NewNop().Sugar(), "jessicali9530/lfw-dataset", "./")
+	path, err = PrepareKaggleDataset(context.TODO(), zap.NewNop().Sugar(), "jessicali9530/lfw-dataset", "./")
 	require.NoError(t, err)
+	require.Equal(t, "tablepilot_kaggle_cache/jessicali9530--lfw-dataset", path)
 }
