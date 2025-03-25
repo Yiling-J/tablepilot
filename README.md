@@ -308,7 +308,7 @@ Each source is an object with the following fields:
 Common fields:
 
 - **name**: The name of the source (e.g., `"cuisines"`).
-- **type**: The type of the source, which can be `"ai"`, `"list"`, `"linked"` or `"csv"`.
+- **type**: The type of the source, which can be `"ai"`, `"list"`, `"linked"`, `"csv"` or `"parquet"`.
 
 Special fields for different types:
 
