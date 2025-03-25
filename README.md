@@ -115,6 +115,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
   ```
   tablepilot create recipes.json
   ```
+  **Important**: If you modify the JSON schema after creating a table, be sure to delete the existing table then recreating it.
 
 - **delete**
   Delete a specified table.
@@ -344,6 +345,9 @@ Special fields for different types:
     ```
 
     You can find the dataset name by clicking the **Download** button in the top-right corner of the dataset page on Kaggle.
+
+- **parquet**:
+  - **paths**: Same as `CSV` source.
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:
