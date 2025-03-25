@@ -1,0 +1,29 @@
+{
+  "name": "question_and_answer",
+  "description": "A table of questions and answers in Chinese",
+  "sources": [
+    {
+      "name": "questions",
+      "type": "parquet",
+      "paths": ["examples/chinese_qa_parquet/data/*.parquet"]
+    }
+  ],
+  "columns": [
+    {
+      "name": "Question",
+      "description": "A common question in Chinese",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "questions",
+      "linked_column": "input",
+      "linked_context_columns": ["input"],
+      "random": true
+    },
+    {
+      "name": "Answer",
+      "description": "THe answer to the question, in Chinese",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}
