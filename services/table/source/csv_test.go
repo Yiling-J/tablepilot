@@ -67,7 +67,7 @@ func TestSource_CSVParsePaths(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := parsePaths(mockFS, "./", tt.paths)
+			result, err := parsePaths(mockFS, tt.paths)
 			if tt.err {
 				assert.Error(t, err)
 			} else {

@@ -126,7 +126,7 @@ func TestCSVIndexer_New(t *testing.T) {
 			fileNames := createTestFiles(t, tt.fileContents)
 			defer deleteTestFiles(t, fileNames)
 
-			selector, err := NewCSVIndexer(fileNames)
+			selector, err := NewCSVIndexer(os.DirFS("./"), fileNames)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -245,7 +245,7 @@ func TestCSVIndexer_Fetch(t *testing.T) {
 			fileNames := createTestFiles(t, tt.fileContents)
 			defer deleteTestFiles(t, fileNames)
 
-			selector, err := NewCSVIndexer(fileNames)
+			selector, err := NewCSVIndexer(os.DirFS("./"), fileNames)
 			if err != nil {
 				require.FailNow(t, "NewCSVSelector() failed: %v", err)
 			}

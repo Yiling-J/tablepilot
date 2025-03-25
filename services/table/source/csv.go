@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"slices"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -48,16 +47,16 @@ func (cs *CsvSource) getRoot(ctx context.Context, logger *zap.SugaredLogger, dir
 }
 
 func (cs *CsvSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir string) error {
-	root, rootPath, err := cs.getRoot(ctx, logger, dir)
+	root, _, err := cs.getRoot(ctx, logger, dir)
 	if err != nil {
 		return err
 	}
 	fileSystem := root.FS()
-	files, err := parsePaths(fileSystem, rootPath, cs.Paths)
+	files, err := parsePaths(fileSystem, cs.Paths)
 	if err != nil {
 		return err
 	}
-	rs, err := csvindexer.NewCSVIndexer(files)
+	rs, err := csvindexer.NewCSVIndexer(fileSystem, files)
 	if err != nil {
 		return err
 	}
@@ -67,16 +66,16 @@ func (cs *CsvSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir st
 }
 
 func (cs *CsvSource) GetColumns(ctx context.Context, logger *zap.SugaredLogger, dir string) ([]string, error) {
-	root, rootPath, err := cs.getRoot(ctx, logger, dir)
+	root, _, err := cs.getRoot(ctx, logger, dir)
 	if err != nil {
 		return nil, err
 	}
 	fileSystem := root.FS()
-	files, err := parsePaths(fileSystem, rootPath, cs.Paths)
+	files, err := parsePaths(fileSystem, cs.Paths)
 	if err != nil {
 		return nil, err
 	}
-	return csvindexer.GetColumnsFromFiles(files)
+	return csvindexer.GetColumnsFromFiles(fileSystem, files)
 }
 
 func (cs *CsvSource) NextLinked(ctx context.Context, idx int, column string, contextColumns []string) (*schema.CellValue, error) {
@@ -105,7 +104,7 @@ func (cs *CsvSource) Total() int {
 	return cs.randomCSV.Total()
 }
 
-func parsePaths(fileSystem fs.FS, root string, paths []string) ([]string, error) {
+func parsePaths(fileSystem fs.FS, paths []string) ([]string, error) {
 	fm := map[string]bool{}
 	results := []string{}
 	for _, p := range paths {
@@ -116,7 +115,7 @@ func parsePaths(fileSystem fs.FS, root string, paths []string) ([]string, error)
 		for _, f := range files {
 			if _, ok := fm[f]; !ok {
 				fm[f] = true
-				results = append(results, filepath.Join(root, f))
+				results = append(results, f)
 			}
 		}
 	}

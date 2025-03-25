@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	"io/fs"
 	"reflect"
 
 	"github.com/spf13/cast"
@@ -20,19 +20,20 @@ type FileOffset struct {
 }
 
 type CSVIndexer struct {
+	fs        fs.FS
 	files     []string
 	total     int
 	positions []FileOffset
 	columns   []string
 }
 
-func NewCSVIndexer(files []string) (*CSVIndexer, error) {
+func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
 	var positions []FileOffset
 	var total int
 	var columns []string
 
 	for i, file := range files {
-		f, err := os.Open(file)
+		f, err := fs.Open(file)
 		if err != nil {
 			return nil, err
 		}
@@ -72,6 +73,7 @@ func NewCSVIndexer(files []string) (*CSVIndexer, error) {
 	}
 
 	return &CSVIndexer{
+		fs:        fs,
 		files:     files,
 		total:     total,
 		positions: positions,
@@ -96,14 +98,18 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 		return nil, errors.New("position for index not found")
 	}
 	file := r.files[pos.File]
-	f, err := os.Open(file)
+	f, err := r.fs.Open(file)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	_, err = f.Seek(pos.Offset, io.SeekStart)
-	if err != nil {
-		return nil, err
+	if rs, ok := f.(io.ReadSeeker); ok {
+		_, err = rs.Seek(pos.Offset, io.SeekStart)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("file not seekable")
 	}
 	reader := csv.NewReader(f)
 	for i := 0; ; i++ {
@@ -129,11 +135,11 @@ func (r *CSVIndexer) Columns() []string {
 	return r.columns
 }
 
-func GetColumnsFromFiles(files []string) ([]string, error) {
+func GetColumnsFromFiles(fs fs.FS, files []string) ([]string, error) {
 	var columns []string
 
 	for _, file := range files {
-		f, err := os.Open(file)
+		f, err := fs.Open(file)
 		if err != nil {
 			return nil, err
 		}

@@ -31,3 +31,6 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 
 - **imdb_movie_haiku**
   This example takes an IMDb movie CSV table and generates haiku poems inspired by movie titles and overviews, blending structured data with artistic expression.
+
+- **chinese_qa_parquet**
+  This example downloads Parquet files from a [Hugging Face dataset](https://huggingface.co/datasets/Congliu/Chinese-DeepSeek-R1-Distill-data-110k) and uses them as the data source.
