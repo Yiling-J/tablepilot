@@ -21,6 +21,13 @@ func TestSource_Validate(t *testing.T) {
 		{`{"type":"linked","table":"table"}`, nil},
 		{`{"type":"list"}`, errors.New("no options")},
 		{`{"type":"list","file":"z.txt"}`, nil},
+		{`{"type": "csv","paths":["foo.csv"]}`, nil},
+		{`{"type": "csv"}`, errors.New("paths is empty")},
+		{`{"type": "csv","kaggle":"foo/bar"}`, errors.New("paths is empty")},
+		{`{"type": "parquet","paths":["foo.parquet"]}`, nil},
+		{`{"type": "parquet"}`, errors.New("paths is empty")},
+		{`{"type": "parquet","huggingface":{"dataset":"abc"}}`, nil},
+		{`{"type": "parquet","huggingface":{"dataset":""}}`, errors.New("Hugging Face dataset is empty")},
 	}
 
 	for _, c := range cases {

@@ -73,8 +73,11 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 		if err != nil {
 			return nil, err
 		}
-		if len(ls.Paths) == 0 {
+		if ls.Huggingface == nil && len(ls.Paths) == 0 {
 			return nil, errors.New("paths is empty")
+		}
+		if ls.Huggingface != nil && ls.Huggingface.Dataset == "" {
+			return nil, errors.New("Hugging Face dataset is empty")
 		}
 		s = &ls
 	default:
