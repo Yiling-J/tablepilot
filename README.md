@@ -348,6 +348,10 @@ Special fields for different types:
 
 - **parquet**:
   - **paths**: Same as `CSV` source.
+  - **huggingface**: If specified, uses a Hugging Face dataset and ignores `paths`.
+    - **dataset**: The dataset to use (e.g., `facebook/natural_reasoning`).
+    - **config**: (Optional) The dataset configuration to use, defaulting to `"default"`.
+    - **split**: (Optional) The dataset split to use, defaulting to `"train"`.
 
 #### columns: 
 A list of column definitions. Each column is an object that can contain the following fields:
@@ -376,7 +380,7 @@ When `fill_mode` is set to `"pick"`, the following fields are available:
   - Default: `false`.
 - **repeat**: Specifies how many times a picked value is reused before switching to the next one. The minimum and default value is `1`, meaning each value is used once before moving to the next.
 
-When `source` type is `linked` or `csv`, the following fields are available:
+When `source` type is `linked` or `csv` or `parquet`, the following fields are available:
 
 - **linked_column**: The linked-table column used for display text in the generated cell(e.g., user name).
 - **linked_context_columns**: The linked-table columns providing context when generating data (e.g., user age, job, nationality).
