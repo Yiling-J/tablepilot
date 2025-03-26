@@ -349,6 +349,7 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 		if err != nil {
 			return nil, err
 		}
+		var client huggingface.Client
 		if ls.Huggingface != nil {
 			if ls.Huggingface.Dataset == "" {
 				return nil, errors.New("dataset is empty")
@@ -359,11 +360,11 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 			if ls.Huggingface.Split == "" {
 				ls.Huggingface.Split = "train"
 			}
+			client = huggingface.NewClient(
+				ls.Huggingface.Dataset, ls.Huggingface.Config, ls.Huggingface.Split,
+				g.logger,
+			)
 		}
-		client := huggingface.NewClient(
-			ls.Huggingface.Dataset, ls.Huggingface.Config, ls.Huggingface.Split,
-			g.logger,
-		)
 		err = ls.Init(ctx, client, g.logger, g.sourceDataDir)
 		if err != nil {
 			return nil, err
