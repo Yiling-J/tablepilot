@@ -9,8 +9,7 @@
         "dataset": "Congliu/Chinese-DeepSeek-R1-Distill-data-110k",
         "config": "default",
         "split": "train"
-      },
-      "paths": ["examples/chinese_qa_parquet/data/*.parquet"]
+      }
     }
   ],
   "columns": [
