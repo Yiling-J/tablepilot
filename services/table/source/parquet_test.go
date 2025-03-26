@@ -35,18 +35,18 @@ func TestSource_HuggingFaceParquet(t *testing.T) {
 		Dataset: "foo/bar",
 	}}
 	hfClient := &huggingface.ClientMock{
-		GetDatasetSizeFunc: func() (*huggingface.DatasetSizeResponse, error) {
+		GetDatasetSizeFunc: func(ctx context.Context) (*huggingface.DatasetSizeResponse, error) {
 			return &huggingface.DatasetSizeResponse{Size: huggingface.SizeInfo{
 				Splits: []huggingface.SplitInfo{{Config: "default", Split: "train", NumRows: 100}},
 			}}, nil
 		},
-		GetDatasetInfoFunc: func() (*huggingface.DatasetInfoResponse, error) {
+		GetDatasetInfoFunc: func(ctx context.Context) (*huggingface.DatasetInfoResponse, error) {
 			return &huggingface.DatasetInfoResponse{Features: map[string]any{
 				"Id":   true,
 				"Name": true,
 			}}, nil
 		},
-		GetDatasetRowsFunc: func(offset, length int) (*huggingface.RowResponse, error) {
+		GetDatasetRowsFunc: func(ctx context.Context, offset, length int) (*huggingface.RowResponse, error) {
 			return &huggingface.RowResponse{Rows: []huggingface.RowInfo{
 				{Row: map[string]any{"Id": cast.ToString(offset), "Name": "n" + cast.ToString(offset)}},
 			}}, nil

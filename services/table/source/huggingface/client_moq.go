@@ -4,6 +4,7 @@
 package huggingface
 
 import (
+	"context"
 	"sync"
 )
 
@@ -17,13 +18,13 @@ var _ Client = &ClientMock{}
 //
 //		// make and configure a mocked Client
 //		mockedClient := &ClientMock{
-//			GetDatasetInfoFunc: func() (*DatasetInfoResponse, error) {
+//			GetDatasetInfoFunc: func(ctx context.Context) (*DatasetInfoResponse, error) {
 //				panic("mock out the GetDatasetInfo method")
 //			},
-//			GetDatasetRowsFunc: func(offset int, length int) (*RowResponse, error) {
+//			GetDatasetRowsFunc: func(ctx context.Context, offset int, length int) (*RowResponse, error) {
 //				panic("mock out the GetDatasetRows method")
 //			},
-//			GetDatasetSizeFunc: func() (*DatasetSizeResponse, error) {
+//			GetDatasetSizeFunc: func(ctx context.Context) (*DatasetSizeResponse, error) {
 //				panic("mock out the GetDatasetSize method")
 //			},
 //		}
@@ -34,21 +35,25 @@ var _ Client = &ClientMock{}
 //	}
 type ClientMock struct {
 	// GetDatasetInfoFunc mocks the GetDatasetInfo method.
-	GetDatasetInfoFunc func() (*DatasetInfoResponse, error)
+	GetDatasetInfoFunc func(ctx context.Context) (*DatasetInfoResponse, error)
 
 	// GetDatasetRowsFunc mocks the GetDatasetRows method.
-	GetDatasetRowsFunc func(offset int, length int) (*RowResponse, error)
+	GetDatasetRowsFunc func(ctx context.Context, offset int, length int) (*RowResponse, error)
 
 	// GetDatasetSizeFunc mocks the GetDatasetSize method.
-	GetDatasetSizeFunc func() (*DatasetSizeResponse, error)
+	GetDatasetSizeFunc func(ctx context.Context) (*DatasetSizeResponse, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
 		// GetDatasetInfo holds details about calls to the GetDatasetInfo method.
 		GetDatasetInfo []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 		}
 		// GetDatasetRows holds details about calls to the GetDatasetRows method.
 		GetDatasetRows []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 			// Offset is the offset argument value.
 			Offset int
 			// Length is the length argument value.
@@ -56,6 +61,8 @@ type ClientMock struct {
 		}
 		// GetDatasetSize holds details about calls to the GetDatasetSize method.
 		GetDatasetSize []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
 		}
 	}
 	lockGetDatasetInfo sync.RWMutex
@@ -64,16 +71,19 @@ type ClientMock struct {
 }
 
 // GetDatasetInfo calls GetDatasetInfoFunc.
-func (mock *ClientMock) GetDatasetInfo() (*DatasetInfoResponse, error) {
+func (mock *ClientMock) GetDatasetInfo(ctx context.Context) (*DatasetInfoResponse, error) {
 	if mock.GetDatasetInfoFunc == nil {
 		panic("ClientMock.GetDatasetInfoFunc: method is nil but Client.GetDatasetInfo was just called")
 	}
 	callInfo := struct {
-	}{}
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
 	mock.lockGetDatasetInfo.Lock()
 	mock.calls.GetDatasetInfo = append(mock.calls.GetDatasetInfo, callInfo)
 	mock.lockGetDatasetInfo.Unlock()
-	return mock.GetDatasetInfoFunc()
+	return mock.GetDatasetInfoFunc(ctx)
 }
 
 // GetDatasetInfoCalls gets all the calls that were made to GetDatasetInfo.
@@ -81,8 +91,10 @@ func (mock *ClientMock) GetDatasetInfo() (*DatasetInfoResponse, error) {
 //
 //	len(mockedClient.GetDatasetInfoCalls())
 func (mock *ClientMock) GetDatasetInfoCalls() []struct {
+	Ctx context.Context
 } {
 	var calls []struct {
+		Ctx context.Context
 	}
 	mock.lockGetDatasetInfo.RLock()
 	calls = mock.calls.GetDatasetInfo
@@ -91,21 +103,23 @@ func (mock *ClientMock) GetDatasetInfoCalls() []struct {
 }
 
 // GetDatasetRows calls GetDatasetRowsFunc.
-func (mock *ClientMock) GetDatasetRows(offset int, length int) (*RowResponse, error) {
+func (mock *ClientMock) GetDatasetRows(ctx context.Context, offset int, length int) (*RowResponse, error) {
 	if mock.GetDatasetRowsFunc == nil {
 		panic("ClientMock.GetDatasetRowsFunc: method is nil but Client.GetDatasetRows was just called")
 	}
 	callInfo := struct {
+		Ctx    context.Context
 		Offset int
 		Length int
 	}{
+		Ctx:    ctx,
 		Offset: offset,
 		Length: length,
 	}
 	mock.lockGetDatasetRows.Lock()
 	mock.calls.GetDatasetRows = append(mock.calls.GetDatasetRows, callInfo)
 	mock.lockGetDatasetRows.Unlock()
-	return mock.GetDatasetRowsFunc(offset, length)
+	return mock.GetDatasetRowsFunc(ctx, offset, length)
 }
 
 // GetDatasetRowsCalls gets all the calls that were made to GetDatasetRows.
@@ -113,10 +127,12 @@ func (mock *ClientMock) GetDatasetRows(offset int, length int) (*RowResponse, er
 //
 //	len(mockedClient.GetDatasetRowsCalls())
 func (mock *ClientMock) GetDatasetRowsCalls() []struct {
+	Ctx    context.Context
 	Offset int
 	Length int
 } {
 	var calls []struct {
+		Ctx    context.Context
 		Offset int
 		Length int
 	}
@@ -127,16 +143,19 @@ func (mock *ClientMock) GetDatasetRowsCalls() []struct {
 }
 
 // GetDatasetSize calls GetDatasetSizeFunc.
-func (mock *ClientMock) GetDatasetSize() (*DatasetSizeResponse, error) {
+func (mock *ClientMock) GetDatasetSize(ctx context.Context) (*DatasetSizeResponse, error) {
 	if mock.GetDatasetSizeFunc == nil {
 		panic("ClientMock.GetDatasetSizeFunc: method is nil but Client.GetDatasetSize was just called")
 	}
 	callInfo := struct {
-	}{}
+		Ctx context.Context
+	}{
+		Ctx: ctx,
+	}
 	mock.lockGetDatasetSize.Lock()
 	mock.calls.GetDatasetSize = append(mock.calls.GetDatasetSize, callInfo)
 	mock.lockGetDatasetSize.Unlock()
-	return mock.GetDatasetSizeFunc()
+	return mock.GetDatasetSizeFunc(ctx)
 }
 
 // GetDatasetSizeCalls gets all the calls that were made to GetDatasetSize.
@@ -144,8 +163,10 @@ func (mock *ClientMock) GetDatasetSize() (*DatasetSizeResponse, error) {
 //
 //	len(mockedClient.GetDatasetSizeCalls())
 func (mock *ClientMock) GetDatasetSizeCalls() []struct {
+	Ctx context.Context
 } {
 	var calls []struct {
+		Ctx context.Context
 	}
 	mock.lockGetDatasetSize.RLock()
 	calls = mock.calls.GetDatasetSize

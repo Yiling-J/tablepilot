@@ -1,6 +1,7 @@
 package huggingface
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +29,7 @@ func TestHFClient_GetDatasetSize(t *testing.T) {
 	client.httpClient = server.Client()
 	client.baseURL = server.URL
 
-	resp, err := client.GetDatasetSize()
+	resp, err := client.GetDatasetSize(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, 1000, resp.Size.Splits[0].NumRows)
 }
@@ -49,7 +50,7 @@ func TestHFCLient_GetDatasetRows(t *testing.T) {
 	client.httpClient = server.Client()
 	client.baseURL = server.URL
 
-	resp, err := client.GetDatasetRows(0, 1)
+	resp, err := client.GetDatasetRows(context.TODO(), 0, 1)
 	require.NoError(t, err)
 	require.Equal(t, "sample data", resp.Rows[0].Row["text"])
 }
@@ -70,7 +71,7 @@ func TestHFClient_GetDatasetInfo(t *testing.T) {
 	client.httpClient = server.Client()
 	client.baseURL = server.URL
 
-	resp, err := client.GetDatasetInfo()
+	resp, err := client.GetDatasetInfo(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, "type1", resp.Features["feature1"])
 }

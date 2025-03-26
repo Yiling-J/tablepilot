@@ -41,7 +41,7 @@ func (ps *ParquetSource) getRoot(ctx context.Context, logger *zap.SugaredLogger,
 func (ps *ParquetSource) Init(ctx context.Context, hfClient huggingface.Client, logger *zap.SugaredLogger, dir string) error {
 	if hfClient != nil {
 		ps.Huggingface.client = hfClient
-		resp, err := ps.Huggingface.client.GetDatasetSize()
+		resp, err := ps.Huggingface.client.GetDatasetSize(ctx)
 		if err != nil {
 			return err
 		}
@@ -70,7 +70,7 @@ func (ps *ParquetSource) Init(ctx context.Context, hfClient huggingface.Client, 
 
 func (ps *ParquetSource) GetColumns(ctx context.Context, logger *zap.SugaredLogger, dir string) ([]string, error) {
 	if ps.Huggingface != nil {
-		info, err := ps.Huggingface.client.GetDatasetInfo()
+		info, err := ps.Huggingface.client.GetDatasetInfo(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func (ps *ParquetSource) GetColumns(ctx context.Context, logger *zap.SugaredLogg
 
 func (ps *ParquetSource) NextLinked(ctx context.Context, idx int, column string, contextColumns []string) (*schema.CellValue, error) {
 	if ps.Huggingface != nil {
-		rp, err := ps.Huggingface.client.GetDatasetRows(idx, 1)
+		rp, err := ps.Huggingface.client.GetDatasetRows(ctx, idx, 1)
 		if err != nil {
 			return nil, err
 		}

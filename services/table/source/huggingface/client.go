@@ -1,22 +1,27 @@
 package huggingface
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
 )
 
 const baseURL = "https://datasets-server.huggingface.co"
 
 //go:generate moq -rm -out client_moq.go . Client
 type Client interface {
-	GetDatasetSize() (*DatasetSizeResponse, error)
-	GetDatasetRows(offset, length int) (*RowResponse, error)
-	GetDatasetInfo() (*DatasetInfoResponse, error)
+	GetDatasetSize(ctx context.Context) (*DatasetSizeResponse, error)
+	GetDatasetRows(ctx context.Context, offset, length int) (*RowResponse, error)
+	GetDatasetInfo(ctx context.Context) (*DatasetInfoResponse, error)
 }
 
 type ClientImpl struct {
@@ -26,6 +31,7 @@ type ClientImpl struct {
 	split      string
 	logger     *zap.SugaredLogger
 	baseURL    string
+	limiter    *rate.Limiter
 }
 
 type SplitInfo struct {
@@ -61,10 +67,11 @@ func NewClient(dataset, config, split string, logger *zap.SugaredLogger) *Client
 		split:      split,
 		logger:     logger,
 		baseURL:    baseURL,
+		limiter:    rate.NewLimiter(rate.Every(5*time.Second), 5),
 	}
 }
 
-func (c *ClientImpl) GetDatasetSize() (*DatasetSizeResponse, error) {
+func (c *ClientImpl) GetDatasetSize(ctx context.Context) (*DatasetSizeResponse, error) {
 	params := url.Values{}
 	params.Set("dataset", c.dataset)
 	params.Set("config", c.config)
@@ -75,6 +82,7 @@ func (c *ClientImpl) GetDatasetSize() (*DatasetSizeResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -90,7 +98,11 @@ func (c *ClientImpl) GetDatasetSize() (*DatasetSizeResponse, error) {
 	return &result, nil
 }
 
-func (c *ClientImpl) GetDatasetRows(offset, length int) (*RowResponse, error) {
+func (c *ClientImpl) GetDatasetRows(ctx context.Context, offset, length int) (*RowResponse, error) {
+	err := c.limiter.Wait(ctx)
+	if err != nil {
+		return nil, err
+	}
 	params := url.Values{}
 	params.Set("dataset", c.dataset)
 	params.Set("config", c.config)
@@ -104,6 +116,7 @@ func (c *ClientImpl) GetDatasetRows(offset, length int) (*RowResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -112,6 +125,14 @@ func (c *ClientImpl) GetDatasetRows(offset, length int) (*RowResponse, error) {
 	defer resp.Body.Close()
 
 	var result RowResponse
+	if resp.StatusCode != 200 {
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		c.logger.Errorw("Hugging Face get rows API error", "status", resp.StatusCode, "message", string(bodyBytes))
+		return nil, errors.New("Hugging Face get rows API error")
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
@@ -119,7 +140,7 @@ func (c *ClientImpl) GetDatasetRows(offset, length int) (*RowResponse, error) {
 	return &result, nil
 }
 
-func (c *ClientImpl) GetDatasetInfo() (*DatasetInfoResponse, error) {
+func (c *ClientImpl) GetDatasetInfo(ctx context.Context) (*DatasetInfoResponse, error) {
 	params := url.Values{}
 	params.Set("dataset", c.dataset)
 	params.Set("config", c.config)
@@ -130,6 +151,7 @@ func (c *ClientImpl) GetDatasetInfo() (*DatasetInfoResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
