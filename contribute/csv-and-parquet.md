@@ -43,6 +43,18 @@ To efficiently pick random rows from large CSV files without excessive memory us
 
 - Currently The index is not cached or persisted, it is rebuilt each time a new generation starts. If your dataset is large and your disk is not fast, this may take some time. Future improvements may include persistent indexing to improve performance.
 
+Example:
+
+```json
+"sources": [
+	{
+      "name": "country",
+      "type": "csv",
+      "paths": ["data/*.csv"]
+    }
+]
+```
+
 ## Kaggle CSV
 
 Kaggle provides a download API that delivers datasets as ZIP files. Using a Kaggle dataset in Tablepilot follows this process:
@@ -53,6 +65,19 @@ Kaggle provides a download API that delivers datasets as ZIP files. Using a Kagg
 4. Read files as local CSVs.
 
 Once downloaded, datasets are cached and can be used without an internet connection. If you download many datasets, the cache folder may grow large. A future CLI command may be added to list/delete cached datasets. Kaggle datasets can include other formats (e.g., JSON), but only CSV is supported at the moment. JSON support may be added in the future.
+
+Example:
+
+```json
+"sources": [
+	{
+      "name": "country",
+      "type": "csv",
+	  "kaggle": "fernandol/countries-of-the-world",
+      "paths": ["*.csv"]
+    }
+]
+```
 
 ## Local Parquet
 
@@ -69,9 +94,37 @@ All Parquet processing is handled using [`parquet-go`](https://github.com/parque
 
 If you're familiar with the Hugging Face Dataset Viewer, they use a [similar technique](https://github.com/huggingface/dataset-viewer/blob/main/libs/libcommon/src/libcommon/parquet_utils.py#L618), implemented in Python with `pyarrow`.
 
+Example:
+
+```json
+"sources": [
+    {
+      "name": "questions",
+      "type": "parquet",
+      "paths": ["examples/chinese_qa_parquet/data/*.parquet"]
+    }
+]
+```
+
 ## Hugging Face Dataset
 
 Hugging Face provides APIs that handle everything needs. Tablepilot simply calls the [Hugging Face rows API](https://huggingface.co/docs/dataset-viewer/en/rows) to get random row. The only requirement here is Parquet exports supported, which should be ture for most Hugging Face datasets.
+
+Example:
+
+```json
+"sources": [
+    {
+      "name": "questions",
+      "type": "parquet",
+      "huggingface": {
+        "dataset": "Congliu/Chinese-DeepSeek-R1-Distill-data-110k",
+        "config": "default",
+        "split": "train"
+      }
+    }
+]
+```
 
 ### Important Considerations
 
