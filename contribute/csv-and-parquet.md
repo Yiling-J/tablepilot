@@ -47,7 +47,7 @@ Example:
 
 ```json
 "sources": [
-	{
+    {
       "name": "country",
       "type": "csv",
       "paths": ["data/*.csv"]
@@ -70,10 +70,10 @@ Example:
 
 ```json
 "sources": [
-	{
+    {
       "name": "country",
       "type": "csv",
-	  "kaggle": "fernandol/countries-of-the-world",
+      "kaggle": "fernandol/countries-of-the-world",
       "paths": ["*.csv"]
     }
 ]
