@@ -1,4 +1,4 @@
-Tablepilot supports **CSV** and **Parquet** formats as data sources, as both are tabular formats. You can use local CSV and Parquet files, but you can access two widely used remote datasets:
+Tablepilot supports **CSV** and **Parquet** formats as data sources, as both are tabular formats. You can use local CSV and Parquet files, but you can also access two widely used remote datasets:
 
 - **Kaggle** for CSV files
 - **Hugging Face Datasets** for Parquet files
@@ -60,7 +60,7 @@ If you're unfamiliar with Parquet, see its [official documentation](https://gith
 
 ### How Tablepilot Handles Parquet Files
 
-1. **Metadata Collection:** At generating start, Tablepilot reads metadata from all Parquet files (columns, row counts, etc.).
+1. **Metadata Collection:** At generating start, Tablepilot reads metadata from all Parquet files (columns, row groups, row counts, etc.).
 2. **Random Row Selection:** When selecting a row, Tablepilot:
    - Finds the correct row group.
    - Retrieves the exact row efficiently.
@@ -76,8 +76,7 @@ Hugging Face provides APIs that handle everything needs. Tablepilot simply calls
 ### Important Considerations
 
 1. **Internet Required:** Every row retrieval requires an API request, so an internet connection is necessary.
-2. **API Rate Limits:** Hugging Face enforces rate limits.
-   - Tablepilot limits API calls to 1 request every 5 seconds to comply. You can download Parquet files first and use them as local Parquet sources instead.
+2. **API Rate Limits:** Hugging Face API enforces rate limits. So Tablepilot limits API calls to 1 request every 5 seconds to comply. You can download Parquet files first and use them as local Parquet sources instead to speed-up generating.
 
 Hugging Face's auto-converted Parquet files are available in the `refs/convert/parquet` branch, for example:
 
