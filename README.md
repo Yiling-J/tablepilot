@@ -8,8 +8,9 @@
 
 Tablepilot is a CLI/API/WebUI tool designed to generate and autofill tables using AI in a scalable and diverse way.
 
-- **Scalable:** Supports batch processing and allows fine-grained control over column context length to generate large datasets efficiently.  
-- **Diverse:** Easily integrates columns from other table or CSV files as context, enabling richer and more dynamic table generation.  
+- **Scalable:** Supports batch processing and allows fine-grained control over column context length to generate large datasets efficiently.
+- **Diverse:** Easily integrates columns from other table or CSV/Parquet files as context, enabling richer and more dynamic table generation.
+- **Easy use of remote data sources:** Supports Kaggle datasets and Hugging Face datasets, allowing seamless integration of real-world data. For more details, check out the guide: [CSV and Parquet](contribute/csv-and-parquet.md).
 - **Easily switch between different LLMs and models:** You can switch between models like OpenAI, Gemini or other OpenAI compatible API(Ollama/vLLM...) easily.
 - **Seamless API & WebUI:** With a single command: `tablepilot serve`, you can launch both the API server and the WebUI effortlessly. Everything is included by default in the released binary. Check out the WebUI in action! This demo showcases both table generation and autofill:
 
