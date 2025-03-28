@@ -35,8 +35,14 @@ func cellString(v any) string {
 	return vs
 }
 
-func BuildCLI(root *cobra.Command) {
+type CLI struct {
+	Backend *services.Backend
+	Handler *Handler
+}
+
+func BuildCLI(root *cobra.Command) *CLI {
 	var configPath string
+	cli := &CLI{}
 
 	cmd := root
 	cmd.PersistentFlags().StringVarP(&configPath, "config", "", "config.toml", "path to the config file")
@@ -47,7 +53,9 @@ func BuildCLI(root *cobra.Command) {
 	var handler *Handler
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		backend := services.CreateBackend(cmd, verbose)
+		cli.Backend = backend
 		handler = NewHandler(backend)
+		cli.Handler = handler
 		return nil
 	}
 
@@ -189,4 +197,5 @@ func BuildCLI(root *cobra.Command) {
 	}
 	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing. Defaults to file name if not set")
 	cmd.AddCommand(importCmd)
+	return cli
 }
