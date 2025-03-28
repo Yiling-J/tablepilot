@@ -167,3 +167,56 @@ bar1	["ing-3","ing-4"]	15	cd1	2
 	require.NoError(t, err)
 	require.Equal(t, 0, total)
 }
+
+func TestIntegrationCLI_Import(t *testing.T) {
+	defer func() { _ = os.Remove("test.db") }()
+	root := &cobra.Command{
+		Use:   "",
+		Short: "",
+		CompletionOptions: cobra.CompletionOptions{
+			HiddenDefaultCmd: true,
+		},
+	}
+	_ = cli.BuildCLI(root)
+
+	records := [][]string{
+		{"first_name", "last_name", "username"},
+		{"Rob", "Pike", "rob"},
+		{"Ken", "Thompson", "ken"},
+		{"Robert", "Griesemer", "gri"},
+	}
+
+	f, err := os.Create("users.csv")
+	require.NoError(t, err)
+	defer os.Remove("users.csv")
+	w := csv.NewWriter(f)
+	err = w.WriteAll(records)
+	require.NoError(t, err)
+
+	root.SetArgs([]string{"import", "users.csv", "--config", "test.toml"})
+	err = root.Execute()
+	require.NoError(t, err)
+
+	root.SetArgs([]string{"show", "users", "--config", "test.toml"})
+	out, err := captureStdout(root.Execute)
+	require.NoError(t, err)
+	expectedShow := `
+Rob	Pike	rob
+Ken	Thompson	ken
+Robert	Griesemer	gri
+`
+	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
+
+	root.SetArgs([]string{"import", "users.csv", "--config", "test.toml", "-t", "foo"})
+	err = root.Execute()
+	require.NoError(t, err)
+	root.SetArgs([]string{"show", "foo", "--config", "test.toml"})
+	out, err = captureStdout(root.Execute)
+	require.NoError(t, err)
+	expectedShow = `
+Rob	Pike	rob
+Ken	Thompson	ken
+Robert	Griesemer	gri
+`
+	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
+}
