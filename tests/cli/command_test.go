@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"net/http"
@@ -87,11 +88,7 @@ uw2YK1	Difficulty Level	integer	ai	difficulty level of the recipe (1-5)
 		func(r *http.Request) (*http.Response, error) {
 			b, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
-			if counter == 0 {
-				require.Equal(t, simpleRecipeRequest1, string(b))
-			} else {
-				require.Equal(t, simpleRecipeRequest2, string(b))
-			}
+			require.Equal(t, simpleRecipeRequest, string(b))
 			resp := httpmock.NewStringResponse(200, simpleRecipeResponse1)
 			if counter > 0 {
 				resp = httpmock.NewStringResponse(200, simpleRecipeResponse2)
@@ -112,6 +109,26 @@ bar1	["ing-3","ing-4"]	15	cd1	2
 `
 	require.Equal(t, strings.TrimSpace(expectedGenerate), strings.TrimSpace(out))
 
+	counter = 0
+	root.SetArgs([]string{"generate", tables[0].Name, "-c", "4", "-b", "2", "--config", "test.toml", "-s", "gen.csv"})
+	out, err = captureStdout(root.Execute)
+	require.NoError(t, err)
+	expectedGenerate = `
+foo	["ing1","ing2"]	10	cc	1
+foo1	["ing3","ing4"]	12	cc1	2
+bar	["ing-1","ing-2"]	3	cd	2
+bar1	["ing-3","ing-4"]	15	cd1	2
+`
+	require.Equal(t, strings.TrimSpace(expectedGenerate), strings.TrimSpace(out))
+	f, err := os.Open("gen.csv")
+	require.NoError(t, err)
+	defer f.Close()
+	defer func() { _ = os.Remove("gen.csv") }()
+	csvReader := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+	require.NoError(t, err)
+	require.Equal(t, [][]string{{"Name", "Ingredients", "Cooking Time", "Cuisine", "Difficulty Level"}, {"foo", "[\"ing1\",\"ing2\"]", "10", "cc", "1"}, {"foo1", "[\"ing3\",\"ing4\"]", "12", "cc1", "2"}, {"bar", "[\"ing-1\",\"ing-2\"]", "3", "cd", "2"}, {"bar1", "[\"ing-3\",\"ing-4\"]", "15", "cd1", "2"}}, records)
+
 	root.SetArgs([]string{"show", tables[0].Name, "--config", "test.toml"})
 	out, err = captureStdout(root.Execute)
 	require.NoError(t, err)
@@ -122,6 +139,18 @@ bar	["ing-1","ing-2"]	3	cd	2
 bar1	["ing-3","ing-4"]	15	cd1	2
 `
 	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
+
+	root.SetArgs([]string{"export", tables[0].Name, "--config", "test.toml", "-t", "recipes.csv"})
+	err = root.Execute()
+	require.NoError(t, err)
+	f, err = os.Open("recipes.csv")
+	require.NoError(t, err)
+	defer f.Close()
+	defer func() { _ = os.Remove("recipes.csv") }()
+	csvReader = csv.NewReader(f)
+	records, err = csvReader.ReadAll()
+	require.NoError(t, err)
+	require.Equal(t, [][]string{{"Name", "Ingredients", "Cooking Time", "Cuisine", "Difficulty Level"}, {"foo", "[\"ing1\",\"ing2\"]", "10", "cc", "1"}, {"foo1", "[\"ing3\",\"ing4\"]", "12", "cc1", "2"}, {"bar", "[\"ing-1\",\"ing-2\"]", "3", "cd", "2"}, {"bar1", "[\"ing-3\",\"ing-4\"]", "15", "cd1", "2"}}, records)
 
 	root.SetArgs([]string{"truncate", tables[0].Name, "--config", "test.toml"})
 	out, err = captureStderr(root.Execute)

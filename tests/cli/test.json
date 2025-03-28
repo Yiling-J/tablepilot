@@ -6,8 +6,7 @@
       "name": "Name",
       "description": "recipe name",
       "type": "string",
-      "fill_mode": "ai",
-      "context_length": 5
+      "fill_mode": "ai"
     },
     {
       "name": "Ingredients",
