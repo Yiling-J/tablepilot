@@ -16,7 +16,7 @@ func main() {
 			HiddenDefaultCmd: true,
 		},
 	}
-	cli.BuildCLI(cmd)
+	_ = cli.BuildCLI(cmd)
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
 	}

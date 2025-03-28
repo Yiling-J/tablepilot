@@ -1,0 +1,19 @@
+source_data_dir = "./data"
+
+[database]
+driver = "sqlite3"
+dsn = "test.db?_pragma=foreign_keys(1)"
+
+[server]
+address = ":8080"
+
+[[clients]]
+name = "openai"
+type = "openai"
+key = "abc"
+base_url = "https://models.inference.ai.azure.com"
+
+[[models]]
+model = "gpt-4o"
+client = "openai"
+rpm = 10
