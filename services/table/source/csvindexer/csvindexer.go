@@ -54,7 +54,7 @@ func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
 		currentPosition := FileOffset{File: cast.ToUint16(i), Offset: r.InputOffset()}
 		for {
 			_, err := r.Read()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				if total%chunkSize != 0 {
 					positions = append(positions, currentPosition)
 				}
@@ -133,6 +133,34 @@ func (r *CSVIndexer) Total() int {
 
 func (r *CSVIndexer) Columns() []string {
 	return r.columns
+}
+
+func (r *CSVIndexer) Range(fn func(row []string) bool) error {
+	for _, file := range r.files {
+		f, err := r.fs.Open(file)
+		if err != nil {
+			return err
+		}
+		reader := csv.NewReader(f)
+		// skip header
+		_, err = reader.Read()
+		if err != nil {
+			return err
+		}
+		for {
+			record, err := reader.Read()
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				return err
+			}
+			if !fn(record) {
+				break
+			}
+		}
+	}
+	return nil
 }
 
 func GetColumnsFromFiles(fs fs.FS, files []string) ([]string, error) {

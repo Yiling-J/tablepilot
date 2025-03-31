@@ -96,6 +96,23 @@ func (cs *CsvSource) NextLinked(ctx context.Context, idx int, column string, con
 	return cv, nil
 }
 
+func (cs *CsvSource) GetLinkedCellValue(row []any, column string, contextColumns []string) *schema.CellValue {
+	cv := &schema.CellValue{ContextValue: map[string]any{}}
+	if len(contextColumns) == 0 {
+		contextColumns = cs.randomCSV.Columns()
+	}
+	for i, col := range cs.randomCSV.Columns() {
+		if col == column {
+			cv.Value = row[i]
+		}
+		if slices.Contains(contextColumns, col) {
+			cv.ContextValue[col] = row[i]
+		}
+	}
+
+	return cv
+}
+
 func (cs *CsvSource) Next(ctx context.Context, idx int) (*schema.CellValue, error) {
 	return nil, errors.New("not implemented")
 }
@@ -120,4 +137,14 @@ func parsePaths(fileSystem fs.FS, paths []string) ([]string, error) {
 		}
 	}
 	return results, nil
+}
+
+func (cs *CsvSource) Range(fn func(row []any) bool) error {
+	return cs.randomCSV.Range(func(row []string) bool {
+		ar := []any{}
+		for _, cell := range row {
+			ar = append(ar, cell)
+		}
+		return fn(ar)
+	})
 }

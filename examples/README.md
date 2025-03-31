@@ -29,6 +29,9 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 - **pokémons**
   This example demonstrates how to create a table, import an existing CSV of 1000 Pokémons, and autofill column data. Tablepilot will generate ecological information for each Pokémon based on the existing row data.
 
+- **pokémons-autofill**
+  This example demonstrates how to automatically generate Pokémon-themed stories by selecting three Pokémon from a dataset and using AI to create story. The Pokémon are randomly chosen from a CSV file, and their attributes—such as type, classification, and abilities—are used as context to generate rich, engaging stories.
+
 - **imdb_movie_haiku**
   This example takes an IMDb movie CSV table and generates haiku poems inspired by movie titles and overviews, blending structured data with artistic expression.
 

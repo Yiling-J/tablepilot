@@ -772,3 +772,96 @@ func TestTableService_CreateTableAPIRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestTableService_ImportLinked(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	srv, err := NewTableService(&config.Config{Common: config.Common{SourceDataDir: "./"}}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	tid, err := srv.CreateTable(ctx, &TableGenRequest{Name: "lt", Columns: []TableGenColumn{
+		{Name: "c1", FillMode: "ai", Type: "string", Description: "c1c1"},
+		{Name: "c2", FillMode: "ai", Type: "string", Description: "c2c2"},
+	}})
+	require.NoError(t, err)
+	err = srv.CreateRows(ctx, "lt", []map[string]any{
+		{"c1": "aa", "c2": "foo"},
+		{"c1": "bb", "c2": "bar"},
+	})
+	require.NoError(t, err)
+
+	tmpFile, err := os.CreateTemp("./", "test_*.csv")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	writer := csv.NewWriter(tmpFile)
+	require.NoError(t, writer.Write([]string{"c1", "c2"}))
+	require.NoError(t, writer.Write([]string{"a", "v1"}))
+	require.NoError(t, writer.Write([]string{"b", "v2"}))
+	writer.Flush()
+	require.NoError(t, writer.Error())
+	require.NoError(t, tmpFile.Close())
+
+	tb, err := db.TableMeta.Create().SetName("t1").SetSources(map[string]json.RawMessage{
+		"s1": []byte(`{"type":"csv","paths":["test_*.csv"]}`),
+		"s2": []byte(fmt.Sprintf(`{"type":"linked","table":"%s"}`, tid)),
+	}).Save(ctx)
+	require.NoError(t, err)
+	err = db.TableColumn.Create().
+		SetName("col1").
+		SetFillMode(tablecolumn.FillModePick).
+		SetTablemeta(tb).
+		SetSource("s1").
+		SetLinkedColumn("c1").SetLinkedContextColumns([]string{"c1", "c2"}).
+		SetType(tablecolumn.TypeString).Exec(ctx)
+	require.NoError(t, err)
+	err = db.TableColumn.Create().
+		SetName("col2").
+		SetFillMode(tablecolumn.FillModePick).
+		SetTablemeta(tb).
+		SetSource("s2").
+		SetLinkedColumn("c1").SetLinkedContextColumns([]string{"c1", "c2"}).
+		SetType(tablecolumn.TypeString).Exec(ctx)
+	require.NoError(t, err)
+	records := [][]string{
+		{"col1", "col2"},
+		{"a", "aa"},
+		{"b", "bb"},
+		{"c", "cc"},
+	}
+
+	buffer := bytes.NewBuffer([]byte(""))
+	w := csv.NewWriter(buffer)
+	for _, record := range records {
+		err := w.Write(record)
+		require.NoError(t, err)
+	}
+	w.Flush()
+
+	id, err := srv.Import(ctx, "t1", strings.NewReader(buffer.String()))
+	require.NoError(t, err)
+	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).WithRows(func(trq *ent.TableRowQuery) {
+		trq.Order(ent.Asc(tablerow.FieldID))
+	}).Where(tablemeta.Nanoid(id)).First(ctx)
+	require.NoError(t, err)
+	rows := [][]*schema.CellValue{}
+	for _, row := range table.Edges.Rows {
+		rows = append(rows, row.Cells)
+		for _, cell := range row.Cells {
+			fmt.Println(cell.Value, cell.ContextValue)
+		}
+	}
+	require.Equal(t, [][]*schema.CellValue{
+		{&schema.CellValue{Value: "a", ContextValue: map[string]any{"c1": "a", "c2": "v1"}}, &schema.CellValue{Value: "aa", ContextValue: map[string]any{
+			"c1": map[string]any{"data": "aa", "description": "c1c1"},
+			"c2": map[string]any{"data": "foo", "description": "c2c2"},
+		}}},
+		{&schema.CellValue{Value: "b", ContextValue: map[string]any{"c1": "b", "c2": "v2"}}, &schema.CellValue{Value: "bb", ContextValue: map[string]any{
+			"c1": map[string]any{"data": "bb", "description": "c1c1"},
+			"c2": map[string]any{"data": "bar", "description": "c2c2"},
+		}}},
+		{&schema.CellValue{Value: "c", ContextValue: nil}, &schema.CellValue{Value: "cc", ContextValue: nil}},
+	}, rows)
+}
