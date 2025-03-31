@@ -13,11 +13,12 @@ import (
 )
 
 type Huggingface struct {
-	Dataset string `json:"dataset"`
-	Config  string `json:"config"`
-	Split   string `json:"split"`
-	client  huggingface.Client
-	size    int
+	Dataset         string `json:"dataset"`
+	Config          string `json:"config"`
+	Split           string `json:"split"`
+	client          huggingface.Client
+	size            int
+	rangeBatchCount int
 }
 
 type ParquetSource struct {
@@ -141,6 +142,20 @@ func (ps *ParquetSource) NextLinked(ctx context.Context, idx int, column string,
 	return cv, nil
 }
 
+func (ps *ParquetSource) GetLinkedCellValue(row map[string]any, column string, contextColumns []string) *schema.CellValue {
+	cv := &schema.CellValue{ContextValue: map[string]any{}}
+	for col := range row {
+		if col == column {
+			cv.Value = row[col]
+		}
+		if slices.Contains(contextColumns, col) {
+			cv.ContextValue[col] = row[col]
+		}
+	}
+
+	return cv
+}
+
 func (ps *ParquetSource) Next(ctx context.Context, idx int) (*schema.CellValue, error) {
 	return nil, errors.New("not implemented")
 }
@@ -151,4 +166,56 @@ func (ps *ParquetSource) Total() int {
 	}
 	total, _ := ps.reader.Total(context.TODO())
 	return int(total)
+}
+
+func (ps *ParquetSource) Range(ctx context.Context, fn func(row map[string]any) bool) error {
+	offset := 0
+	if ps.Huggingface != nil {
+		for {
+			batchCount := ps.Huggingface.rangeBatchCount
+			if batchCount == 0 {
+				batchCount = 50
+			}
+			resp, err := ps.Huggingface.client.GetDatasetRows(ctx, offset, batchCount)
+			if err != nil {
+				return err
+			}
+			if len(resp.Rows) == 0 || len(resp.Rows) < batchCount {
+				break
+			}
+			for _, row := range resp.Rows {
+				if !fn(row.Row) {
+					return nil
+				}
+			}
+			offset += len(resp.Rows)
+		}
+		return nil
+	}
+	for {
+		rows, err := ps.reader.Rows(ctx, 500, int64(offset))
+		if err != nil {
+			return err
+		}
+		if len(rows) == 0 {
+			break
+		}
+		done := false
+		for _, row := range rows {
+			columns := ps.reader.Columns()
+			mr := map[string]any{}
+			for i, col := range columns {
+				mr[col] = row[i]
+			}
+			if !fn(mr) {
+				done = true
+				break
+			}
+		}
+		if done {
+			break
+		}
+		offset += len(rows)
+	}
+	return nil
 }

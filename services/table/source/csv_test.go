@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestSource_CSVParsePaths(t *testing.T) {
+func TestCSVSource_ParsePaths(t *testing.T) {
 	mockFS := fstest.MapFS{
 		"file1.txt":              {},
 		"file2.txt":              {},
@@ -78,7 +78,7 @@ func TestSource_CSVParsePaths(t *testing.T) {
 	}
 }
 
-func TestSource_CSV(t *testing.T) {
+func TestCSVSource_Basic(t *testing.T) {
 	t.Run("default root", func(t *testing.T) {
 		ctx := context.TODO()
 
@@ -153,7 +153,7 @@ func TestSource_CSV(t *testing.T) {
 	})
 }
 
-func TestSource_GetColumns(t *testing.T) {
+func TestCSVSource_GetColumns(t *testing.T) {
 	t.Run("default root", func(t *testing.T) {
 		ctx := context.TODO()
 
@@ -219,7 +219,7 @@ func createTestZipCSV(t *testing.T) []byte {
 	return buf.Bytes()
 }
 
-func TestSource_KaggleCSV(t *testing.T) {
+func TestCSVSource_Kaggle(t *testing.T) {
 	ctx := context.TODO()
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
@@ -239,7 +239,7 @@ func TestSource_KaggleCSV(t *testing.T) {
 	require.Equal(t, map[string]any{}, v.ContextValue)
 }
 
-func TestSource_KaggleGetColumns(t *testing.T) {
+func TestCSVSource_KaggleGetColumns(t *testing.T) {
 	ctx := context.TODO()
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
@@ -253,4 +253,66 @@ func TestSource_KaggleGetColumns(t *testing.T) {
 	defer func() { _ = os.RemoveAll("tablepilot_kaggle_cache/foo--bar") }()
 	require.NoError(t, err)
 	require.Equal(t, []string{"Name", "Age"}, columns)
+}
+
+func TestCSVSource_GetLinkedCellValue(t *testing.T) {
+	tmpFile, err := os.CreateTemp("./", "test_*.csv")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	writer := csv.NewWriter(tmpFile)
+	require.NoError(t, writer.Write([]string{"Name", "Job", "Age"}))
+	require.NoError(t, writer.Write([]string{"me", "Engineer", "1"}))
+	require.NoError(t, writer.Write([]string{"you", "Doctor", "2"}))
+	writer.Flush()
+	require.NoError(t, writer.Error())
+	require.NoError(t, tmpFile.Close())
+
+	so := &CsvSource{Paths: []string{"test*.csv"}}
+	err = so.Init(context.TODO(), zap.NewNop().Sugar(), "./")
+	require.NoError(t, err)
+	cv := so.GetLinkedCellValue([]any{"me", "Engineer", "1"}, "Name", []string{"Name", "Job"})
+	require.Equal(t, "me", cv.Value)
+	require.Equal(t, map[string]any{"Name": "me", "Job": "Engineer"}, cv.ContextValue)
+
+	cv = so.GetLinkedCellValue([]any{"me", "Engineer", "1"}, "Name", []string{"Name", "Foo"})
+	require.Equal(t, "me", cv.Value)
+	require.Equal(t, map[string]any{"Name": "me"}, cv.ContextValue)
+
+	cv = so.GetLinkedCellValue([]any{"me", "Engineer", "1"}, "Name", []string{"Bar", "Foo"})
+	require.Equal(t, "me", cv.Value)
+	require.Equal(t, map[string]any{}, cv.ContextValue)
+}
+
+func TestCSVSource_Range(t *testing.T) {
+	tmpFile, err := os.CreateTemp("./", "test_*.csv")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	writer := csv.NewWriter(tmpFile)
+	require.NoError(t, writer.Write([]string{"Name", "Job", "Age"}))
+	require.NoError(t, writer.Write([]string{"me", "Engineer", "1"}))
+	require.NoError(t, writer.Write([]string{"you", "Doctor", "2"}))
+	writer.Flush()
+	require.NoError(t, writer.Error())
+	require.NoError(t, tmpFile.Close())
+
+	so := &CsvSource{Paths: []string{"test*.csv"}}
+	err = so.Init(context.TODO(), zap.NewNop().Sugar(), "./")
+	require.NoError(t, err)
+	rows := [][]any{}
+	err = so.Range(func(row []any) bool {
+		rows = append(rows, row)
+		return true
+	})
+	require.NoError(t, err)
+	require.Equal(t, [][]any{{"me", "Engineer", "1"}, {"you", "Doctor", "2"}}, rows)
+
+	rows = [][]any{}
+	err = so.Range(func(row []any) bool {
+		rows = append(rows, row)
+		return false
+	})
+	require.NoError(t, err)
+	require.Equal(t, [][]any{{"me", "Engineer", "1"}}, rows)
 }

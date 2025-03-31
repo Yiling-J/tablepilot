@@ -18,6 +18,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 	"github.com/Yiling-J/tablepilot/services/table/source"
+	"github.com/Yiling-J/tablepilot/services/table/source/huggingface"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/spf13/cast"
 
@@ -393,11 +394,13 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		counter += 1
 	}
 
+	var tableColumns []*ent.TableColumn
 	if tablemeta != nil {
 		cm := map[string]int{}
 		for i, col := range columns {
 			cm[col] = i
 		}
+		tableColumns = tablemeta.Edges.Columns
 		for _, row := range rows {
 			newRow := []any{}
 			for _, col := range tablemeta.Edges.Columns {
@@ -436,18 +439,71 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 					SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tablemeta),
 			)
 		}
-		err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
+		tableColumns, err = tx.TableColumn.CreateBulk(columnCreates...).Save(ctx)
 		if err != nil {
 			return "", ent.Rollback(tx, err)
 		}
 	}
-	rowCreates := []*ent.TableRowCreate{}
+
+	schemaRows := [][]*schema.CellValue{}
 	for _, row := range importRows {
 		cells := []*schema.CellValue{}
 		for _, cell := range row {
 			cells = append(cells, &schema.CellValue{Value: cell})
 		}
-		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(cells).SetTablemeta(tablemeta))
+		schemaRows = append(schemaRows, cells)
+	}
+	for i, col := range tableColumns {
+		if len(col.Source) == 0 {
+			continue
+		}
+		so, err := t.parseLinkedSource(ctx, tx.Client(), json.RawMessage(col.Source))
+		if err != nil {
+			return "", ent.Rollback(tx, err)
+		}
+		switch ts := so.(type) {
+		case *source.LinkedSource:
+			ts.Range(func(row *ent.TableRow) bool {
+				v := ts.GetLinkedCellValue(row, col.LinkedColumn, col.LinkedContextColumns)
+				for _, irow := range schemaRows {
+					if irow[i].Value == v.Value {
+						irow[i].ContextValue = v.ContextValue
+					}
+				}
+				return true
+			})
+		case *source.CsvSource:
+			err = ts.Range(func(row []any) bool {
+				v := ts.GetLinkedCellValue(row, col.LinkedColumn, col.LinkedContextColumns)
+				for _, irow := range schemaRows {
+					if irow[i].Value == v.Value {
+						irow[i].ContextValue = v.ContextValue
+					}
+				}
+				return true
+			})
+			if err != nil {
+				return "", ent.Rollback(tx, err)
+			}
+		case *source.ParquetSource:
+			err = ts.Range(ctx, func(row map[string]any) bool {
+				v := ts.GetLinkedCellValue(row, col.LinkedColumn, col.LinkedContextColumns)
+				for _, irow := range schemaRows {
+					if irow[i].Value == v.Value {
+						irow[i].ContextValue = v.ContextValue
+					}
+				}
+				return true
+			})
+			if err != nil {
+				return "", ent.Rollback(tx, err)
+			}
+		}
+	}
+
+	rowCreates := []*ent.TableRowCreate{}
+	for _, row := range schemaRows {
+		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(row).SetTablemeta(tablemeta))
 	}
 	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
 	if err != nil {
@@ -507,4 +563,64 @@ func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []
 
 func (t *TableServiceImpl) SharedSources(ctx context.Context) []*SharedSource {
 	return t.sharedSources
+}
+
+func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client, raw json.RawMessage) (source.Source, error) {
+	sourceDataDir := t.config.Common.SourceDataDir
+	var so source.Source
+	sourceType := gjson.GetBytes(raw, "type").String()
+	switch sourceType {
+	case "linked":
+		var ls source.LinkedSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		err = ls.Init(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
+	case "csv":
+		var ls source.CsvSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		err = ls.Init(ctx, t.logger, sourceDataDir)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
+	case "parquet":
+		var ls source.ParquetSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		var client huggingface.Client
+		if ls.Huggingface != nil {
+			if ls.Huggingface.Dataset == "" {
+				return nil, errors.New("dataset is empty")
+			}
+			if ls.Huggingface.Config == "" {
+				ls.Huggingface.Config = "default"
+			}
+			if ls.Huggingface.Split == "" {
+				ls.Huggingface.Split = "train"
+			}
+			client = huggingface.NewClient(
+				ls.Huggingface.Dataset, ls.Huggingface.Config, ls.Huggingface.Split,
+				t.logger,
+			)
+		}
+		err = ls.Init(ctx, client, t.logger, sourceDataDir)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
+	default:
+		return nil, fmt.Errorf("unknow source type %s", sourceType)
+	}
+	return so, nil
 }
