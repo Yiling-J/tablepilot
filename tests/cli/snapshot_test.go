@@ -74,7 +74,8 @@ func TestIntegrationCLI_Snapshots(t *testing.T) {
 			snapshots := []snapshot{}
 			raw, err := os.ReadFile("../snapshots/" + tt.snapshot + ".json")
 			require.NoError(t, err)
-			json.Unmarshal(raw, &snapshots)
+			err = json.Unmarshal(raw, &snapshots)
+			require.NoError(t, err)
 
 			httpmock.RegisterResponder(
 				"POST", "https://models.inference.ai.azure.com/chat/completions",
