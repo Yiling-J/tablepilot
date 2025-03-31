@@ -98,6 +98,9 @@ func (cs *CsvSource) NextLinked(ctx context.Context, idx int, column string, con
 
 func (cs *CsvSource) GetLinkedCellValue(row []any, column string, contextColumns []string) *schema.CellValue {
 	cv := &schema.CellValue{ContextValue: map[string]any{}}
+	if len(contextColumns) == 0 {
+		contextColumns = cs.randomCSV.Columns()
+	}
 	for i, col := range cs.randomCSV.Columns() {
 		if col == column {
 			cv.Value = row[i]

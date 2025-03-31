@@ -78,6 +78,11 @@ func (ls *LinkedSource) GetLinkedCellValue(row *ent.TableRow, column string, con
 	indexer := util.NewColumnIndexer(ls.columns)
 	ids := map[string]bool{}
 	names := map[string]string{}
+	if len(contextColumns) == 0 {
+		for _, col := range ls.columns {
+			contextColumns = append(contextColumns, col.Nanoid)
+		}
+	}
 	for _, col := range ls.columns {
 		ids[col.Nanoid] = true
 		names[col.Name] = col.Nanoid

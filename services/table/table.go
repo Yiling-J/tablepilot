@@ -457,7 +457,11 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		if len(col.Source) == 0 {
 			continue
 		}
-		so, err := t.parseLinkedSource(ctx, tx.Client(), json.RawMessage(col.Source))
+		rs, ok := tablemeta.Sources[col.Source]
+		if !ok {
+			return "", ent.Rollback(tx, errors.New("source not found"))
+		}
+		so, err := t.parseLinkedSource(ctx, tx.Client(), rs)
 		if err != nil {
 			return "", ent.Rollback(tx, err)
 		}
@@ -620,7 +624,7 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 		}
 		so = &ls
 	default:
-		return nil, fmt.Errorf("unknow source type %s", sourceType)
+		return nil, fmt.Errorf("unknown source type %s", sourceType)
 	}
 	return so, nil
 }

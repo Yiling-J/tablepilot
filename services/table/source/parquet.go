@@ -144,6 +144,11 @@ func (ps *ParquetSource) NextLinked(ctx context.Context, idx int, column string,
 
 func (ps *ParquetSource) GetLinkedCellValue(row map[string]any, column string, contextColumns []string) *schema.CellValue {
 	cv := &schema.CellValue{ContextValue: map[string]any{}}
+	if len(contextColumns) == 0 {
+		for col := range row {
+			contextColumns = append(contextColumns, col)
+		}
+	}
 	for col := range row {
 		if col == column {
 			cv.Value = row[col]

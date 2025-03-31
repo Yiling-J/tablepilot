@@ -802,13 +802,16 @@ func TestTableService_ImportLinked(t *testing.T) {
 	require.NoError(t, writer.Error())
 	require.NoError(t, tmpFile.Close())
 
-	tb, err := db.TableMeta.Create().SetName("t1").Save(ctx)
+	tb, err := db.TableMeta.Create().SetName("t1").SetSources(map[string]json.RawMessage{
+		"s1": []byte(`{"type":"csv","paths":["test_*.csv"]}`),
+		"s2": []byte(fmt.Sprintf(`{"type":"linked","table":"%s"}`, tid)),
+	}).Save(ctx)
 	require.NoError(t, err)
 	err = db.TableColumn.Create().
 		SetName("col1").
 		SetFillMode(tablecolumn.FillModePick).
 		SetTablemeta(tb).
-		SetSource(`{"type":"csv","paths":["test_*.csv"]}`).
+		SetSource("s1").
 		SetLinkedColumn("c1").SetLinkedContextColumns([]string{"c1", "c2"}).
 		SetType(tablecolumn.TypeString).Exec(ctx)
 	require.NoError(t, err)
@@ -816,7 +819,7 @@ func TestTableService_ImportLinked(t *testing.T) {
 		SetName("col2").
 		SetFillMode(tablecolumn.FillModePick).
 		SetTablemeta(tb).
-		SetSource(fmt.Sprintf(`{"type":"linked","table":"%s"}`, tid)).
+		SetSource("s2").
 		SetLinkedColumn("c1").SetLinkedContextColumns([]string{"c1", "c2"}).
 		SetType(tablecolumn.TypeString).Exec(ctx)
 	require.NoError(t, err)
