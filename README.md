@@ -185,6 +185,8 @@ A number of examples demonstrating various use cases of Tablepilot are available
 	 - If the table exists, Tablepilot matches columns by name and tries to convert data types automatically, if a column exists in table but not in csv file, the default empty value of the column type will be used. Errors occur if conversion fails.
 	 - If the table doesn't exist, all columns are treated as strings.
 
+  **Important**: When importing into an existing table, if the table contains a pick-type column and the imported value for this column is not empty, Tablepilot will scan the entire source (all CSV/Parquet files, the entire database table, or loop through the Hugging Face Rows API) to find a matching value. This process may take a significant amount of time if your source is large.
+
 - **show**
   Display the rows of a specified table.
   ```
