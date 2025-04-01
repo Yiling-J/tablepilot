@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"math/rand/v2"
+	"os"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -20,19 +21,28 @@ type Indexer struct {
 	total    int
 	current  int
 	picked   map[int]bool
+	rng      *rand.Rand
 }
 
 func NewIndexer(source Source, column *ent.TableColumn) *Indexer {
 	if column.Repeat == 0 {
 		column.Repeat = 1
 	}
-	return &Indexer{
+	indexer := &Indexer{
 		source:  source,
 		column:  column,
 		total:   source.Total(),
 		current: -1,
 		picked:  map[int]bool{},
 	}
+	// To ensure a replayable snapshot, we need a fixed random sequence in both record step and test step.
+	if v, _ := os.LookupEnv("TABLEPILOT_SNAPSHOT_RECORD"); len(v) > 0 {
+		indexer.rng = rand.New(rand.NewPCG(90, 723))
+	}
+	if v, _ := os.LookupEnv("TABLEPILOT_SNAPSHOT_TEST"); len(v) > 0 {
+		indexer.rng = rand.New(rand.NewPCG(90, 723))
+	}
+	return indexer
 }
 
 func (i *Indexer) nextIndex() int {
@@ -53,10 +63,18 @@ func (i *Indexer) nextIndex() int {
 					options = append(options, j)
 				}
 			}
-			i.current = options[rand.IntN(len(options))]
+			if i.rng != nil {
+				i.current = options[i.rng.IntN(len(options))]
+			} else {
+				i.current = options[rand.IntN(len(options))]
+			}
 			i.picked[i.current] = true
 		} else {
-			i.current = rand.IntN(i.total)
+			if i.rng != nil {
+				i.current = i.rng.IntN(i.total)
+			} else {
+				i.current = rand.IntN(i.total)
+			}
 		}
 	} else {
 		i.current += 1

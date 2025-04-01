@@ -1,6 +1,7 @@
 package huggingface
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -61,7 +63,7 @@ type DatasetInfoResponse struct {
 
 func NewClient(dataset, config, split string, logger *zap.SugaredLogger) *ClientImpl {
 	return &ClientImpl{
-		httpClient: &http.Client{},
+		httpClient: &http.Client{Transport: &SnapshotTransport{}},
 		dataset:    dataset,
 		config:     config,
 		split:      split,
@@ -165,4 +167,67 @@ func (c *ClientImpl) GetDatasetInfo(ctx context.Context) (*DatasetInfoResponse, 
 	}
 
 	return &result, nil
+}
+
+func SnapshotMiddleware(name string, next http.RoundTripper) http.RoundTripper {
+	return roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		var reqBody []byte
+		if r.Body != nil {
+			reqBody, _ = io.ReadAll(r.Body)
+			r.Body = io.NopCloser(bytes.NewReader(reqBody))
+		}
+
+		resp, err := next.RoundTrip(r)
+		if err != nil {
+			return resp, err
+		}
+
+		var respBody []byte
+		if resp.Body != nil {
+			respBody, _ = io.ReadAll(resp.Body)
+			resp.Body = io.NopCloser(bytes.NewReader(respBody))
+		}
+
+		snapshot := map[string]string{
+			"request":  string(reqBody),
+			"response": string(respBody),
+		}
+
+		var snapshots []map[string]string
+		filename := fmt.Sprintf("tests/snapshots/%s_hf.json", name)
+		if fileData, err := os.ReadFile(filename); err == nil {
+			_ = json.Unmarshal(fileData, &snapshots)
+		}
+
+		snapshots = append(snapshots, snapshot)
+
+		if file, err := os.Create(filename); err == nil {
+			defer file.Close()
+			_ = json.NewEncoder(file).Encode(snapshots)
+		}
+
+		return resp, nil
+	})
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+type SnapshotTransport struct {
+	BaseTransport http.RoundTripper
+}
+
+func (s *SnapshotTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	if s.BaseTransport == nil {
+		s.BaseTransport = http.DefaultTransport
+	}
+
+	if name, ok := os.LookupEnv("TABLEPILOT_SNAPSHOT_RECORD"); ok && len(name) > 0 {
+		return SnapshotMiddleware(name, s.BaseTransport).RoundTrip(r)
+	}
+
+	return s.BaseTransport.RoundTrip(r)
 }

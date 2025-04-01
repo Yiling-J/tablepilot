@@ -1,0 +1,6 @@
+Name,Ingredients,Cooking Time,Cuisine,Difficulty Level
+Pasta Carbonara,"[""Spaghetti"",""Eggs"",""Pancetta"",""Parmesan Cheese"",""Black Pepper""]",20,Italian,2
+Chicken Tikka Masala,"[""Chicken"",""Yogurt"",""Garam Masala"",""Ginger"",""Garlic"",""Tomato Paste"",""Cream""]",45,Indian,3
+Guacamole,"[""Avocado"",""Lime Juice"",""Onion"",""Cilantro"",""Jalapeno"",""Tomato""]",10,Mexican,1
+Lasagna,"[""Lasagna Sheets"",""Ground Beef"",""Tomato Sauce"",""Ricotta Cheese"",""Mozzarella Cheese"",""Parmesan Cheese"",""Onion"",""Garlic"",""Olive Oil"",""Spices""]",45,Italian,3
+Tacos,"[""Tortillas"",""Ground Beef"",""Taco Seasoning"",""Lettuce"",""Tomato"",""Shredded Cheese"",""Sour Cream"",""Salsa""]",30,Mexican,2

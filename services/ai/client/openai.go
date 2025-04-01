@@ -1,8 +1,14 @@
 package client
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
 
 	"github.com/Yiling-J/tablepilot/config"
 
@@ -19,9 +25,53 @@ type oaiChatCompletionService interface {
 }
 
 func NewOpenAIChatCompletionService(config *config.OpenAI) *openai.ChatCompletionService {
-	return openai.NewClient(
+	options := []option.RequestOption{
 		option.WithAPIKey(config.Key),
 		option.WithBaseURL(config.BaseURL),
+	}
+	// recording request/response to json snapshot file
+	if name, _ := os.LookupEnv("TABLEPILOT_SNAPSHOT_RECORD"); len(name) > 0 {
+		options = append(options, option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
+			var reqBody []byte
+			if r.Body != nil {
+				reqBody, _ = io.ReadAll(r.Body)
+				r.Body = io.NopCloser(bytes.NewReader(reqBody))
+			}
+
+			resp, err := mn(r)
+			if err != nil {
+				return resp, err
+			}
+
+			var respBody []byte
+			if resp.Body != nil {
+				respBody, _ = io.ReadAll(resp.Body)
+				resp.Body = io.NopCloser(bytes.NewReader(respBody))
+			}
+
+			snapshot := map[string]string{
+				"request":  string(reqBody),
+				"response": string(respBody),
+			}
+
+			var snapshots []map[string]string
+			filename := fmt.Sprintf("tests/snapshots/%s.json", name)
+			fileData, err := os.ReadFile(filename)
+			if err == nil {
+				_ = json.Unmarshal(fileData, &snapshots)
+			}
+			snapshots = append(snapshots, snapshot)
+			file, err := os.Create(filename)
+			if err == nil {
+				defer file.Close()
+				_ = json.NewEncoder(file).Encode(snapshots)
+			}
+
+			return resp, nil
+		}))
+	}
+	return openai.NewClient(
+		options...,
 	).Chat.Completions
 }
 

@@ -1,0 +1,6 @@
+Name,Ing1,Ing2,Ingredients,Cooking Time,Cuisine,Meal,Difficulty Level
+Vegetable Stir Fry,Olive Oil,Olive Oil,"[""Soy Sauce"",""Ginger"",""Garlic"",""Sesame Oil"",""Olive Oil"",""Vegetables""]",30,Chinese,Dinner,2
+Passion Fruit Caipirinha,Vanilla Extract,Vanilla Extract,"[""Passion Fruit"",""Lime"",""Sugar"",""Vanilla Extract"",""Cachaca""]",5,Brazilian,Drinks,1
+Greek Yogurt with Berries,Berries,Berries,"[""Yogurt"",""Honey"",""Berries"",""Mint""]",10,Mediterranean,Desserts,1
+Rice and Beans,Rice,Rice,"[""Rice"",""Beans"",""Onions"",""Garlic"",""Spices""]",30,French,Lunch,2
+Tomato Shakshuka,Tomatoes,Tomatoes,"[""Tomatoes"",""Eggs"",""Onions"",""Peppers"",""Spices""]",20,Moroccan,Breakfast,3
