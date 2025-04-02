@@ -16,6 +16,12 @@ Tablepilot is a CLI/API/WebUI tool designed to generate and autofill tables usin
 
 ![Demo](./demo.gif)
 
+#### Concept
+
+The concept behind Tablepilot is simple yet powerful. Suppose you want to generate 1,000 unique recipes using AI. A straightforward approach might be to ask ChatGPT for 10 recipes at a time, then continue requesting more while using previously generated content as context, until you reach 1,000 recipes. However, this method has two major drawbacks: the growing context consumes a large number of tokens, and as the context expands, ChatGPT struggles to ensure uniqueness across recipes.
+
+Instead of relying on context, we can structure the generation as a large table. Suppose we add two columns: cuisine and meal type, and assign random values to them (e.g., Chinese and Lunch) for each of the 1,000 recipes. This naturally increases diversity in the results without needing previous generations as context. The key question is: How do we get random values for columns like cuisine and meal type? This is where Tablepilot excels. You can source data from other tables, local CSV or Parquet files, AI-generated options, or remote datasets from Kaggle and Hugging Face.
+
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly.
 
