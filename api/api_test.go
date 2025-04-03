@@ -41,6 +41,33 @@ func TestAPI_CreateTable(t *testing.T) {
 	resp.ResponseEq(t, 200, map[string]string{"id": "foo"})
 }
 
+func TestAPI_UpdateTable(t *testing.T) {
+	expectedRequest := &table.TableGenRequest{
+		Name:        "recipes",
+		Model:       "m1",
+		Description: "all recipes",
+		Columns: []table.TableGenColumn{
+			{Name: "col1", Description: "desc", Type: "string", FillMode: "ai"},
+		},
+		Sources: []json.RawMessage{[]byte(`{"source":"s"}`)},
+	}
+	expectedRequest.MarkAPIRequest()
+	tableMock := &table.TableServiceMock{
+		UpdateFunc: func(ctx context.Context, tb string, req *table.TableGenRequest) (string, error) {
+			require.Equal(t, "foo", tb)
+			require.Equal(t, expectedRequest, req)
+			return "foo", nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewPatchRequest("/api/v1/tables/foo", expectedRequest)
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, map[string]string{"id": "foo"})
+}
+
 func TestAPI_Generate(t *testing.T) {
 	var counter int
 	mockRowGen := &table.RowsGeneratorMock{
