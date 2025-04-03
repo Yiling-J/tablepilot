@@ -1,7 +1,5 @@
 <div align="center">
-  <a href="https://ollama.com" />
-    <img alt="ollama" height="100px" src="icon.png">
-  </a>
+    <img alt="tablepilot" height="100px" src="icon.png">
 </div>
 
 # Tablepilot
