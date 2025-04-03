@@ -262,6 +262,9 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 	if req.Name == "" {
 		return "", ent.Rollback(tx, errors.New("table name is empty"))
 	}
+	if table == "" {
+		table = req.Name
+	}
 	sources := map[string]json.RawMessage{}
 	if len(req.Sources) > 0 {
 		for _, raw := range req.Sources {

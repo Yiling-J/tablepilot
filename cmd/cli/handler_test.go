@@ -57,6 +57,44 @@ func TestHandler_Create(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestHandler_Update(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		UpdateFunc: func(ctx context.Context, tb string, req *table.TableGenRequest) (string, error) {
+			require.Equal(t, "foo", tb)
+			require.Equal(t, &table.TableGenRequest{
+				Name: "go",
+				Columns: []table.TableGenColumn{
+					{Name: "c1", Type: "string", FillMode: "ai"},
+				},
+			}, req)
+			return "123", nil
+		},
+	}
+	handler := &Handler{
+		backend: services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, tableMock,
+		),
+	}
+	cmd := &cobra.Command{}
+	cmd.Flags().String("table", "", "")
+	err := cmd.Flags().Set("table", "foo")
+	require.NoError(t, err)
+	testFile := fmt.Sprintf("foo_%d.json", time.Now().UnixNano())
+	file, err := os.Create(testFile)
+	require.NoError(t, err)
+	defer os.Remove(testFile)
+	_, err = file.WriteString(
+		`{"name":"go","columns":[{"name":"c1","type":"string","fill_mode":"ai"}]}`,
+	)
+	require.NoError(t, err)
+	err = file.Close()
+	require.NoError(t, err)
+	err = handler.Update(cmd, []string{testFile})
+	require.NoError(t, err)
+	require.NoError(t, err)
+}
+
 func TestHandler_Show(t *testing.T) {
 	tableMock := &table.TableServiceMock{
 		RowsFunc: func(ctx context.Context, name string) (*table.Rows, error) {
