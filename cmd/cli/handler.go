@@ -40,7 +40,7 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		id, err := h.backend.TableService.CreateTable(cmd.Context(), &req)
+		id, err := h.backend.TableService.Create(cmd.Context(), &req)
 		if err != nil {
 			return err
 		}

@@ -21,11 +21,11 @@ var _ TableService = &TableServiceMock{}
 //
 //		// make and configure a mocked TableService
 //		mockedTableService := &TableServiceMock{
+//			CreateFunc: func(ctx context.Context, req *TableGenRequest) (string, error) {
+//				panic("mock out the Create method")
+//			},
 //			CreateRowsFunc: func(ctx context.Context, table string, rows []map[string]any) error {
 //				panic("mock out the CreateRows method")
-//			},
-//			CreateTableFunc: func(ctx context.Context, req *TableGenRequest) (string, error) {
-//				panic("mock out the CreateTable method")
 //			},
 //			DeleteFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Delete method")
@@ -51,6 +51,9 @@ var _ TableService = &TableServiceMock{}
 //			TruncateFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Truncate method")
 //			},
+//			UpdateFunc: func(ctx context.Context, table string, req *TableGenRequest) (string, error) {
+//				panic("mock out the Update method")
+//			},
 //		}
 //
 //		// use mockedTableService in code that requires TableService
@@ -58,11 +61,11 @@ var _ TableService = &TableServiceMock{}
 //
 //	}
 type TableServiceMock struct {
+	// CreateFunc mocks the Create method.
+	CreateFunc func(ctx context.Context, req *TableGenRequest) (string, error)
+
 	// CreateRowsFunc mocks the CreateRows method.
 	CreateRowsFunc func(ctx context.Context, table string, rows []map[string]any) error
-
-	// CreateTableFunc mocks the CreateTable method.
-	CreateTableFunc func(ctx context.Context, req *TableGenRequest) (string, error)
 
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(ctx context.Context, table string) (int, error)
@@ -88,8 +91,18 @@ type TableServiceMock struct {
 	// TruncateFunc mocks the Truncate method.
 	TruncateFunc func(ctx context.Context, table string) (int, error)
 
+	// UpdateFunc mocks the Update method.
+	UpdateFunc func(ctx context.Context, table string, req *TableGenRequest) (string, error)
+
 	// calls tracks calls to the methods.
 	calls struct {
+		// Create holds details about calls to the Create method.
+		Create []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Req is the req argument value.
+			Req *TableGenRequest
+		}
 		// CreateRows holds details about calls to the CreateRows method.
 		CreateRows []struct {
 			// Ctx is the ctx argument value.
@@ -98,13 +111,6 @@ type TableServiceMock struct {
 			Table string
 			// Rows is the rows argument value.
 			Rows []map[string]any
-		}
-		// CreateTable holds details about calls to the CreateTable method.
-		CreateTable []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Req is the req argument value.
-			Req *TableGenRequest
 		}
 		// Delete holds details about calls to the Delete method.
 		Delete []struct {
@@ -160,9 +166,18 @@ type TableServiceMock struct {
 			// Table is the table argument value.
 			Table string
 		}
+		// Update holds details about calls to the Update method.
+		Update []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table string
+			// Req is the req argument value.
+			Req *TableGenRequest
+		}
 	}
+	lockCreate         sync.RWMutex
 	lockCreateRows     sync.RWMutex
-	lockCreateTable    sync.RWMutex
 	lockDelete         sync.RWMutex
 	lockGenetate       sync.RWMutex
 	lockGetTableDetail sync.RWMutex
@@ -171,6 +186,43 @@ type TableServiceMock struct {
 	lockRows           sync.RWMutex
 	lockSharedSources  sync.RWMutex
 	lockTruncate       sync.RWMutex
+	lockUpdate         sync.RWMutex
+}
+
+// Create calls CreateFunc.
+func (mock *TableServiceMock) Create(ctx context.Context, req *TableGenRequest) (string, error) {
+	if mock.CreateFunc == nil {
+		panic("TableServiceMock.CreateFunc: method is nil but TableService.Create was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Req *TableGenRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockCreate.Lock()
+	mock.calls.Create = append(mock.calls.Create, callInfo)
+	mock.lockCreate.Unlock()
+	return mock.CreateFunc(ctx, req)
+}
+
+// CreateCalls gets all the calls that were made to Create.
+// Check the length with:
+//
+//	len(mockedTableService.CreateCalls())
+func (mock *TableServiceMock) CreateCalls() []struct {
+	Ctx context.Context
+	Req *TableGenRequest
+} {
+	var calls []struct {
+		Ctx context.Context
+		Req *TableGenRequest
+	}
+	mock.lockCreate.RLock()
+	calls = mock.calls.Create
+	mock.lockCreate.RUnlock()
+	return calls
 }
 
 // CreateRows calls CreateRowsFunc.
@@ -210,42 +262,6 @@ func (mock *TableServiceMock) CreateRowsCalls() []struct {
 	mock.lockCreateRows.RLock()
 	calls = mock.calls.CreateRows
 	mock.lockCreateRows.RUnlock()
-	return calls
-}
-
-// CreateTable calls CreateTableFunc.
-func (mock *TableServiceMock) CreateTable(ctx context.Context, req *TableGenRequest) (string, error) {
-	if mock.CreateTableFunc == nil {
-		panic("TableServiceMock.CreateTableFunc: method is nil but TableService.CreateTable was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-		Req *TableGenRequest
-	}{
-		Ctx: ctx,
-		Req: req,
-	}
-	mock.lockCreateTable.Lock()
-	mock.calls.CreateTable = append(mock.calls.CreateTable, callInfo)
-	mock.lockCreateTable.Unlock()
-	return mock.CreateTableFunc(ctx, req)
-}
-
-// CreateTableCalls gets all the calls that were made to CreateTable.
-// Check the length with:
-//
-//	len(mockedTableService.CreateTableCalls())
-func (mock *TableServiceMock) CreateTableCalls() []struct {
-	Ctx context.Context
-	Req *TableGenRequest
-} {
-	var calls []struct {
-		Ctx context.Context
-		Req *TableGenRequest
-	}
-	mock.lockCreateTable.RLock()
-	calls = mock.calls.CreateTable
-	mock.lockCreateTable.RUnlock()
 	return calls
 }
 
@@ -530,6 +546,46 @@ func (mock *TableServiceMock) TruncateCalls() []struct {
 	mock.lockTruncate.RLock()
 	calls = mock.calls.Truncate
 	mock.lockTruncate.RUnlock()
+	return calls
+}
+
+// Update calls UpdateFunc.
+func (mock *TableServiceMock) Update(ctx context.Context, table string, req *TableGenRequest) (string, error) {
+	if mock.UpdateFunc == nil {
+		panic("TableServiceMock.UpdateFunc: method is nil but TableService.Update was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Table string
+		Req   *TableGenRequest
+	}{
+		Ctx:   ctx,
+		Table: table,
+		Req:   req,
+	}
+	mock.lockUpdate.Lock()
+	mock.calls.Update = append(mock.calls.Update, callInfo)
+	mock.lockUpdate.Unlock()
+	return mock.UpdateFunc(ctx, table, req)
+}
+
+// UpdateCalls gets all the calls that were made to Update.
+// Check the length with:
+//
+//	len(mockedTableService.UpdateCalls())
+func (mock *TableServiceMock) UpdateCalls() []struct {
+	Ctx   context.Context
+	Table string
+	Req   *TableGenRequest
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Table string
+		Req   *TableGenRequest
+	}
+	mock.lockUpdate.RLock()
+	calls = mock.calls.Update
+	mock.lockUpdate.RUnlock()
 	return calls
 }
 

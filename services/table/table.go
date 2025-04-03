@@ -41,7 +41,8 @@ var reflector = jsonschema.Reflector{
 
 //go:generate moq -rm -out table_moq.go . TableService RowsGenerator
 type TableService interface {
-	CreateTable(ctx context.Context, req *TableGenRequest) (string, error)
+	Create(ctx context.Context, req *TableGenRequest) (string, error)
+	Update(ctx context.Context, table string, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
 	GetTableDetail(ctx context.Context, table string) (*TableInfo, error)
 	Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
@@ -102,7 +103,7 @@ type TableGenColumnSchema struct {
 	Type        string `json:"type"`
 }
 
-func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest) (string, error) {
+func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (string, error) {
 	t.logger.Debugw("creating table", "name", req.Name)
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
@@ -250,6 +251,178 @@ func (t *TableServiceImpl) CreateTable(ctx context.Context, req *TableGenRequest
 
 	t.logger.Debug("finish creating table")
 	return table.Nanoid, tx.Commit()
+}
+
+func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableGenRequest) (string, error) {
+	t.logger.Debugw("updating table", "table", table)
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return "", fmt.Errorf("starting a transaction: %w", err)
+	}
+	if req.Name == "" {
+		return "", ent.Rollback(tx, errors.New("table name is empty"))
+	}
+	sources := map[string]json.RawMessage{}
+	if len(req.Sources) > 0 {
+		for _, raw := range req.Sources {
+			vs, err := source.ValidateSource(ctx, raw, tx.Client())
+			if err != nil {
+				return "", ent.Rollback(tx, err)
+			}
+			if req.APIRequest() {
+				switch st := vs.(type) {
+				case *source.CsvSource:
+					if len(st.Paths) > 0 {
+						return "", errors.New("paths field for csv source is only allowed in CLI")
+					}
+				case *source.ListSource:
+					if st.File != "" {
+						return "", errors.New("file field for list source is only allowed in CLI")
+					}
+				}
+			}
+			bs, err := json.Marshal(vs)
+			if err != nil {
+				return "", ent.Rollback(tx, err)
+			}
+			sources[gjson.GetBytes(raw, "name").String()] = bs
+		}
+	}
+	if len(t.sharedSources) > 0 {
+		for _, so := range t.sharedSources {
+			if _, ok := sources[so.Name]; !ok {
+				vs, err := source.ValidateSource(ctx, so.Data, tx.Client())
+				if err != nil {
+					return "", ent.Rollback(tx, err)
+				}
+				bs, err := json.Marshal(vs)
+				if err != nil {
+					return "", ent.Rollback(tx, err)
+				}
+				sources[so.Name] = bs
+			}
+		}
+	}
+
+	dbtable, err := tx.TableMeta.Query().Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).WithColumns().Only(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+
+	err = dbtable.Update().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).SetSources(sources).Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+
+	// validate linked column column/context_columns exists
+	err = validateLinkedColumnInfo(ctx, tx, req.Columns, sources)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+
+	reqColumns := map[string]TableGenColumn{}
+	for _, col := range req.Columns {
+		reqColumns[col.Name] = col
+	}
+
+	removed := map[int]bool{}
+	upserts := []TableGenColumn{}
+	exists := map[string]string{}
+	for i, col := range dbtable.Edges.Columns {
+		if v, ok := reqColumns[col.Name]; !ok {
+			removed[i] = true
+			err = tx.TableColumn.DeleteOneID(col.ID).Exec(ctx)
+			if err != nil {
+				return "", ent.Rollback(tx, err)
+			}
+		} else {
+			upserts = append(upserts, v)
+			exists[col.Name] = col.Nanoid
+		}
+	}
+
+	// append new columns and prepare zero values for existing rows
+	zeros := []any{}
+	for _, col := range req.Columns {
+		if col.Name == "" {
+			continue
+		}
+		if _, ok := exists[col.Name]; ok {
+			continue
+		}
+		upserts = append(upserts, col)
+		zv, err := util.ZeroValue(tablecolumn.Type(col.Type))
+		if err != nil {
+			return "", ent.Rollback(tx, err)
+		}
+		zeros = append(zeros, zv)
+	}
+
+	columnCreates := []*ent.TableColumnCreate{}
+	for _, col := range upserts {
+		cr := tx.TableColumn.Create()
+		if nid, ok := exists[col.Name]; ok {
+			cr.SetNanoid(nid)
+		}
+		cc := cr.SetTablemeta(dbtable).
+			SetFillMode(tablecolumn.FillMode(col.FillMode)).
+			SetName(col.Name).
+			SetDescription(col.Description).
+			SetType(tablecolumn.Type(col.Type)).
+			SetContextLength(col.ContextLength)
+
+		if col.Source != "" && col.FillMode == "pick" {
+			if _, ok := sources[col.Source]; ok {
+				cc.SetSource(col.Source).SetRandom(col.Random).
+					SetReplacement(col.Replacement).
+					SetRepeat(col.Repeat).SetLinkedColumn(col.LinkedColumn).
+					SetLinkedContextColumns(col.LinkedContextColumns)
+			} else {
+				return "", ent.Rollback(tx, fmt.Errorf("source %s not dound", col.Source))
+			}
+		}
+		columnCreates = append(columnCreates, cc)
+		t.logger.Debugw(
+			"upserting column", "name", col.Name, "description", col.Description,
+			"fill_mode", col.FillMode, "type", col.Type, "source", col.Source,
+		)
+	}
+
+	err = tx.TableColumn.CreateBulk(columnCreates...).OnConflictColumns(tablecolumn.FieldNanoid).UpdateNewValues().Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+
+	// update rows if exists
+	rows, err := dbtable.QueryRows().All(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+	updates := []*ent.TableRowCreate{}
+	for _, row := range rows {
+		cells := []*schema.CellValue{}
+		for i, cell := range row.Cells {
+			if !removed[i] {
+				cells = append(cells, cell)
+			}
+		}
+		for _, v := range zeros {
+			cells = append(cells, &schema.CellValue{Value: v})
+		}
+		updates = append(updates, tx.TableRow.Create().SetTablemeta(dbtable).SetCells(cells).SetNanoid(row.Nanoid))
+	}
+	if len(updates) > 0 {
+		err = tx.TableRow.CreateBulk(updates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, err)
+		}
+	}
+
+	t.logger.Debug("finish updating table")
+	return dbtable.Nanoid, tx.Commit()
 }
 
 func (t *TableServiceImpl) ListTables(ctx context.Context) (*ListTablesResponse, error) {

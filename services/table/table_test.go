@@ -57,7 +57,7 @@ func toCells(data []any) []*schema.CellValue {
 	return cells
 }
 
-func TestTableService_CreateTable(t *testing.T) {
+func TestTableService_Create(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
 	columns := []TableGenColumn{
@@ -154,7 +154,7 @@ func TestTableService_CreateTable(t *testing.T) {
 		"users":     []byte(fmt.Sprintf(`{"type":"linked","table":"%s"}`, userTable.Nanoid)),
 	}
 
-	id, err := srv.CreateTable(ctx, &TableGenRequest{
+	id, err := srv.Create(ctx, &TableGenRequest{
 		Name:        "test",
 		Description: "test table",
 		Columns:     columns,
@@ -262,7 +262,7 @@ func TestTableService_CreateTableSharedSource(t *testing.T) {
 	).Save(ctx)
 	require.NoError(t, err)
 
-	id, err := srv.CreateTable(ctx, &TableGenRequest{
+	id, err := srv.Create(ctx, &TableGenRequest{
 		Name:        "test",
 		Description: "test table",
 		Columns:     columns,
@@ -758,7 +758,7 @@ func TestTableService_CreateTableAPIRequest(t *testing.T) {
 			).Save(ctx)
 			require.NoError(t, err)
 
-			_, err = srv.CreateTable(ctx, &TableGenRequest{
+			_, err = srv.Create(ctx, &TableGenRequest{
 				Name:        "test",
 				Description: "test table",
 				Columns:     columns,
@@ -779,7 +779,7 @@ func TestTableService_ImportLinked(t *testing.T) {
 	srv, err := NewTableService(&config.Config{Common: config.Common{SourceDataDir: "./"}}, db, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
-	tid, err := srv.CreateTable(ctx, &TableGenRequest{Name: "lt", Columns: []TableGenColumn{
+	tid, err := srv.Create(ctx, &TableGenRequest{Name: "lt", Columns: []TableGenColumn{
 		{Name: "c1", FillMode: "ai", Type: "string", Description: "c1c1"},
 		{Name: "c2", FillMode: "ai", Type: "string", Description: "c2c2"},
 	}})
@@ -863,5 +863,107 @@ func TestTableService_ImportLinked(t *testing.T) {
 			"c2": map[string]any{"data": "bar", "description": "c2c2"},
 		}}},
 		{&schema.CellValue{Value: "c", ContextValue: nil}, &schema.CellValue{Value: "cc", ContextValue: nil}},
+	}, rows)
+}
+
+func TestTableService_Update(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	columns := []TableGenColumn{
+		{
+			Name: "name", Description: "recipe name", Type: "string",
+			FillMode: "ai", ContextLength: 5,
+		},
+		{
+			Name: "description", Description: "recipe description", Type: "string",
+			FillMode: "ai", ContextLength: 5,
+		},
+		{
+			Name: "steps", Description: "recipe steps", Type: "string",
+			FillMode: "ai", ContextLength: 3,
+		},
+		{
+			Name: "ingredients", Description: "recipe ingredients", Type: "string",
+			FillMode: "ai",
+		},
+	}
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	id, err := srv.Create(ctx, &TableGenRequest{
+		Name:        "test",
+		Description: "test table",
+		Columns:     columns,
+		Model:       "aiai",
+	})
+	require.NoError(t, err)
+	detail, err := srv.GetTableDetail(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, []TableColumnInfo{
+		{ID: "UkLWZg", Name: "name", Description: "recipe name", Type: "string", FillMode: "ai"},
+		{ID: "gbHJdm", Name: "description", Description: "recipe description", Type: "string", FillMode: "ai"},
+		{ID: "EfhxLZ", Name: "steps", Description: "recipe steps", Type: "string", FillMode: "ai"},
+		{ID: "VqXmZF", Name: "ingredients", Description: "recipe ingredients", Type: "string", FillMode: "ai"},
+	}, detail.Columns)
+	err = srv.CreateRows(ctx, id, []map[string]any{
+		{"name": "r1", "description": "d1", "steps": "s1", "ingredients": "i1"},
+		{"name": "r2", "description": "d2", "steps": "s2", "ingredients": "i2"},
+	})
+	require.NoError(t, err)
+
+	// change order, remove one column and add two columns
+	columns = []TableGenColumn{
+		{
+			Name: "steps", Description: "recipe steps", Type: "string",
+			FillMode: "ai", ContextLength: 3,
+		},
+		{
+			Name: "ingredients", Description: "recipe ingredients", Type: "string",
+			FillMode: "ai",
+		},
+		{
+			Name: "name", Description: "recipe name", Type: "string",
+			FillMode: "ai", ContextLength: 5,
+		},
+		{
+			Name: "tags", Description: "recipe tags", Type: "string",
+			FillMode: "ai",
+		},
+		{
+			Name: "difficulty", Description: "recipe difficulty", Type: "integer",
+			FillMode: "ai",
+		},
+	}
+	id, err = srv.Update(ctx, "test", &TableGenRequest{
+		Name:        "test_go",
+		Description: "test table go",
+		Columns:     columns,
+	})
+	require.NoError(t, err)
+	detail, err = srv.GetTableDetail(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, []TableColumnInfo{
+		{ID: "UkLWZg", Name: "name", Description: "recipe name", Type: "string", FillMode: "ai"},
+		{ID: "EfhxLZ", Name: "steps", Description: "recipe steps", Type: "string", FillMode: "ai"},
+		{ID: "VqXmZF", Name: "ingredients", Description: "recipe ingredients", Type: "string", FillMode: "ai"},
+		{ID: "p6klVe", Name: "tags", Description: "recipe tags", Type: "string", FillMode: "ai"},
+		{ID: "nJqfPa", Name: "difficulty", Description: "recipe difficulty", Type: "integer", FillMode: "ai"},
+	}, detail.Columns)
+
+	dbrows, err := db.TableRow.Query().Where(tablerow.HasTablemetaWith(tablemeta.Nanoid(id))).Order(ent.Asc("id")).All(ctx)
+	require.NoError(t, err)
+	rows := [][]*schema.CellValue{}
+	for _, row := range dbrows {
+		rows = append(rows, row.Cells)
+	}
+	require.Equal(t, [][]*schema.CellValue{
+		{
+			&schema.CellValue{Value: "r1"}, &schema.CellValue{Value: "s1"},
+			&schema.CellValue{Value: "i1"}, &schema.CellValue{Value: ""}, &schema.CellValue{Value: float64(0)},
+		},
+		{
+			&schema.CellValue{Value: "r2"}, &schema.CellValue{Value: "s2"},
+			&schema.CellValue{Value: "i2"}, &schema.CellValue{Value: ""}, &schema.CellValue{Value: float64(0)},
+		},
 	}, rows)
 }

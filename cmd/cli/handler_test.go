@@ -25,7 +25,7 @@ import (
 
 func TestHandler_Create(t *testing.T) {
 	tableMock := &table.TableServiceMock{
-		CreateTableFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
+		CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
 			require.Equal(t, &table.TableGenRequest{
 				Name: "go",
 				Columns: []table.TableGenColumn{

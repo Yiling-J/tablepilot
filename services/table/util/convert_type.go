@@ -10,22 +10,26 @@ import (
 	"github.com/spf13/cast"
 )
 
+func ZeroValue(tp tablecolumn.Type) (any, error) {
+	switch tp {
+	case tablecolumn.TypeString:
+		return "", nil
+	case tablecolumn.TypeNumber:
+		return 0.0, nil
+	case tablecolumn.TypeInteger:
+		return 0, nil
+	case tablecolumn.TypeBoolean:
+		return false, nil
+	case tablecolumn.TypeArray:
+		return []any{}, nil
+	default:
+		return "", errors.New("unsupported type")
+	}
+}
+
 func ConvertStringToType(v string, to tablecolumn.Type) (any, error) {
 	if v == "" {
-		switch to {
-		case tablecolumn.TypeString:
-			return "", nil
-		case tablecolumn.TypeNumber:
-			return 0.0, nil
-		case tablecolumn.TypeInteger:
-			return 0, nil
-		case tablecolumn.TypeBoolean:
-			return false, nil
-		case tablecolumn.TypeArray:
-			return []any{}, nil
-		default:
-			return nil, errors.New("unsupported type")
-		}
+		return ZeroValue(to)
 	}
 
 	switch to {

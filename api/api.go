@@ -22,7 +22,7 @@ func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 	}
 	request.MarkAPIRequest()
 
-	uid, err := hs.TableService.CreateTable(ctx.Request.Context(), &request)
+	uid, err := hs.TableService.Create(ctx.Request.Context(), &request)
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return

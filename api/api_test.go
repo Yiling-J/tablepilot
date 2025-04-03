@@ -27,7 +27,7 @@ func TestAPI_CreateTable(t *testing.T) {
 	}
 	expectedRequest.MarkAPIRequest()
 	tableMock := &table.TableServiceMock{
-		CreateTableFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
+		CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
 			require.Equal(t, expectedRequest, req)
 			return "foo", nil
 		},
