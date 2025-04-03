@@ -18,13 +18,37 @@ POST /tables
 ```
 #### Request Body
 
-See [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples) for more examples.
+The JSON body of this API follows the same syntax as the CLI schema file. See [examples directory](https://github.com/Yiling-J/tablepilot/tree/main/examples) for more examples.
 
 ```json
 {
   "name": "recipes",
   "model": "m1",
   "description": "all recipes",
+  "columns": [
+    {"name": "recipe_name", "description": "Name of the recipe", "type": "string", "fill_mode": "ai"}
+  ],
+  "sources": [
+    {"name": "cuisines"}
+  ]
+}
+```
+#### Response
+```json
+{
+  "id": "foo"
+}
+```
+
+### Update a Table
+#### Endpoint
+```
+PATCH /tables/{table_id or table_name}
+```
+#### Request Body
+
+```json
+{
   "columns": [
     {"name": "recipe_name", "description": "Name of the recipe", "type": "string", "fill_mode": "ai"}
   ],

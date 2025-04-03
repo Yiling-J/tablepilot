@@ -40,12 +40,35 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		id, err := h.backend.TableService.CreateTable(cmd.Context(), &req)
+		id, err := h.backend.TableService.Create(cmd.Context(), &req)
 		if err != nil {
 			return err
 		}
 		h.backend.Logger.Infow("table created", "id", id)
 	}
+	return nil
+}
+
+func (h *Handler) Update(cmd *cobra.Command, args []string) error {
+	fileName := args[0]
+	tb, err := cmd.Flags().GetString("table")
+	if err != nil {
+		return err
+	}
+	var req table.TableGenRequest
+	f, err := os.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(f, &req)
+	if err != nil {
+		return err
+	}
+	id, err := h.backend.TableService.Update(cmd.Context(), tb, &req)
+	if err != nil {
+		return err
+	}
+	h.backend.Logger.Infow("table updated", "id", id)
 	return nil
 }
 

@@ -124,6 +124,16 @@ A number of examples demonstrating various use cases of Tablepilot are available
   ```
   **Important**: If you modify the JSON schema after creating a table, be sure to delete the existing table then recreating it.
 
+- **update**
+  Update table from schema JSON file.
+  ```
+  tablepilot update recipes.json -t=recipes
+  ```
+  - `-t, --table string`
+	 Table ID or name to update. If not provided, the name field in the JSON file will be used.
+
+  The update command compares the existing columns in the database with those in the JSON file and matches them by column name. Columns present in both the database and JSON file will be updated. Columns missing from the JSON file will be removed. And if the table already contains data: Removed columns will also have their data deleted, newly added columns will be initialized with their zero value.
+
 - **delete**
   Delete a specified table.
   ```

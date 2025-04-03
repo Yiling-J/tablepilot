@@ -22,7 +22,25 @@ func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 	}
 	request.MarkAPIRequest()
 
-	uid, err := hs.TableService.CreateTable(ctx.Request.Context(), &request)
+	uid, err := hs.TableService.Create(ctx.Request.Context(), &request)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+
+	ctx.JSON(200, gin.H{"id": uid})
+}
+
+func (hs *HTTPServer) UpdateTable(ctx *gin.Context) {
+	var request table.TableGenRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	request.MarkAPIRequest()
+
+	uid, err := hs.TableService.Update(ctx.Request.Context(), ctx.Param("table"), &request)
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
@@ -193,6 +211,7 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/tables", hs.CreateTable)
 	hs.apiv1.GET("/tables", hs.ListTables)
 	hs.apiv1.GET("/tables/:table", hs.Describe)
+	hs.apiv1.PATCH("/tables/:table", hs.UpdateTable)
 	hs.apiv1.POST("/tables/:table", hs.CreateRows)
 	hs.apiv1.DELETE("/tables/:table", hs.Delete)
 	hs.apiv1.POST("/tables/:table/truncate", hs.Truncate)

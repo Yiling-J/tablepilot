@@ -68,6 +68,17 @@ func BuildCLI(root *cobra.Command) *CLI {
 		},
 	})
 
+	updateCommand := &cobra.Command{
+		Use:   "update <file>...",
+		Short: "Update an existing table using a schema JSON file",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handler.Update(cmd, args)
+		},
+	}
+	updateCommand.Flags().StringP("table", "t", "", "table ID or name to update; defaults to the name field in the JSON if not specified")
+	cmd.AddCommand(updateCommand)
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "list",
 		Short: "List all available tables",

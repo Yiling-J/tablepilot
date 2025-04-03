@@ -67,6 +67,14 @@ func (ts *TestServer) NewPostRequest(url string, body any) (*http.Request, error
 	return http.NewRequest(http.MethodPost, url, strings.NewReader(string(d)))
 }
 
+func (ts *TestServer) NewPatchRequest(url string, body any) (*http.Request, error) {
+	d, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	return http.NewRequest(http.MethodPatch, url, strings.NewReader(string(d)))
+}
+
 func (ts *TestServer) NewPutRequest(url string, body any) (*http.Request, error) {
 	d, err := json.Marshal(body)
 	if err != nil {
