@@ -914,7 +914,7 @@ func TestTableService_Update(t *testing.T) {
 	// change order, remove one column and add two columns
 	columns = []TableGenColumn{
 		{
-			Name: "steps", Description: "recipe steps", Type: "string",
+			Name: "steps", Description: "recipe steps go", Type: "array",
 			FillMode: "ai", ContextLength: 3,
 		},
 		{
@@ -944,7 +944,7 @@ func TestTableService_Update(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []TableColumnInfo{
 		{ID: "UkLWZg", Name: "name", Description: "recipe name", Type: "string", FillMode: "ai"},
-		{ID: "EfhxLZ", Name: "steps", Description: "recipe steps", Type: "string", FillMode: "ai"},
+		{ID: "EfhxLZ", Name: "steps", Description: "recipe steps go", Type: "array", FillMode: "ai"},
 		{ID: "VqXmZF", Name: "ingredients", Description: "recipe ingredients", Type: "string", FillMode: "ai"},
 		{ID: "p6klVe", Name: "tags", Description: "recipe tags", Type: "string", FillMode: "ai"},
 		{ID: "nJqfPa", Name: "difficulty", Description: "recipe difficulty", Type: "integer", FillMode: "ai"},
