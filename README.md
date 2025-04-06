@@ -36,7 +36,7 @@ To generate a table, you’ll need a **TOML config file**, and in the case of th
 - **Config File (Required):** Defines the LLM clients for table generation and specifies the database for storing table schemas and data.
 - **Schema File (Only Required for CLI):** If using the CLI, you'll need a JSON schema file to define the table name, columns, and other details. For WebUI users, you can build the schema interactively in the UI. For API users, send the schema as JSON in the request body when calling the API.
 
-Below is an example `config.toml` file using an SQLite3 database (`data.db`). This configuration defines two clients, **OpenAI** and **Gemini**, and assigns two models to them:  
+Below is an example `config.toml` file using an SQLite3 database (`data.db`). This configuration defines two clients, **OpenAI** and **Gemini**, and assigns two models to them:
 
 - **Gemini** → `gemini-2.0-flash-001` (default)
 - **OpenAI** → `gpt-4o`
@@ -85,7 +85,7 @@ tablepilot create examples/recipes_simple/recipes.json
 ```
 tablepilot describe recipes
 ```
-   
+
 **Generate Rows**: Use the `generate` command to create rows. The rows will be stored automatically in the database. However, you can use the `saveas` flag to save the generated rows directly into a CSV file, instead of the database. In this case, the database acts as a schema store and does not store any row data. In this example we generate 20 recipes, 5 recipes a batch.
 ```
 tablepilot generate recipes -c=20 -b=5
@@ -104,10 +104,10 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 - **recipes_for_customers**
   This example illustrating how to use another table as a reference. The `customers.json` file is used to generate a customer table, and then the recipes table is generated based on customer data. Each customer will receive a unique recipe tailored to their information.
-  
+
 - **pokémons**
   This example demonstrates how to create a table, import an existing CSV of 1000 Pokémons, and autofill column data. Tablepilot will generate ecological information for each Pokémon based on the existing row data.
-  
+
 - **imdb_movie_haiku**
   This example takes an IMDb movie CSV table and generates haiku poems inspired by movie titles and overviews, blending structured data with artistic expression.
 
@@ -212,7 +212,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
   ```
   tablepilot truncate recipes
   ```
-  
+
 - **serve**
   Start an API server. See [API.md](API.md) for available endpoints. If you installed Tablepilot from a binary release or built the frontend when installing from source, the WebUI will be accessible at the root URL, such as: http://127.0.0.1:8080/
   ```
@@ -228,7 +228,7 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 - **--config string**
   Path to the config file (default is `config.toml`).
-  
+
   ```
   tablepilot show recipes --config custom_config.toml
   ```
@@ -306,10 +306,10 @@ A Table schema JSON file consists of five main parts: `name`, `description`, `mo
 
 The name of the table. This serves as a unique identifier for the table (e.g., `"recipes"` in the example above). Use only letters, numbers, and underscores (_), and start with a letter.
 
-#### description: 
+#### description:
 A description of what the table represents. It provides context for the data (e.g., `"table of recipes"`). This description will be used in the prompt, so it should be clear and easy for the LLM to understand. It's helpful to include relevant details to ensure accurate and meaningful generation.
 
-#### model (Optional): 
+#### model (Optional):
 This section allows you to specify a default model for AI-generated columns. If not defined, the default model will be selected based on the configuration file.
 
 #### sources:
@@ -370,7 +370,7 @@ Special fields for different types:
     - **config**: (Optional) The dataset configuration to use, defaulting to `"default"`.
     - **split**: (Optional) The dataset split to use, defaulting to `"train"`.
 
-#### columns: 
+#### columns:
 A list of column definitions. Each column is an object that can contain the following fields:
 
 - **name**: The name of the column (e.g., `"Name"`, `"Ingredients"`). This will be used in the prompt when generating rows.
@@ -380,6 +380,7 @@ A list of column definitions. Each column is an object that can contain the foll
 	- `"array"`: For lists.
 	- `"integer"`: For integral numbers.
 	- `"number"`: For any numeric type, either integers or floating point numbers.
+	- `"image"`: For local image files or image URLs. Currently, this column type is input-only. Attempting to generate values for image columns will be ignored. Output support for image generation will be added once integration is complete. The value of this column should be either a file path relative to {source_data_dir} or a valid image URL. Your model must support [Images and vision](https://platform.openai.com/docs/guides/images?api-mode=chat) in order to use this column type.
 - **fill_mode**: Specifies how the column is populated. Possible values:
 	- `"ai"`: AI will generate values for this column.
 	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
