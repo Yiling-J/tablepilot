@@ -33,7 +33,7 @@ func TestSource_AI(t *testing.T) {
 				ChatFunc: func(
 					ctx context.Context, request *client.ChatRequest,
 				) (*client.ChatResponse, error) {
-					require.Equal(t, p, request.Messages[0].Content)
+					require.Equal(t, p, request.Messages[0].Content[0].Data)
 					require.Equal(t, 1.0, request.PresencePenalty)
 					require.Equal(t, OptionGenMaxTokens, int(request.MaxOutputTokens))
 					return &client.ChatResponse{
