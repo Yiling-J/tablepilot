@@ -64,6 +64,7 @@ func TestIntegrationCLI_Snapshots(t *testing.T) {
 		{"imdb_movie_haiku", "imdb_movie_haiku/haiku.json", [][]string{}},
 		{"chinese_qa_parquet", "chinese_qa_parquet/table.json", [][]string{}},
 		{"chinese_qa_parquet_huggingface", "chinese_qa_parquet_huggingface/table.json", [][]string{}},
+		{"icon_jokes", "icon_jokes/icon_jokes.json", [][]string{}},
 	}
 
 	for _, tt := range tests {

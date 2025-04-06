@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/invopop/jsonschema"
 )
@@ -32,6 +33,17 @@ func UserMessage(content string) *Message {
 	}
 }
 
+func sortAndRun(m map[string]string, fn func(k string, v string)) {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fn(k, m[k])
+	}
+}
+
 func UserMessageWithImages(content string, images map[string]string) *Message {
 	m := &Message{
 		Role: "user",
@@ -39,16 +51,16 @@ func UserMessageWithImages(content string, images map[string]string) *Message {
 			{Type: ContentTypeText, Data: content},
 		},
 	}
-	for id, img := range images {
+	sortAndRun(images, func(k, v string) {
 		m.Content = append(m.Content, Content{
 			Type: ContentTypeText,
-			Data: fmt.Sprintf("\nBelow is the image with ID: <%s>", id),
+			Data: fmt.Sprintf("\nBelow is the image with ID: <%s>", k),
 		})
 		m.Content = append(m.Content, Content{
 			Type: ContentTypeImage,
-			Data: img,
+			Data: v,
 		})
-	}
+	})
 	return m
 }
 
