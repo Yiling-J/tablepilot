@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -11,6 +15,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
@@ -262,7 +267,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 			ChatFunc: func(
 				ctx context.Context, request *client.ChatRequest,
 			) (*client.ChatResponse, error) {
-				promptContent = request.Messages[0].Content
+				promptContent = request.Messages[0].Content[0].Data
 				b, err := json.Marshal(map[string]any{"data": "d"})
 				require.NoError(t, err)
 				return &client.ChatResponse{
@@ -306,7 +311,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 			ChatFunc: func(
 				ctx context.Context, request *client.ChatRequest,
 			) (*client.ChatResponse, error) {
-				promptContent = request.Messages[0].Content
+				promptContent = request.Messages[0].Content[0].Data
 				b, err := json.Marshal(map[string]any{"data": "d"})
 				require.NoError(t, err)
 				return &client.ChatResponse{
@@ -376,7 +381,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 			ChatFunc: func(
 				ctx context.Context, request *client.ChatRequest,
 			) (*client.ChatResponse, error) {
-				promptContent = request.Messages[0].Content
+				promptContent = request.Messages[0].Content[0].Data
 				data := []map[string]any{{"id": 0, col.Nanoid: "d"}, {"id": 1, col.Nanoid: "e"}}
 				b, err := json.Marshal(map[string]any{"data": data})
 				require.NoError(t, err)
@@ -454,7 +459,7 @@ func TestRowsGenerator_Autofill(t *testing.T) {
 				ChatFunc: func(
 					ctx context.Context, request *client.ChatRequest,
 				) (*client.ChatResponse, error) {
-					promptContent = request.Messages[0].Content
+					promptContent = request.Messages[0].Content[0].Data
 					data := []map[string]any{}
 					for i := 0; i < 2; i++ {
 						id := "x"
@@ -727,4 +732,267 @@ func TestRowsGenerator_AutofillPartial(t *testing.T) {
 	require.Equal(t, rows[0].Cells, []*schema.CellValue{
 		{Value: "v10"}, {Value: "foobar"}, {Value: "v30"}, {Value: "v40"},
 	})
+}
+
+func createPNG(filePath string) error {
+	img := image.NewRGBA(image.Rect(0, 0, 5, 5))
+	black := color.RGBA{0, 0, 0, 255}
+	for y := 0; y < 5; y++ {
+		for x := 0; x < 5; x++ {
+			img.Set(x, y, black)
+		}
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	return png.Encode(file, img)
+}
+
+func TestRowsGenerator_PrepareImageRows(t *testing.T) {
+	t.Run("generate", func(t *testing.T) {
+		files := []string{"i1.png", "i2.png", "i1.png", "i3.png", "i2.png"}
+		for _, f := range files {
+			err := createPNG(f)
+			require.NoError(t, err)
+			defer func() { _ = os.Remove(f) }()
+		}
+		sc := &source.ListSource{Options: files}
+		err := sc.Init(context.TODO(), "")
+		require.NoError(t, err)
+		idx := source.NewIndexer(sc, &ent.TableColumn{
+			Random: false,
+		})
+		generator := &AIRowsGenerator{
+			sourceDataDir: "./",
+			indexerMap: map[string]*source.Indexer{
+				"c1": idx,
+			},
+			table: &ent.TableMeta{Edges: ent.TableMetaEdges{
+				Columns: []*ent.TableColumn{
+					{Nanoid: "c1", Type: tablecolumn.TypeImage, Source: "c1", Random: false},
+				},
+			}},
+			images: make(map[string]string),
+		}
+		err = generator.prepareRows(context.TODO(), 5)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"i1.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i2.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i3.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC"}, generator.images)
+		for i, f := range files {
+			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "id": {Value: i}}, generator.rows[i])
+		}
+	})
+
+	t.Run("generate-url", func(t *testing.T) {
+		files := []string{"i1.png", "i2.png", "i1.png", "i3.png", "i2.png"}
+		for i, f := range files {
+			files[i] = "https://images.com/" + f
+		}
+		sc := &source.ListSource{Options: files}
+		err := sc.Init(context.TODO(), "")
+		require.NoError(t, err)
+		idx := source.NewIndexer(sc, &ent.TableColumn{
+			Random: false,
+		})
+		generator := &AIRowsGenerator{
+			sourceDataDir: "./",
+			indexerMap: map[string]*source.Indexer{
+				"c1": idx,
+			},
+			table: &ent.TableMeta{Edges: ent.TableMetaEdges{
+				Columns: []*ent.TableColumn{
+					{Nanoid: "c1", Type: tablecolumn.TypeImage, Source: "c1", Random: false},
+				},
+			}},
+			images: make(map[string]string),
+		}
+		err = generator.prepareRows(context.TODO(), 5)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"https://images.com/i1.png": "https://images.com/i1.png", "https://images.com/i2.png": "https://images.com/i2.png", "https://images.com/i3.png": "https://images.com/i3.png"}, generator.images)
+		for i, f := range files {
+			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "id": {Value: i}}, generator.rows[i])
+		}
+	})
+
+	t.Run("autofill", func(t *testing.T) {
+		files := []string{"i1.png", "i2.png", "i1.png", "i3.png", "i2.png"}
+		for _, f := range files {
+			err := createPNG(f)
+			require.NoError(t, err)
+			defer func() { _ = os.Remove(f) }()
+		}
+		db := db.NewTestDB()
+		ctx := context.TODO()
+		tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+		require.NoError(t, err)
+		err = db.TableColumn.Create().
+			SetName("c0").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeString).Exec(ctx)
+		require.NoError(t, err)
+		err = db.TableColumn.Create().
+			SetName("c1").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeImage).Exec(ctx)
+		require.NoError(t, err)
+		rows, err := db.TableRow.CreateBulk([]*ent.TableRowCreate{
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: "i1.png"}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: "i2.png"}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: "i1.png"}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: "i3.png"}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: "i2.png"}}),
+		}...).Save(ctx)
+		require.NoError(t, err)
+		tb, err = db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+			tcq.Order(ent.Asc(tablecolumn.FieldID))
+		}).Where(tablemeta.Name("table")).First(ctx)
+		require.NoError(t, err)
+
+		sc := &source.ListSource{Options: files}
+		err = sc.Init(ctx, "")
+		require.NoError(t, err)
+		idx := source.NewIndexer(sc, &ent.TableColumn{
+			Random: false,
+		})
+		generator := &AIRowsGenerator{
+			autofill: AutofillRequest{
+				Enable:         true,
+				Columns:        []string{"c0"},
+				ContextColumns: []string{"c1"},
+			},
+			sourceDataDir: "./",
+			indexerMap: map[string]*source.Indexer{
+				"c1": idx,
+			},
+			table:  tb,
+			images: make(map[string]string),
+		}
+		err = generator.prepareRows(context.TODO(), 5)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"i1.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i2.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i3.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC"}, generator.images)
+		for i, f := range files {
+			require.Equal(t, map[string]*schema.CellValue{
+				tb.Edges.Columns[0].Nanoid: {Value: "v"}, tb.Edges.Columns[1].Nanoid: {Value: f}, "id": {Value: rows[i].Nanoid},
+			}, generator.rows[i])
+		}
+	})
+
+	t.Run("autofill-url", func(t *testing.T) {
+		files := []string{"i1.png", "i2.png", "i1.png", "i3.png", "i2.png"}
+		for i, f := range files {
+			files[i] = "https://images.com/" + f
+		}
+		db := db.NewTestDB()
+		ctx := context.TODO()
+		tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+		require.NoError(t, err)
+		err = db.TableColumn.Create().
+			SetName("c0").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeString).Exec(ctx)
+		require.NoError(t, err)
+		err = db.TableColumn.Create().
+			SetName("c1").
+			SetFillMode(tablecolumn.FillModeAi).
+			SetTablemeta(tb).
+			SetType(tablecolumn.TypeImage).Exec(ctx)
+		require.NoError(t, err)
+		rows, err := db.TableRow.CreateBulk([]*ent.TableRowCreate{
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: files[0]}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: files[1]}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: files[2]}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: files[3]}}),
+			db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "v"}, {Value: files[4]}}),
+		}...).Save(ctx)
+		require.NoError(t, err)
+		tb, err = db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+			tcq.Order(ent.Asc(tablecolumn.FieldID))
+		}).Where(tablemeta.Name("table")).First(ctx)
+		require.NoError(t, err)
+
+		sc := &source.ListSource{Options: files}
+		err = sc.Init(ctx, "")
+		require.NoError(t, err)
+		idx := source.NewIndexer(sc, &ent.TableColumn{
+			Random: false,
+		})
+		generator := &AIRowsGenerator{
+			autofill: AutofillRequest{
+				Enable:         true,
+				Columns:        []string{"c0"},
+				ContextColumns: []string{"c1"},
+			},
+			sourceDataDir: "./",
+			indexerMap: map[string]*source.Indexer{
+				"c1": idx,
+			},
+			table:  tb,
+			images: make(map[string]string),
+		}
+		err = generator.prepareRows(context.TODO(), 5)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"https://images.com/i1.png": "https://images.com/i1.png", "https://images.com/i2.png": "https://images.com/i2.png", "https://images.com/i3.png": "https://images.com/i3.png"}, generator.images)
+		for i, f := range files {
+			require.Equal(t, map[string]*schema.CellValue{
+				tb.Edges.Columns[0].Nanoid: {Value: "v"}, tb.Edges.Columns[1].Nanoid: {Value: f}, "id": {Value: rows[i].Nanoid},
+			}, generator.rows[i])
+		}
+	})
+}
+
+func TestRowsGenerator_SkipImageColumn(t *testing.T) {
+	ctx := context.TODO()
+	db := db.NewTestDB()
+	tb, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	err = db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetSource("so").
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeImage).Exec(ctx)
+	require.NoError(t, err)
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: "foo",
+		Batch: 5,
+		Count: 5,
+	}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	require.Equal(t, 0, len(generator.missingColumns))
+}
+
+func TestRowsGenerator_ChatWithImage(t *testing.T) {
+	ctx := context.Background()
+	var messages []*client.Message
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			messages = request.Messages
+			return &client.ChatResponse{
+				Content: "",
+			}, nil
+		},
+	}
+
+	generator := &AIRowsGenerator{
+		ai: aiService,
+		missingColumns: []*ent.TableColumn{
+			{Nanoid: "n1", Type: tablecolumn.TypeArray},
+			{Nanoid: "n2", Type: tablecolumn.TypeString},
+		},
+		builder: promptbuilder.NewRowsBuilder(1),
+		table:   &ent.TableMeta{Model: "test"},
+		images:  map[string]string{"i.png": "i,png"},
+	}
+	_, err := generator.chat(ctx)
+	require.NoError(t, err)
+	p, err := generator.builder.Prompt()
+	require.NoError(t, err)
+	require.Equal(t, client.UserMessageWithImages(p, map[string]string{"i.png": "i,png"}), messages[0])
 }

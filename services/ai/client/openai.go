@@ -89,7 +89,16 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 	for _, m := range request.Messages {
 		switch m.Role {
 		case "user":
-			messages = append(messages, openai.UserMessage(m.Content))
+			for _, c := range m.Content {
+				switch c.Type {
+				case ContentTypeText:
+					messages = append(messages, openai.UserMessage(c.Data))
+				case ContentTypeImage:
+					messages = append(messages, openai.UserMessageParts(
+						openai.ImagePart(c.Data),
+					))
+				}
+			}
 		}
 	}
 	chatParams := openai.ChatCompletionNewParams{

@@ -1,30 +1,72 @@
 package client
 
-import "github.com/invopop/jsonschema"
+import (
+	"fmt"
+
+	"github.com/invopop/jsonschema"
+)
+
+type ContentType string
+
+const (
+	ContentTypeText  ContentType = "text"
+	ContentTypeImage ContentType = "image"
+)
+
+type Content struct {
+	Type ContentType
+	Data string
+}
 
 type Message struct {
 	Role    string
-	Content string
+	Content []Content
 }
 
 func UserMessage(content string) *Message {
 	return &Message{
-		Role:    "user",
-		Content: content,
+		Role: "user",
+		Content: []Content{
+			{Type: ContentTypeText, Data: content},
+		},
 	}
+}
+
+func UserMessageWithImages(content string, images map[string]string) *Message {
+	m := &Message{
+		Role: "user",
+		Content: []Content{
+			{Type: ContentTypeText, Data: content},
+		},
+	}
+	for id, img := range images {
+		m.Content = append(m.Content, Content{
+			Type: ContentTypeText,
+			Data: fmt.Sprintf("\nBelow is the image with ID: <%s>", id),
+		})
+		m.Content = append(m.Content, Content{
+			Type: ContentTypeImage,
+			Data: img,
+		})
+	}
+	return m
 }
 
 func AssistantMessage(content string) *Message {
 	return &Message{
-		Role:    "assistant",
-		Content: content,
+		Role: "assistant",
+		Content: []Content{
+			{Type: ContentTypeText, Data: content},
+		},
 	}
 }
 
 func SystemMessage(content string) *Message {
 	return &Message{
-		Role:    "system",
-		Content: content,
+		Role: "system",
+		Content: []Content{
+			{Type: ContentTypeText, Data: content},
+		},
 	}
 }
 
