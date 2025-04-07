@@ -2,6 +2,8 @@ package table
 
 import (
 	"context"
+	// #nosec
+	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -254,14 +256,20 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 					if v == "" {
 						continue
 					}
-					if _, ok := g.images[v]; !ok {
+					// use md5 if v is too long(data url)
+					vk := v
+					if strings.HasPrefix(v, "data:") && len(v) > 200 {
+						// #nosec
+						vk = fmt.Sprintf("%x", md5.Sum([]byte(v)))
+					}
+					if _, ok := g.images[vk]; !ok {
 						url, err := g.imageURL(ctx, v)
 						if err != nil {
 							return err
 						}
-						g.images[v] = url
+						g.images[vk] = url
 					}
-					row[col.Nanoid] = &schema.CellValue{Value: v}
+					row[col.Nanoid] = &schema.CellValue{Value: vk}
 				} else {
 					row[col.Nanoid] = dbrow.Cells[i]
 				}
@@ -286,14 +294,20 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 					if v == "" {
 						continue
 					}
-					if _, ok := g.images[v]; !ok {
+					// use md5 if v is too long(data url)
+					vk := v
+					if strings.HasPrefix(v, "data:") && len(v) > 200 {
+						// #nosec
+						vk = fmt.Sprintf("%x", md5.Sum([]byte(v)))
+					}
+					if _, ok := g.images[vk]; !ok {
 						url, err := g.imageURL(ctx, v)
 						if err != nil {
 							return err
 						}
-						g.images[v] = url
+						g.images[vk] = url
 					}
-					row[col.Nanoid] = &schema.CellValue{Value: v}
+					row[col.Nanoid] = &schema.CellValue{Value: vk}
 				}
 			}
 			if len(row) > 0 {

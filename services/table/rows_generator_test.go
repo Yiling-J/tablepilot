@@ -817,7 +817,10 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 	})
 
 	t.Run("generate-dataurl", func(t *testing.T) {
-		files := []string{"data:image/jpeg;base64,abc"}
+		files := []string{
+			"data:image/jpeg;base64,abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcbacbabbshcfudsfuibcugcguidkgkgfdsgfuigfuiehkadjagfdgfsdkfdksksdfgjksdgfkgfksdfksdgfwieufhgsfkdjfbskhfuwehfwesofhweiofhhfjksdfkjsgfjksfbwhefwohfshfwoifhiowhfsklfhlshfwiehfiowshfiowshfgwiehfiwhfowihgwioihnchfwifhv",
+			"data:image/jpeg;base64,abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcbacbabbshcfersfuibcugcguidkgkgfdsgfuigfuiehkadjagfdgfsdkfdksksdfgjksdgfkgfksdfksdgfwieufhgsfkdjfbskhfuwehfwesofhweiofhhfjksdfkjsgfjksfbwhefwohfshfwoifhiowhfsklfhlshfwiehfiowshfiowshfgwiehfiwhfowihgwioihnchfwifhv",
+		}
 		sc := &source.ListSource{Options: files}
 		err := sc.Init(context.TODO(), "")
 		require.NoError(t, err)
@@ -836,12 +839,14 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 			}},
 			images: make(map[string]string),
 		}
-		err = generator.prepareRows(context.TODO(), 1)
+		err = generator.prepareRows(context.TODO(), 2)
 		require.NoError(t, err)
-		require.Equal(t, map[string]string{"data:image/jpeg;base64,abc": "data:image/jpeg;base64,abc"}, generator.images)
-		for i, f := range files {
-			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "id": {Value: i}}, generator.rows[i])
-		}
+		require.Equal(t, map[string]string{
+			"89fc4c78a70dc188887832116393e225": "data:image/jpeg;base64,abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcbacbabbshcfudsfuibcugcguidkgkgfdsgfuigfuiehkadjagfdgfsdkfdksksdfgjksdgfkgfksdfksdgfwieufhgsfkdjfbskhfuwehfwesofhweiofhhfjksdfkjsgfjksfbwhefwohfshfwoifhiowhfsklfhlshfwiehfiowshfiowshfgwiehfiwhfowihgwioihnchfwifhv",
+			"d7f4f6b429c06ba9339ceabf1dfc9d95": "data:image/jpeg;base64,abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcbacbabbshcfersfuibcugcguidkgkgfdsgfuigfuiehkadjagfdgfsdkfdksksdfgjksdgfkgfksdfksdgfwieufhgsfkdjfbskhfuwehfwesofhweiofhhfjksdfkjsgfjksfbwhefwohfshfwoifhiowhfsklfhlshfwiehfiowshfiowshfgwiehfiwhfowihgwioihnchfwifhv",
+		}, generator.images)
+		require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "89fc4c78a70dc188887832116393e225"}, "id": {Value: 0}}, generator.rows[0])
+		require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "d7f4f6b429c06ba9339ceabf1dfc9d95"}, "id": {Value: 1}}, generator.rows[1])
 	})
 
 	t.Run("autofill", func(t *testing.T) {
