@@ -816,6 +816,34 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		}
 	})
 
+	t.Run("generate-dataurl", func(t *testing.T) {
+		files := []string{"data:image/jpeg;base64,abc"}
+		sc := &source.ListSource{Options: files}
+		err := sc.Init(context.TODO(), "")
+		require.NoError(t, err)
+		idx := source.NewIndexer(sc, &ent.TableColumn{
+			Random: false,
+		})
+		generator := &AIRowsGenerator{
+			sourceDataDir: "./",
+			indexerMap: map[string]*source.Indexer{
+				"c1": idx,
+			},
+			table: &ent.TableMeta{Edges: ent.TableMetaEdges{
+				Columns: []*ent.TableColumn{
+					{Nanoid: "c1", Type: tablecolumn.TypeImage, Source: "c1", Random: false},
+				},
+			}},
+			images: make(map[string]string),
+		}
+		err = generator.prepareRows(context.TODO(), 1)
+		require.NoError(t, err)
+		require.Equal(t, map[string]string{"data:image/jpeg;base64,abc": "data:image/jpeg;base64,abc"}, generator.images)
+		for i, f := range files {
+			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "id": {Value: i}}, generator.rows[i])
+		}
+	})
+
 	t.Run("autofill", func(t *testing.T) {
 		files := []string{"i1.png", "i2.png", "i1.png", "i3.png", "i2.png"}
 		for _, f := range files {

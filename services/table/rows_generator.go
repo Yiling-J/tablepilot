@@ -212,6 +212,10 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 	if err == nil {
 		return raw, nil
 	}
+	// already data url
+	if strings.HasPrefix(raw, "data:") {
+		return raw, nil
+	}
 	// try load image file
 	root, err := os.OpenRoot(g.sourceDataDir)
 	if err != nil {
