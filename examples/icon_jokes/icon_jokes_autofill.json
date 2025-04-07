@@ -1,0 +1,24 @@
+{
+  "name": "icon_jokes",
+  "description": "A table of funny jokes inspired by two icon images",
+  "columns": [
+    {
+      "name": "Image 1",
+      "description": "The first icon image file",
+      "type": "image",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Image 2",
+      "description": "The second icon image file",
+      "type": "image",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Joke",
+      "description": "A humorous and imaginative joke about the interaction or contrast between Image 1 and Image 2",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}

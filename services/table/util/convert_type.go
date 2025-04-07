@@ -22,6 +22,8 @@ func ZeroValue(tp tablecolumn.Type) (any, error) {
 		return false, nil
 	case tablecolumn.TypeArray:
 		return []any{}, nil
+	case tablecolumn.TypeImage:
+		return "", nil
 	default:
 		return "", errors.New("unsupported type")
 	}
@@ -56,6 +58,8 @@ func ConvertStringToType(v string, to tablecolumn.Type) (any, error) {
 			return arr, nil
 		}
 		return nil, fmt.Errorf("invalid JSON array format: %v", v)
+	case tablecolumn.TypeImage:
+		return v, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %v", v)
 	}
@@ -63,7 +67,7 @@ func ConvertStringToType(v string, to tablecolumn.Type) (any, error) {
 
 func ConvertAnyToType(v any, to tablecolumn.Type) any {
 	switch to {
-	case tablecolumn.TypeString:
+	case tablecolumn.TypeString, tablecolumn.TypeImage:
 		return cast.ToString(v)
 	case tablecolumn.TypeNumber:
 		return cast.ToFloat64(v)

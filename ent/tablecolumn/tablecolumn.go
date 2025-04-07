@@ -121,6 +121,7 @@ const (
 	TypeInteger Type = "integer"
 	TypeBoolean Type = "boolean"
 	TypeArray   Type = "array"
+	TypeImage   Type = "image"
 )
 
 func (_type Type) String() string {
@@ -130,7 +131,7 @@ func (_type Type) String() string {
 // TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
 func TypeValidator(_type Type) error {
 	switch _type {
-	case TypeString, TypeNumber, TypeInteger, TypeBoolean, TypeArray:
+	case TypeString, TypeNumber, TypeInteger, TypeBoolean, TypeArray, TypeImage:
 		return nil
 	default:
 		return fmt.Errorf("tablecolumn: invalid enum value for type field: %q", _type)

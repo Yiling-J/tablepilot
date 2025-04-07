@@ -24,7 +24,7 @@ func (TableColumn) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty(),
 		field.String("description").Optional(),
-		field.Enum("type").Values("string", "number", "integer", "boolean", "array"),
+		field.Enum("type").Values("string", "number", "integer", "boolean", "array", "image"),
 		field.Enum("fill_mode").Values("ai", "pick"),
 		field.String("source").Optional(),
 		field.Int("context_length").Default(0),

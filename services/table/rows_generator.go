@@ -2,10 +2,16 @@ package table
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
 	"slices"
+	"strings"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -41,6 +47,7 @@ type AIRowsGenerator struct {
 	indexerMap     map[string]*source.Indexer
 	sourceMap      map[string]source.Source
 	generated      []map[string]*schema.CellValue
+	images         map[string]string
 	contextLength  int
 	saveTo         string
 	temperature    float64
@@ -73,6 +80,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		model:       params.Model,
 		autofill:    params.Autofill,
 		offset:      params.Autofill.Offset,
+		images:      make(map[string]string),
 	}
 	if params.sourceDataDir == "" {
 		params.sourceDataDir = "./"
@@ -133,7 +141,9 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 			generator.indexerMap[c.Nanoid] = idx
 			continue
 		}
-		generator.missingColumns = append(generator.missingColumns, c)
+		if c.Type != tablecolumn.TypeImage {
+			generator.missingColumns = append(generator.missingColumns, c)
+		}
 	}
 	return generator, nil
 }
@@ -197,6 +207,32 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 	return nil
 }
 
+func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, error) {
+	_, err := url.ParseRequestURI(raw)
+	if err == nil {
+		return raw, nil
+	}
+	// try load image file
+	root, err := os.OpenRoot(g.sourceDataDir)
+	if err != nil {
+		return "", err
+	}
+	f, err := root.Open(raw)
+	if err != nil {
+		return "", err
+	}
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+	ct := http.DetectContentType(data)
+	b64 := base64.StdEncoding.EncodeToString(data)
+	if !strings.HasPrefix(ct, "image/") {
+		return "", errors.New("not an image")
+	}
+	return fmt.Sprintf("data:%s;base64,%s", ct, b64), nil
+}
+
 func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 	if g.autofill.Enable {
 		rows, err := g.table.QueryRows().Order(
@@ -209,7 +245,22 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 		for _, dbrow := range rows {
 			row := map[string]*schema.CellValue{}
 			for i, col := range g.table.Edges.Columns {
-				row[col.Nanoid] = dbrow.Cells[i]
+				if col.Type == tablecolumn.TypeImage {
+					v := cast.ToString(dbrow.Cells[i].Value)
+					if v == "" {
+						continue
+					}
+					if _, ok := g.images[v]; !ok {
+						url, err := g.imageURL(ctx, v)
+						if err != nil {
+							return err
+						}
+						g.images[v] = url
+					}
+					row[col.Nanoid] = &schema.CellValue{Value: v}
+				} else {
+					row[col.Nanoid] = dbrow.Cells[i]
+				}
 			}
 			row["id"] = &schema.CellValue{Value: dbrow.Nanoid}
 			g.rows = append(g.rows, row)
@@ -225,6 +276,20 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 						return err
 					}
 					row[col.Nanoid] = v
+				}
+				if col.Type == tablecolumn.TypeImage {
+					v := cast.ToString(row[col.Nanoid].Value)
+					if v == "" {
+						continue
+					}
+					if _, ok := g.images[v]; !ok {
+						url, err := g.imageURL(ctx, v)
+						if err != nil {
+							return err
+						}
+						g.images[v] = url
+					}
+					row[col.Nanoid] = &schema.CellValue{Value: v}
 				}
 			}
 			if len(row) > 0 {
@@ -271,6 +336,9 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 		return nil, err
 	}
 	input := client.UserMessage(prompt)
+	if len(g.images) > 0 {
+		input = client.UserMessageWithImages(prompt, g.images)
+	}
 	temperature := g.temperature
 	if temperature < 0 {
 		temperature = GENERATE_DATA_TEMPERATURE

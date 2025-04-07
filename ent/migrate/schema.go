@@ -16,7 +16,7 @@ var (
 		{Name: "nanoid", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString, Nullable: true},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"string", "number", "integer", "boolean", "array"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"string", "number", "integer", "boolean", "array", "image"}},
 		{Name: "fill_mode", Type: field.TypeEnum, Enums: []string{"ai", "pick"}},
 		{Name: "source", Type: field.TypeString, Nullable: true},
 		{Name: "context_length", Type: field.TypeInt, Default: 0},

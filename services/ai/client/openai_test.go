@@ -80,3 +80,32 @@ func TestClient_OpenAIObjectSchema(t *testing.T) {
 	expected := `{"max_completion_tokens":1200,"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"},"temperature":0.32}`
 	require.Equal(t, expected, string(b))
 }
+
+func TestClient_OpenAIContentTypeImage(t *testing.T) {
+	var params openai.ChatCompletionNewParams
+	m := &mockOpenAICompletionService{
+		new: func(ctx context.Context, body openai.ChatCompletionNewParams, opts ...option.RequestOption) (res *openai.ChatCompletion, err error) {
+			params = body
+			return &openai.ChatCompletion{
+				Choices: []openai.ChatCompletionChoice{{Message: openai.ChatCompletionMessage{
+					Content: "foobar",
+				}}},
+				Usage: openai.CompletionUsage{TotalTokens: 100},
+			}, nil
+		},
+	}
+	client := NewOpenAIClient(m, zap.NewNop().Sugar())
+	resp, err := client.Chat(context.TODO(), &ChatRequest{
+		Messages: []*Message{UserMessageWithImages("foo", map[string]string{
+			"i1.png": "i1",
+			"i2.png": "i2",
+		})},
+		Schema: &jsonschema.Schema{Type: "string", Version: "v1"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "foobar", resp.Content)
+	b, err := params.MarshalJSON()
+	require.NoError(t, err)
+	expected := `{"max_completion_tokens":0,"messages":[{"content":[{"text":"foo","type":"text"}],"role":"user"},{"content":[{"text":"\nBelow is the image with ID: <i1.png>","type":"text"}],"role":"user"},{"content":[{"image_url":{"url":"i1"},"type":"image_url"}],"role":"user"},{"content":[{"text":"\nBelow is the image with ID: <i2.png>","type":"text"}],"role":"user"},{"content":[{"image_url":{"url":"i2"},"type":"image_url"}],"role":"user"}],"model":"","presence_penalty":0,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"},"temperature":0}`
+	require.Equal(t, expected, string(b))
+}

@@ -103,7 +103,7 @@ func TestTableService_Create(t *testing.T) {
 			columnsGenBuilder.AddExistingColumns(bc)
 			prompt, err := columnsGenBuilder.Prompt()
 			require.NoError(t, err)
-			require.Equal(t, prompt, request.Messages[0].Content)
+			require.Equal(t, prompt, request.Messages[0].Content[0].Data)
 			return &client.ChatResponse{
 				Content: `[{"name":"extra","type":"string"},{"name":"extra2","type":"string"}]`,
 				Tokens:  100,

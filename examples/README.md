@@ -13,7 +13,7 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 
 - **recipes_cuisine_meal**
   Building on the `recipes_cuisine` example, this variation adds a "meal" column, where the value is selected from 6 meal options, creating more diversity in the results.
-  
+
 - **recipes_cuisine_meal_ingredients**
   Building on the `recipes_cuisine_meal` example, this variation adds two must-have-ingredient column, where the value is selected from 50 AI generated ingredients, creating even more diversity in the results. (But it doesn't seem very creative, maybe write a better prompt in table description or try a different model.)
 
@@ -25,7 +25,7 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 
 - **recipes_for_customers**
   This is the most complex example, illustrating how to use another table as a reference. The `customers.json` file is used to generate a customer table, and then the recipes table is generated based on customer data. Each customer will receive a unique recipe tailored to their information.
-  
+
 - **pokémons**
   This example demonstrates how to create a table, import an existing CSV of 1000 Pokémons, and autofill column data. Tablepilot will generate ecological information for each Pokémon based on the existing row data.
 
@@ -40,3 +40,6 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 
 - **chinese_qa_parquet_huggingface**
   Similar to the previous example, but this version uses Hugging Face integration directly, eliminating the need for manual downloads.
+
+- **icon_jokes**
+  This example create a joke from two random icon images, shows how to use images as input prompts(column type image). Include both generate and autofill examples.
