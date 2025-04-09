@@ -19,7 +19,7 @@ func TestPromptBuilder_RowsBuilder(t *testing.T) {
 	builder.AddMissingColumns([]*ent.TableColumn{
 		{Name: "c1", Nanoid: "n1", Description: "col1", Type: tablecolumn.TypeString},
 		{Name: "c2", Nanoid: "n2", Description: "col2", Type: tablecolumn.TypeInteger},
-	})
+	}, true)
 	err := builder.AddColumnContextData("n1", []any{
 		"abc", 123, []string{"go"}, map[string]any{"name": "bar"},
 	})
@@ -61,7 +61,7 @@ func TestPromptBuilder_RowsBuilderExists(t *testing.T) {
 	builder.AddMissingColumns([]*ent.TableColumn{
 		{Name: "c1", Nanoid: "n1", Description: "col1", Type: tablecolumn.TypeString},
 		{Name: "c2", Nanoid: "n2", Description: "col2", Type: tablecolumn.TypeInteger},
-	})
+	}, true)
 	err := builder.AddColumnContextData("n1", []any{
 		"abc", 123, []string{"go"}, map[string]any{"name": "bar"},
 	})
@@ -109,7 +109,7 @@ func TestPromptBuilder_RowsBuilderAutofill(t *testing.T) {
 	builder.AddMissingColumns([]*ent.TableColumn{
 		{Name: "c1", Nanoid: "n1", Description: "col1", Type: tablecolumn.TypeString},
 		{Name: "c2", Nanoid: "n2", Description: "col2", Type: tablecolumn.TypeInteger},
-	})
+	}, true)
 	err := builder.AddColumnContextData("n1", []any{
 		"abc", 123, []string{"go"}, map[string]any{"name": "bar"},
 	})

@@ -51,6 +51,7 @@ type GenerateRowsRequest struct {
 	Batch       int     `json:"batch"`
 	Temperature float64 `json:"temperature"`
 	Model       string  `json:"model"`
+	ImageModel  string  `json:"image_model"`
 	// used in API only to send streaming results
 	Stream bool `json:"stream"`
 

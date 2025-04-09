@@ -22,6 +22,9 @@ var _ AiService = &AiServiceMock{}
 //			ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
 //				panic("mock out the Chat method")
 //			},
+//			ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+//				panic("mock out the ImageGen method")
+//			},
 //			ListModelsFunc: func(ctx context.Context) *ModelList {
 //				panic("mock out the ListModels method")
 //			},
@@ -35,6 +38,9 @@ type AiServiceMock struct {
 	// ChatFunc mocks the Chat method.
 	ChatFunc func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
 
+	// ImageGenFunc mocks the ImageGen method.
+	ImageGenFunc func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
+
 	// ListModelsFunc mocks the ListModels method.
 	ListModelsFunc func(ctx context.Context) *ModelList
 
@@ -47,6 +53,13 @@ type AiServiceMock struct {
 			// Request is the request argument value.
 			Request *client.ChatRequest
 		}
+		// ImageGen holds details about calls to the ImageGen method.
+		ImageGen []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Request is the request argument value.
+			Request *client.ChatRequest
+		}
 		// ListModels holds details about calls to the ListModels method.
 		ListModels []struct {
 			// Ctx is the ctx argument value.
@@ -54,6 +67,7 @@ type AiServiceMock struct {
 		}
 	}
 	lockChat       sync.RWMutex
+	lockImageGen   sync.RWMutex
 	lockListModels sync.RWMutex
 }
 
@@ -90,6 +104,42 @@ func (mock *AiServiceMock) ChatCalls() []struct {
 	mock.lockChat.RLock()
 	calls = mock.calls.Chat
 	mock.lockChat.RUnlock()
+	return calls
+}
+
+// ImageGen calls ImageGenFunc.
+func (mock *AiServiceMock) ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+	if mock.ImageGenFunc == nil {
+		panic("AiServiceMock.ImageGenFunc: method is nil but AiService.ImageGen was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Request *client.ChatRequest
+	}{
+		Ctx:     ctx,
+		Request: request,
+	}
+	mock.lockImageGen.Lock()
+	mock.calls.ImageGen = append(mock.calls.ImageGen, callInfo)
+	mock.lockImageGen.Unlock()
+	return mock.ImageGenFunc(ctx, request)
+}
+
+// ImageGenCalls gets all the calls that were made to ImageGen.
+// Check the length with:
+//
+//	len(mockedAiService.ImageGenCalls())
+func (mock *AiServiceMock) ImageGenCalls() []struct {
+	Ctx     context.Context
+	Request *client.ChatRequest
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Request *client.ChatRequest
+	}
+	mock.lockImageGen.RLock()
+	calls = mock.calls.ImageGen
+	mock.lockImageGen.RUnlock()
 	return calls
 }
 

@@ -296,7 +296,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		builder := promptbuilder.NewRowsBuilder(2)
 		builder.AddDescription("bar")
 		builder.AddTableColumns([]*ent.TableColumn{col}, false)
-		builder.AddMissingColumns([]*ent.TableColumn{col})
+		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		p, err := builder.Prompt()
 
 		require.NoError(t, err)
@@ -348,7 +348,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		err = builder.AddColumnContextData(col.Nanoid, []any{4, 3})
 		require.NoError(t, err)
 		builder.AddTableColumns([]*ent.TableColumn{col}, false)
-		builder.AddMissingColumns([]*ent.TableColumn{col})
+		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		p, err := builder.Prompt()
 
 		require.NoError(t, err)
@@ -402,7 +402,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		builder := promptbuilder.NewRowsBuilder(2)
 		builder.AddDescription("bar")
 		builder.AddTableColumns([]*ent.TableColumn{col, col2}, false)
-		builder.AddMissingColumns([]*ent.TableColumn{col})
+		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		err = builder.AddExistings([]map[string]any{
 			{col2.Nanoid: "a", "id": 0},
 			{col2.Nanoid: "b", "id": 1},
@@ -524,7 +524,7 @@ func TestRowsGenerator_Autofill(t *testing.T) {
 					missing = append(missing, col2)
 				}
 			}
-			builder.AddMissingColumns(missing)
+			builder.AddMissingColumns(missing, true)
 
 			rows := []map[string]any{}
 			for i := 0; i < 2; i++ {

@@ -150,3 +150,7 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 		Tokens:  chatCompletion.Usage.TotalTokens,
 	}, nil
 }
+
+func (c *OpenAIClient) ImageGen(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error) {
+	return nil, errors.New("Not implemented")
+}

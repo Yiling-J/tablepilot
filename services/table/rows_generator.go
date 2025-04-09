@@ -2,6 +2,9 @@ package table
 
 import (
 	"context"
+	"path/filepath"
+	"time"
+
 	// #nosec
 	"crypto/md5"
 	"encoding/base64"
@@ -40,20 +43,22 @@ type RowsGenerator interface {
 }
 
 type AIRowsGenerator struct {
-	db             *ent.Client
-	ai             ai.AiService
-	logger         *zap.SugaredLogger
-	table          *ent.TableMeta
-	missingColumns []*ent.TableColumn
-	contextColumns []*ent.TableColumn
-	indexerMap     map[string]*source.Indexer
-	sourceMap      map[string]source.Source
-	generated      []map[string]*schema.CellValue
-	images         map[string]string
-	contextLength  int
-	saveTo         string
-	temperature    float64
-	model          string
+	db                  *ent.Client
+	ai                  ai.AiService
+	logger              *zap.SugaredLogger
+	table               *ent.TableMeta
+	missingColumns      []*ent.TableColumn
+	missingImageColumns []*ent.TableColumn
+	contextColumns      []*ent.TableColumn
+	indexerMap          map[string]*source.Indexer
+	sourceMap           map[string]source.Source
+	generated           []map[string]*schema.CellValue
+	images              map[string]string
+	contextLength       int
+	saveTo              string
+	temperature         float64
+	model               string
+	imageModel          string
 
 	total     int
 	batchSize int
@@ -80,6 +85,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		saveTo:      params.SaveTo,
 		temperature: params.Temperature,
 		model:       params.Model,
+		imageModel:  params.ImageModel,
 		autofill:    params.Autofill,
 		offset:      params.Autofill.Offset,
 		images:      make(map[string]string),
@@ -145,6 +151,8 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		}
 		if c.Type != tablecolumn.TypeImage {
 			generator.missingColumns = append(generator.missingColumns, c)
+		} else {
+			generator.missingImageColumns = append(generator.missingImageColumns, c)
 		}
 	}
 	return generator, nil
@@ -289,7 +297,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 					}
 					row[col.Nanoid] = v
 				}
-				if col.Type == tablecolumn.TypeImage {
+				if col.Type == tablecolumn.TypeImage && ok {
 					v := cast.ToString(row[col.Nanoid].Value)
 					if v == "" {
 						continue
@@ -375,6 +383,27 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 			Properties:           omw,
 			AdditionalProperties: jsonschema.FalseSchema,
 		},
+	})
+}
+
+func (g *AIRowsGenerator) imageGen(ctx context.Context) (*client.ImageGenResponse, error) {
+	prompt, err := g.builder.ImageGenPrompt()
+	if err != nil {
+		return nil, err
+	}
+	input := client.UserMessage(prompt)
+	if len(g.images) > 0 {
+		input = client.UserMessageWithImages(prompt, g.images)
+	}
+	temperature := g.temperature
+	if temperature < 0 {
+		temperature = GENERATE_DATA_TEMPERATURE
+	}
+	model := g.imageModel
+	return g.ai.ImageGen(ctx, &client.ChatRequest{
+		Temperature: temperature,
+		Messages:    []*client.Message{input},
+		Model:       model,
 	})
 }
 
@@ -499,11 +528,12 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 		chatRows = append(chatRows, cr)
 	}
 	g.builder.AddTableColumns(g.table.Edges.Columns, g.autofill.Enable)
-	g.builder.AddMissingColumns(g.missingColumns)
+	g.builder.AddMissingColumns(g.missingColumns, true)
 	err = g.builder.AddExistings(chatRows)
 	if err != nil {
 		return nil, err
 	}
+
 	generated := []map[string]*schema.CellValue{}
 	resp, err := g.chat(ctx)
 	if err != nil {
@@ -550,6 +580,81 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	return generated, nil
 }
 
+func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]*schema.CellValue) ([]map[string]*schema.CellValue, error) {
+	err := g.newBatch(ctx, len(rows))
+	if err != nil {
+		return nil, err
+	}
+	chatRows := []map[string]any{}
+	// used in autofill mode only
+	contextColumnIDs := map[string]bool{}
+	for _, col := range g.contextColumns {
+		contextColumnIDs[col.Nanoid] = true
+	}
+	idMap := map[string]int{}
+	for i, row := range rows {
+		cr := map[string]any{}
+		for k, v := range row {
+			if g.autofill.Enable && k != "id" {
+				if _, ok := contextColumnIDs[k]; !ok {
+					continue
+				}
+			}
+			if v.ContextValue != nil {
+				cr[k] = v.ContextValue
+			} else {
+				cr[k] = v.Value
+			}
+		}
+		if v, ok := row["id"]; !ok {
+			row["id"] = &schema.CellValue{Value: i}
+			idMap[cast.ToString(i)] = i
+		} else {
+			idMap[cast.ToString(v.Value)] = i
+		}
+		chatRows = append(chatRows, cr)
+	}
+	g.builder.AddTableColumns(g.table.Edges.Columns, g.autofill.Enable)
+	g.builder.AddMissingColumns(g.missingImageColumns, false)
+	err = g.builder.AddExistings(chatRows)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := g.imageGen(ctx)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("generate images done", len(resp.Images))
+	for id, data := range resp.Images {
+		tmp := strings.Split(id, "-")
+		row, column := tmp[0], tmp[1]
+		imagesDir := filepath.Join(g.sourceDataDir, "images", g.table.Name)
+		if err := os.MkdirAll(imagesDir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create directory %q: %w", imagesDir, err)
+		}
+		if index, ok := idMap[row]; ok {
+			root, err := os.OpenRoot(g.sourceDataDir)
+			if err != nil {
+				return nil, err
+			}
+			fp := fmt.Sprintf("images/%s/%s-%d.png", g.table.Name, id, time.Now().Unix())
+			f, err := root.Create(fp)
+			if err != nil {
+				return nil, err
+			}
+			defer func() { _ = f.Close() }()
+			_, err = f.Write(data)
+			if err != nil {
+				return nil, err
+			}
+			row := rows[index]
+			row[column] = &schema.CellValue{Value: fp}
+		}
+	}
+	return rows, nil
+}
+
 func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellValue, error) {
 	if g.current >= g.total {
 		return []map[string]*schema.CellValue{}, nil
@@ -558,15 +663,25 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 	if left := g.total - g.current; batchSize > left {
 		batchSize = left
 	}
-	rows, err := g.generate(ctx, batchSize)
-	if err != nil {
-		return nil, err
+	rows := g.rows
+	var err error
+	if len(g.missingColumns) > 0 {
+		rows, err = g.generate(ctx, batchSize)
+		if err != nil {
+			return nil, err
+		}
+		if len(rows) == 0 {
+			return []map[string]*schema.CellValue{}, nil
+		}
+		if len(rows) > batchSize {
+			rows = rows[:batchSize]
+		}
 	}
-	if len(rows) == 0 {
-		return []map[string]*schema.CellValue{}, nil
-	}
-	if len(rows) > batchSize {
-		rows = rows[:batchSize]
+	if len(g.missingImageColumns) > 0 {
+		rows, err = g.generateImages(ctx, rows)
+		if err != nil {
+			return nil, err
+		}
 	}
 	g.generated = append(g.generated, rows...)
 	g.current += len(rows)

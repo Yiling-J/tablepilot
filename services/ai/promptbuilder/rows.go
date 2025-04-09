@@ -75,15 +75,17 @@ func (rb *RowsBuilder) AddTableColumns(v []*ent.TableColumn, autofill bool) {
 	}
 }
 
-func (rb *RowsBuilder) AddMissingColumns(v []*ent.TableColumn) {
+func (rb *RowsBuilder) AddMissingColumns(v []*ent.TableColumn, withIDColumn bool) {
 	if len(v) == 0 {
 		return
 	}
 	rb.AddText("Generate values for the following missing columns:")
 	el := rb.NewXML("MissingColumns")
-	// add id column
-	cel := el.CreateElement("Column")
-	cel.CreateAttr("id", "id")
+	if withIDColumn {
+		// add id column
+		cel := el.CreateElement("Column")
+		cel.CreateAttr("id", "id")
+	}
 	for _, col := range v {
 		cel := el.CreateElement("Column")
 		cel.CreateAttr("id", col.Nanoid)
