@@ -240,6 +240,7 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 }
 
 func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
+	g.images = map[string]string{}
 	if g.autofill.Enable {
 		rows, err := g.table.QueryRows().Order(
 			ent.Asc(tablerow.FieldID),
