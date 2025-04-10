@@ -210,6 +210,7 @@ export async function autofill(
   await fetchEventSource(autofillUrl(table), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    openWhenHidden: true,
     body: JSON.stringify({
       batch: genRequest.batch,
       count: genRequest.count,
