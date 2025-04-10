@@ -12,6 +12,7 @@ import {
 } from "@/actions";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { imageUrl } from "@/urls.tsx";
 import { ColumnDef } from "@tanstack/react-table";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -157,6 +158,7 @@ export function Table({ id }: TableProps) {
                   {e.type == "integer" && "numbers"}
                   {e.type == "array" && "data_array"}
                   {e.type == "boolean" && "check"}
+                  {e.type == "image" && "image"}
                 </span>
 
                 <div className="text-base">{e.name}</div>
@@ -172,6 +174,25 @@ export function Table({ id }: TableProps) {
 
             cell: ({ cell }) => {
               const cellValue = cell.renderValue();
+              if (e.type == "image") {
+                if (!cell.renderValue()) {
+                  return (
+                    <div className="w-64 h-64 border flex items-center justify-center rounded">
+                      <Skeleton className="w-64 h-64 rounded" />
+                    </div>
+                  );
+                }
+                return (
+                  <div>
+                    <img
+                      src={imageUrl(table.id, cell.renderValue() as string)}
+                      width={256}
+                      height={256}
+                      className="rounded"
+                    />
+                  </div>
+                );
+              }
               return (
                 <div>
                   <div className="max-h-80 line-clamp-6">{cellValue}</div>

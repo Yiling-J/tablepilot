@@ -1,6 +1,9 @@
 package api
 
 import (
+	"log"
+	"strconv"
+
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/google/uuid"
@@ -206,6 +209,20 @@ func (hs *HTTPServer) SharedSources(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"sources": sources})
 }
 
+func (hs *HTTPServer) GetImage(ctx *gin.Context) {
+	data, err := hs.TableService.GetImage(ctx, ctx.Param("table"), ctx.Param("path"))
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.Header("Content-Type", "image/png")
+	ctx.Header("Content-Length", strconv.Itoa(len(data)))
+	if _, err := ctx.Writer.Write(data); err != nil {
+		log.Println("unable to write image.")
+		errorResponse(ctx, 500, err)
+	}
+}
+
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
@@ -219,4 +236,5 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/autofill/tables/:table", hs.Autofill)
 	hs.apiv1.GET("/tables/:table/rows", hs.Rows)
 	hs.apiv1.GET("/sources", hs.SharedSources)
+	hs.apiv1.GET("/tables/:table/images/*path", hs.GetImage)
 }

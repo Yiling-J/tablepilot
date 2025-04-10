@@ -70,7 +70,7 @@ function TableCellEx({
       {flexRender(cell.column.columnDef.cell, cell.getContext())}
       {hoverCell && (
         <div className="absolute bottom-0 right-0 flex pr-1 pb-1">
-          {showExpand && (
+          {showExpand.current && (
             <Button
               size="icon"
               className="rounded-full border hover:scale-100 transition-transform duration-50 scale-90 group hover:bg-secondary"

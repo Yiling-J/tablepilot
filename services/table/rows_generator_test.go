@@ -625,7 +625,7 @@ func TestRowsGenerator_AutofillNext(t *testing.T) {
 				Batch: tc.batch,
 				Autofill: AutofillRequest{
 					Enable:  true,
-					Columns: []string{"c"},
+					Columns: []string{"c2"},
 				},
 			}, db, aiService, zap.NewNop().Sugar())
 			require.NoError(t, err)

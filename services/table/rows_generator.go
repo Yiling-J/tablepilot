@@ -256,6 +256,10 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 			return err
 		}
 		g.offset += len(rows)
+		contextColumns := map[string]bool{}
+		for _, col := range g.autofill.ContextColumns {
+			contextColumns[col] = true
+		}
 		for _, dbrow := range rows {
 			row := map[string]*schema.CellValue{}
 			for i, col := range g.table.Edges.Columns {
@@ -271,6 +275,12 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 						vk = fmt.Sprintf("%x", md5.Sum([]byte(v)))
 					}
 					if _, ok := g.images[vk]; !ok {
+						// don't actually read the image data, if the column is not in context columns
+						if _, ok := contextColumns[col.Nanoid]; !ok {
+							if _, ok := contextColumns[col.Name]; !ok {
+								continue
+							}
+						}
 						url, err := g.imageURL(ctx, v)
 						if err != nil {
 							return err
@@ -625,11 +635,10 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("generate images done", len(resp.Images))
 	for id, data := range resp.Images {
 		tmp := strings.Split(id, "-")
 		row, column := tmp[0], tmp[1]
-		imagesDir := filepath.Join(g.sourceDataDir, "images", g.table.Name)
+		imagesDir := filepath.Join(g.sourceDataDir, "tablepilot_images", g.table.Nanoid)
 		if err := os.MkdirAll(imagesDir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create directory %q: %w", imagesDir, err)
 		}
@@ -638,7 +647,7 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 			if err != nil {
 				return nil, err
 			}
-			fp := fmt.Sprintf("images/%s/%s-%d.png", g.table.Name, id, time.Now().Unix())
+			fp := fmt.Sprintf("tablepilot_images/%s/%s-%d.png", g.table.Nanoid, id, time.Now().Unix())
 			f, err := root.Create(fp)
 			if err != nil {
 				return nil, err
@@ -678,6 +687,15 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 		}
 	}
 	if len(g.missingImageColumns) > 0 {
+		// prepareRows step is done in generate function, but when missingColumns length is zero,
+		// the generate method is skipped, so need to call prepareRows so rows is not empty
+		if len(g.missingColumns) == 0 {
+			err = g.prepareRows(ctx, batchSize)
+			if err != nil {
+				return nil, err
+			}
+			rows = g.rows
+		}
 		rows, err = g.generateImages(ctx, rows)
 		if err != nil {
 			return nil, err
