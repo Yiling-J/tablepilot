@@ -179,6 +179,7 @@ export async function generate(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ batch, count, temperature, model, stream: true }),
     signal: signal,
+    openWhenHidden: true,
     onclose() {
       callback("[DONE]");
     },
@@ -209,6 +210,7 @@ export async function autofill(
   await fetchEventSource(autofillUrl(table), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    openWhenHidden: true,
     body: JSON.stringify({
       batch: genRequest.batch,
       count: genRequest.count,
