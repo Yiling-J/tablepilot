@@ -179,6 +179,7 @@ export async function generate(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ batch, count, temperature, model, stream: true }),
     signal: signal,
+    openWhenHidden: true,
     onclose() {
       callback("[DONE]");
     },
