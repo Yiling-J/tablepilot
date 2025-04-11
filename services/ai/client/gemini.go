@@ -2,9 +2,11 @@ package client
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"google.golang.org/genai"
@@ -46,7 +48,15 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 				case ContentTypeText:
 					messages = append(messages, genai.NewPartFromText(c.Data))
 				case ContentTypeImage:
-					messages = append(messages, genai.NewPartFromBytes([]byte(c.Data), string(c.Type)))
+					// c.Data should be data url format: data:{content type};base64,{b64 image}
+					tmp := strings.Split(c.Data, ";base64,")
+					if len(tmp) == 2 {
+						b, err := base64.StdEncoding.DecodeString(tmp[1])
+						if err != nil {
+							return nil, err
+						}
+						messages = append(messages, genai.NewPartFromBytes(b, strings.TrimPrefix(tmp[0], "data:")))
+					}
 				}
 			}
 		}
@@ -68,6 +78,9 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 	// image id text can appear before or after the generated image
 	var imageID string
 	var fileData []byte
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil {
+		return nil, errors.New("gemini return zero candidates")
+	}
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if part.Text != "" {
 			match := imageIdRE.FindStringSubmatch(part.Text)
