@@ -11,6 +11,8 @@ The full example consists of two tables:
 - `recipes`: used in the first example (image + text generation)
 - `recipes_v2`: used in the second and third examples (autofill image column)
 
+![Demo](./demo.mp4)
+
 ---
 
 ### Configuration
@@ -67,12 +69,12 @@ This table contains two image columns: one for the recipe and one for ingredient
 
 **Step 2: Generate data**
 ```bash
-tablepilot generate recipes -c 30 -b 2
+tablepilot generate recipes -c 30 -b 1
 ```
 
-This sets the batch size to 2, which generates 4 images per API call.
+This sets the batch size to 1, which generates 2 images per API call.
 
-The `gemini-2.0-flash-exp-image-generation` model (free version) is unstable and slow, and it often fails, so it's strongly recommended to use a small batch size (1 or 2).
+The `gemini-2.0-flash-exp-image-generation` model (free version) is not very stable, and often fails, so it's strongly recommended to use a small batch size (1 or 2).
 
 ---
 
