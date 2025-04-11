@@ -11,7 +11,9 @@ The full example consists of two tables:
 - `recipes`: used in the first example (image + text generation)
 - `recipes_v2`: used in the second and third examples (autofill image column)
 
-![Demo](./demo.mp4)
+https://github.com/user-attachments/assets/17c33af4-ed8d-44f9-8141-f18839a2927c
+
+
 
 ---
 
