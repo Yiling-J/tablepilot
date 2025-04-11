@@ -602,6 +602,16 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 	for _, col := range g.contextColumns {
 		contextColumnIDs[col.Nanoid] = true
 	}
+	// In the autofill case, also include generated text columns as context.
+	// Ideally, text and image are generated together and should provide mutual context.
+	// For example, if you have a table with recipe names and steps, and you want to autofill
+	// the ingredients and image, then the ingredients column should be considered part of the
+	// context, even if it wasn't explicitly specified.
+	if g.autofill.Enable {
+		for _, col := range g.missingColumns {
+			contextColumnIDs[col.Nanoid] = true
+		}
+	}
 	idMap := map[string]int{}
 	for i, row := range rows {
 		cr := map[string]any{}
