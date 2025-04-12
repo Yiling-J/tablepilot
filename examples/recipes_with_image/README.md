@@ -54,7 +54,7 @@ client = "gemini-image"
 rpm = 10
 ```
 
-Once configured, Tablepilot will use this image model when generating images.
+Once configured, Tablepilot will use this image model when generating images. The generated images will be saved in the `{source_data_dir}/tablepilot_images/{table_id}` directory.
 
 ---
 
