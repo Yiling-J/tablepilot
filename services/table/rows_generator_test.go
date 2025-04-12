@@ -1033,6 +1033,7 @@ func TestRowsGenerator_ChatWithImage(t *testing.T) {
 }
 
 func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
 	db := db.NewTestDB()
 	ctx := context.Background()
 	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
@@ -1106,6 +1107,7 @@ func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
 }
 
 func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
 	db := db.NewTestDB()
 	ctx := context.Background()
 	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
@@ -1192,6 +1194,7 @@ func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
 }
 
 func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
 	db := db.NewTestDB()
 	ctx := context.Background()
 	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)

@@ -12,8 +12,13 @@ import (
 	"google.golang.org/genai"
 )
 
+//go:generate moq -rm -out gemini_moq.go . GenaiModelService
+type GenaiModelService interface {
+	GenerateContent(ctx context.Context, model string, contents []*genai.Content, config *genai.GenerateContentConfig) (*genai.GenerateContentResponse, error)
+}
+
 type GeminiClient struct {
-	client *genai.Client
+	modelService GenaiModelService
 }
 
 func NewGeminiClient(config *config.Gemini) (*GeminiClient, error) {
@@ -25,7 +30,7 @@ func NewGeminiClient(config *config.Gemini) (*GeminiClient, error) {
 		return nil, err
 	}
 	return &GeminiClient{
-		client: c,
+		modelService: c.Models,
 	}, nil
 }
 
@@ -62,7 +67,7 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 		}
 	}
 
-	resp, err := c.client.Models.GenerateContent(ctx, request.ImageModel, []*genai.Content{{
+	resp, err := c.modelService.GenerateContent(ctx, request.ImageModel, []*genai.Content{{
 		Parts: messages,
 		Role:  "user",
 	}}, &genai.GenerateContentConfig{
@@ -90,12 +95,14 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 				imageID = fmt.Sprintf("%s-%s", rowID, columnID)
 				// sometimes gemini return id text twice
 				if _, ok := images[imageID]; ok {
+					imageID = ""
 					continue
 				}
 				// image id after image generated
 				if fileData != nil {
 					images[imageID] = fileData
 					fileData = nil
+					imageID = ""
 				}
 			}
 		}
