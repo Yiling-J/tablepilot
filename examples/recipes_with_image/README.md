@@ -5,6 +5,7 @@ This example demonstrates how to use **Tablepilot** to generate images in three 
 3. Autofill an image column based on another image column
 
 It uses Gemini's new experimental image generation model: `gemini-2.0-flash-exp-image-generation`. Currently, this is the **only supported** image generation model.
+
 **Note:** The image generation feature is experimental and may change in future releases.
 
 The full example consists of two tables:
@@ -54,7 +55,11 @@ client = "gemini-image"
 rpm = 10
 ```
 
-Once configured, Tablepilot will use this image model when generating images. The generated images will be saved in the `{source_data_dir}/tablepilot_images/{table_id}` directory.
+The client type must be `gemini` and the model must be `gemini-2.0-flash-exp-image-generation`. Once configured, Tablepilot will use this image model when generating images. The generated images will be saved in the `{source_data_dir}/tablepilot_images/{table_id}` directory.
+
+**View Generated Images in Real Time**
+
+The steps below use CLI commands, but Tablepilot also provides a WebUI. If you’d like to view generated images in real time, you can first create the table using the CLI, then start the server and open the WebUI. From there, you can generate or autofill data directly in the WebUI and see the images as they’re created.
 
 ---
 
@@ -86,7 +91,7 @@ Because of limitations with the image model, a more robust approach is to genera
 
 - Use large batches when generating text (fast and reliable)
 - Autofill images in smaller batches for better stability
-- Resume image generation using the `--offset` flag if an error occurs
+- Resume image generation using the `--offset`/`-o` flag if an error occurs
 
 **Step 1: Create the table (no image columns yet)**
 ```bash
@@ -105,7 +110,7 @@ tablepilot update examples/recipes_with_image/recipes_v2_with_image.json
 
 **Step 4: Autofill the image column using text context**
 ```bash
-tablepilot autofill recipes_v2 -c 30 -b 2 \
+tablepilot autofill recipes_v2 -c 30 -b 1 \
   --columns=Image \
   --context_columns=Name \
   --context_columns=Ingredients \
@@ -115,7 +120,7 @@ tablepilot autofill recipes_v2 -c 30 -b 2 \
 
 To resume from a specific offset after a failure:
 ```bash
-tablepilot autofill recipes_v2 -c 30 -b 2 \
+tablepilot autofill recipes_v2 -c 30 -b 1 \
   --columns=Image \
   --context_columns=Name \
   --context_columns=Ingredients \
@@ -137,7 +142,7 @@ tablepilot update examples/recipes_with_image/recipes_v2_with_image_combo.json
 
 **Step 2: Autofill the new column using an existing image column**
 ```bash
-tablepilot autofill recipes_v2 -c 30 -b 2 \
+tablepilot autofill recipes_v2 -c 30 -b 1 \
   --columns="Combo Meal" \
   --context_columns=Image
 ```
