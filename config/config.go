@@ -43,13 +43,20 @@ type OpenAI struct {
 	BaseURL string `mapstructure:"base_url"`
 }
 
+type Gemini struct {
+	Name string
+	Type string
+	Key  string
+}
+
 type Config struct {
-	Common   Common
-	Server   Server
-	Database *Database
-	Models   []Model
-	Clients  []Client
-	Sources  []map[string]any
+	Common      Common
+	Server      Server
+	Database    *Database
+	Models      []Model
+	ImageModels []Model `mapstructure:"image_models"`
+	Clients     []Client
+	Sources     []map[string]any
 }
 
 func NewConfig(name string) (config *Config, err error) {
@@ -75,6 +82,13 @@ func NewConfig(name string) (config *Config, err error) {
 				return config, err
 			}
 			clients = append(clients, &oai)
+		case "gemini":
+			var genai Gemini
+			err = viper.UnmarshalKey(key, &genai)
+			if err != nil {
+				return config, err
+			}
+			clients = append(clients, &genai)
 		default:
 			return nil, errors.New("unknown client")
 		}

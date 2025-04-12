@@ -13,14 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type MockChatClient struct {
-	chat func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
-}
-
-func (m *MockChatClient) Chat(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
-	return m.chat(ctx, request)
-}
-
 func TestAIService_Chat(t *testing.T) {
 	cases := []struct {
 		inputModel string
@@ -36,8 +28,8 @@ func TestAIService_Chat(t *testing.T) {
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
 			var req *client.ChatRequest
-			chatClient := &MockChatClient{
-				chat: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			chatClient := &client.ChatClientMock{
+				ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
 					req = request
 					return &client.ChatResponse{}, nil
 				},

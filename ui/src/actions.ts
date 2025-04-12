@@ -50,7 +50,13 @@ export async function deleteTable(id: string) {
   return res.status;
 }
 
-export type ColumnType = "string" | "number" | "integer" | "boolean" | "array";
+export type ColumnType =
+  | "string"
+  | "number"
+  | "integer"
+  | "boolean"
+  | "array"
+  | "image";
 
 export interface Column {
   id: string;

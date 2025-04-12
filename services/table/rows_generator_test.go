@@ -296,7 +296,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		builder := promptbuilder.NewRowsBuilder(2)
 		builder.AddDescription("bar")
 		builder.AddTableColumns([]*ent.TableColumn{col}, false)
-		builder.AddMissingColumns([]*ent.TableColumn{col})
+		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		p, err := builder.Prompt()
 
 		require.NoError(t, err)
@@ -348,7 +348,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		err = builder.AddColumnContextData(col.Nanoid, []any{4, 3})
 		require.NoError(t, err)
 		builder.AddTableColumns([]*ent.TableColumn{col}, false)
-		builder.AddMissingColumns([]*ent.TableColumn{col})
+		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		p, err := builder.Prompt()
 
 		require.NoError(t, err)
@@ -402,7 +402,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		builder := promptbuilder.NewRowsBuilder(2)
 		builder.AddDescription("bar")
 		builder.AddTableColumns([]*ent.TableColumn{col, col2}, false)
-		builder.AddMissingColumns([]*ent.TableColumn{col})
+		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		err = builder.AddExistings([]map[string]any{
 			{col2.Nanoid: "a", "id": 0},
 			{col2.Nanoid: "b", "id": 1},
@@ -524,7 +524,7 @@ func TestRowsGenerator_Autofill(t *testing.T) {
 					missing = append(missing, col2)
 				}
 			}
-			builder.AddMissingColumns(missing)
+			builder.AddMissingColumns(missing, true)
 
 			rows := []map[string]any{}
 			for i := 0; i < 2; i++ {
@@ -625,7 +625,7 @@ func TestRowsGenerator_AutofillNext(t *testing.T) {
 				Batch: tc.batch,
 				Autofill: AutofillRequest{
 					Enable:  true,
-					Columns: []string{"c"},
+					Columns: []string{"c2"},
 				},
 			}, db, aiService, zap.NewNop().Sugar())
 			require.NoError(t, err)
@@ -978,7 +978,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 	})
 }
 
-func TestRowsGenerator_SkipImageColumn(t *testing.T) {
+func TestRowsGenerator_ImageColumn(t *testing.T) {
 	ctx := context.TODO()
 	db := db.NewTestDB()
 	tb, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
@@ -997,6 +997,8 @@ func TestRowsGenerator_SkipImageColumn(t *testing.T) {
 	}, db, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	require.Equal(t, 0, len(generator.missingColumns))
+	require.Equal(t, 1, len(generator.missingImageColumns))
+	require.Equal(t, generator.missingImageColumns[0].Name, "c1")
 }
 
 func TestRowsGenerator_ChatWithImage(t *testing.T) {
@@ -1028,4 +1030,246 @@ func TestRowsGenerator_ChatWithImage(t *testing.T) {
 	p, err := generator.builder.Prompt()
 	require.NoError(t, err)
 	require.Equal(t, client.UserMessageWithImages(p, map[string]string{"i.png": "i,png"}), messages[0])
+}
+
+func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+	require.NoError(t, err)
+	c1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	c2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeImage).Save(ctx)
+	require.NoError(t, err)
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			data := []map[string]any{
+				{"id": 0, c1.Nanoid: "foobar"},
+			}
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+		ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("")
+			builder.AddTableColumns([]*ent.TableColumn{c1, c2}, false)
+			builder.AddMissingColumns([]*ent.TableColumn{c2}, false)
+			err = builder.AddExistings([]map[string]any{
+				{c1.Nanoid: "foobar", "id": 0},
+			})
+			require.NoError(t, err)
+			p, err := builder.ImageGenPrompt()
+			require.NoError(t, err)
+			require.Nil(t, request.Schema)
+			require.Equal(t, []*client.Message{
+				{Role: "user", Content: []client.Content{
+					{Type: client.ContentTypeText, Data: p},
+				}},
+			}, request.Messages)
+			id := fmt.Sprintf("%d-%s", 0, c2.Nanoid)
+			return &client.ImageGenResponse{
+				Images: map[string][]byte{id: []byte("bar")},
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 1,
+		Batch: 1,
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	v, err := generator.Next(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(v))
+	require.Equal(t, 1, len(aiService.ChatCalls()))
+	require.Equal(t, 1, len(aiService.ImageGenCalls()))
+	require.Equal(t, 3, len(v[0]))
+	require.True(t, strings.HasPrefix(cast.ToString(v[0][c2.Nanoid].Value), "tablepilot_images/UkLWZg/0-gbHJdm-"))
+	require.Equal(t, &schema.CellValue{
+		Value: "foobar",
+	}, v[0][c1.Nanoid])
+	require.Equal(t, &schema.CellValue{Value: float64(0)}, v[0]["id"])
+}
+
+func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+	require.NoError(t, err)
+	c1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	c2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeImage).Save(ctx)
+	require.NoError(t, err)
+	c3, err := db.TableColumn.Create().
+		SetName("c3").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	row, err := db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: ""}, {Value: ""}, {Value: "bar"}}).Save(ctx)
+	require.NoError(t, err)
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			data := []map[string]any{
+				{"id": row.Nanoid, c1.Nanoid: "foobar"},
+			}
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+		ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("")
+			builder.AddTableColumns([]*ent.TableColumn{c1, c2, c3}, true)
+			builder.AddMissingColumns([]*ent.TableColumn{c2}, false)
+			err = builder.AddExistings([]map[string]any{
+				{c1.Nanoid: "foobar", c3.Nanoid: "bar", "id": row.Nanoid},
+			})
+			require.NoError(t, err)
+			p, err := builder.ImageGenPrompt()
+			require.NoError(t, err)
+			require.Nil(t, request.Schema)
+			require.Equal(t, []*client.Message{
+				{Role: "user", Content: []client.Content{
+					{Type: client.ContentTypeText, Data: p},
+				}},
+			}, request.Messages)
+			id := fmt.Sprintf("%s-%s", row.Nanoid, c2.Nanoid)
+			return &client.ImageGenResponse{
+				Images: map[string][]byte{id: []byte("bar")},
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 1,
+		Batch: 1,
+		Autofill: AutofillRequest{
+			Enable:         true,
+			Columns:        []string{"c1", "c2"},
+			ContextColumns: []string{"c3"},
+		},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	v, err := generator.Next(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(v))
+	require.Equal(t, 1, len(aiService.ChatCalls()))
+	require.Equal(t, 1, len(aiService.ImageGenCalls()))
+	require.Equal(t, 4, len(v[0]))
+	require.True(t, strings.HasPrefix(cast.ToString(v[0][c2.Nanoid].Value), "tablepilot_images/UkLWZg/UkLWZg-gbHJdm-"))
+	require.Equal(t, &schema.CellValue{
+		Value: "foobar",
+	}, v[0][c1.Nanoid])
+	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["id"])
+}
+
+func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+	require.NoError(t, err)
+	c1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	c2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeImage).Save(ctx)
+	require.NoError(t, err)
+	row, err := db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "bar"}, {Value: ""}}).Save(ctx)
+	require.NoError(t, err)
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			data := []map[string]any{
+				{"id": row.Nanoid, c1.Nanoid: "foobar"},
+			}
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+		ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("")
+			builder.AddTableColumns([]*ent.TableColumn{c1, c2}, true)
+			builder.AddMissingColumns([]*ent.TableColumn{c2}, false)
+			err = builder.AddExistings([]map[string]any{
+				{c1.Nanoid: "bar", "id": row.Nanoid},
+			})
+			require.NoError(t, err)
+			p, err := builder.ImageGenPrompt()
+			require.NoError(t, err)
+			require.Nil(t, request.Schema)
+			require.Equal(t, []*client.Message{
+				{Role: "user", Content: []client.Content{
+					{Type: client.ContentTypeText, Data: p},
+				}},
+			}, request.Messages)
+			id := fmt.Sprintf("%s-%s", row.Nanoid, c2.Nanoid)
+			return &client.ImageGenResponse{
+				Images: map[string][]byte{id: []byte("bar")},
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 1,
+		Batch: 1,
+		Autofill: AutofillRequest{
+			Enable:         true,
+			Columns:        []string{"c2"},
+			ContextColumns: []string{"c1"},
+		},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	v, err := generator.Next(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(v))
+	require.Equal(t, 0, len(aiService.ChatCalls()))
+	require.Equal(t, 1, len(aiService.ImageGenCalls()))
+	require.Equal(t, 3, len(v[0]))
+	require.True(t, strings.HasPrefix(cast.ToString(v[0][c2.Nanoid].Value), "tablepilot_images/UkLWZg/UkLWZg-gbHJdm-"))
+	require.Equal(t, &schema.CellValue{
+		Value: "bar",
+	}, v[0][c1.Nanoid])
+	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["id"])
 }

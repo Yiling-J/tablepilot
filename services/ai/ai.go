@@ -17,6 +17,7 @@ import (
 //go:generate moq -rm -out ai_moq.go . AiService
 type AiService interface {
 	Chat(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
+	ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
 	ListModels(ctx context.Context) *ModelList
 }
 
@@ -29,11 +30,12 @@ type model struct {
 }
 
 type AiServiceImpl struct {
-	clients      map[string]client.ChatClient
-	models       map[string]*model
-	logger       *zap.SugaredLogger
-	defaultModel string
-	config       *config.Config
+	clients           map[string]client.ChatClient
+	models            map[string]*model
+	logger            *zap.SugaredLogger
+	defaultModel      string
+	defaultImageModel string
+	config            *config.Config
 }
 
 func NewAiService(cfg *config.Config, clients map[string]client.ChatClient, logger *zap.SugaredLogger) (*AiServiceImpl, error) {
@@ -50,6 +52,36 @@ func NewAiService(cfg *config.Config, clients map[string]client.ChatClient, logg
 				srv.defaultModel = m.Alias
 			} else {
 				srv.defaultModel = m.Model
+			}
+		}
+		_, ok := srv.clients[m.Client]
+		if !ok {
+			return nil, errors.New("not found")
+		}
+
+		var limiter *rate.Limiter
+		if m.RPM > 0 {
+			limiter = rate.NewLimiter(rate.Every(time.Minute/time.Duration(m.RPM)), m.RPM)
+		}
+		md := &model{
+			model:     m.Model,
+			maxTokens: m.MaxTokens,
+			alias:     m.Alias,
+			limiter:   limiter,
+			client:    m.Client,
+		}
+		srv.models[md.model] = md
+		if md.alias != "" {
+			srv.models[md.alias] = md
+		}
+	}
+
+	for i, m := range cfg.ImageModels {
+		if i == 0 || m.Default {
+			if m.Alias != "" {
+				srv.defaultImageModel = m.Alias
+			} else {
+				srv.defaultImageModel = m.Model
 			}
 		}
 		_, ok := srv.clients[m.Client]
@@ -100,6 +132,33 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	}
 	ai.logger.Debugln("chat response reveived", "total_tokens", resp.Tokens)
 	ai.logger.Debugln("content:", resp.Content)
+	return resp, nil
+}
+
+func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+	if request.ImageModel == "" {
+		request.ImageModel = ai.defaultImageModel
+	}
+	client, err := ai.getChatClientByModel(request.ImageModel)
+	if err != nil {
+		return nil, err
+	}
+
+	request.ImageModel = ai.models[request.ImageModel].model
+	modelMaxTokens := ai.models[request.ImageModel].maxTokens
+	if modelMaxTokens != 0 {
+		request.MaxOutputTokens = modelMaxTokens
+	}
+
+	ai.logger.Debugln("send image generate request", "model", request.ImageModel, "temperature", request.Temperature)
+	for _, message := range request.Messages {
+		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)
+	}
+	resp, err := client.ImageGen(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	ai.logger.Debugln("image generate response reveived", "total_tokens", resp.Tokens)
 	return resp, nil
 }
 

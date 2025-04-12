@@ -256,6 +256,7 @@ export function ColumnsForm({
                     <SelectItem value="number">Float or Integer</SelectItem>
                     <SelectItem value="boolean">Boolean</SelectItem>
                     <SelectItem value="array">Array</SelectItem>
+                    <SelectItem value="image">Image</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

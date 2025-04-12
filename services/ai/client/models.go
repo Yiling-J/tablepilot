@@ -87,6 +87,7 @@ type ChatRequest struct {
 	Temperature     float64
 	Schema          *jsonschema.Schema
 	Model           string
+	ImageModel      string
 	MaxOutputTokens int64
 	PresencePenalty float64
 }
@@ -94,6 +95,11 @@ type ChatRequest struct {
 type ChatResponse struct {
 	Content string `json:"content"`
 	Tokens  int64  `json:"tokens"`
+}
+
+type ImageGenResponse struct {
+	Images map[string][]byte `json:"images"` // map[image id]image b64 data
+	Tokens int64             `json:"tokens"`
 }
 
 type ImageGenerateRequest struct {

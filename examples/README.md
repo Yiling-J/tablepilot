@@ -2,6 +2,8 @@
 
 All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 
+#### Text
+
 - **recipes_simple**
   A simple example that generates columns defined in the schema.
 
@@ -41,5 +43,18 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 - **chinese_qa_parquet_huggingface**
   Similar to the previous example, but this version uses Hugging Face integration directly, eliminating the need for manual downloads.
 
+#### Image understanding
+
 - **icon_jokes**
   This example create a joke from two random icon images, shows how to use images as input prompts(column type image). Include both generate and autofill examples.
+
+#### [Experimental] Generate/Edit image
+
+- **recipes_with_image**
+  This example demonstrates how to generate images in three different ways:
+
+  1. Generate images together with text columns
+  2. Autofill an image column based on text columns
+  3. Autofill an image column based on another image column
+
+  Refer to the README in the example for more details.

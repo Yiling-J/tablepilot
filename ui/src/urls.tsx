@@ -31,3 +31,7 @@ export function truncateUrl(id: string) {
 export function sourcesUrl() {
   return `${address}/api/v1/sources`;
 }
+
+export function imageUrl(tableID: string, path: string) {
+  return `${address}/api/v1/tables/${tableID}/images/${path}`;
+}
