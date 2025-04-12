@@ -14,6 +14,8 @@ Tablepilot is a CLI/API/WebUI tool designed to generate and autofill tables usin
 
 ![Demo](./demo.gif)
 
+- **Image Understanding & Image Generation/Editing (Experimental)**: See this [example](examples/recipes_with_image) for details.
+
 #### Concept
 
 The concept behind Tablepilot is simple yet powerful. Suppose you want to generate 1,000 unique recipes using AI. A straightforward approach might be to ask ChatGPT for 10 recipes at a time, then continue requesting more while using previously generated content as context, until you reach 1,000 recipes. However, this method has two major drawbacks: the growing context consumes a large number of tokens, and as the context expands, ChatGPT struggles to ensure uniqueness across recipes.
@@ -110,6 +112,16 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 - **imdb_movie_haiku**
   This example takes an IMDb movie CSV table and generates haiku poems inspired by movie titles and overviews, blending structured data with artistic expression.
+ 
+#### Image understanding
+
+- **icon_jokes**
+  This example create a joke from two random icon images, shows how to use images as input prompts(column type image). Include both generate and autofill examples.
+
+#### [Experimental] Generate/Edit image
+
+- **recipes_with_image**
+  This example demonstrates how to  generate images in three different ways.
 
 ## Usage
 
@@ -242,6 +254,8 @@ A number of examples demonstrating various use cases of Tablepilot are available
 
 Tablepilot requires a TOML configuration file. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
 
+> For experimental image generation and editing, see this [example](examples/recipes_with_image) for details.
+
 The configuration consists of following sections:
 
 ### Common (Optional)
@@ -258,7 +272,7 @@ The configuration consists of following sections:
 You can define multiple clients, and different models can use different clients.
 
 - **name**: The name of the client. This name is referenced in the `models` section to select which client the model uses.
-- **type**: The client type. Currently, only `"openai"` is supported, which should includes all OpenAI-compatible APIs.
+- **type**: The client type. Currently, `"openai"` and `"gemini"`(experimental and only usable for image generation) is supported. `openai` type should includes all OpenAI-compatible APIs.
 - **key**: The API key used to authenticate requests.
 - **base_url**: The base URL of the API.
 
@@ -380,7 +394,7 @@ A list of column definitions. Each column is an object that can contain the foll
 	- `"array"`: For lists.
 	- `"integer"`: For integral numbers.
 	- `"number"`: For any numeric type, either integers or floating point numbers.
-	- `"image"`: For local image files or image URLs. Currently, this column type is input-only. Attempting to generate values for image columns will be ignored. Output support for image generation will be added once integration is complete. The value of this column should be either a file path relative to {source_data_dir} or a valid image URL. Your model must support [Images and vision](https://platform.openai.com/docs/guides/images?api-mode=chat) in order to use this column type.
+	- `"image"`: For local image files or image URLs. The value of this column should be either a file path relative to {source_data_dir} or a valid image URL when use as input. Your model must support [Images and vision](https://platform.openai.com/docs/guides/images?api-mode=chat) in order to use this column as input(image understanding), and you must specify the `image_models` in your config to generate or edit image.
 - **fill_mode**: Specifies how the column is populated. Possible values:
 	- `"ai"`: AI will generate values for this column.
 	- `"pick"`: Values are picked from an existing source (e.g., a list of cuisines).
