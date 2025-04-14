@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"go.uber.org/zap"
@@ -70,14 +71,28 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 		}
 	}
 
-	resp, err := c.modelService.GenerateContent(ctx, request.ImageModel, []*genai.Content{{
-		Parts: messages,
-		Role:  "user",
-	}}, &genai.GenerateContentConfig{
-		Temperature:        &tp,
-		MaxOutputTokens:    &maxTokens,
-		ResponseModalities: []string{"IMAGE", "TEXT"},
-	})
+	var resp *genai.GenerateContentResponse
+	var err error
+	retry := 0
+	for retry < 3 {
+		resp, err = c.modelService.GenerateContent(ctx, request.ImageModel, []*genai.Content{{
+			Parts: messages,
+			Role:  "user",
+		}}, &genai.GenerateContentConfig{
+			Temperature:        &tp,
+			MaxOutputTokens:    &maxTokens,
+			ResponseModalities: []string{"IMAGE", "TEXT"},
+		})
+		if err != nil {
+			c.logger.Errorw("gemini image generation failed", "error", err, "retry", retry)
+			// TODO: reduce this when gemini api is stable
+			time.Sleep(5 * time.Second)
+			retry += 1
+			continue
+		} else {
+			break
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
