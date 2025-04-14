@@ -641,7 +641,11 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		if err != nil {
 			return "", ent.Rollback(tx, err)
 		}
+
+		// assign context value to cell if column fill type is pick
 		switch ts := so.(type) {
+		case *source.ListSource:
+			// there is no context value if source type is list
 		case *source.LinkedSource:
 			ts.Range(func(row *ent.TableRow) bool {
 				v := ts.GetLinkedCellValue(row, col.LinkedColumn, col.LinkedContextColumns)
@@ -750,6 +754,17 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 	var so source.Source
 	sourceType := gjson.GetBytes(raw, "type").String()
 	switch sourceType {
+	case "list":
+		var ls source.ListSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		err = ls.Init(ctx, sourceDataDir)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
 	case "linked":
 		var ls source.LinkedSource
 		err := json.Unmarshal(raw, &ls)
