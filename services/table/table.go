@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"strings"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -54,7 +52,6 @@ type TableService interface {
 	Import(ctx context.Context, table string, reader io.Reader) (string, error)
 	CreateRows(ctx context.Context, table string, rows []map[string]any) error
 	SharedSources(ctx context.Context) []*SharedSource
-	GetImage(ctx context.Context, table string, path string) ([]byte, error)
 }
 
 type TableServiceImpl struct {
@@ -644,7 +641,11 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		if err != nil {
 			return "", ent.Rollback(tx, err)
 		}
+
+		// assign context value to cell if column fill type is pick
 		switch ts := so.(type) {
+		case *source.ListSource:
+			// there is no context value if source type is list
 		case *source.LinkedSource:
 			ts.Range(func(row *ent.TableRow) bool {
 				v := ts.GetLinkedCellValue(row, col.LinkedColumn, col.LinkedContextColumns)
@@ -753,6 +754,17 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 	var so source.Source
 	sourceType := gjson.GetBytes(raw, "type").String()
 	switch sourceType {
+	case "list":
+		var ls source.ListSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		err = ls.Init(ctx, sourceDataDir)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
 	case "linked":
 		var ls source.LinkedSource
 		err := json.Unmarshal(raw, &ls)
@@ -806,38 +818,4 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 		return nil, fmt.Errorf("unknown source type %s", sourceType)
 	}
 	return so, nil
-}
-
-func (t *TableServiceImpl) GetImage(ctx context.Context, table string, path string) ([]byte, error) {
-	path = strings.TrimPrefix(path, "/")
-	meta, err := t.db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
-		tcq.Order(ent.Asc(tablecolumn.FieldID))
-	}).Where(tablemeta.Or(
-		tablemeta.Nanoid(table),
-		tablemeta.Name(table),
-	)).First(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// path format: tablepilot_images/{table_id}/xxx.png
-	ps := strings.Split(path, "/")
-	if len(ps) != 3 {
-		return nil, errors.New("invalid path")
-	}
-	if ps[0] != "tablepilot_images" {
-		return nil, errors.New("invalid path")
-	}
-	if ps[1] != meta.Nanoid {
-		return nil, errors.New("invalid path")
-	}
-	root, err := os.OpenRoot(t.config.Common.SourceDataDir)
-	if err != nil {
-		return nil, err
-	}
-	f, err := root.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	return io.ReadAll(f)
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Yiling-J/tablepilot/config"
+	"go.uber.org/zap"
 	"google.golang.org/genai"
 )
 
@@ -19,9 +20,10 @@ type GenaiModelService interface {
 
 type GeminiClient struct {
 	modelService GenaiModelService
+	logger       *zap.SugaredLogger
 }
 
-func NewGeminiClient(config *config.Gemini) (*GeminiClient, error) {
+func NewGeminiClient(config *config.Gemini, logger *zap.SugaredLogger) (*GeminiClient, error) {
 	c, err := genai.NewClient(context.TODO(), &genai.ClientConfig{
 		APIKey:  config.Key,
 		Backend: genai.BackendGeminiAPI,
@@ -31,6 +33,7 @@ func NewGeminiClient(config *config.Gemini) (*GeminiClient, error) {
 	}
 	return &GeminiClient{
 		modelService: c.Models,
+		logger:       logger,
 	}, nil
 }
 
@@ -38,7 +41,7 @@ func (c *GeminiClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 	return nil, errors.New("Not implemented")
 }
 
-var imageIdRE = regexp.MustCompile(`<gen\s+row_id="([0-9a-zA-Z]+)"\s+column_id="([0-9a-zA-Z]+)"\s*\/>`)
+var imageIdRE = regexp.MustCompile(`<info\s+row_id="([0-9a-zA-Z]+)"\s+column_id="([0-9a-zA-Z]+)"\s*\/>`)
 
 func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error) {
 	tp := float32(request.Temperature)
@@ -88,6 +91,7 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 	}
 	for _, part := range resp.Candidates[0].Content.Parts {
 		if part.Text != "" {
+			c.logger.Debugw("Gemini text response", "text", part.Text)
 			match := imageIdRE.FindStringSubmatch(part.Text)
 			if len(match) == 3 {
 				rowID := match[1]
@@ -107,6 +111,7 @@ func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*Ima
 			}
 		}
 		if part.InlineData != nil {
+			c.logger.Debug("Gemini image response")
 			// image id before image generated
 			if imageID != "" {
 				images[imageID] = part.InlineData.Data

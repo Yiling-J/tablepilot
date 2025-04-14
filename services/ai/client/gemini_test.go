@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/genai"
 )
 
@@ -18,7 +19,7 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 		{
 			name: "simple",
 			parts: []*genai.Part{
-				{Text: `<gen row_id="r0" column_id="c0" />`},
+				{Text: `<info row_id="r0" column_id="c0" />`},
 				{InlineData: &genai.Blob{Data: []byte("foo")}},
 			},
 			expected: map[string][]byte{"r0-c0": []byte("foo")},
@@ -26,7 +27,7 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 		{
 			name: "simple 2",
 			parts: []*genai.Part{
-				{Text: `<gen row_id="r0" column_id="c0"/>`},
+				{Text: `<info row_id="r0" column_id="c0"/>`},
 				{InlineData: &genai.Blob{Data: []byte("foo")}},
 			},
 			expected: map[string][]byte{"r0-c0": []byte("foo")},
@@ -34,11 +35,11 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 		{
 			name: "three images simple",
 			parts: []*genai.Part{
-				{Text: `<gen row_id="r0" column_id="c0" />`},
+				{Text: `<info row_id="r0" column_id="c0" />`},
 				{InlineData: &genai.Blob{Data: []byte("foo")}},
-				{Text: `<gen row_id="r0" column_id="c1" />`},
+				{Text: `<info row_id="r0" column_id="c1" />`},
 				{InlineData: &genai.Blob{Data: []byte("bar")}},
-				{Text: `<gen row_id="r0" column_id="c2" />`},
+				{Text: `<info row_id="r0" column_id="c2" />`},
 				{InlineData: &genai.Blob{Data: []byte("baz")}},
 			},
 			expected: map[string][]byte{
@@ -51,11 +52,11 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 			name: "three images, image first",
 			parts: []*genai.Part{
 				{InlineData: &genai.Blob{Data: []byte("foo")}},
-				{Text: `<gen row_id="r0" column_id="c0" />`},
+				{Text: `<info row_id="r0" column_id="c0" />`},
 				{InlineData: &genai.Blob{Data: []byte("bar")}},
-				{Text: `<gen row_id="r0" column_id="c1" />`},
+				{Text: `<info row_id="r0" column_id="c1" />`},
 				{InlineData: &genai.Blob{Data: []byte("baz")}},
-				{Text: `<gen row_id="r0" column_id="c2" />`},
+				{Text: `<info row_id="r0" column_id="c2" />`},
 			},
 			expected: map[string][]byte{
 				"r0-c0": []byte("foo"),
@@ -67,11 +68,11 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 			name: "three images, mix order",
 			parts: []*genai.Part{
 				{InlineData: &genai.Blob{Data: []byte("foo")}},
-				{Text: `<gen row_id="r0" column_id="c0" />`},
-				{Text: `<gen row_id="r0" column_id="c1" />`},
+				{Text: `<info row_id="r0" column_id="c0" />`},
+				{Text: `<info row_id="r0" column_id="c1" />`},
 				{InlineData: &genai.Blob{Data: []byte("bar")}},
 				{InlineData: &genai.Blob{Data: []byte("baz")}},
-				{Text: `<gen row_id="r0" column_id="c2" />`},
+				{Text: `<info row_id="r0" column_id="c2" />`},
 			},
 			expected: map[string][]byte{
 				"r0-c0": []byte("foo"),
@@ -82,14 +83,14 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 		{
 			name: "three images, duplicate and unknown",
 			parts: []*genai.Part{
-				{Text: `<gen unknown="abc" />`},
-				{Text: `<gen row_id="r0" column_id="c0" />`},
+				{Text: `<info unknown="abc" />`},
+				{Text: `<info row_id="r0" column_id="c0" />`},
 				{InlineData: &genai.Blob{Data: []byte("foo")}},
-				{Text: `<gen row_id="r0" column_id="c0" />`},
-				{Text: `<gen row_id="r0" column_id="c1" />`},
+				{Text: `<info row_id="r0" column_id="c0" />`},
+				{Text: `<info row_id="r0" column_id="c1" />`},
 				{InlineData: &genai.Blob{Data: []byte("bar")}},
-				{Text: `<gen row_id="r0" column_id="c2" />`},
-				{Text: `<gen unknown="def" />`},
+				{Text: `<info row_id="r0" column_id="c2" />`},
+				{Text: `<info unknown="def" />`},
 				{InlineData: &genai.Blob{Data: []byte("baz")}},
 			},
 			expected: map[string][]byte{
@@ -125,6 +126,7 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 			}
 			client := &GeminiClient{
 				modelService: srv,
+				logger:       zap.NewNop().Sugar(),
 			}
 			resp, err := client.ImageGen(context.TODO(), &ChatRequest{
 				Temperature: 0.85,

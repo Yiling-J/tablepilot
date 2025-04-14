@@ -27,7 +27,7 @@ func NewClients(cfg *config.Config, logger *zap.SugaredLogger) (map[string]ChatC
 			clients[v.Name] = oai
 		case *config.Gemini:
 			logger.Debugw("creating new gemini client", "name", v.Name)
-			genai, err := NewGeminiClient(v)
+			genai, err := NewGeminiClient(v, logger)
 			if err != nil {
 				return nil, err
 			}

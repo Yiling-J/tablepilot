@@ -20,6 +20,8 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
+	"github.com/Yiling-J/tablepilot/services/table/source"
+	"github.com/parquet-go/parquet-go"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -585,6 +587,122 @@ func TestTableService_ImportAutoType(t *testing.T) {
 		rows = append(rows, r)
 	}
 	require.Equal(t, [][]any{{1.0, "2", 3.2, []any{"a", "b"}}}, rows)
+}
+
+func TestTableService_ImportSourceColumn(t *testing.T) {
+	cases := []struct {
+		name   string
+		source source.Source
+	}{
+		{"list", &source.ListSource{Type: "list", Options: []string{"a"}}},
+		{"linked", &source.LinkedSource{Type: "linked", Table: "lk"}},
+		{"csv", &source.CsvSource{Type: "csv", Paths: []string{"tmp_table_import.csv"}}},
+		{"parquet", &source.ParquetSource{Type: "parquet", Paths: []string{"tmp_table_import.parquet"}}},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := db.NewTestDB()
+			ctx := context.Background()
+
+			linkedColumn := "col"
+			switch tc.name {
+			case "list":
+			case "linked":
+				tb, err := db.TableMeta.Create().SetName("lk").Save(ctx)
+				require.NoError(t, err)
+				tc.source.(*source.LinkedSource).Table = tb.Nanoid
+				col, err := db.TableColumn.Create().
+					SetTablemeta(tb).SetTablemeta(tb).
+					SetName("col").SetType(tablecolumn.TypeString).
+					SetDescription("c1d").
+					SetFillMode(tablecolumn.FillModeAi).Save(ctx)
+				require.NoError(t, err)
+				linkedColumn = col.Nanoid
+				err = db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+					{Value: "bar"}},
+				).Exec(ctx)
+				require.NoError(t, err)
+			case "csv":
+				tmpFile, err := os.Create("tmp_table_import.csv")
+				require.NoError(t, err)
+				defer os.Remove(tmpFile.Name())
+
+				writer := csv.NewWriter(tmpFile)
+				require.NoError(t, writer.Write([]string{"col"}))
+				require.NoError(t, writer.Write([]string{"bar"}))
+				writer.Flush()
+				require.NoError(t, writer.Error())
+				require.NoError(t, tmpFile.Close())
+			case "parquet":
+				type RowType struct {
+					Col string `parquet:"col"`
+				}
+
+				err := parquet.WriteFile("tmp_table_import.parquet", []RowType{
+					{Col: "bar"},
+				})
+				defer os.Remove("tmp_table_import.parquet")
+				require.NoError(t, err)
+			default:
+				require.FailNow(t, "unknown source")
+			}
+
+			s, err := json.Marshal(tc.source)
+			require.NoError(t, err)
+			tb, err := db.TableMeta.Create().SetName("foo").SetSources(map[string]json.RawMessage{
+				"s1": s,
+			}).Save(ctx)
+			require.NoError(t, err)
+			err = db.TableColumn.Create().SetName("string").SetTablemeta(tb).SetFillMode(tablecolumn.FillModePick).
+				SetType(tablecolumn.TypeString).SetSource("s1").
+				SetLinkedColumn(linkedColumn).SetLinkedContextColumns([]string{linkedColumn}).
+				Exec(ctx)
+			require.NoError(t, err)
+
+			srv, err := NewTableService(&config.Config{Common: config.Common{SourceDataDir: "./"}}, db, nil, zap.NewNop().Sugar())
+			require.NoError(t, err)
+			records := [][]string{
+				{"string"},
+				{"bar"},
+			}
+
+			buffer := bytes.NewBuffer([]byte(""))
+			w := csv.NewWriter(buffer)
+			for _, record := range records {
+				err := w.Write(record)
+				require.NoError(t, err)
+			}
+			w.Flush()
+
+			id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+			require.NoError(t, err)
+
+			table, err := db.TableMeta.Query().WithRows(func(trq *ent.TableRowQuery) {
+				trq.Order(ent.Asc(tablerow.FieldID))
+			}).Where(tablemeta.Nanoid(id)).First(ctx)
+			require.NoError(t, err)
+			cell := table.Edges.Rows[0].Cells[0]
+			if tc.name == "list" {
+				require.Equal(t, &schema.CellValue{
+					Value: "bar",
+				}, cell)
+			} else if tc.name == "linked" {
+				require.Equal(t, &schema.CellValue{
+					Value: "bar",
+					ContextValue: map[string]any{"col": map[string]any{
+						"data":        "bar",
+						"description": "c1d",
+					}},
+				}, cell)
+			} else {
+				require.Equal(t, &schema.CellValue{
+					Value:        "bar",
+					ContextValue: map[string]any{"col": "bar"},
+				}, cell)
+			}
+		})
+	}
 }
 
 func TestTableService_ListTables(t *testing.T) {
