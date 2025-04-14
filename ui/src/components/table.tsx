@@ -185,7 +185,7 @@ export function Table({ id }: TableProps) {
                 return (
                   <div>
                     <img
-                      src={imageUrl(table.id, cell.renderValue() as string)}
+                      src={imageUrl(cell.renderValue() as string)}
                       width={256}
                       height={256}
                       className="rounded"

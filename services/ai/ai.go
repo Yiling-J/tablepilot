@@ -139,7 +139,7 @@ func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatReque
 	if request.ImageModel == "" {
 		request.ImageModel = ai.defaultImageModel
 	}
-	client, err := ai.getChatClientByModel(request.ImageModel)
+	aiClient, err := ai.getChatClientByModel(request.ImageModel)
 	if err != nil {
 		return nil, err
 	}
@@ -152,9 +152,16 @@ func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatReque
 
 	ai.logger.Debugln("send image generate request", "model", request.ImageModel, "temperature", request.Temperature)
 	for _, message := range request.Messages {
-		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)
+		ai.logger.Debugf("[%s]message\n", message.Role)
+		for _, c := range message.Content {
+			data := c.Data
+			if c.Type == client.ContentTypeImage {
+				data = "{image data}"
+			}
+			ai.logger.Debugf("[%s]message part: \n%s", c.Type, data)
+		}
 	}
-	resp, err := client.ImageGen(ctx, request)
+	resp, err := aiClient.ImageGen(ctx, request)
 	if err != nil {
 		return nil, err
 	}

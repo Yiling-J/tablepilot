@@ -58,5 +58,6 @@ func (hs *HTTPServer) RegisterRoutes() {
 	hs.Engine.Use(static.Serve("/", static.EmbedFolder(ui.Dist, "dist")))
 	hs.Engine.Use(static.Serve("/", &indexHTML{fs: http.FS(ui.Dist)}))
 	hs.apiv1 = hs.Engine.Group("/api/v1")
+	hs.apiv1.Static("/images", hs.Config.Common.SourceDataDir)
 	hs.addRouters()
 }

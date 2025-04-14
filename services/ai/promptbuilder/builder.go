@@ -39,14 +39,16 @@ func (b *Builder) Prompt() (string, error) {
 }
 
 func (b *Builder) ImageGenPrompt() (string, error) {
-	prompt := `<job name="Images-Generation-For-Table-Row" />` + "\n"
+	prompt := `<job name="Images-Generation" />` + "\n"
 	p, err := b.Prompt()
 	if err != nil {
 		return "", err
 	}
 	prompt += p
-	prompt += `Now help me generate the missing images for each row. Here's what you should do:
-- For every row in '<Rows>' and for each column in '<MissingColumns>', generate an image based on the contextual information along with the column’s 'description' using your text-to-image capability.
-- Before generating each image, also provide a text response indicating the corresponding row ID and column ID in <gen row_id="xxx" column_id="xxx" /> format.`
+	prompt += `For each row in '<Rows>' and each column in '<MissingColumns>', help me generate the missing images as follows:
+- Explain the image you intend to generate.
+- Provide a text response indicating the corresponding row ID and column ID in <info row_id="xxx" column_id="xxx" /> format.
+- **Generate an image** based on the contextual information along with the column’s 'description' using your image-generation capability.
+- After generating the image, describe the final result and what the image depicts.`
 	return prompt, nil
 }

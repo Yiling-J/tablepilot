@@ -627,12 +627,15 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 				cr[k] = v.Value
 			}
 		}
+		var rowid string
 		if v, ok := row["id"]; !ok {
+			rowid = cast.ToString(i)
 			row["id"] = &schema.CellValue{Value: i}
-			idMap[cast.ToString(i)] = i
 		} else {
-			idMap[cast.ToString(v.Value)] = i
+			rowid = cast.ToString(v.Value)
 		}
+		idMap[rowid] = i
+		cr["id"] = rowid
 		chatRows = append(chatRows, cr)
 	}
 	g.builder.AddTableColumns(g.table.Edges.Columns, g.autofill.Enable)
