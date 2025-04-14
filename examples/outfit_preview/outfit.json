@@ -5,17 +5,17 @@
     {
       "name": "model",
       "type": "list",
-      "options": ["examples/model/model.jpg"]
+      "options": ["examples/outfit_preview/model.jpg"]
     },
     {
       "name": "hats",
       "type": "csv",
-      "paths": ["examples/model/hat/hat.csv"]
+      "paths": ["examples/outfit_preview/hat/hat.csv"]
     },
     {
       "name": "glasses",
       "type": "csv",
-      "paths": ["examples/model/glasses/glasses.csv"]
+      "paths": ["examples/outfit_preview/glasses/glasses.csv"]
     }
   ],
   "columns": [
