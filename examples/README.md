@@ -58,3 +58,6 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
   3. Autofill an image column based on another image column
 
   Refer to the README in the example for more details.
+
+- **outfit_preview**
+  This example shows how to combine a hat image, a glasses image, and a model image to create an outfit preview.

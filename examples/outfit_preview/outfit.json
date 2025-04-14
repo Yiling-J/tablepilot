@@ -1,0 +1,56 @@
+{
+  "name": "outfit",
+  "description": "Table showcasing a model wearing various combinations of hats and glasses.",
+  "sources": [
+    {
+      "name": "model",
+      "type": "list",
+      "options": ["examples/model/model.jpg"]
+    },
+    {
+      "name": "hats",
+      "type": "csv",
+      "paths": ["examples/model/hat/hat.csv"]
+    },
+    {
+      "name": "glasses",
+      "type": "csv",
+      "paths": ["examples/model/glasses/glasses.csv"]
+    }
+  ],
+  "columns": [
+    {
+      "name": "Model",
+      "description": "Image of the model",
+      "type": "image",
+      "fill_mode": "pick",
+      "source": "model"
+    },
+    {
+      "name": "Hat",
+      "description": "Selected hat image the model will wear",
+      "type": "image",
+      "fill_mode": "pick",
+      "source": "hats",
+      "linked_column": "image",
+      "random": true,
+      "replacement": false
+    },
+    {
+      "name": "Glasses",
+      "description": "Selected glasses image the model will wear",
+      "type": "image",
+      "fill_mode": "pick",
+      "source": "glasses",
+      "linked_column": "image",
+      "random": true,
+      "replacement": false
+    },
+    {
+      "name": "Outfit Preview",
+      "description": "AI-generated image of the model wearing the selected hat and glasses",
+      "type": "image",
+      "fill_mode": "ai"
+    }
+  ]
+}
