@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"google.golang.org/genai"
 )
 
@@ -125,6 +126,7 @@ func TestGeminiClient_ImageGen(t *testing.T) {
 			}
 			client := &GeminiClient{
 				modelService: srv,
+				logger:       zap.NewNop().Sugar(),
 			}
 			resp, err := client.ImageGen(context.TODO(), &ChatRequest{
 				Temperature: 0.85,
