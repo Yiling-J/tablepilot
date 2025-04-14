@@ -4,23 +4,19 @@
 
 # Tablepilot
 
-Tablepilot is a CLI/API/WebUI tool designed to generate and autofill tables using AI in a scalable and diverse way.
+Tablepilot is a CLI/API/WebUI tool for generating and autofilling tables using AI. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, local CSV/Parquet files, or datasets from Kaggle or Hugging Face. Making it easy to generate diverse results.
 
-- **Scalable:** Supports batch processing and allows fine-grained control over column context length to generate large datasets efficiently.
-- **Diverse:** Easily integrates columns from other table or CSV/Parquet files as context, enabling richer and more dynamic table generation.
-- **Easy use of remote data sources:** Supports Kaggle datasets and Hugging Face datasets, allowing seamless integration of real-world data. For more details about local/remote file sources, check out the [guide](contribute/csv-and-parquet.md).
-- **Easily switch between different LLMs and models:** You can switch between models like OpenAI, Gemini or other OpenAI compatible API(Ollama/vLLM...) easily.
-- **Seamless API & WebUI:** With a single command: `tablepilot serve`, you can launch both the API server and the WebUI effortlessly. Everything is included by default in the released binary. Check out the WebUI in action! This demo showcases both table generation and autofill:
+As a CLI tool, Tablepilot uses a declarative schema format. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. A WebUI is also available. See the demo below:
 
 ![Demo](./demo.gif)
 
-- **Image Understanding & Image Generation/Editing (Experimental)**: See this [example](examples/recipes_with_image) for details.
+Tablepilot also includes experimental support for image understanding, image generation, and image editing. See this [detailed example](examples/recipes_with_image) for more information.
 
 #### Concept
 
 The concept behind Tablepilot is simple yet powerful. Suppose you want to generate 1,000 unique recipes using AI. A straightforward approach might be to ask ChatGPT for 10 recipes at a time, then continue requesting more while using previously generated content as context, until you reach 1,000 recipes. However, this method has two major drawbacks: the growing context consumes a large number of tokens, and as the context expands, ChatGPT struggles to ensure uniqueness across recipes.
 
-Instead of relying on context, we can structure the generation as a large table. Suppose we add two columns: cuisine and meal type, and assign random values to them (e.g., Chinese and Lunch) for each of the 1,000 recipes. These values then serve as context for generation, naturally increases diversity in the results without needing previous generations as context. The key question is: How do we get random values for columns like cuisine and meal type? This is where Tablepilot excels. You can source data from other tables, local CSV or Parquet files, AI-generated options, or remote datasets from Kaggle and Hugging Face.
+Instead of relying on context, suppose we add two columns to the table: cuisine and meal type, and assign random values to them (e.g., Chinese and Lunch) for each of the 1,000 recipes. These values then serve as context for generation, naturally increases diversity in the results without needing previous generations as context. The key question is: How do we get random values for columns like cuisine and meal type? This is where Tablepilot excels. You can source data from other tables, local CSV or Parquet files, AI-generated options, or remote datasets from Kaggle and Hugging Face.
 
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly.
