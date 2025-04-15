@@ -7,6 +7,7 @@ import {
     createTable,
     getSources,
     getTables,
+    updateTable,
 } from "@/actions";
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen } from "@testing-library/react";
@@ -498,5 +499,102 @@ describe("CreateTableFormWithRows", () => {
       { name: "foo" },
       { name: "bar" },
     ]);
+  });
+});
+
+describe("UpdateTableForm", () => {
+  it("should call update api when complete", async () => {
+    vi.mock("@/actions");
+    const table = {
+      id: "abc",
+      name: "users",
+      description: "users table",
+      columns: [
+        {
+          id: "col1",
+          name: "name",
+          description: "user name",
+          type: "string",
+          fill_mode: "ai",
+        },
+        {
+          id: "col2",
+          name: "job",
+          description: "user job",
+          type: "string",
+          fill_mode: "ai",
+        },
+      ],
+      model: "",
+    } as TableInfo;
+    const mockedGetTables = vi.mocked(getTables);
+    mockedGetTables.mockResolvedValue({
+      tables: [table],
+      total: 1,
+    });
+    const mockedGetSources = vi.mocked(getSources);
+    mockedGetSources.mockResolvedValue([
+      {
+        name: "s1",
+        data: {},
+        columns: [],
+      },
+      {
+        name: "s3",
+        data: { name: "s3", type: "ai", prompt: "foo" },
+        columns: [],
+      },
+    ]);
+    const form = {
+      name: "foo",
+      description: "bar",
+      sources: [
+        { name: "s1", type: "ai", prompt: "" } as AiSource,
+        { name: "s2", type: "linked", table: "users" } as LinkedSource,
+      ],
+      columns: [
+        {
+          name: "c1",
+          description: "recipe name",
+          type: "string",
+          fill_mode: "ai",
+          random: true,
+          replacement: false,
+          repeat: 1,
+          linked_column: "",
+          linked_context_columns: [],
+        },
+      ],
+    };
+    const mockedUpdateTable = vi.mocked(updateTable);
+    mockedUpdateTable.mockResolvedValue({
+      id: "tb1",
+      name: "",
+      description: "",
+      model: "",
+      columns: [],
+    });
+    let cb = 0;
+    render(
+      <TestProvider>
+        <CreateTableForm
+          close={() => {}}
+          form={form}
+          table={"tb1"}
+          submitCallback={async () => {
+            cb++;
+          }}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Update your table configuration or import JSON");
+    await userEvent.click(screen.getByText("Next"));
+    await userEvent.click(screen.getByText("Next"));
+    mockedGetTables.mockReset();
+    await userEvent.click(screen.getByText("Complete"));
+    expect(mockedUpdateTable.mock.calls[0][0]).toBe("tb1");
+    expect(mockedUpdateTable.mock.calls[0][1]).toMatchObject(form);
+    expect(mockedGetTables.mock.calls.length).toBe(1);
+    expect(cb).toBe(1);
   });
 });
