@@ -5,6 +5,7 @@ import {
     generateUrl,
     modelsUrl,
     rowsUrl,
+    schemaUrl,
     sourcesUrl,
     tableUrl,
     tablesUrl,
@@ -149,6 +150,23 @@ export async function createTable(
   return res.json();
 }
 
+export async function updateTable(
+  table: string,
+  request: TableCreateRequest,
+): Promise<TableInfo> {
+  const res = await fetch(tableUrl(table), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
+}
+
 export interface ModelList {
   default: string;
   models: string[];
@@ -279,4 +297,16 @@ export async function getSources(): Promise<SourceData[]> {
     throw new Error("Failed to fetch data");
   }
   return res.json().then((v) => v.sources);
+}
+
+export async function getTableSchema(
+  table: string,
+): Promise<TableCreateRequest> {
+  const res = await fetch(schemaUrl(table), {
+    method: "GET",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
 }

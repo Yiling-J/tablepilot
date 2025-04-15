@@ -52,6 +52,7 @@ type TableService interface {
 	Import(ctx context.Context, table string, reader io.Reader) (string, error)
 	CreateRows(ctx context.Context, table string, rows []map[string]any) error
 	SharedSources(ctx context.Context) []*SharedSource
+	GetTableSchema(ctx context.Context, table string) (*TableGenRequest, error)
 }
 
 type TableServiceImpl struct {
@@ -818,4 +819,54 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 		return nil, fmt.Errorf("unknown source type %s", sourceType)
 	}
 	return so, nil
+}
+
+func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*TableGenRequest, error) {
+	meta, err := t.db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).First(ctx)
+	if err != nil {
+		return nil, err
+	}
+	schema := &TableGenRequest{
+		Name:        meta.Name,
+		Description: meta.Description,
+	}
+	sources := []json.RawMessage{}
+	for name, s := range meta.Sources {
+		var m map[string]any
+		err = json.Unmarshal(s, &m)
+		if err != nil {
+			return nil, err
+		}
+		m["name"] = name
+		b, err := json.Marshal(m)
+		if err != nil {
+			return nil, err
+		}
+		sources = append(sources, b)
+	}
+	schema.Sources = sources
+	columns := []TableGenColumn{}
+	for _, col := range meta.Edges.Columns {
+		columns = append(columns, TableGenColumn{
+			Name:                 col.Name,
+			Description:          col.Description,
+			Type:                 col.Type.String(),
+			FillMode:             col.FillMode.String(),
+			Source:               col.Source,
+			Random:               col.Random,
+			Replacement:          col.Replacement,
+			Repeat:               col.Repeat,
+			ContextLength:        col.ContextLength,
+			LinkedColumn:         col.LinkedColumn,
+			LinkedContextColumns: col.LinkedContextColumns,
+		})
+	}
+	schema.Columns = columns
+
+	return schema, nil
 }

@@ -437,3 +437,23 @@ func TestAPI_Sources(t *testing.T) {
 	resp := server.Send(req)
 	resp.ResponseEq(t, 200, map[string]any{"sources": sources})
 }
+
+func TestAPI_GetTableSchema(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		GetTableSchemaFunc: func(ctx context.Context, tb string) (*table.TableGenRequest, error) {
+			require.Equal(t, "foo", tb)
+			return &table.TableGenRequest{Name: "bar"}, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	req, err := server.NewGetRequest("/api/v1/tables/foo/schema")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(
+		t, 200, map[string]any{
+			"name": "bar", "model": "", "description": "", "columns": nil, "sources": nil,
+		},
+	)
+}

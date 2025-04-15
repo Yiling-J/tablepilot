@@ -9,20 +9,25 @@ import {
 import { JSONObject } from "@/json";
 
 interface CreateTableDialogProps {
+  table?: string;
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
   close: () => void;
   form?: TableCreateRequest;
   rows?: JSONObject[];
+  submitCallback?: () => Promise<void>;
 }
 
 export function CreateTableDialog({
+  table,
   isOpen,
   setIsOpen,
   close,
   form,
   rows,
+  submitCallback,
 }: CreateTableDialogProps) {
+  console.log("=== submit callback", submitCallback, typeof submitCallback);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogOverlay />
@@ -32,9 +37,17 @@ export function CreateTableDialog({
           e.preventDefault();
         }}
       >
-        <DialogTitle>Create New Table</DialogTitle>
+        <DialogTitle>
+          {table === undefined ? "Create New Table" : "Update Table"}
+        </DialogTitle>
         <div className="mx-2 mt-2 scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background">
-          <CreateTableForm close={close} form={form} rows={rows} />
+          <CreateTableForm
+            close={close}
+            form={form}
+            rows={rows}
+            table={table}
+            submitCallback={submitCallback}
+          />
         </div>
       </DialogContent>
     </Dialog>
