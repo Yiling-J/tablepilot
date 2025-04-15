@@ -168,7 +168,7 @@ export function Table({ id }: TableProps) {
     useCreateTableDialog();
 
   const handleEditColumnClick = async () => {
-    let schema = await getTableSchema(id);
+    const schema = await getTableSchema(id);
     withForm(schema);
     withTable(id);
     openNewTableDialog();

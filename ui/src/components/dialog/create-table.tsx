@@ -27,7 +27,6 @@ export function CreateTableDialog({
   rows,
   submitCallback,
 }: CreateTableDialogProps) {
-  console.log("=== submit callback", submitCallback, typeof submitCallback);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogOverlay />
