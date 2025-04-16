@@ -103,6 +103,6 @@ type CreateRowsRequest struct {
 type SharedSource struct {
 	Name string          `json:"name"`
 	Data json.RawMessage `json:"data"`
-	// only used in csv type source, this is required by API+WebUI, so user can select csv columns
+	// only used in csv/parquet type source, this is required by API+WebUI, so user can select columns in UI
 	Columns []string `json:"columns"`
 }

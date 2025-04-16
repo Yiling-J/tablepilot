@@ -90,6 +90,12 @@ func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, log
 					return nil, err
 				}
 				ss.Columns = columns
+			case *source.ParquetSource:
+				columns, err := st.GetColumns(context.Background(), ts.logger, config.Common.SourceDataDir)
+				if err != nil {
+					return nil, err
+				}
+				ss.Columns = columns
 			}
 			ss.Data = json.RawMessage(bs)
 			ts.sharedSources = append(ts.sharedSources, ss)

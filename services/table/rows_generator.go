@@ -496,6 +496,17 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 			return nil, err
 		}
 		so = &ls
+	case "files":
+		var ls source.FilesSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		err = ls.Init(ctx, g.logger, g.sourceDataDir)
+		if err != nil {
+			return nil, err
+		}
+		so = &ls
 	default:
 		return nil, fmt.Errorf("unknow source type %s", sourceType)
 	}
