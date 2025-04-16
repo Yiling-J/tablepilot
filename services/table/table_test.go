@@ -1085,3 +1085,108 @@ func TestTableService_Update(t *testing.T) {
 		},
 	}, rows)
 }
+
+func TestTableService_GetTableSchema(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	columns := []TableGenColumn{
+		{
+			Name: "name", Description: "recipe name", Type: "string",
+			FillMode: "ai", ContextLength: 5,
+		},
+		{
+			Name: "count", Description: "recipe count", Type: "integer",
+			FillMode: "ai", ContextLength: 3,
+		},
+		{
+			Name: "tag", Description: "recipe tag", Type: "array",
+			FillMode: "pick", Source: "tags", Random: true, Replacement: true, Repeat: 3,
+		},
+		{
+			Name: "country", Description: "recipe country", Type: "string",
+			FillMode: "pick", Source: "countries",
+		},
+		{
+			Name: "user", Description: "recipe user", Type: "boolean",
+			FillMode: "pick", Source: "users", LinkedColumn: "name", LinkedContextColumns: []string{"age"},
+		},
+		{},
+	}
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			require.Equal(t, "user", request.Messages[0].Role)
+			require.Equal(t, request.Model, "aiai")
+			columnsGenBuilder := promptbuilder.NewColumnsBuilder(1, "test", "test table")
+			bc := []promptbuilder.Column{}
+			for _, c := range columns {
+				if c.Name == "" {
+					continue
+				}
+				bc = append(bc, promptbuilder.Column{
+					Name:        c.Name,
+					Description: c.Description,
+				})
+			}
+			columnsGenBuilder.AddExistingColumns(bc)
+			prompt, err := columnsGenBuilder.Prompt()
+			require.NoError(t, err)
+			require.Equal(t, prompt, request.Messages[0].Content[0].Data)
+			return &client.ChatResponse{
+				Content: `[{"name":"extra","type":"string"},{"name":"extra2","type":"string"}]`,
+				Tokens:  100,
+			}, nil
+		},
+	}
+	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	sources := []json.RawMessage{
+		[]byte(`{
+      "name": "countries",
+      "type": "list",
+      "options": ["China", "Japan", "England", "Thai", "France"]
+    }`),
+		[]byte(`
+    {
+      "name": "tags",
+      "type": "ai",
+      "prompt": "Generate 20 tags."
+    }`),
+		[]byte(`
+    {
+      "name": "users",
+      "type": "linked",
+      "table": "user"
+    }
+`),
+	}
+
+	userTable, err := db.TableMeta.Create().SetName("user").Save(ctx)
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(ctx)
+	require.NoError(t, err)
+
+	id, err := srv.Create(ctx, &TableGenRequest{
+		Name:        "test",
+		Description: "test table",
+		Columns:     columns,
+		Sources:     sources,
+		Model:       "aiai",
+	})
+	require.NoError(t, err)
+	schema, err := srv.GetTableSchema(ctx, id)
+	require.NoError(t, err)
+	expected := `{"name":"test","model":"","description":"test table","columns":[{"name":"name","description":"recipe name","type":"string","fill_mode":"ai","source":"","random":false,"replacement":false,"repeat":1,"context_length":5,"linked_column":"","linked_context_columns":[]},{"name":"count","description":"recipe count","type":"integer","fill_mode":"ai","source":"","random":false,"replacement":false,"repeat":1,"context_length":3,"linked_column":"","linked_context_columns":[]},{"name":"tag","description":"recipe tag","type":"array","fill_mode":"pick","source":"tags","random":true,"replacement":true,"repeat":3,"context_length":0,"linked_column":"","linked_context_columns":null},{"name":"country","description":"recipe country","type":"string","fill_mode":"pick","source":"countries","random":false,"replacement":false,"repeat":0,"context_length":0,"linked_column":"","linked_context_columns":null},{"name":"user","description":"recipe user","type":"boolean","fill_mode":"pick","source":"users","random":false,"replacement":false,"repeat":0,"context_length":0,"linked_column":"name","linked_context_columns":["age"]},{"name":"extra","description":"","type":"string","fill_mode":"ai","source":"","random":false,"replacement":false,"repeat":1,"context_length":0,"linked_column":"","linked_context_columns":[]}],"sources":[{"name":"countries","options":["China","Japan","England","Thai","France"],"type":"list"},{"name":"tags","options":null,"prompt":"Generate 20 tags.","type":"ai"},{"name":"users","table":"UkLWZg","type":"linked"}]}`
+	b, err := json.Marshal(schema)
+	require.NoError(t, err)
+	require.Equal(t, expected, string(b))
+}

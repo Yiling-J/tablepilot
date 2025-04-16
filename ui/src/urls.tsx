@@ -35,3 +35,7 @@ export function sourcesUrl() {
 export function imageUrl(path: string) {
   return `${address}/api/v1/images/${path}`;
 }
+
+export function schemaUrl(id: string) {
+  return `${address}/api/v1/tables/${id}/schema`;
+}

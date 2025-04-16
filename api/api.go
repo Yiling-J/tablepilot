@@ -206,6 +206,15 @@ func (hs *HTTPServer) SharedSources(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"sources": sources})
 }
 
+func (hs *HTTPServer) GetTableSchema(ctx *gin.Context) {
+	schema, err := hs.TableService.GetTableSchema(ctx.Request.Context(), ctx.Param("table"))
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, schema)
+}
+
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
@@ -219,4 +228,5 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/autofill/tables/:table", hs.Autofill)
 	hs.apiv1.GET("/tables/:table/rows", hs.Rows)
 	hs.apiv1.GET("/sources", hs.SharedSources)
+	hs.apiv1.GET("/tables/:table/schema", hs.GetTableSchema)
 }

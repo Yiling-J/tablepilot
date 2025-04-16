@@ -33,11 +33,11 @@ var _ TableService = &TableServiceMock{}
 //			GenetateFunc: func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
 //			},
-//			GetImageFunc: func(ctx context.Context, table string, path string) ([]byte, error) {
-//				panic("mock out the GetImage method")
-//			},
 //			GetTableDetailFunc: func(ctx context.Context, table string) (*TableInfo, error) {
 //				panic("mock out the GetTableDetail method")
+//			},
+//			GetTableSchemaFunc: func(ctx context.Context, table string) (*TableGenRequest, error) {
+//				panic("mock out the GetTableSchema method")
 //			},
 //			ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
 //				panic("mock out the Import method")
@@ -76,11 +76,11 @@ type TableServiceMock struct {
 	// GenetateFunc mocks the Genetate method.
 	GenetateFunc func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
 
-	// GetImageFunc mocks the GetImage method.
-	GetImageFunc func(ctx context.Context, table string, path string) ([]byte, error)
-
 	// GetTableDetailFunc mocks the GetTableDetail method.
 	GetTableDetailFunc func(ctx context.Context, table string) (*TableInfo, error)
+
+	// GetTableSchemaFunc mocks the GetTableSchema method.
+	GetTableSchemaFunc func(ctx context.Context, table string) (*TableGenRequest, error)
 
 	// ImportFunc mocks the Import method.
 	ImportFunc func(ctx context.Context, table string, reader io.Reader) (string, error)
@@ -132,17 +132,15 @@ type TableServiceMock struct {
 			// Params is the params argument value.
 			Params GenerateRowsRequest
 		}
-		// GetImage holds details about calls to the GetImage method.
-		GetImage []struct {
+		// GetTableDetail holds details about calls to the GetTableDetail method.
+		GetTableDetail []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Table is the table argument value.
 			Table string
-			// Path is the path argument value.
-			Path string
 		}
-		// GetTableDetail holds details about calls to the GetTableDetail method.
-		GetTableDetail []struct {
+		// GetTableSchema holds details about calls to the GetTableSchema method.
+		GetTableSchema []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Table is the table argument value.
@@ -195,8 +193,8 @@ type TableServiceMock struct {
 	lockCreateRows     sync.RWMutex
 	lockDelete         sync.RWMutex
 	lockGenetate       sync.RWMutex
-	lockGetImage       sync.RWMutex
 	lockGetTableDetail sync.RWMutex
+	lockGetTableSchema sync.RWMutex
 	lockImport         sync.RWMutex
 	lockListTables     sync.RWMutex
 	lockRows           sync.RWMutex
@@ -353,46 +351,6 @@ func (mock *TableServiceMock) GenetateCalls() []struct {
 	return calls
 }
 
-// GetImage calls GetImageFunc.
-func (mock *TableServiceMock) GetImage(ctx context.Context, table string, path string) ([]byte, error) {
-	if mock.GetImageFunc == nil {
-		panic("TableServiceMock.GetImageFunc: method is nil but TableService.GetImage was just called")
-	}
-	callInfo := struct {
-		Ctx   context.Context
-		Table string
-		Path  string
-	}{
-		Ctx:   ctx,
-		Table: table,
-		Path:  path,
-	}
-	mock.lockGetImage.Lock()
-	mock.calls.GetImage = append(mock.calls.GetImage, callInfo)
-	mock.lockGetImage.Unlock()
-	return mock.GetImageFunc(ctx, table, path)
-}
-
-// GetImageCalls gets all the calls that were made to GetImage.
-// Check the length with:
-//
-//	len(mockedTableService.GetImageCalls())
-func (mock *TableServiceMock) GetImageCalls() []struct {
-	Ctx   context.Context
-	Table string
-	Path  string
-} {
-	var calls []struct {
-		Ctx   context.Context
-		Table string
-		Path  string
-	}
-	mock.lockGetImage.RLock()
-	calls = mock.calls.GetImage
-	mock.lockGetImage.RUnlock()
-	return calls
-}
-
 // GetTableDetail calls GetTableDetailFunc.
 func (mock *TableServiceMock) GetTableDetail(ctx context.Context, table string) (*TableInfo, error) {
 	if mock.GetTableDetailFunc == nil {
@@ -426,6 +384,42 @@ func (mock *TableServiceMock) GetTableDetailCalls() []struct {
 	mock.lockGetTableDetail.RLock()
 	calls = mock.calls.GetTableDetail
 	mock.lockGetTableDetail.RUnlock()
+	return calls
+}
+
+// GetTableSchema calls GetTableSchemaFunc.
+func (mock *TableServiceMock) GetTableSchema(ctx context.Context, table string) (*TableGenRequest, error) {
+	if mock.GetTableSchemaFunc == nil {
+		panic("TableServiceMock.GetTableSchemaFunc: method is nil but TableService.GetTableSchema was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Table string
+	}{
+		Ctx:   ctx,
+		Table: table,
+	}
+	mock.lockGetTableSchema.Lock()
+	mock.calls.GetTableSchema = append(mock.calls.GetTableSchema, callInfo)
+	mock.lockGetTableSchema.Unlock()
+	return mock.GetTableSchemaFunc(ctx, table)
+}
+
+// GetTableSchemaCalls gets all the calls that were made to GetTableSchema.
+// Check the length with:
+//
+//	len(mockedTableService.GetTableSchemaCalls())
+func (mock *TableServiceMock) GetTableSchemaCalls() []struct {
+	Ctx   context.Context
+	Table string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Table string
+	}
+	mock.lockGetTableSchema.RLock()
+	calls = mock.calls.GetTableSchema
+	mock.lockGetTableSchema.RUnlock()
 	return calls
 }
 

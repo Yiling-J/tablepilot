@@ -2,6 +2,7 @@ import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CsvOutput, download } from "export-to-csv";
+import { useNavigate } from "react-router-dom";
 import { beforeEach } from "vitest";
 import {
     GenerateRequest,
@@ -10,6 +11,7 @@ import {
     getModels,
     getRows,
     getTable,
+    getTableSchema,
     getTables,
     truncateTable,
 } from "../actions";
@@ -17,6 +19,8 @@ import { Table } from "./table";
 
 describe("Table", () => {
   beforeEach(() => {
+    vi.mock("react-router-dom");
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
     vi.mock("@/actions");
     const mockedGetTable = vi.mocked(getTable);
     const table = {
@@ -299,5 +303,40 @@ describe("Table", () => {
     ["Alice", "Software Engineer"].forEach((v) =>
       expect(screen.getByText(v)).toBeInTheDocument(),
     );
+  });
+
+  it("should open update table dialog when click column cell", async () => {
+    const mockedGetTableSchema = vi.mocked(getTableSchema);
+    const table = {
+      name: "foo",
+      description: "bar",
+      sources: [],
+      columns: [
+        {
+          name: "c1",
+          description: "recipe name",
+          type: "string",
+          fill_mode: "ai",
+          random: true,
+          replacement: false,
+          repeat: 1,
+          linked_column: "",
+          linked_context_columns: [],
+        },
+      ],
+    };
+    mockedGetTableSchema.mockResolvedValue(table);
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    await userEvent.click(screen.getByText("name"));
+    await screen.findByText("Update Table");
+    expect(
+      screen.getByText("Update your table configuration or import JSON"),
+    ).toBeInTheDocument();
   });
 });

@@ -7,9 +7,10 @@ interface CreateTableDialogContextValue {
   isOpen: boolean;
   openNewTableDialog: () => void;
   withForm: (form: TableCreateRequest) => void;
-  clearForm: () => void;
   withRows: (rows: JSONObject[]) => void;
-  clearRows: () => void;
+  withTable: (table: string) => void;
+  withSubmitCallback: (callback: () => Promise<void>) => void;
+  clear: () => void;
 }
 
 const CreateTableDialogContext = createContext<
@@ -30,6 +31,10 @@ interface CreateTableDialogProviderProps {
   children: ReactNode;
 }
 
+interface submitCallback {
+  fn?: () => Promise<void>;
+}
+
 export function CreateTableDialogProvider({
   children,
 }: CreateTableDialogProviderProps) {
@@ -37,14 +42,23 @@ export function CreateTableDialogProvider({
   const openNewTableDialog = () => setIsOpen(true);
   const closeDialog = () => setIsOpen(false);
   const [form, setForm] = useState<TableCreateRequest | undefined>(undefined);
+  const [table, setTable] = useState<string | undefined>(undefined);
+  const submitCallbackRef = useRef<submitCallback>({});
   const withForm = (form: TableCreateRequest) => setForm(form);
-  const clearForm = () => setForm(undefined);
+  const withTable = (table: string) => setTable(table);
   const rowsRef = useRef<JSONObject[] | undefined>(undefined);
   const withRows = (rows: JSONObject[]) => {
     rowsRef.current = rows;
   };
-  const clearRows = () => {
+  const withSubmitCallback = (callback: () => Promise<void>) => {
+    submitCallbackRef.current.fn = callback;
+  };
+
+  const clear = () => {
+    setForm(undefined);
+    setTable(undefined);
     rowsRef.current = undefined;
+    submitCallbackRef.current.fn = undefined;
   };
 
   return (
@@ -53,18 +67,26 @@ export function CreateTableDialogProvider({
         isOpen,
         openNewTableDialog,
         withForm,
-        clearForm,
         withRows,
-        clearRows,
+        withTable,
+        withSubmitCallback,
+        clear,
       }}
     >
       {children}
       <CreateTableDialog
+        table={table}
         isOpen={isOpen}
-        setIsOpen={setIsOpen}
+        setIsOpen={(v: boolean) => {
+          if (!v) {
+            clear();
+          }
+          setIsOpen(v);
+        }}
         close={closeDialog}
         form={form}
         rows={rowsRef.current}
+        submitCallback={submitCallbackRef.current.fn}
       />
     </CreateTableDialogContext.Provider>
   );

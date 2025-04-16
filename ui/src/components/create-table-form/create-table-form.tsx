@@ -1,4 +1,9 @@
-import { TableCreateRequest, createRows, createTable } from "@/actions";
+import {
+    TableCreateRequest,
+    createRows,
+    createTable,
+    updateTable,
+} from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -29,15 +34,19 @@ const initialFormData: TableCreateRequest = {
 };
 
 interface CreateTableFormProps {
+  table?: string;
   close: () => void;
   form?: TableCreateRequest;
   rows?: JSONObject[];
+  submitCallback?: () => Promise<void>;
 }
 
 export default function CreateTableForm({
+  table,
   close,
   form,
   rows,
+  submitCallback,
 }: CreateTableFormProps) {
   const [formData, setFormData] = useState<TableCreateRequest>(
     form ?? initialFormData,
@@ -45,7 +54,7 @@ export default function CreateTableForm({
   const [loading, setLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("step1");
   const [showPreview, setShowPreview] = useState(false);
-  const { clearForm, clearRows } = useCreateTableDialog();
+  const { clear } = useCreateTableDialog();
   const navigate = useNavigate();
   const { refreshTables } = useTables();
 
@@ -65,15 +74,22 @@ export default function CreateTableForm({
 
   const handleSubmit = async () => {
     setLoading(true);
+    let info;
     try {
-      const info = await createTable(formData);
+      if (table !== undefined) {
+        info = await updateTable(table, formData);
+      } else {
+        info = await createTable(formData);
+      }
       if (rows && rows.length > 0) {
         await createRows(info.id, rows);
       }
+      if (submitCallback) {
+        await submitCallback();
+      }
       await refreshTables();
       close();
-      clearForm();
-      clearRows();
+      clear();
       navigate(`/tables/${info.id}`);
     } catch (err) {
       console.log("create table failed: ", err);
@@ -99,7 +115,9 @@ export default function CreateTableForm({
           <CardHeader>
             <CardTitle>Table Configuration</CardTitle>
             <CardDescription>
-              Create your table configuration or import JSON
+              {table === undefined
+                ? "Create your table configuration or import JSON"
+                : "Update your table configuration or import JSON"}
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -8,9 +8,11 @@ import {
     getModels,
     getRows,
     getTable,
+    getTableSchema,
     truncateTable,
 } from "@/actions";
 import { Separator } from "@/components/ui/separator";
+import { useCreateTableDialog } from "@/context/create-table";
 import { cn } from "@/lib/utils";
 import { imageUrl } from "@/urls.tsx";
 import { ColumnDef } from "@tanstack/react-table";
@@ -29,7 +31,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ReloadIcon } from "@radix-ui/react-icons";
+import { GearIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { download, generateCsv, mkConfig } from "export-to-csv";
 import { GridHeader } from "./grid-header.tsx";
 import { TablepilotHeader } from "./header.tsx";
@@ -102,6 +104,38 @@ const loading = (
   </div>
 );
 
+function ColumnHeader({
+  column,
+  onClick,
+}: {
+  column: Column;
+  onClick: () => Promise<void>;
+}) {
+  const [hoverColumn, setHoverColumn] = useState("");
+  return (
+    <div
+      className="flex content-center text-black dark:text-white text-sm items-center"
+      onMouseEnter={() => {
+        setHoverColumn(column.id);
+      }}
+      onMouseLeave={() => setHoverColumn("")}
+      onClick={onClick}
+    >
+      <span className="cursor-pointer material-symbols-rounded pl-2 pr-2 text-base">
+        {column.type == "string" && "text_fields"}
+        {column.type == "number" && "numbers"}
+        {column.type == "integer" && "numbers"}
+        {column.type == "array" && "data_array"}
+        {column.type == "boolean" && "check"}
+        {column.type == "image" && "image"}
+      </span>
+
+      <div className="text-base">{column.name}</div>
+      {column.id === hoverColumn && <GearIcon className="ml-2" />}
+    </div>
+  );
+}
+
 export function Table({ id }: TableProps) {
   const [rows, setRows] = useState(Array<JSONObject>);
   const [table, setTable] = useState<TableInfo | undefined>(undefined);
@@ -130,6 +164,16 @@ export function Table({ id }: TableProps) {
   const modeRef = useRef<"generate" | "autofill">("generate");
   const autofillOffsetRef = useRef(0);
   const { refreshTables } = useTables();
+  const { openNewTableDialog, withForm, withTable, withSubmitCallback } =
+    useCreateTableDialog();
+
+  const handleEditColumnClick = async () => {
+    const schema = await getTableSchema(id);
+    withForm(schema);
+    withTable(id);
+    openNewTableDialog();
+    withSubmitCallback(fetchData);
+  };
 
   const fetchData = async () => {
     try {
@@ -151,18 +195,7 @@ export function Table({ id }: TableProps) {
             accessorKey: e.id,
             meta: { columnType: e.type.toString() },
             header: () => (
-              <div className="flex content-center text-black dark:text-white text-sm items-center">
-                <span className="cursor-pointer material-symbols-rounded pl-2 pr-2 text-base">
-                  {e.type == "string" && "text_fields"}
-                  {e.type == "number" && "numbers"}
-                  {e.type == "integer" && "numbers"}
-                  {e.type == "array" && "data_array"}
-                  {e.type == "boolean" && "check"}
-                  {e.type == "image" && "image"}
-                </span>
-
-                <div className="text-base">{e.name}</div>
-              </div>
+              <ColumnHeader column={e} onClick={handleEditColumnClick} />
             ),
             accessorFn: (row: JSONObject) => {
               const v = row[e.id] as object;
