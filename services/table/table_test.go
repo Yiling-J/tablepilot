@@ -807,6 +807,8 @@ func TestTableService_CreateRows(t *testing.T) {
 	require.Equal(t, expected, data)
 }
 
+type rowType struct{ Name, Job string }
+
 func TestTableService_NewServiceSharedSource(t *testing.T) {
 	tmpFile, err := os.CreateTemp("./", "test_*.csv")
 	require.NoError(t, err)
@@ -820,16 +822,28 @@ func TestTableService_NewServiceSharedSource(t *testing.T) {
 	require.NoError(t, writer.Error())
 	require.NoError(t, tmpFile.Close())
 
+	tmpPqFile, err := os.CreateTemp("./", "test_*.parquet")
+	require.NoError(t, err)
+	defer os.Remove(tmpPqFile.Name())
+	err = parquet.WriteFile(tmpPqFile.Name(), []rowType{
+		{Name: "Bob"},
+	})
+	require.NoError(t, err)
+
 	db := db.NewTestDB()
 	srv, err := NewTableService(&config.Config{Sources: []map[string]any{
 		{"name": "s1", "type": "list", "options": []string{"a", "b"}},
 		{"name": "s2", "type": "csv", "paths": []string{strings.TrimPrefix(tmpFile.Name(), "./")}},
+		{"name": "s3", "type": "parquet", "paths": []string{strings.TrimPrefix(tmpPqFile.Name(), "./")}},
 	}, Common: config.Common{SourceDataDir: "./"}}, db, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	require.ElementsMatch(t, []*SharedSource{
 		{Name: "s1", Columns: nil, Data: json.RawMessage(`{"name":"s1","options":["a","b"],"type":"list"}`)},
 		{Name: "s2", Columns: []string{"Name", "Job", "Age"}, Data: json.RawMessage(
 			fmt.Sprintf(`{"name":"s2","paths":["%s"],"type":"csv"}`, strings.TrimPrefix(tmpFile.Name(), "./")),
+		)},
+		{Name: "s3", Columns: []string{"Name", "Job"}, Data: json.RawMessage(
+			fmt.Sprintf(`{"name":"s3","paths":["%s"],"type":"parquet"}`, strings.TrimPrefix(tmpPqFile.Name(), "./")),
 		)},
 	}, srv.sharedSources)
 }
