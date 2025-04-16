@@ -1,12 +1,14 @@
 package table
 
 import (
+	"cmp"
 	"context"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -855,6 +857,11 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 		}
 		sources = append(sources, b)
 	}
+
+	slices.SortFunc(sources, func(a, b json.RawMessage) int {
+		return cmp.Compare(gjson.GetBytes(a, "name").String(), gjson.GetBytes(b, "name").String())
+	})
+
 	schema.Sources = sources
 	columns := []TableGenColumn{}
 	for _, col := range meta.Edges.Columns {
