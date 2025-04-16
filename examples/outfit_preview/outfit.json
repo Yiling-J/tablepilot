@@ -9,13 +9,13 @@
     },
     {
       "name": "hats",
-      "type": "csv",
-      "paths": ["examples/outfit_preview/hat/hat.csv"]
+      "type": "files",
+      "paths": ["examples/outfit_preview/hat/*.jpg"]
     },
     {
       "name": "glasses",
-      "type": "csv",
-      "paths": ["examples/outfit_preview/glasses/glasses.csv"]
+      "type": "files",
+      "paths": ["examples/outfit_preview/glasses/*.jpg"]
     }
   ],
   "columns": [
@@ -32,7 +32,6 @@
       "type": "image",
       "fill_mode": "pick",
       "source": "hats",
-      "linked_column": "image",
       "random": true,
       "replacement": false
     },
@@ -42,7 +41,6 @@
       "type": "image",
       "fill_mode": "pick",
       "source": "glasses",
-      "linked_column": "image",
       "random": true,
       "replacement": false
     },
