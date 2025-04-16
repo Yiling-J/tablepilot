@@ -80,6 +80,16 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 			return nil, errors.New("Hugging Face dataset is empty")
 		}
 		s = &ls
+	case "files":
+		var ls FilesSource
+		err := json.Unmarshal(raw, &ls)
+		if err != nil {
+			return nil, err
+		}
+		if len(ls.Paths) == 0 {
+			return nil, errors.New("paths is empty")
+		}
+		s = &ls
 	default:
 		return nil, fmt.Errorf("invalid source type %s", sourceType)
 	}

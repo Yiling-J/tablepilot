@@ -28,6 +28,8 @@ func TestSource_Validate(t *testing.T) {
 		{`{"type": "parquet"}`, errors.New("paths is empty")},
 		{`{"type": "parquet","huggingface":{"dataset":"abc"}}`, nil},
 		{`{"type": "parquet","huggingface":{"dataset":""}}`, errors.New("Hugging Face dataset is empty")},
+		{`{"type": "files","paths":["foo.csv"]}`, nil},
+		{`{"type": "files"}`, errors.New("paths is empty")},
 	}
 
 	for _, c := range cases {

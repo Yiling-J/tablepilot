@@ -323,12 +323,14 @@ A description of what the table represents. It provides context for the data (e.
 This section allows you to specify a default model for AI-generated columns. If not defined, the default model will be selected based on the configuration file.
 
 #### sources:
-A list of sources from which `pick`-type columns can select values. Tablepilot currently 4 types of sources:
+A list of sources from which `pick`-type columns can select values. Tablepilot currently 6 types of sources:
 
-- **AI**: Uses AI to generate a list of options dynamically. Each time a new generation starts (via the `generate` command, generate API call, or start button in UI), the options will be regenerated.
-- **LIST**: Uses a predefined list of options.
-- **LINKED**: Uses rows from another table as the source.
-- **CSV**: Uses rows from one or more CSV files as the source. All CSV files must have a header row with column names and share the same column structure.
+- **ai**: Uses AI to generate a list of options dynamically. Each time a new generation starts (via the `generate` command, generate API call, or start button in UI), the options will be regenerated.
+- **list**: Uses a predefined list of options.
+- **linked**: Uses rows from another table as the source.
+- **csv**: Uses rows from one or more CSV files / Kaggle datasets as the source. All CSV files must have a header row with column names and share the same column structure.
+- **parquet**:  Uses rows from one or more Parquet files / Hugging Face datasets as the source.
+- **files**: Uses file paths as values. Each value is a relative path (to {source_data_dir}). This is especially useful for image-type columns where you want to reference image file paths directly. See icon_jokes or outfit_preview in the examples directory for reference.
 
 Each source is an object with the following fields:
 
@@ -379,6 +381,9 @@ Special fields for different types:
     - **dataset**: The dataset to use (e.g., `facebook/natural_reasoning`).
     - **config**: (Optional) The dataset configuration to use, defaulting to `"default"`.
     - **split**: (Optional) The dataset split to use, defaulting to `"train"`.
+
+- **files**:
+  - **paths**: Same as `CSV` source.
 
 #### columns:
 A list of column definitions. Each column is an object that can contain the following fields:

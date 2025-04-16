@@ -1,0 +1,35 @@
+{
+  "name": "icon_jokes_v1_1",
+  "description": "A table of funny jokes inspired by two icon images",
+  "sources": [
+    {
+      "name": "images",
+      "type": "files",
+      "paths": ["examples/icon_jokes/images/*.png"]
+    }
+  ],
+  "columns": [
+    {
+      "name": "Image 1",
+      "description": "The first icon image file",
+      "type": "image",
+      "fill_mode": "pick",
+      "source": "images",
+      "random": true
+    },
+    {
+      "name": "Image 2",
+      "description": "The second icon image file",
+      "type": "image",
+      "fill_mode": "pick",
+      "source": "images",
+      "random": true
+    },
+    {
+      "name": "Joke",
+      "description": "A humorous and imaginative joke about the interaction or contrast between Image 1 and Image 2",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}
