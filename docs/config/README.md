@@ -10,10 +10,22 @@ The configuration consists of following sections:
 
 - **source_data_dir**: The root search dir for CSV source `paths` field and List source `file` field. Default "./".
 
+```toml
+[common]
+source_data_dir = "./data"
+```
+
+
 ### Database
 
 - **driver**: Specifies the database driver (e.g., `"sqlite3"`).
 - **dsn**: The data source name (DSN) for the database connection.
+
+```toml
+[database]
+driver = "sqlite3"
+dsn = "data.db?_pragma=foreign_keys(1)"
+```
 
 ### Clients
 
@@ -24,11 +36,30 @@ You can define multiple clients, and different models can use different clients.
 - **key**: The API key used to authenticate requests.
 - **base_url**: The base URL of the API.
 
+```toml
+[[clients]]
+name = "gemini"
+type = "openai"
+key = "your_api_key"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+[[clients]]
+name = "openai"
+type = "openai"
+key = "your_api_key"
+base_url = "https://api.openai.com/v1/"
+```
+
 ### Server (Optional)
 
 This section configures the API server when running `tablepilot serve`.
 
 - **address**: TCP network address. Used in `http.ListenAndServe`. Default `:8080`.
+
+```toml
+[server]
+address = ":8088"
+```
 
 ### Models
 
@@ -43,9 +74,22 @@ You can define multiple models and assign them to different clients or different
 
 **Important**: All models must support [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).
 
+```toml
+[[models]]
+model = "gemini-2.0-flash-001"
+client = "gemini"
+rpm = 20
+
+[[models]]
+model = "gpt-4o"
+client = "openai"
+rpm = 5
+```
+
 ### Sources (Optional)
 
 You can also define shared sources here. These sources will be accessible to all tables. For more details on source definitions, see [Sources](#sources). Example:
+
 ```toml
 [[sources]]
 name = "customers"
