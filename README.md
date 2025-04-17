@@ -67,9 +67,9 @@ Let’s briefly review what each part means. Full definitions are available [her
 
 ### Sources
 
-> See the [source config readme](docs/schema#sources) for full details.
+> See the [source config readme](docs/schema/source.md) for full details.
 
-When generating a row, non-AI columns are filled first using a **source**. These values are then passed as context to the LLM to generate the remaining columns. Pretty straightforward, right?
+When generating a row, non-AI columns are filled first using data from **source**. These values are then passed as context to the LLM to generate the remaining columns. Pretty straightforward, right?
 
 Sources are the core of Tablepilot's flexibility and support 6 types:
 
@@ -80,7 +80,7 @@ Sources are the core of Tablepilot's flexibility and support 6 types:
 - `csv`
 - `parquet`
 
-The first three act like lists of options. For example, `<ai: generate a list of fruits>` will generate a list, and each row picks one value from it.
+The first three act like lists of options. For example, a fruits list `["apple", "banana", "orange"]` and each row picks one value from it.
 
 - **list**: Options are predefined by you.
 - **ai**: If you don’t know the options, you can prompt the LLM to generate them.
@@ -99,7 +99,7 @@ The remaining three are **tabular sources** containing multiple columns. For exa
 
 ### Columns
 
-> See the [column config readme](docs/schema#columns) for full details.
+> See the [column config readme](docs/schema/column.md) for full details.
 
 Each column has a name, description, type, and how it should be filled (AI or source).
 
