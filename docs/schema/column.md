@@ -1,5 +1,5 @@
 #### Column:
-A list of column definitions. Each column is an object that can contain the following fields:
+Each column object contain the following fields:
 
 - **name**: The name of the column (e.g., `"Name"`, `"Ingredients"`). This will be used in the prompt when generating rows.
 - **description**: A brief description of what data the column contains (e.g., `"recipe name"`). This will also be used in the prompt when generating rows.
@@ -29,8 +29,11 @@ When `fill_mode` is set to `"pick"`, the following fields are available:
 When `source` type is `linked` or `csv` or `parquet`, the following fields are available:
 
 - **linked_column**: The linked-table column used for display text in the generated cell(e.g., user name).
-- **linked_context_columns**: The linked-table columns providing context when generating data (e.g., user age, job, nationality).
+- **linked_context_columns**: The linked-table columns providing context when generating data (e.g., user age, job, nationality). Note that only values from linked_context_columns are sent as context, not from linked_column. If you want a column to be both displayed and sent as context, it must be included in both linked_column and linked_context_columns.
 
 **Shared AI Type Source Behavior**
 
 If multiple columns use the same AI source but have different `random`, `replacement`, or `repeat` settings, the source is initialized only once. For example, if a `"tags"` source generates 20 tag options via AI and three columns reference it, the tag generation process runs once, and all three columns share the same selection pool.
+
+**AI Generated columns**
+If you leave the `name` field empty, Tablepilot will automatically generate a column based on the table schema, ignoring the other parameters.

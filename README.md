@@ -110,7 +110,8 @@ You can also configure the **context length**, which determines how many previou
 
 ### Generate Mode
 
-Generate mode is simple: specify which table to generate, how many rows, and the batch size (how many rows per AI call). If your rows are large, use smaller batch sizes to avoid token limits. Larger batches offer better consistency and token efficiency.
+Generate mode is simple: specify which table to generate, how many rows, and the batch size (how many rows per AI call). If you expect large outputs per row, use smaller batch sizes to avoid hitting the model’s maximum token limit. However, larger batch sizes can improve consistency and token efficiency.
+
 
 Example: generate 30 recipes, 5 per batch:
 

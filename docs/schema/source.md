@@ -1,6 +1,6 @@
 #### Sources
 
-A list of sources from which `pick`-type columns can select values. Tablepilot currently 6 types of sources:
+A sourc object from which `pick`-type columns can select values. Tablepilot currently 6 types of sources:
 
 - **ai**: Uses AI to generate a list of options dynamically. Each time a new generation starts (via the `generate` command, generate API call, or start button in UI), the options will be regenerated.
 - **list**: Uses a predefined list of options.
