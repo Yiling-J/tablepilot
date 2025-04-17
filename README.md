@@ -86,10 +86,7 @@ The first three act like lists of options. For example, a fruits list `["apple",
 - **ai**: If you don’t know the options, you can prompt the LLM to generate them.
 - **files**: Used for image columns—values are file paths like `["cat.png", "dog.png"]`.
 
-The remaining three are **tabular sources** containing multiple columns. For example, a `user` table might have Name, Age, and Job. You can configure:
-
-- `linked_column`: What to display in the new table (e.g., Name).
-- `linked_context_columns`: Extra fields (e.g., Age, Job) to pass to the LLM for better content generation.
+The remaining three are **tabular sources** containing multiple columns. For example, a `user` table might have Name, Age, and Job. You can select which column to use as the display value and which ones to use as context. See the next section for details.
 
 - **linked**: Pulls data from other Tablepilot tables.
 - **csv**: Uses local CSV files or remote Kaggle datasets.
@@ -101,13 +98,13 @@ The remaining three are **tabular sources** containing multiple columns. For exa
 
 > See the [column config readme](docs/schema/column.md) for full details.
 
-Each column has a name, description, type, and how it should be filled (AI or source).
+Each column has `name`, `description`, and `type`. You’ll also need to specify how the column should be populated, either by AI or from a source.
 
-- The **description** is sent to the AI, so be descriptive—it helps the model understand your intent.
-- When using a source, you can specify how values are selected: randomly, randomly with replacement, or sequentially.
-- For tabular sources (linked/csv/parquet), you must specify `linked_column` and optionally `linked_context_columns`.
+All column names and descriptions are sent to the AI model, regardless of whether the column is AI-generated. This helps the model better understand the overall table schema and generate more relevant content, so make your descriptions as clear and descriptive as possible.
 
-You can also set **context length**, which controls how many previous values in this column are passed to the AI during generation. For instance, if your "Name" column has a context length of 20, the last 20 names will be included when generating a new row.
+If the column is filled from a source, you can define how values are selected: randomly, randomly with replacement(same value can be selected more than once), or sequentially. For tabular sources (linked/CSV/Parquet), you must specify a `linked_column`, and you may optionally define `linked_context_columns`. You can control how often a value is reused using the `repeat` parameter. For example, if your recipe table has a `Tag` column with `repeat` set to 5, the "Vegan" tag will be used for 5 rows before moving on to the next value from the source.
+
+You can also configure the **context length**, which determines how many previous values from the column are passed to the AI during generation. For example, if the "Name" column has a context length of 20, the last 20 names will be included when generating the next row.
 
 ---
 
