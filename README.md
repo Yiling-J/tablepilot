@@ -69,22 +69,22 @@ Let’s briefly review what each part means. Full definitions are available [her
 
 > See the [source config readme](docs/schema/source.md) for full details.
 
-When generating a row, non-AI columns are filled first using data from **source**. These values are then passed as context to the LLM to generate the remaining columns. Pretty straightforward, right?
+When generating a row, non-AI columns are filled first using data from **source**. These values are then passed as context to the LLM to generate the remaining columns.
 
 Sources are the core of Tablepilot's flexibility and support 6 types:
 
-- `list`
-- `ai`
-- `files`
-- `linked`
-- `csv`
-- `parquet`
+- list
+- ai
+- files
+- linked
+- csv
+- parquet
 
 The first three act like lists of options. For example, a fruits list `["apple", "banana", "orange"]` and each row picks one value from it.
 
 - **list**: Options are predefined by you.
 - **ai**: If you don’t know the options, you can prompt the LLM to generate them.
-- **files**: Used for image columns—values are file paths like `["cat.png", "dog.png"]`.
+- **files**: Used for image columns, values are file paths like `["cat.png", "dog.png"]`.
 
 The remaining three are **tabular sources** containing multiple columns. For example, a `user` table might have Name, Age, and Job. You can select which column to use as the display value and which ones to use as context. See the next section for details.
 
@@ -141,7 +141,7 @@ tablepilot autofill recipes columns=ingredients columns=steps context_columns=na
 
 ## CLI and API
 
-Tablepilot provides a full set of CLI commands, including `create`, `update`, `list`, `delete`, and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI.
+Tablepilot provides a full set of CLI commands, including `create`, `update`, `list`, `delete`, and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI. Use `tablepilot serve` command to start API server and WebUI.
 
 - For a complete list of CLI commands, see [this doc](CLI.md).
 - For all available API endpoints, see [this doc](API.md).
