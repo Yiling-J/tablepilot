@@ -52,8 +52,6 @@ rpm = 20
 
 Tablepilot has two modes: generate and autofill. Use generate mode when you want to create new rows from scratch. Use autofill mode when you already have a table with data, and you’ve added new columns that needs to be filled in. Before diving into these two modes, let’s go over a few basic concepts.
 
-A table typically consists of multiple columns. Some columns are AI-generated, while others are contextual—sourced from external data like another table, a fixed list, a CSV file, or a remote dataset.
-
 In Tablepilot, tables are defined using a JSON schema. You pass this JSON file via CLI, send it as a payload via API, or create it through the WebUI (which auto-generates the JSON under the hood). The schema format looks like this:
 ```json
 {
