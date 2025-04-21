@@ -22,8 +22,8 @@ type Huggingface struct {
 }
 
 type ParquetSource struct {
+	BasicSource
 	reader         *parquet.ParquetGoReader
-	Type           string   `json:"type"`
 	Paths          []string `json:"paths"`
 	Column         string   `json:"column"`
 	ContextColumns []string `json:"context_columns"`

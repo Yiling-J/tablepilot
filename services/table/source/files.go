@@ -9,7 +9,7 @@ import (
 )
 
 type FilesSource struct {
-	Type  string   `json:"type"`
+	BasicSource
 	Paths []string `json:"paths"`
 	files []string
 }

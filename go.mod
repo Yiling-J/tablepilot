@@ -8,6 +8,7 @@ require (
 	github.com/beevik/etree v1.5.0
 	github.com/bmatcuk/doublestar/v4 v4.8.1
 	github.com/charmbracelet/lipgloss v1.0.0
+	github.com/gammazero/toposort v0.1.1
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/static v1.1.3
 	github.com/gin-contrib/zap v1.1.4
@@ -18,7 +19,7 @@ require (
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/lib/pq v1.10.9
 	github.com/muesli/reflow v0.3.0
-	github.com/openai/openai-go v0.1.0-alpha.41
+	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/parquet-go/parquet-go v0.25.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/cobra v1.8.1

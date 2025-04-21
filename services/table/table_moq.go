@@ -21,6 +21,9 @@ var _ TableService = &TableServiceMock{}
 //
 //		// make and configure a mocked TableService
 //		mockedTableService := &TableServiceMock{
+//			BuildTableFunc: func(ctx context.Context, name string, description string, depends []string, exists []*TableInfo) (*TableGenRequest, error) {
+//				panic("mock out the BuildTable method")
+//			},
 //			CreateFunc: func(ctx context.Context, req *TableGenRequest) (string, error) {
 //				panic("mock out the Create method")
 //			},
@@ -29,6 +32,9 @@ var _ TableService = &TableServiceMock{}
 //			},
 //			DeleteFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Delete method")
+//			},
+//			GenerateBuilderTablesFunc: func(ctx context.Context, prompt string) ([]BuilderTable, error) {
+//				panic("mock out the GenerateBuilderTables method")
 //			},
 //			GenetateFunc: func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
@@ -44,6 +50,12 @@ var _ TableService = &TableServiceMock{}
 //			},
 //			ListTablesFunc: func(ctx context.Context) (*ListTablesResponse, error) {
 //				panic("mock out the ListTables method")
+//			},
+//			PolishBuilderTableFunc: func(ctx context.Context, table *TableGenRequest, prompt string) (*TableGenRequest, error) {
+//				panic("mock out the PolishBuilderTable method")
+//			},
+//			PolishBuilderTablesFunc: func(ctx context.Context, tables []BuilderTable, prompt string) ([]BuilderTable, error) {
+//				panic("mock out the PolishBuilderTables method")
 //			},
 //			RowsFunc: func(ctx context.Context, table string) (*Rows, error) {
 //				panic("mock out the Rows method")
@@ -64,6 +76,9 @@ var _ TableService = &TableServiceMock{}
 //
 //	}
 type TableServiceMock struct {
+	// BuildTableFunc mocks the BuildTable method.
+	BuildTableFunc func(ctx context.Context, name string, description string, depends []string, exists []*TableInfo) (*TableGenRequest, error)
+
 	// CreateFunc mocks the Create method.
 	CreateFunc func(ctx context.Context, req *TableGenRequest) (string, error)
 
@@ -72,6 +87,9 @@ type TableServiceMock struct {
 
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(ctx context.Context, table string) (int, error)
+
+	// GenerateBuilderTablesFunc mocks the GenerateBuilderTables method.
+	GenerateBuilderTablesFunc func(ctx context.Context, prompt string) ([]BuilderTable, error)
 
 	// GenetateFunc mocks the Genetate method.
 	GenetateFunc func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
@@ -88,6 +106,12 @@ type TableServiceMock struct {
 	// ListTablesFunc mocks the ListTables method.
 	ListTablesFunc func(ctx context.Context) (*ListTablesResponse, error)
 
+	// PolishBuilderTableFunc mocks the PolishBuilderTable method.
+	PolishBuilderTableFunc func(ctx context.Context, table *TableGenRequest, prompt string) (*TableGenRequest, error)
+
+	// PolishBuilderTablesFunc mocks the PolishBuilderTables method.
+	PolishBuilderTablesFunc func(ctx context.Context, tables []BuilderTable, prompt string) ([]BuilderTable, error)
+
 	// RowsFunc mocks the Rows method.
 	RowsFunc func(ctx context.Context, table string) (*Rows, error)
 
@@ -102,6 +126,19 @@ type TableServiceMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// BuildTable holds details about calls to the BuildTable method.
+		BuildTable []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Name is the name argument value.
+			Name string
+			// Description is the description argument value.
+			Description string
+			// Depends is the depends argument value.
+			Depends []string
+			// Exists is the exists argument value.
+			Exists []*TableInfo
+		}
 		// Create holds details about calls to the Create method.
 		Create []struct {
 			// Ctx is the ctx argument value.
@@ -124,6 +161,13 @@ type TableServiceMock struct {
 			Ctx context.Context
 			// Table is the table argument value.
 			Table string
+		}
+		// GenerateBuilderTables holds details about calls to the GenerateBuilderTables method.
+		GenerateBuilderTables []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Prompt is the prompt argument value.
+			Prompt string
 		}
 		// Genetate holds details about calls to the Genetate method.
 		Genetate []struct {
@@ -160,6 +204,24 @@ type TableServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
+		// PolishBuilderTable holds details about calls to the PolishBuilderTable method.
+		PolishBuilderTable []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table *TableGenRequest
+			// Prompt is the prompt argument value.
+			Prompt string
+		}
+		// PolishBuilderTables holds details about calls to the PolishBuilderTables method.
+		PolishBuilderTables []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Tables is the tables argument value.
+			Tables []BuilderTable
+			// Prompt is the prompt argument value.
+			Prompt string
+		}
 		// Rows holds details about calls to the Rows method.
 		Rows []struct {
 			// Ctx is the ctx argument value.
@@ -189,18 +251,70 @@ type TableServiceMock struct {
 			Req *TableGenRequest
 		}
 	}
-	lockCreate         sync.RWMutex
-	lockCreateRows     sync.RWMutex
-	lockDelete         sync.RWMutex
-	lockGenetate       sync.RWMutex
-	lockGetTableDetail sync.RWMutex
-	lockGetTableSchema sync.RWMutex
-	lockImport         sync.RWMutex
-	lockListTables     sync.RWMutex
-	lockRows           sync.RWMutex
-	lockSharedSources  sync.RWMutex
-	lockTruncate       sync.RWMutex
-	lockUpdate         sync.RWMutex
+	lockBuildTable            sync.RWMutex
+	lockCreate                sync.RWMutex
+	lockCreateRows            sync.RWMutex
+	lockDelete                sync.RWMutex
+	lockGenerateBuilderTables sync.RWMutex
+	lockGenetate              sync.RWMutex
+	lockGetTableDetail        sync.RWMutex
+	lockGetTableSchema        sync.RWMutex
+	lockImport                sync.RWMutex
+	lockListTables            sync.RWMutex
+	lockPolishBuilderTable    sync.RWMutex
+	lockPolishBuilderTables   sync.RWMutex
+	lockRows                  sync.RWMutex
+	lockSharedSources         sync.RWMutex
+	lockTruncate              sync.RWMutex
+	lockUpdate                sync.RWMutex
+}
+
+// BuildTable calls BuildTableFunc.
+func (mock *TableServiceMock) BuildTable(ctx context.Context, name string, description string, depends []string, exists []*TableInfo) (*TableGenRequest, error) {
+	if mock.BuildTableFunc == nil {
+		panic("TableServiceMock.BuildTableFunc: method is nil but TableService.BuildTable was just called")
+	}
+	callInfo := struct {
+		Ctx         context.Context
+		Name        string
+		Description string
+		Depends     []string
+		Exists      []*TableInfo
+	}{
+		Ctx:         ctx,
+		Name:        name,
+		Description: description,
+		Depends:     depends,
+		Exists:      exists,
+	}
+	mock.lockBuildTable.Lock()
+	mock.calls.BuildTable = append(mock.calls.BuildTable, callInfo)
+	mock.lockBuildTable.Unlock()
+	return mock.BuildTableFunc(ctx, name, description, depends, exists)
+}
+
+// BuildTableCalls gets all the calls that were made to BuildTable.
+// Check the length with:
+//
+//	len(mockedTableService.BuildTableCalls())
+func (mock *TableServiceMock) BuildTableCalls() []struct {
+	Ctx         context.Context
+	Name        string
+	Description string
+	Depends     []string
+	Exists      []*TableInfo
+} {
+	var calls []struct {
+		Ctx         context.Context
+		Name        string
+		Description string
+		Depends     []string
+		Exists      []*TableInfo
+	}
+	mock.lockBuildTable.RLock()
+	calls = mock.calls.BuildTable
+	mock.lockBuildTable.RUnlock()
+	return calls
 }
 
 // Create calls CreateFunc.
@@ -312,6 +426,42 @@ func (mock *TableServiceMock) DeleteCalls() []struct {
 	mock.lockDelete.RLock()
 	calls = mock.calls.Delete
 	mock.lockDelete.RUnlock()
+	return calls
+}
+
+// GenerateBuilderTables calls GenerateBuilderTablesFunc.
+func (mock *TableServiceMock) GenerateBuilderTables(ctx context.Context, prompt string) ([]BuilderTable, error) {
+	if mock.GenerateBuilderTablesFunc == nil {
+		panic("TableServiceMock.GenerateBuilderTablesFunc: method is nil but TableService.GenerateBuilderTables was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Prompt string
+	}{
+		Ctx:    ctx,
+		Prompt: prompt,
+	}
+	mock.lockGenerateBuilderTables.Lock()
+	mock.calls.GenerateBuilderTables = append(mock.calls.GenerateBuilderTables, callInfo)
+	mock.lockGenerateBuilderTables.Unlock()
+	return mock.GenerateBuilderTablesFunc(ctx, prompt)
+}
+
+// GenerateBuilderTablesCalls gets all the calls that were made to GenerateBuilderTables.
+// Check the length with:
+//
+//	len(mockedTableService.GenerateBuilderTablesCalls())
+func (mock *TableServiceMock) GenerateBuilderTablesCalls() []struct {
+	Ctx    context.Context
+	Prompt string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Prompt string
+	}
+	mock.lockGenerateBuilderTables.RLock()
+	calls = mock.calls.GenerateBuilderTables
+	mock.lockGenerateBuilderTables.RUnlock()
 	return calls
 }
 
@@ -492,6 +642,86 @@ func (mock *TableServiceMock) ListTablesCalls() []struct {
 	mock.lockListTables.RLock()
 	calls = mock.calls.ListTables
 	mock.lockListTables.RUnlock()
+	return calls
+}
+
+// PolishBuilderTable calls PolishBuilderTableFunc.
+func (mock *TableServiceMock) PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string) (*TableGenRequest, error) {
+	if mock.PolishBuilderTableFunc == nil {
+		panic("TableServiceMock.PolishBuilderTableFunc: method is nil but TableService.PolishBuilderTable was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Table  *TableGenRequest
+		Prompt string
+	}{
+		Ctx:    ctx,
+		Table:  table,
+		Prompt: prompt,
+	}
+	mock.lockPolishBuilderTable.Lock()
+	mock.calls.PolishBuilderTable = append(mock.calls.PolishBuilderTable, callInfo)
+	mock.lockPolishBuilderTable.Unlock()
+	return mock.PolishBuilderTableFunc(ctx, table, prompt)
+}
+
+// PolishBuilderTableCalls gets all the calls that were made to PolishBuilderTable.
+// Check the length with:
+//
+//	len(mockedTableService.PolishBuilderTableCalls())
+func (mock *TableServiceMock) PolishBuilderTableCalls() []struct {
+	Ctx    context.Context
+	Table  *TableGenRequest
+	Prompt string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Table  *TableGenRequest
+		Prompt string
+	}
+	mock.lockPolishBuilderTable.RLock()
+	calls = mock.calls.PolishBuilderTable
+	mock.lockPolishBuilderTable.RUnlock()
+	return calls
+}
+
+// PolishBuilderTables calls PolishBuilderTablesFunc.
+func (mock *TableServiceMock) PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string) ([]BuilderTable, error) {
+	if mock.PolishBuilderTablesFunc == nil {
+		panic("TableServiceMock.PolishBuilderTablesFunc: method is nil but TableService.PolishBuilderTables was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Tables []BuilderTable
+		Prompt string
+	}{
+		Ctx:    ctx,
+		Tables: tables,
+		Prompt: prompt,
+	}
+	mock.lockPolishBuilderTables.Lock()
+	mock.calls.PolishBuilderTables = append(mock.calls.PolishBuilderTables, callInfo)
+	mock.lockPolishBuilderTables.Unlock()
+	return mock.PolishBuilderTablesFunc(ctx, tables, prompt)
+}
+
+// PolishBuilderTablesCalls gets all the calls that were made to PolishBuilderTables.
+// Check the length with:
+//
+//	len(mockedTableService.PolishBuilderTablesCalls())
+func (mock *TableServiceMock) PolishBuilderTablesCalls() []struct {
+	Ctx    context.Context
+	Tables []BuilderTable
+	Prompt string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Tables []BuilderTable
+		Prompt string
+	}
+	mock.lockPolishBuilderTables.RLock()
+	calls = mock.calls.PolishBuilderTables
+	mock.lockPolishBuilderTables.RUnlock()
 	return calls
 }
 

@@ -9,6 +9,11 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/schema"
 )
 
+type BasicSource struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
 type Source interface {
 	Next(ctx context.Context, idx int) (*schema.CellValue, error)
 	Total() int

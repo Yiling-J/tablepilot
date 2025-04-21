@@ -17,7 +17,9 @@ func TestSource_Files(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
 	so := &FilesSource{
-		Type:  "files",
+		BasicSource: BasicSource{
+			Type: "files",
+		},
 		Paths: []string{"parquet/test_data/*.parquet", "test_*.txt"},
 	}
 	err = so.Init(ctx, zap.NewNop().Sugar(), "./")

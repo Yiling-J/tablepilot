@@ -208,5 +208,13 @@ func BuildCLI(root *cobra.Command) *CLI {
 	}
 	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing. Defaults to file name if not set")
 	cmd.AddCommand(importCmd)
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "builder",
+		Short: "Start tablepilot builder",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handler.Builder(cmd, args)
+		},
+	})
 	return cli
 }

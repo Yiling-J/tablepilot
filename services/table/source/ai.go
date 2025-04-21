@@ -21,7 +21,7 @@ var reflector = jsonschema.Reflector{
 }
 
 type AISource struct {
-	Type    string   `json:"type"`
+	BasicSource
 	Prompt  string   `json:"prompt"`
 	Options []string `json:"options"`
 }

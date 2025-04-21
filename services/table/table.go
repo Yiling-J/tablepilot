@@ -55,6 +55,10 @@ type TableService interface {
 	CreateRows(ctx context.Context, table string, rows []map[string]any) error
 	SharedSources(ctx context.Context) []*SharedSource
 	GetTableSchema(ctx context.Context, table string) (*TableGenRequest, error)
+	GenerateBuilderTables(ctx context.Context, prompt string) ([]BuilderTable, error)
+	PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string) ([]BuilderTable, error)
+	BuildTable(ctx context.Context, name, description string, depends []string, exists []*TableInfo) (*TableGenRequest, error)
+	PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string) (*TableGenRequest, error)
 }
 
 type TableServiceImpl struct {

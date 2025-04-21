@@ -21,6 +21,9 @@ var _ ChatClient = &ChatClientMock{}
 //			ChatFunc: func(ctx context.Context, request *ChatRequest) (*ChatResponse, error) {
 //				panic("mock out the Chat method")
 //			},
+//			FunctionCallFunc: func(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error) {
+//				panic("mock out the FunctionCall method")
+//			},
 //			ImageGenFunc: func(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error) {
 //				panic("mock out the ImageGen method")
 //			},
@@ -34,6 +37,9 @@ type ChatClientMock struct {
 	// ChatFunc mocks the Chat method.
 	ChatFunc func(ctx context.Context, request *ChatRequest) (*ChatResponse, error)
 
+	// FunctionCallFunc mocks the FunctionCall method.
+	FunctionCallFunc func(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error)
+
 	// ImageGenFunc mocks the ImageGen method.
 	ImageGenFunc func(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error)
 
@@ -41,6 +47,13 @@ type ChatClientMock struct {
 	calls struct {
 		// Chat holds details about calls to the Chat method.
 		Chat []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Request is the request argument value.
+			Request *ChatRequest
+		}
+		// FunctionCall holds details about calls to the FunctionCall method.
+		FunctionCall []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Request is the request argument value.
@@ -54,8 +67,9 @@ type ChatClientMock struct {
 			Request *ChatRequest
 		}
 	}
-	lockChat     sync.RWMutex
-	lockImageGen sync.RWMutex
+	lockChat         sync.RWMutex
+	lockFunctionCall sync.RWMutex
+	lockImageGen     sync.RWMutex
 }
 
 // Chat calls ChatFunc.
@@ -91,6 +105,42 @@ func (mock *ChatClientMock) ChatCalls() []struct {
 	mock.lockChat.RLock()
 	calls = mock.calls.Chat
 	mock.lockChat.RUnlock()
+	return calls
+}
+
+// FunctionCall calls FunctionCallFunc.
+func (mock *ChatClientMock) FunctionCall(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error) {
+	if mock.FunctionCallFunc == nil {
+		panic("ChatClientMock.FunctionCallFunc: method is nil but ChatClient.FunctionCall was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Request *ChatRequest
+	}{
+		Ctx:     ctx,
+		Request: request,
+	}
+	mock.lockFunctionCall.Lock()
+	mock.calls.FunctionCall = append(mock.calls.FunctionCall, callInfo)
+	mock.lockFunctionCall.Unlock()
+	return mock.FunctionCallFunc(ctx, request)
+}
+
+// FunctionCallCalls gets all the calls that were made to FunctionCall.
+// Check the length with:
+//
+//	len(mockedChatClient.FunctionCallCalls())
+func (mock *ChatClientMock) FunctionCallCalls() []struct {
+	Ctx     context.Context
+	Request *ChatRequest
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Request *ChatRequest
+	}
+	mock.lockFunctionCall.RLock()
+	calls = mock.calls.FunctionCall
+	mock.lockFunctionCall.RUnlock()
 	return calls
 }
 

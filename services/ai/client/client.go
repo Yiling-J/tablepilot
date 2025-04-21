@@ -13,6 +13,7 @@ import (
 type ChatClient interface {
 	Chat(ctx context.Context, request *ChatRequest) (*ChatResponse, error)
 	ImageGen(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error)
+	FunctionCall(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error)
 }
 
 func NewClients(cfg *config.Config, logger *zap.SugaredLogger) (map[string]ChatClient, error) {

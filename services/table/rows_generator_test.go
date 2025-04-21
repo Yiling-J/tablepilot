@@ -358,7 +358,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 	t.Run("pick-type column", func(t *testing.T) {
 		db := db.NewTestDB()
 		ctx := context.Background()
-		sc := &source.ListSource{Options: []string{"a", "b"}, Type: "list"}
+		sc := &source.ListSource{Options: []string{"a", "b"}, BasicSource: source.BasicSource{Type: "list"}}
 		sb, err := json.Marshal(sc)
 		require.NoError(t, err)
 		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").SetSources(map[string]json.RawMessage{"so": sb}).Save(ctx)

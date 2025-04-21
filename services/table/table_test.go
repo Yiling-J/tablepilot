@@ -594,10 +594,10 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 		name   string
 		source source.Source
 	}{
-		{"list", &source.ListSource{Type: "list", Options: []string{"a"}}},
-		{"linked", &source.LinkedSource{Type: "linked", Table: "lk"}},
-		{"csv", &source.CsvSource{Type: "csv", Paths: []string{"tmp_table_import.csv"}}},
-		{"parquet", &source.ParquetSource{Type: "parquet", Paths: []string{"tmp_table_import.parquet"}}},
+		{"list", &source.ListSource{BasicSource: source.BasicSource{Type: "list"}, Options: []string{"a"}}},
+		{"linked", &source.LinkedSource{BasicSource: source.BasicSource{Type: "linked"}, Table: "lk"}},
+		{"csv", &source.CsvSource{BasicSource: source.BasicSource{Type: "csv"}, Paths: []string{"tmp_table_import.csv"}}},
+		{"parquet", &source.ParquetSource{BasicSource: source.BasicSource{Type: "parquet"}, Paths: []string{"tmp_table_import.parquet"}}},
 	}
 
 	for _, tc := range cases {

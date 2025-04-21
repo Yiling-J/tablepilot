@@ -15,8 +15,8 @@ import (
 )
 
 type CsvSource struct {
+	BasicSource
 	randomCSV      *csvindexer.CSVIndexer
-	Type           string   `json:"type"`
 	Paths          []string `json:"paths"`
 	Kaggle         string   `json:"kaggle"`
 	Column         string   `json:"column"`
