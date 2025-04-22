@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
@@ -467,6 +469,8 @@ func topoSortTables(tables []table.BuilderTable) ([]table.BuilderTable, error) {
 	return sorted, nil
 }
 
+var tableNameRegex = regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+
 func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 	reader := bufio.NewReader(cmd.InOrStdin())
 
@@ -505,6 +509,30 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to polish tables: %w", err)
 		}
 	}
+	errors := []string{}
+	for _, tb := range tables {
+		if !tableNameRegex.MatchString(tb.Name) {
+			errors = append(errors, fmt.Sprintf("[%s]: Table name must start with a letter and contain only letters, numbers, or underscores.", tb.Name))
+		}
+		exist, err := h.backend.DB.TableMeta.Query().Where(tablemeta.Name(tb.Name)).Exist(cmd.Context())
+		if err != nil {
+			return err
+		}
+		if exist {
+			errors = append(errors, fmt.Sprintf("[%s]: This table name already exist, please change.", tb.Name))
+		}
+	}
+	if len(errors) > 0 {
+		fmt.Printf("\nAuto fixing these errors:\n%s", strings.Join(errors, "\n"))
+		msg := fmt.Sprintf(`Please fix these errors:\n %s`, strings.Join(errors, `\n`))
+		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, msg)
+		if err != nil {
+			return fmt.Errorf("failed to polish tables: %w", err)
+		}
+		fmt.Println("\nDone! Here is the new table list:")
+		printTables(tables)
+		fmt.Println("")
+	}
 	tables, err = topoSortTables(tables)
 	if err != nil {
 		return fmt.Errorf("failed to topo sort tables: %w", err)
@@ -521,6 +549,17 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		info, err := h.backend.TableService.BuildTable(cmd.Context(), tb.Name, tb.Description, tb.Depends, exists)
 		if err != nil {
 			return err
+		}
+		err = h.backend.TableService.Validate(cmd.Context(), info)
+		if err != nil {
+			fmt.Println("Validate failed, try auto fixing table...")
+
+			info, err = h.backend.TableService.PolishBuilderTable(
+				cmd.Context(), info, fmt.Sprintf("Please fix this error: %s", err.Error()), exists,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to fix table: %w", err)
+			}
 		}
 		fmt.Println("")
 		fmt.Printf("Table Name: %s\n", tb.Name)
@@ -558,6 +597,21 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 			info, err = h.backend.TableService.PolishBuilderTable(cmd.Context(), info, input, exists)
 			if err != nil {
 				return fmt.Errorf("failed to polish tables: %w", err)
+			}
+			for {
+				err = h.backend.TableService.Validate(cmd.Context(), info)
+				if err != nil {
+					fmt.Println("Validate failed, try auto fixing table...")
+
+					info, err = h.backend.TableService.PolishBuilderTable(
+						cmd.Context(), info, fmt.Sprintf("Please fix this error: %s", err.Error()), exists,
+					)
+					if err != nil {
+						return fmt.Errorf("failed to fix table: %w", err)
+					}
+				} else {
+					break
+				}
 			}
 		}
 		tid, err := h.backend.TableService.Create(cmd.Context(), info)

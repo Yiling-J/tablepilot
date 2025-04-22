@@ -43,6 +43,7 @@ var reflector = jsonschema.Reflector{
 
 //go:generate moq -rm -out table_moq.go . TableService RowsGenerator
 type TableService interface {
+	Validate(ctx context.Context, req *TableGenRequest) error
 	Create(ctx context.Context, req *TableGenRequest) (string, error)
 	Update(ctx context.Context, table string, req *TableGenRequest) (string, error)
 	ListTables(ctx context.Context) (*ListTablesResponse, error)
@@ -886,4 +887,26 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 	schema.Columns = columns
 
 	return schema, nil
+}
+
+func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) error {
+	if len(req.Columns) == 0 {
+		return errors.New("columns should not be empty.")
+	}
+	sources := map[string]bool{}
+	for _, raw := range req.Sources {
+		_, err := source.ValidateSource(ctx, raw, t.db)
+		if err != nil {
+			return err
+		}
+		sources[gjson.GetBytes(raw, "name").String()] = true
+	}
+	for _, col := range req.Columns {
+		if col.Source != "" {
+			if _, ok := sources[col.Source]; !ok {
+				return fmt.Errorf("source %s not found.", col.Source)
+			}
+		}
+	}
+	return nil
 }

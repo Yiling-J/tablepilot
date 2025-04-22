@@ -1204,3 +1204,33 @@ func TestTableService_GetTableSchema(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expected, string(b))
 }
+
+func TestTableService_Validate(t *testing.T) {
+	cases := []struct {
+		req *TableGenRequest
+		err string
+	}{
+		{
+			req: &TableGenRequest{},
+			err: "columns should not be empty.",
+		},
+		{
+			req: &TableGenRequest{
+				Columns: []TableGenColumn{
+					{Source: "s1"},
+				},
+			},
+			err: "source s1 not found.",
+		},
+	}
+
+	db := db.NewTestDB()
+	ctx := context.Background()
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	for _, tc := range cases {
+		err := srv.Validate(ctx, tc.req)
+		require.Equal(t, tc.err, err.Error())
+	}
+}

@@ -213,10 +213,6 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 			return nil, err
 		}
 	}
-	err = builder.validate()
-	if err != nil {
-		return nil, err
-	}
 	return builder.table, nil
 }
 
@@ -270,10 +266,6 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 		if err != nil {
 			return nil, err
 		}
-	}
-	err = builder.validate()
-	if err != nil {
-		return nil, err
 	}
 	return builder.table, nil
 }

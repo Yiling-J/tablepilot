@@ -114,7 +114,3 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 	}
 	return nil
 }
-
-func (tb *tableBuilder) validate() error {
-	return nil
-}

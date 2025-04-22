@@ -69,6 +69,9 @@ var _ TableService = &TableServiceMock{}
 //			UpdateFunc: func(ctx context.Context, table string, req *TableGenRequest) (string, error) {
 //				panic("mock out the Update method")
 //			},
+//			ValidateFunc: func(ctx context.Context, req *TableGenRequest) error {
+//				panic("mock out the Validate method")
+//			},
 //		}
 //
 //		// use mockedTableService in code that requires TableService
@@ -123,6 +126,9 @@ type TableServiceMock struct {
 
 	// UpdateFunc mocks the Update method.
 	UpdateFunc func(ctx context.Context, table string, req *TableGenRequest) (string, error)
+
+	// ValidateFunc mocks the Validate method.
+	ValidateFunc func(ctx context.Context, req *TableGenRequest) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -252,6 +258,13 @@ type TableServiceMock struct {
 			// Req is the req argument value.
 			Req *TableGenRequest
 		}
+		// Validate holds details about calls to the Validate method.
+		Validate []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Req is the req argument value.
+			Req *TableGenRequest
+		}
 	}
 	lockBuildTable            sync.RWMutex
 	lockCreate                sync.RWMutex
@@ -269,6 +282,7 @@ type TableServiceMock struct {
 	lockSharedSources         sync.RWMutex
 	lockTruncate              sync.RWMutex
 	lockUpdate                sync.RWMutex
+	lockValidate              sync.RWMutex
 }
 
 // BuildTable calls BuildTableFunc.
@@ -872,6 +886,42 @@ func (mock *TableServiceMock) UpdateCalls() []struct {
 	mock.lockUpdate.RLock()
 	calls = mock.calls.Update
 	mock.lockUpdate.RUnlock()
+	return calls
+}
+
+// Validate calls ValidateFunc.
+func (mock *TableServiceMock) Validate(ctx context.Context, req *TableGenRequest) error {
+	if mock.ValidateFunc == nil {
+		panic("TableServiceMock.ValidateFunc: method is nil but TableService.Validate was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Req *TableGenRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockValidate.Lock()
+	mock.calls.Validate = append(mock.calls.Validate, callInfo)
+	mock.lockValidate.Unlock()
+	return mock.ValidateFunc(ctx, req)
+}
+
+// ValidateCalls gets all the calls that were made to Validate.
+// Check the length with:
+//
+//	len(mockedTableService.ValidateCalls())
+func (mock *TableServiceMock) ValidateCalls() []struct {
+	Ctx context.Context
+	Req *TableGenRequest
+} {
+	var calls []struct {
+		Ctx context.Context
+		Req *TableGenRequest
+	}
+	mock.lockValidate.RLock()
+	calls = mock.calls.Validate
+	mock.lockValidate.RUnlock()
 	return calls
 }
 
