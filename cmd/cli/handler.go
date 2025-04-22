@@ -523,7 +523,9 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-
+		fmt.Printf("Table Name: %s\n", tb.Name)
+		fmt.Printf("Table Description: %s\n", tb.Description)
+		fmt.Println("")
 		for {
 			if len(info.Sources) > 0 {
 				fmt.Println("Here is the sources of the table in JSON format:")

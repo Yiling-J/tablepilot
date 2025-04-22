@@ -72,12 +72,13 @@ func getTools(polish bool) []client.ChatTool {
 			Parameters: []client.ChatToolParam{
 				{Name: "name", Type: "string", Description: "Name of the column"},
 				{Name: "description", Type: "string", Description: "Description of the column"},
+				{Name: "contextLength", Type: "integer", Description: "Defines how many previous values in this column will be sent to the LLM when generating a new batch of rows. This helps provide context for the generation."},
 				{
 					Name:        "type",
 					Type:        "string",
 					Description: "Type of the column (e.g., string, number)",
 					Enum: []string{
-						"string", "integer", "number", "boolean", "array",
+						"string", "integer", "number", "boolean", "array", "image",
 					},
 				},
 			},
@@ -98,6 +99,7 @@ func getTools(polish bool) []client.ChatTool {
 				},
 				{Name: "random", Type: "boolean", Description: "Whether to randomly pick values"},
 				{Name: "repeat", Type: "integer", Description: "Number of times values can repeat (0 means at least once)"},
+				{Name: "contextLength", Type: "integer", Description: "Defines how many previous values in this column will be sent to the LLM when generating a new batch of rows. This helps provide context for the generation."},
 				{Name: "source", Type: "string", Description: "Name of the source"},
 				{Name: "linkedColumn", Type: "string", Description: "Name of the display column this one depends on"},
 				{Name: "linkedContextColumns", Type: "[]string", Description: "Columns used as context when sending linked data to AI."},
@@ -221,7 +223,7 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	if err != nil {
 		return nil, err
 	}
-	pm := promptbuilder.NewTablePolishBuilder(prompt, string(sb), string(cb))
+	pm := promptbuilder.NewTablePolishBuilder(prompt, table.Name, table.Description, string(sb), string(cb))
 	message, err := pm.Prompt()
 	if err != nil {
 		return nil, err
