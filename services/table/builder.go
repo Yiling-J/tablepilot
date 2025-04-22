@@ -220,7 +220,7 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 	return builder.table, nil
 }
 
-func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string) (*TableGenRequest, error) {
+func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo) (*TableGenRequest, error) {
 	cb, err := json.Marshal(table.Columns)
 	if err != nil {
 		return nil, err
@@ -229,7 +229,22 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	if err != nil {
 		return nil, err
 	}
-	pm := promptbuilder.NewTablePolishBuilder(prompt, table.Name, table.Description, string(sb), string(cb))
+	tbs := []promptbuilder.TableInfoSimple{}
+	for _, tb := range exists {
+		info := promptbuilder.TableInfoSimple{
+			Name:        tb.Name,
+			Description: tb.Description,
+			Columns:     []promptbuilder.TableColumnSimple{},
+		}
+		for _, col := range tb.Columns {
+			info.Columns = append(info.Columns, promptbuilder.TableColumnSimple{
+				Name:        col.Name,
+				Description: col.Description,
+			})
+		}
+		tbs = append(tbs, info)
+	}
+	pm := promptbuilder.NewTablePolishBuilder(prompt, table.Name, table.Description, string(sb), string(cb), tbs)
 	message, err := pm.Prompt()
 	if err != nil {
 		return nil, err

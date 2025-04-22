@@ -58,7 +58,7 @@ type TableService interface {
 	GenerateBuilderTables(ctx context.Context, prompt string) ([]BuilderTable, error)
 	PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string) ([]BuilderTable, error)
 	BuildTable(ctx context.Context, name, description string, depends []string, exists []*TableInfo) (*TableGenRequest, error)
-	PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string) (*TableGenRequest, error)
+	PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo) (*TableGenRequest, error)
 }
 
 type TableServiceImpl struct {

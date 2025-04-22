@@ -480,7 +480,6 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 	}
 	userPrompt = strings.TrimSpace(userPrompt)
 
-	// Generate tables
 	tables, err := h.backend.TableService.GenerateBuilderTables(cmd.Context(), userPrompt)
 	if err != nil {
 		return fmt.Errorf("failed to generate tables: %w", err)
@@ -490,7 +489,7 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		fmt.Println("\nGenerated Tables:")
 		printTables(tables)
 
-		fmt.Print("\nIs this table list acceptable? Enter any improvements you'd like, or leave blank if it's good enough. Press Enter when you're done: ")
+		fmt.Print("\nIs this table list acceptable? Type any suggestions for improvements, or leave blank if it's good enough. Press Enter when you're done: ")
 		input, err := readLine(reader)
 		if err != nil {
 			return fmt.Errorf("failed to read input: %w", err)
@@ -514,7 +513,7 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 	fmt.Println("Final table list accepted. Start creating tables...")
 	created := map[string]*table.TableInfo{}
 	for _, tb := range tables {
-		fmt.Printf("Generate table schema for %s\n", tb.Name)
+		fmt.Println("Start generating table schema")
 		exists := []*table.TableInfo{}
 		for _, c := range created {
 			exists = append(exists, c)
@@ -523,6 +522,7 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		fmt.Println("")
 		fmt.Printf("Table Name: %s\n", tb.Name)
 		fmt.Printf("Table Description: %s\n", tb.Description)
 		fmt.Println("")
@@ -545,7 +545,7 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 				}
 				fmt.Println(string(b))
 			}
-			fmt.Print("\nIs this table acceptable? Enter any improvements you'd like, or leave blank if it's good enough. Press Enter when you're done: ")
+			fmt.Print("\nIs this table acceptable? Type any suggestions for improvements, or leave blank if it's good enough. Press Enter when you're done: ")
 			input, err := readLine(reader)
 			if err != nil {
 				return fmt.Errorf("failed to read input: %w", err)
@@ -555,7 +555,7 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 				break
 			}
 
-			info, err = h.backend.TableService.PolishBuilderTable(cmd.Context(), info, input)
+			info, err = h.backend.TableService.PolishBuilderTable(cmd.Context(), info, input, exists)
 			if err != nil {
 				return fmt.Errorf("failed to polish tables: %w", err)
 			}
@@ -564,12 +564,18 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("table created")
 		detail, err := h.backend.TableService.GetTableDetail(cmd.Context(), tid)
 		if err != nil {
 			return err
 		}
 		created[info.Name] = detail
 	}
+	fmt.Println("")
+	fmt.Println("Table creation is complete. You can now generate content for the tables using either the CLI or WebUI. The recommended table generation order is as follows:")
+	tableNames := []string{}
+	for _, tb := range tables {
+		tableNames = append(tableNames, tb.Name)
+	}
+	fmt.Println(strings.Join(tableNames, " -> "))
 	return nil
 }
