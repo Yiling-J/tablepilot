@@ -151,9 +151,9 @@ func TestTableService_Create(t *testing.T) {
 	require.NoError(t, err)
 
 	savedSources := map[string]json.RawMessage{
-		"countries": []byte(`{"type":"list","options":["China","Japan","England","Thai","France"]}`),
-		"tags":      []byte(`{"type":"ai","prompt":"Generate 20 tags.","options":null}`),
-		"users":     []byte(fmt.Sprintf(`{"type":"linked","table":"%s"}`, userTable.Nanoid)),
+		"countries": []byte(`{"name":"countries","type":"list","options":["China","Japan","England","Thai","France"]}`),
+		"tags":      []byte(`{"name":"tags","type":"ai","prompt":"Generate 20 tags.","options":null}`),
+		"users":     []byte(fmt.Sprintf(`{"name":"users","type":"linked","table":"%s"}`, userTable.Nanoid)),
 	}
 
 	id, err := srv.Create(ctx, &TableGenRequest{

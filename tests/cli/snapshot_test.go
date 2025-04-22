@@ -1,4 +1,4 @@
-package cli
+package main
 
 import (
 	"archive/zip"
@@ -39,11 +39,6 @@ func compareCSVFiles(t *testing.T, file1, file2 string) {
 		}
 		require.Equal(t, row1, row2)
 	}
-}
-
-type snapshot struct {
-	Request  string `json:"request"`
-	Response string `json:"response"`
 }
 
 func TestIntegrationCLI_Snapshots(t *testing.T) {
@@ -88,7 +83,7 @@ func TestIntegrationCLI_Snapshots(t *testing.T) {
 				func(r *http.Request) (*http.Response, error) {
 					b, err := io.ReadAll(r.Body)
 					require.NoError(t, err)
-					require.Equal(t, string(b), snapshots[counter].Request)
+					require.JSONEq(t, string(b), snapshots[counter].Request)
 					resp := httpmock.NewStringResponse(200, snapshots[counter].Response)
 					resp.Header.Add("content-type", "application/json")
 					counter++
@@ -204,7 +199,7 @@ func TestIntegrationCLI_SnapshotsAutofill(t *testing.T) {
 				func(r *http.Request) (*http.Response, error) {
 					b, err := io.ReadAll(r.Body)
 					require.NoError(t, err)
-					require.Equal(t, string(b), snapshots[counter].Request)
+					require.JSONEq(t, string(b), snapshots[counter].Request)
 					resp := httpmock.NewStringResponse(200, snapshots[counter].Response)
 					resp.Header.Add("content-type", "application/json")
 					counter++

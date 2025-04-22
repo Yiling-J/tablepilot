@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Yiling-J/tablepilot/config"
 
@@ -55,7 +56,11 @@ func NewOpenAIChatCompletionService(config *config.OpenAI) *openai.ChatCompletio
 			}
 
 			var snapshots []map[string]string
+			dir, _ := os.Getwd()
 			filename := fmt.Sprintf("tests/snapshots/%s.json", name)
+			if strings.HasSuffix(dir, "tests/cli") {
+				filename = fmt.Sprintf("../snapshots/%s.json", name)
+			}
 			fileData, err := os.ReadFile(filename)
 			if err == nil {
 				_ = json.Unmarshal(fileData, &snapshots)
@@ -65,6 +70,8 @@ func NewOpenAIChatCompletionService(config *config.OpenAI) *openai.ChatCompletio
 			if err == nil {
 				defer file.Close()
 				_ = json.NewEncoder(file).Encode(snapshots)
+			} else {
+				fmt.Println("create openai request snapshot file failed.", err)
 			}
 
 			return resp, nil
