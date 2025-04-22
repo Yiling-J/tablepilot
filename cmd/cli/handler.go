@@ -468,7 +468,7 @@ func topoSortTables(tables []table.BuilderTable) ([]table.BuilderTable, error) {
 }
 
 func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
-	reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(cmd.InOrStdin())
 
 	fmt.Println("This command will create a set of tables based on your requirement.")
 	fmt.Println("Please describe what you want to build, press Enter to finish")

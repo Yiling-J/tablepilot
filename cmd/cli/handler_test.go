@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -605,4 +607,87 @@ func TestHandler_Autofill(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHandler_Builder(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		GenerateBuilderTablesFunc: func(ctx context.Context, prompt string) ([]table.BuilderTable, error) {
+			return []table.BuilderTable{
+				{Name: "tb1", Description: "d1"},
+			}, nil
+		},
+		PolishBuilderTablesFunc: func(ctx context.Context, tables []table.BuilderTable, prompt string) ([]table.BuilderTable, error) {
+			return []table.BuilderTable{
+				{Name: "tb1", Description: "d1"},
+				{Name: "tb2", Description: "d2", Depends: []string{"tb1"}},
+			}, nil
+		},
+		BuildTableFunc: func(ctx context.Context, name, description string, depends []string, exists []*table.TableInfo) (*table.TableGenRequest, error) {
+			if name == "tb1" {
+				require.Equal(t, 0, len(exists))
+				return &table.TableGenRequest{
+					Name:        "tb1",
+					Description: "d1",
+					Columns:     []table.TableGenColumn{},
+				}, nil
+			} else if name == "tb2" {
+				require.Equal(t, []*table.TableInfo{
+					{Name: "tbb1"},
+				}, exists)
+				return &table.TableGenRequest{
+					Name:        "tb2",
+					Description: "d2",
+					Columns:     []table.TableGenColumn{},
+				}, nil
+			}
+			return nil, errors.New("build table err")
+		},
+		PolishBuilderTableFunc: func(ctx context.Context, req *table.TableGenRequest, prompt string, exists []*table.TableInfo) (*table.TableGenRequest, error) {
+			return &table.TableGenRequest{
+				Name:        "tb1",
+				Description: "d1",
+				Columns: []table.TableGenColumn{
+					{Name: "col1", Description: "dc1"},
+				},
+			}, nil
+		},
+		CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
+			switch req.Name {
+			case "tb1":
+				return "id1", nil
+			case "tb2":
+				return "id2", nil
+			default:
+				return "", errors.New("create err")
+			}
+		},
+		GetTableDetailFunc: func(ctx context.Context, tb string) (*table.TableInfo, error) {
+			name := ""
+			switch tb {
+			case "id1":
+				name = "tbb1"
+			case "id2":
+				name = "tbb2"
+			default:
+				return nil, errors.New("get table detail err")
+			}
+			return &table.TableInfo{Name: name}, nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, tableMock,
+		),
+	)
+	cmd := &cobra.Command{}
+	cmd.SetIn(bytes.NewReader([]byte("foo\nbar\n\nbaz\n\n\n")))
+	err := handler.Builder(cmd, []string{})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tableMock.GenerateBuilderTablesCalls()))
+	require.Equal(t, 1, len(tableMock.PolishBuilderTablesCalls()))
+	require.Equal(t, 2, len(tableMock.BuildTableCalls()))
+	require.Equal(t, 1, len(tableMock.PolishBuilderTableCalls()))
+	require.Equal(t, 2, len(tableMock.CreateCalls()))
+	require.Equal(t, 2, len(tableMock.GetTableDetailCalls()))
 }
