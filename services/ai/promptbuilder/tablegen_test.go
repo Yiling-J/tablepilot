@@ -2,53 +2,22 @@ package promptbuilder
 
 import (
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-type TableColumnSimple struct {
-	Name        string
-	Description string
-}
+func TestPromptBuilder_TableGen(t *testing.T) {
+	builder := NewTableGenBuilder("foo", "bar", []string{"t1", "t2"}, []TableInfoSimple{
+		{Name: "t1", Description: "d1", Columns: []TableColumnSimple{
+			{Name: "c1", Description: "dc1"},
+			{Name: "c2", Description: "dc2"},
+		}},
+	})
 
-type TableInfoSimple struct {
-	Name        string
-	Description string
-	Columns     []TableColumnSimple
-}
-
-type TableGenBuilder struct {
-	Builder
-}
-
-func NewTableGenBuilder(name, description string, depends []string, tables []TableInfoSimple) *TableGenBuilder {
-	tb := &TableGenBuilder{}
-	tb.AddText(tableGenPrompt)
-	tb.AddText("")
-	tb.AddText("### Info")
-	tb.AddText("")
-	el := tb.NewXML("Name")
-	el.CreateText(name)
-	el = tb.NewXML("Description")
-	el.CreateText(description)
-	el = tb.NewXML("Depends")
-	for _, dp := range depends {
-		el.CreateText(fmt.Sprintf("<Table name=\"%s\">", dp))
-	}
-	el = tb.NewXML("ExistingTables")
-	for _, tb := range tables {
-		et := el.CreateElement("Table")
-		et.CreateAttr("name", tb.Name)
-		et.CreateAttr("description", tb.Description)
-		for _, col := range tb.Columns {
-			ec := et.CreateElement("Column")
-			ec.CreateAttr("name", col.Name)
-			ec.CreateAttr("description", col.Description)
-		}
-	}
-	tb.AddText("Based on the provided `<Name>`, `<Description>`, and `<ExistingTables>`, create a table with the appropriate columns. You are expected to **decide on the appropriate columns automatically**, without asking for further input.")
-	return tb
-}
-
-const tableGenPrompt = `
+	prompt, err := builder.Prompt()
+	require.NoError(t, err)
+	expected := `
 #### Columns
 
 Each column object contain the following fields:
@@ -152,44 +121,36 @@ For example, imagine you have a "customer" table that includes columns like age,
 
 In this case, the column definition might look like this:
 
-AddPickColumn("customers", "Customer for whom the plan is created", "string", true, 1, 0, "customers", "name", ["name", "age", "job", "salary"])`
+AddPickColumn("customers", "Customer for whom the plan is created", "string", true, 1, 0, "customers", "name", ["name", "age", "job", "salary"])
 
-type TablePolishBuilder struct {
-	Builder
+### Info
+
+<Name>foo</Name>
+<Description>bar</Description>
+<Depends>&lt;Table name=&quot;t1&quot;&gt;&lt;Table name=&quot;t2&quot;&gt;</Depends>
+<ExistingTables>
+  <Table name="t1" description="d1">
+    <Column name="c1" description="dc1"/>
+    <Column name="c2" description="dc2"/>
+  </Table>
+</ExistingTables>
+`
+	expected += fmt.Sprintln("Based on the provided `<Name>`, `<Description>`, and `<ExistingTables>`, create a table with the appropriate columns. You are expected to **decide on the appropriate columns automatically**, without asking for further input.")
+
+	require.Equal(t, expected, prompt)
 }
 
-func NewTablePolishBuilder(prompt string, name, description, sourcesJSON string, columnsJSON string, tables []TableInfoSimple) *TablePolishBuilder {
-	tb := &TablePolishBuilder{}
-	tb.AddText(tablePolishPrompt)
-	tb.AddText("")
-	tb.AddText("### Info")
-	tb.AddText("")
-	el := tb.NewXML("Name")
-	el.CreateText(name)
-	el = tb.NewXML("Description")
-	el.CreateText(description)
-	el = tb.NewXML("SourcesJSON")
-	el.CreateText(sourcesJSON)
-	el = tb.NewXML("ColumnsJSON")
-	el.CreateText(columnsJSON)
-	el = tb.NewXML("ExistingTables")
-	for _, tb := range tables {
-		et := el.CreateElement("Table")
-		et.CreateAttr("name", tb.Name)
-		et.CreateAttr("description", tb.Description)
-		for _, col := range tb.Columns {
-			ec := et.CreateElement("Column")
-			ec.CreateAttr("name", col.Name)
-			ec.CreateAttr("description", col.Description)
-		}
-	}
-	el = tb.NewXML("Requirement")
-	el.CreateText(prompt)
-	tb.AddText("Now update the table schema based on <Requirement>. Existing sources or columns of the table are in <SourcesJson> and <ColumnsJson>. You are expected to **decide on the appropriate columns to modify automatically**, without asking for further input.")
-	return tb
-}
+func TestPromptBuilder_TablePolish(t *testing.T) {
+	builder := NewTablePolishBuilder("go", "foo", "bar", "sources", "columns", []TableInfoSimple{
+		{Name: "t1", Description: "d1", Columns: []TableColumnSimple{
+			{Name: "c1", Description: "dc1"},
+			{Name: "c2", Description: "dc2"},
+		}},
+	})
 
-const tablePolishPrompt = `
+	prompt, err := builder.Prompt()
+	require.NoError(t, err)
+	expected := `
 #### Columns
 
 Each column object contain the following fields:
@@ -296,4 +257,23 @@ For example, imagine you have a "customer" table that includes columns like age,
 
 In this case, the column definition might look like this:
 
-AddPickColumn("customers", "Customer for whom the plan is created", "string", true, 1, 0, "customers", "name", ["name", "age", "job", "salary"])`
+AddPickColumn("customers", "Customer for whom the plan is created", "string", true, 1, 0, "customers", "name", ["name", "age", "job", "salary"])
+
+### Info
+
+<Name>foo</Name>
+<Description>bar</Description>
+<SourcesJSON>sources</SourcesJSON>
+<ColumnsJSON>columns</ColumnsJSON>
+<ExistingTables>
+  <Table name="t1" description="d1">
+    <Column name="c1" description="dc1"/>
+    <Column name="c2" description="dc2"/>
+  </Table>
+</ExistingTables>
+<Requirement>go</Requirement>
+`
+	expected += fmt.Sprintln("Now update the table schema based on <Requirement>. Existing sources or columns of the table are in <SourcesJson> and <ColumnsJson>. You are expected to **decide on the appropriate columns to modify automatically**, without asking for further input.")
+
+	require.Equal(t, expected, prompt)
+}
