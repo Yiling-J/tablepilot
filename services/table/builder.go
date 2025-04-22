@@ -63,8 +63,14 @@ func (t *TableServiceImpl) PolishBuilderTables(ctx context.Context, tables []Bui
 	return tables, nil
 }
 
-func getTools(polish bool) []client.ChatTool {
+func getTools(polish bool, imageGen bool) []client.ChatTool {
 	tools := []client.ChatTool{}
+	columnTypes := []string{
+		"string", "integer", "number", "boolean", "array",
+	}
+	if imageGen {
+		columnTypes = append(columnTypes, "image")
+	}
 	tools = append(tools, []client.ChatTool{
 		{
 			Name:        "AddAiColumn",
@@ -77,9 +83,7 @@ func getTools(polish bool) []client.ChatTool {
 					Name:        "type",
 					Type:        "string",
 					Description: "Type of the column (e.g., string, number)",
-					Enum: []string{
-						"string", "integer", "number", "boolean", "array", "image",
-					},
+					Enum:        columnTypes,
 				},
 			},
 		},
@@ -93,9 +97,7 @@ func getTools(polish bool) []client.ChatTool {
 					Name:        "type",
 					Type:        "string",
 					Description: "Type of the column (e.g., string, number)",
-					Enum: []string{
-						"string", "integer", "number", "boolean", "array", "image",
-					},
+					Enum:        columnTypes,
 				},
 				{Name: "random", Type: "boolean", Description: "Whether to randomly pick values"},
 				{Name: "repeat", Type: "integer", Description: "Number of times values can repeat (0 means at least once)"},
@@ -186,10 +188,14 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 	if err != nil {
 		return nil, err
 	}
+	imageGen := false
+	if len(t.config.ImageModels) > 0 {
+		imageGen = true
+	}
 	resp, err := t.ai.FunctionCall(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
 		Temperature:     0.6,
-		Tools:           getTools(false),
+		Tools:           getTools(false, imageGen),
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
@@ -228,10 +234,14 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	if err != nil {
 		return nil, err
 	}
+	imageGen := false
+	if len(t.config.ImageModels) > 0 {
+		imageGen = true
+	}
 	resp, err := t.ai.FunctionCall(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
 		Temperature:     0.2,
-		Tools:           getTools(true),
+		Tools:           getTools(true, imageGen),
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
