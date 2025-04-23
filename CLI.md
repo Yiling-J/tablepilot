@@ -9,7 +9,7 @@
   - Generating tables and columns one by one.
 
   The instructions are straightforward, just follow the guide. Note: The builder command only creates the table structure; it does not populate the table with data. You’ll need to use the `generate` command separately to fill in the rows.
-  ```
+  ```console
   tablepilot builder
   ```
   	- `-m, --model string`
@@ -20,14 +20,14 @@
 
 - **create**
   Create tables from schema JSON files.
-  ```
+  ```console
   tablepilot create recipes.json
   ```
   **Important**: If you modify the JSON schema after creating a table, be sure to update or recreate the table first.
 
 - **update**
   Update table from schema JSON file.
-  ```
+  ```console
   tablepilot update recipes.json -t=recipes
   ```
   - `-t, --table string`
@@ -37,13 +37,13 @@
 
 - **delete**
   Delete a specified table.
-  ```
+  ```console
   tablepilot delete recipes
   ```
 
 - **describe**
   Show details about the columns in a specified table.
-  ```
+  ```console
   tablepilot describe recipes
   ```
   - `-o, --output string`
@@ -51,13 +51,13 @@
 
 - **export**
   Export the table as a CSV file.
-  ```
+  ```console
   tablepilot export recipes
   ```
 
 - **generate**
   Generate data for a specified table.
-  ```
+  ```console
   tablepilot generate recipes -c=50 -b=10
   ```
 
@@ -78,7 +78,7 @@
 
 - **autofill**
   Autofill specified columns for a table. For each existing row, the provided `--columns` will be generated.
-  ```
+  ```console
   tablepilot autofill recipes -c=50 -b=10 --columns=ingredients --columns=tags --context_columns=name --context_columns=steps
   ```
     - <all generate command flgs>
@@ -95,7 +95,7 @@
 
 - **import**
   Import a CSV file into a table.
-  ```
+  ```console
   tablepilot import users.csv
   ```
 
@@ -108,19 +108,19 @@
 
 - **show**
   Display the rows of a specified table.
-  ```
+  ```console
   tablepilot show recipes
   ```
 
 - **truncate**
   Remove all data from a specified table.
-  ```
+  ```console
   tablepilot truncate recipes
   ```
 
 - **serve**
   Start an API server. See [API.md](API.md) for available endpoints. If you installed Tablepilot from a binary release or built the frontend when installing from source, the WebUI will be accessible at the root URL, such as: http://127.0.0.1:8080/
-  ```
+  ```console
   tablepilot serve
   ```
   By default, the API server listens on `:8080`. You can customize the address by adding a `server` section to your TOML config:
@@ -134,11 +134,11 @@
 - **--config string**
   Path to the config file (default is `config.toml`).
 
-  ```
+  ```console
   tablepilot show recipes --config custom_config.toml
   ```
 - **-v, --verbose**
   Verbose output, this will show detailed debug info including LLM prompt/response (default: false).
-  ```
+  ```console
   tablepilot generate recipes -v
   ```
