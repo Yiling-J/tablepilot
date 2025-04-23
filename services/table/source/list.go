@@ -9,7 +9,7 @@ import (
 )
 
 type ListSource struct {
-	Type    string   `json:"type"`
+	BasicSource
 	Options []string `json:"options"`
 	File    string   `json:"file,omitempty"`
 }

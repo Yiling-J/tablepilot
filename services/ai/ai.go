@@ -19,6 +19,7 @@ type AiService interface {
 	Chat(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
 	ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
 	ListModels(ctx context.Context) *ModelList
+	FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
 }
 
 type model struct {
@@ -132,6 +133,33 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	}
 	ai.logger.Debugln("chat response reveived", "total_tokens", resp.Tokens)
 	ai.logger.Debugln("content:", resp.Content)
+	return resp, nil
+}
+
+func (ai *AiServiceImpl) FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
+	if request.Model == "" {
+		request.Model = ai.defaultModel
+	}
+	client, err := ai.getChatClientByModel(request.Model)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Model = ai.models[request.Model].model
+	modelMaxTokens := ai.models[request.Model].maxTokens
+	if modelMaxTokens != 0 {
+		request.MaxOutputTokens = modelMaxTokens
+	}
+	ai.logger.Debugln("send function call request", "model", request.Model, "temperature", request.Temperature)
+	for _, message := range request.Messages {
+		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)
+	}
+	resp, err := client.FunctionCall(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	ai.logger.Debugln("function call response reveived", "total_tokens", resp.Tokens, "text_message", resp.Text)
+	ai.logger.Debugln("content:", resp.FunctionCalls)
 	return resp, nil
 }
 

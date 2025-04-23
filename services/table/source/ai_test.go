@@ -42,7 +42,9 @@ func TestSource_AI(t *testing.T) {
 				},
 			}
 			so := &AISource{
-				Type:   "ai",
+				BasicSource: BasicSource{
+					Type: "ai",
+				},
 				Prompt: "aiai",
 			}
 			if hasOption {

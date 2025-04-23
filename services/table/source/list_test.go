@@ -16,7 +16,9 @@ import (
 func TestSource_List(t *testing.T) {
 	ctx := context.TODO()
 	so := &ListSource{
-		Type:    "list",
+		BasicSource: BasicSource{
+			Type: "list",
+		},
 		Options: []string{"a", "b", "c"},
 	}
 	err := so.Init(ctx, "./")
@@ -40,7 +42,9 @@ func TestSource_ListFile(t *testing.T) {
 	require.NoError(t, err)
 
 	so := &ListSource{
-		Type: "list",
+		BasicSource: BasicSource{
+			Type: "list",
+		},
 		File: strings.TrimPrefix(tmpFile.Name(), "./"),
 	}
 	err = so.Init(ctx, "./")

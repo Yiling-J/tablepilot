@@ -1,6 +1,6 @@
 Name,Ingredients,Cooking Time,Country,Meals
-Chinese Scallion Pancakes,"[""Scallions"",""Flour"",""Water"",""Salt"",""Oil""]",15,China,Breakfast
-Congee,"[""Rice"",""Water"",""Salt"",""Ginger"",""Green Onion""]",20,China,Breakfast
-Kung Pao Chicken,"[""Chicken"",""Peanuts"",""Dried Chili Peppers"",""Soy Sauce"",""Vinegar"",""Sugar"",""Cornstarch""]",30,China,Lunch
-Mapo Tofu,"[""Chicken"",""Soy sauce"",""Ginger"",""Garlic"",""Green onions""]",30,China,Lunch
-Red Braised Pork Belly,"[""Pork belly"",""Soy sauce"",""Sugar"",""Star anise"",""Ginger""]",45,China,Dinner
+Chinese Scallion Pancake,"[""all-purpose flour"",""salt"",""boiling water"",""cold water"",""scallions"",""vegetable oil"",""sesame oil""]",30,China,Breakfast
+Chinese Steamed Buns,"[""all-purpose flour"",""instant yeast"",""sugar"",""lukewarm water"",""vegetable oil""]",60,China,Breakfast
+Kung Pao Chicken,"[""chicken"",""peanuts"",""dried chili peppers"",""soy sauce"",""vinegar"",""sugar"",""cornstarch"",""garlic"",""ginger""]",25,China,Lunch
+Chicken Stir-Fry,"[""Chicken"",""Soy sauce"",""Ginger"",""Garlic"",""Green onions""]",30,China,Lunch
+Vegetarian Stir-Fry,"[""Tofu"",""Mushrooms"",""Broccoli"",""Carrots"",""Soy sauce"",""Oyster sauce""]",45,China,Dinner

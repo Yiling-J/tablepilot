@@ -9,8 +9,8 @@ import (
 
 func TestSource_Indexer(t *testing.T) {
 	so := &ListSource{
-		Type:    "list",
-		Options: []string{"a", "b", "c", "d", "e"},
+		BasicSource: BasicSource{Type: "list"},
+		Options:     []string{"a", "b", "c", "d", "e"},
 	}
 	indexer := NewIndexer(so, &ent.TableColumn{
 		Random: false,

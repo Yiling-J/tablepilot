@@ -19,7 +19,7 @@ func TestSource_Validate(t *testing.T) {
 		{`{"type":"linked","table":""}`, ErrTableNameOrIdEmpty()},
 		{`{"type":"linked","table":"abc"}`, ErrTableNotFound("abc")},
 		{`{"type":"linked","table":"table"}`, nil},
-		{`{"type":"list"}`, errors.New("no options")},
+		{`{"name":"s1","type":"list"}`, errors.New("souce s1 options should not be empty")},
 		{`{"type":"list","file":"z.txt"}`, nil},
 		{`{"type": "csv","paths":["foo.csv"]}`, nil},
 		{`{"type": "csv"}`, errors.New("paths is empty")},

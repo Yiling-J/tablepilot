@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Yiling-J/tablepilot/config"
 
@@ -55,7 +56,11 @@ func NewOpenAIChatCompletionService(config *config.OpenAI) *openai.ChatCompletio
 			}
 
 			var snapshots []map[string]string
+			dir, _ := os.Getwd()
 			filename := fmt.Sprintf("tests/snapshots/%s.json", name)
+			if strings.HasSuffix(dir, "tests/cli") {
+				filename = fmt.Sprintf("../snapshots/%s.json", name)
+			}
 			fileData, err := os.ReadFile(filename)
 			if err == nil {
 				_ = json.Unmarshal(fileData, &snapshots)
@@ -65,14 +70,17 @@ func NewOpenAIChatCompletionService(config *config.OpenAI) *openai.ChatCompletio
 			if err == nil {
 				defer file.Close()
 				_ = json.NewEncoder(file).Encode(snapshots)
+			} else {
+				fmt.Println("create openai request snapshot file failed.", err)
 			}
 
 			return resp, nil
 		}))
 	}
-	return openai.NewClient(
+	srv := openai.NewClient(
 		options...,
 	).Chat.Completions
+	return &srv
 }
 
 type OpenAIClient struct {
@@ -94,16 +102,20 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 				case ContentTypeText:
 					messages = append(messages, openai.UserMessage(c.Data))
 				case ContentTypeImage:
-					messages = append(messages, openai.UserMessageParts(
-						openai.ImagePart(c.Data),
+					messages = append(messages, openai.UserMessage(
+						[]openai.ChatCompletionContentPartUnionParam{
+							openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
+								URL: c.Data,
+							}),
+						},
 					))
 				}
 			}
 		}
 	}
 	chatParams := openai.ChatCompletionNewParams{
-		Messages:            openai.F(messages),
-		Model:               openai.F(request.Model),
+		Messages:            messages,
+		Model:               request.Model,
 		Temperature:         openai.Float(request.Temperature),
 		PresencePenalty:     openai.Float(request.PresencePenalty),
 		MaxCompletionTokens: openai.Int(request.MaxOutputTokens),
@@ -123,16 +135,15 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 		}
 		var schema any = request.Schema
 		schemaParam := openai.ResponseFormatJSONSchemaJSONSchemaParam{
-			Name:        openai.F("schema"),
-			Description: openai.F("schema for table"),
-			Schema:      openai.F(schema),
+			Name:        "schema",
+			Description: openai.String("schema for table"),
+			Schema:      schema,
 		}
-		chatParams.ResponseFormat = openai.F[openai.ChatCompletionNewParamsResponseFormatUnion](
-			openai.ResponseFormatJSONSchemaParam{
-				Type:       openai.F(openai.ResponseFormatJSONSchemaTypeJSONSchema),
-				JSONSchema: openai.F(schemaParam),
+		chatParams.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+			OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+				JSONSchema: schemaParam,
 			},
-		)
+		}
 	}
 	chatCompletion, err := c.completionService.New(ctx, chatParams)
 	if err != nil {
@@ -148,6 +159,66 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 	return &ChatResponse{
 		Content: content,
 		Tokens:  chatCompletion.Usage.TotalTokens,
+	}, nil
+}
+
+func (c *OpenAIClient) FunctionCall(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error) {
+	messages := []openai.ChatCompletionMessageParamUnion{}
+	for _, m := range request.Messages {
+		switch m.Role {
+		case "user":
+			for _, c := range m.Content {
+				switch c.Type {
+				case ContentTypeText:
+					messages = append(messages, openai.UserMessage(c.Data))
+				case ContentTypeImage:
+					messages = append(messages, openai.UserMessage(
+						[]openai.ChatCompletionContentPartUnionParam{
+							openai.ImageContentPart(openai.ChatCompletionContentPartImageImageURLParam{
+								URL: c.Data,
+							}),
+						},
+					))
+				}
+			}
+		}
+	}
+	tools := []openai.ChatCompletionToolParam{}
+	for _, tool := range request.Tools {
+		tools = append(tools, tool.OpenAITool())
+	}
+	chatParams := openai.ChatCompletionNewParams{
+		Messages:            messages,
+		Model:               request.Model,
+		Temperature:         openai.Float(request.Temperature),
+		PresencePenalty:     openai.Float(request.PresencePenalty),
+		MaxCompletionTokens: openai.Int(request.MaxOutputTokens),
+		Tools:               tools,
+	}
+	chatCompletion, err := c.completionService.New(ctx, chatParams)
+	if err != nil {
+		return nil, err
+	}
+	if len(chatCompletion.Choices) < 1 {
+		return nil, errors.New("chat choices empty")
+	}
+
+	calls := []FunctionCall{}
+	for _, tc := range chatCompletion.Choices[0].Message.ToolCalls {
+		var m map[string]any
+		err = json.Unmarshal([]byte(tc.Function.Arguments), &m)
+		if err != nil {
+			return nil, err
+		}
+		calls = append(calls, FunctionCall{
+			Name:      tc.Function.Name,
+			Arguments: m,
+		})
+	}
+	return &FunctionCallResponse{
+		Text:          chatCompletion.Choices[0].Message.Content,
+		FunctionCalls: calls,
+		Tokens:        chatCompletion.Usage.TotalTokens,
 	}, nil
 }
 

@@ -23,7 +23,7 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 			return nil, err
 		}
 		if len(ls.Options) == 0 && ls.File == "" {
-			return nil, errors.New("no options")
+			return nil, fmt.Errorf("souce %s options should not be empty", ls.Name)
 		}
 		s = &ls
 	case "ai":
@@ -33,7 +33,7 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 			return nil, err
 		}
 		if len(ls.Prompt) == 0 {
-			return nil, errors.New("empty prompt")
+			return nil, fmt.Errorf("souce %s prompt should not be empty", ls.Name)
 		}
 		s = &ls
 	case "linked":

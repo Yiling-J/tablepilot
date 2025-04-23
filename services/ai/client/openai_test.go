@@ -46,7 +46,7 @@ func TestClient_OpenAIArraySchema(t *testing.T) {
 	require.Equal(t, 100, int(resp.Tokens))
 	b, err := params.MarshalJSON()
 	require.NoError(t, err)
-	expected := `{"max_completion_tokens":1200,"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"properties":{"data":{"$schema":"v1","type":"array"}},"type":"object"}},"type":"json_schema"},"temperature":0.32}`
+	expected := `{"messages":[{"content":"abc","role":"user"}],"model":"model","max_completion_tokens":1200,"presence_penalty":0.45,"temperature":0.32,"response_format":{"json_schema":{"name":"schema","description":"schema for table","schema":{"properties":{"data":{"$schema":"v1","type":"array"}},"type":"object"}},"type":"json_schema"}}`
 	require.Equal(t, expected, string(b))
 }
 
@@ -77,7 +77,7 @@ func TestClient_OpenAIObjectSchema(t *testing.T) {
 	require.Equal(t, 100, int(resp.Tokens))
 	b, err := params.MarshalJSON()
 	require.NoError(t, err)
-	expected := `{"max_completion_tokens":1200,"messages":[{"content":[{"text":"abc","type":"text"}],"role":"user"}],"model":"model","presence_penalty":0.45,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"},"temperature":0.32}`
+	expected := `{"messages":[{"content":"abc","role":"user"}],"model":"model","max_completion_tokens":1200,"presence_penalty":0.45,"temperature":0.32,"response_format":{"json_schema":{"name":"schema","description":"schema for table","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"}}`
 	require.Equal(t, expected, string(b))
 }
 
@@ -106,6 +106,6 @@ func TestClient_OpenAIContentTypeImage(t *testing.T) {
 	require.Equal(t, "foobar", resp.Content)
 	b, err := params.MarshalJSON()
 	require.NoError(t, err)
-	expected := `{"max_completion_tokens":0,"messages":[{"content":[{"text":"foo","type":"text"}],"role":"user"},{"content":[{"text":"\nBelow is the image with ID: <i1.png>","type":"text"}],"role":"user"},{"content":[{"image_url":{"url":"i1"},"type":"image_url"}],"role":"user"},{"content":[{"text":"\nBelow is the image with ID: <i2.png>","type":"text"}],"role":"user"},{"content":[{"image_url":{"url":"i2"},"type":"image_url"}],"role":"user"}],"model":"","presence_penalty":0,"response_format":{"json_schema":{"description":"schema for table","name":"schema","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"},"temperature":0}`
+	expected := `{"messages":[{"content":"foo","role":"user"},{"content":"\nBelow is the image with ID: \u003ci1.png\u003e","role":"user"},{"content":[{"image_url":{"url":"i1"},"type":"image_url"}],"role":"user"},{"content":"\nBelow is the image with ID: \u003ci2.png\u003e","role":"user"},{"content":[{"image_url":{"url":"i2"},"type":"image_url"}],"role":"user"}],"max_completion_tokens":0,"presence_penalty":0,"temperature":0,"response_format":{"json_schema":{"name":"schema","description":"schema for table","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"}}`
 	require.Equal(t, expected, string(b))
 }

@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +15,7 @@ import (
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
@@ -602,6 +605,200 @@ func TestHandler_Autofill(t *testing.T) {
 					t,
 					[][]string{{"c1", "c2"}, {"0", "t0"}, {"1", "t1"}},
 					records)
+			}
+		})
+	}
+}
+
+func TestHandler_Builder(t *testing.T) {
+	tableMock := &table.TableServiceMock{
+		GenerateBuilderTablesFunc: func(ctx context.Context, prompt string, params table.ModelParams) ([]table.BuilderTable, error) {
+			return []table.BuilderTable{
+				{Name: "tb1", Description: "d1"},
+			}, nil
+		},
+		PolishBuilderTablesFunc: func(ctx context.Context, tables []table.BuilderTable, prompt string, params table.ModelParams) ([]table.BuilderTable, error) {
+			return []table.BuilderTable{
+				{Name: "tb1", Description: "d1"},
+				{Name: "tb2", Description: "d2", Depends: []string{"tb1"}},
+			}, nil
+		},
+		BuildTableFunc: func(ctx context.Context, name, description string, depends []string, exists []*table.TableInfo, params table.ModelParams) (*table.TableGenRequest, error) {
+			if name == "tb1" {
+				require.Equal(t, 0, len(exists))
+				return &table.TableGenRequest{
+					Name:        "tb1",
+					Description: "d1",
+					Columns:     []table.TableGenColumn{},
+				}, nil
+			} else if name == "tb2" {
+				require.Equal(t, []*table.TableInfo{
+					{Name: "tbb1"},
+				}, exists)
+				return &table.TableGenRequest{
+					Name:        "tb2",
+					Description: "d2",
+					Columns:     []table.TableGenColumn{},
+				}, nil
+			}
+			return nil, errors.New("build table err")
+		},
+		PolishBuilderTableFunc: func(ctx context.Context, req *table.TableGenRequest, prompt string, exists []*table.TableInfo, params table.ModelParams) (*table.TableGenRequest, error) {
+			return &table.TableGenRequest{
+				Name:        "tb1",
+				Description: "d1",
+				Columns: []table.TableGenColumn{
+					{Name: "col1", Description: "dc1"},
+				},
+			}, nil
+		},
+		CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
+			switch req.Name {
+			case "tb1":
+				return "id1", nil
+			case "tb2":
+				return "id2", nil
+			default:
+				return "", errors.New("create err")
+			}
+		},
+		GetTableDetailFunc: func(ctx context.Context, tb string) (*table.TableInfo, error) {
+			name := ""
+			switch tb {
+			case "id1":
+				name = "tbb1"
+			case "id2":
+				name = "tbb2"
+			default:
+				return nil, errors.New("get table detail err")
+			}
+			return &table.TableInfo{Name: name}, nil
+		},
+		ValidateFunc: func(ctx context.Context, req *table.TableGenRequest) error {
+			return nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, db.NewTestDB(), zap.NewNop().Sugar(),
+			nil, tableMock,
+		),
+	)
+	cmd := &cobra.Command{}
+	cmd.Flags().Float64P("temperature", "", 0.3, "")
+	cmd.Flags().StringP("model", "", "", "")
+	cmd.SetContext(context.TODO())
+	cmd.SetIn(bytes.NewReader([]byte("foo\nbar\n\nbaz\n\n\n")))
+	err := handler.Builder(cmd, []string{})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tableMock.GenerateBuilderTablesCalls()))
+	require.Equal(t, 1, len(tableMock.PolishBuilderTablesCalls()))
+	require.Equal(t, 2, len(tableMock.BuildTableCalls()))
+	require.Equal(t, 1, len(tableMock.PolishBuilderTableCalls()))
+	require.Equal(t, 2, len(tableMock.CreateCalls()))
+	require.Equal(t, 2, len(tableMock.GetTableDetailCalls()))
+}
+
+func TestHandler_TopoSortTables(t *testing.T) {
+	tests := []struct {
+		name     string
+		tables   []table.BuilderTable
+		wantErr  bool
+		validate func(sorted []table.BuilderTable, err error)
+	}{
+		{
+			name: "No dependency",
+			tables: []table.BuilderTable{
+				{Name: "A", Depends: []string{}},
+				{Name: "B", Depends: []string{}},
+				{Name: "C", Depends: []string{}},
+			},
+			wantErr: false,
+			validate: func(sorted []table.BuilderTable, err error) {
+				require.NoError(t, err)
+				nameIndex := map[string]bool{}
+				for _, tbl := range sorted {
+					nameIndex[tbl.Name] = true
+				}
+				require.True(t, nameIndex["A"])
+				require.True(t, nameIndex["B"])
+				require.True(t, nameIndex["C"])
+			},
+		},
+		{
+			name: "Basic linear dependency",
+			tables: []table.BuilderTable{
+				{Name: "A", Depends: []string{}},
+				{Name: "B", Depends: []string{"A"}},
+				{Name: "C", Depends: []string{"B"}},
+			},
+			wantErr: false,
+			validate: func(sorted []table.BuilderTable, err error) {
+				require.NoError(t, err)
+				nameIndex := map[string]int{}
+				for i, tbl := range sorted {
+					nameIndex[tbl.Name] = i
+				}
+				require.True(t, nameIndex["A"] < nameIndex["B"])
+				require.True(t, nameIndex["B"] < nameIndex["C"])
+			},
+		},
+		{
+			name: "Branching dependencies",
+			tables: []table.BuilderTable{
+				{Name: "A", Depends: []string{}},
+				{Name: "B", Depends: []string{"A"}},
+				{Name: "C", Depends: []string{"A"}},
+				{Name: "D", Depends: []string{"B", "C"}},
+			},
+			wantErr: false,
+			validate: func(sorted []table.BuilderTable, err error) {
+				require.NoError(t, err)
+				nameIndex := map[string]int{}
+				for i, tbl := range sorted {
+					nameIndex[tbl.Name] = i
+				}
+				require.True(t, nameIndex["A"] < nameIndex["B"])
+				require.True(t, nameIndex["A"] < nameIndex["C"])
+				require.True(t, nameIndex["B"] < nameIndex["D"])
+				require.True(t, nameIndex["C"] < nameIndex["D"])
+			},
+		},
+		{
+			name: "Cyclic dependencies",
+			tables: []table.BuilderTable{
+				{Name: "A", Depends: []string{"C"}},
+				{Name: "B", Depends: []string{"A"}},
+				{Name: "C", Depends: []string{"B"}}, // cycle: A -> C -> B -> A
+			},
+			wantErr: true,
+			validate: func(sorted []table.BuilderTable, err error) {
+				require.Error(t, err)
+			},
+		},
+		{
+			name:    "Empty input",
+			tables:  []table.BuilderTable{},
+			wantErr: false,
+			validate: func(sorted []table.BuilderTable, err error) {
+				require.NoError(t, err)
+				require.Len(t, sorted, 0)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Call the function under test
+			sorted, err := topoSortTables(tt.tables)
+
+			// Check if we expect an error
+			if tt.wantErr {
+				require.Error(t, err)
+				tt.validate(sorted, err)
+			} else {
+				require.NoError(t, err)
+				tt.validate(sorted, err)
 			}
 		})
 	}

@@ -1,18 +1,22 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
+	"github.com/gammazero/toposort"
 
 	"github.com/spf13/cobra"
 )
@@ -419,5 +423,243 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 		}
 	}
 	h.backend.Logger.Infow("autofill done")
+	return nil
+}
+
+func printTables(tables []table.BuilderTable) {
+	for _, t := range tables {
+		fmt.Printf("- %s: %s\n", t.Name, t.Description)
+		if len(t.Depends) > 0 {
+			fmt.Printf("depends on: %s\n", strings.Join(t.Depends, ", "))
+		}
+		fmt.Println("----------")
+	}
+}
+
+func readLine(reader *bufio.Reader) (string, error) {
+	b, _, err := reader.ReadLine()
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func topoSortTables(tables []table.BuilderTable) ([]table.BuilderTable, error) {
+	var edges []toposort.Edge
+	tm := map[string]table.BuilderTable{}
+	for _, table := range tables {
+		tm[table.Name] = table
+		if len(table.Depends) == 0 {
+			edges = append(edges, toposort.Edge{nil, table.Name})
+			continue
+		}
+		for _, dep := range table.Depends {
+			edges = append(edges, toposort.Edge{dep, table.Name})
+		}
+	}
+
+	sortedNames, err := toposort.Toposort(edges)
+	if err != nil {
+		return nil, err
+	}
+	sorted := []table.BuilderTable{}
+	for _, name := range sortedNames {
+		sorted = append(sorted, tm[name.(string)])
+	}
+	return sorted, nil
+}
+
+var tableNameRegex = regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
+
+	reader := bufio.NewReader(cmd.InOrStdin())
+
+	fmt.Println("This command will create a set of tables based on your requirement.")
+	fmt.Println("Please describe what you want to build, press Enter to finish")
+	fmt.Print("> ")
+
+	userPrompt, err := readLine(reader)
+	if err != nil {
+		return fmt.Errorf("failed to read prompt: %w", err)
+	}
+	userPrompt = strings.TrimSpace(userPrompt)
+
+	tables, err := h.backend.TableService.GenerateBuilderTables(cmd.Context(), userPrompt, table.ModelParams{
+		Model:       model,
+		Temperature: temperature,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to generate tables: %w", err)
+	}
+
+	for {
+		fmt.Println("\nGenerated Tables:")
+		printTables(tables)
+
+		fmt.Print("\nIs this table list acceptable? Type any suggestions for improvements, or leave blank if it's good enough. Press Enter when you're done: ")
+		input, err := readLine(reader)
+		if err != nil {
+			return fmt.Errorf("failed to read input: %w", err)
+		}
+		input = strings.TrimSpace(input)
+
+		if input == "" {
+			break
+		}
+
+		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, input, table.ModelParams{
+			Model:       model,
+			Temperature: temperature,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to polish tables: %w", err)
+		}
+	}
+	errors := []string{}
+	for _, tb := range tables {
+		if !tableNameRegex.MatchString(tb.Name) {
+			errors = append(errors, fmt.Sprintf("[%s]: Table name must start with a letter and contain only letters, numbers, or underscores.", tb.Name))
+		}
+		exist, err := h.backend.DB.TableMeta.Query().Where(tablemeta.Name(tb.Name)).Exist(cmd.Context())
+		if err != nil {
+			return err
+		}
+		if exist {
+			errors = append(errors, fmt.Sprintf("[%s]: This table name already exist, please change.", tb.Name))
+		}
+	}
+	if len(errors) > 0 {
+		fmt.Printf("\nAuto fixing these errors:\n%s", strings.Join(errors, "\n"))
+		msg := fmt.Sprintf(`Please fix these errors:\n %s`, strings.Join(errors, `\n`))
+		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, msg, table.ModelParams{
+			Model:       model,
+			Temperature: temperature,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to polish tables: %w", err)
+		}
+		fmt.Println("\nDone! Here is the new table list:")
+		printTables(tables)
+		fmt.Println("")
+	}
+	tables, err = topoSortTables(tables)
+	if err != nil {
+		return fmt.Errorf("failed to topo sort tables: %w", err)
+	}
+
+	fmt.Println("Final table list accepted. Start creating tables...")
+	created := map[string]*table.TableInfo{}
+	for _, tb := range tables {
+		fmt.Println("Start generating table schema")
+		exists := []*table.TableInfo{}
+		for _, c := range created {
+			exists = append(exists, c)
+		}
+		info, err := h.backend.TableService.BuildTable(cmd.Context(), tb.Name, tb.Description, tb.Depends, exists, table.ModelParams{
+			Model:       model,
+			Temperature: temperature,
+		})
+		if err != nil {
+			return err
+		}
+		err = h.backend.TableService.Validate(cmd.Context(), info)
+		if err != nil {
+			fmt.Println("Validate failed, try auto fixing table...")
+
+			info, err = h.backend.TableService.PolishBuilderTable(
+				cmd.Context(), info, fmt.Sprintf("Please fix this error: %s", err.Error()), exists,
+				table.ModelParams{
+					Model:       model,
+					Temperature: temperature,
+				})
+			if err != nil {
+				return fmt.Errorf("failed to fix table: %w", err)
+			}
+		}
+		fmt.Println("")
+		fmt.Printf("Table Name: %s\n", tb.Name)
+		fmt.Printf("Table Description: %s\n", tb.Description)
+		fmt.Println("")
+		for {
+			if len(info.Sources) > 0 {
+				fmt.Println("Here is the sources of the table in JSON format:")
+				for _, source := range info.Sources {
+					b, err := json.Marshal(source)
+					if err != nil {
+						return err
+					}
+					fmt.Println(string(b))
+				}
+			}
+			fmt.Println("Here is the columns of the table in JSON format:")
+			for _, column := range info.Columns {
+				b, err := json.Marshal(column)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(b))
+			}
+			fmt.Print("\nIs this table acceptable? Type any suggestions for improvements, or leave blank if it's good enough. Press Enter when you're done: ")
+			input, err := readLine(reader)
+			if err != nil {
+				return fmt.Errorf("failed to read input: %w", err)
+			}
+			input = strings.TrimSpace(input)
+			if input == "" {
+				break
+			}
+
+			info, err = h.backend.TableService.PolishBuilderTable(cmd.Context(), info, input, exists, table.ModelParams{
+				Model:       model,
+				Temperature: temperature,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to polish tables: %w", err)
+			}
+			for {
+				err = h.backend.TableService.Validate(cmd.Context(), info)
+				if err != nil {
+					fmt.Println("Validate failed, try auto fixing table...")
+
+					info, err = h.backend.TableService.PolishBuilderTable(
+						cmd.Context(), info, fmt.Sprintf("Please fix this error: %s", err.Error()), exists,
+						table.ModelParams{
+							Model:       model,
+							Temperature: temperature,
+						})
+					if err != nil {
+						return fmt.Errorf("failed to fix table: %w", err)
+					}
+				} else {
+					break
+				}
+			}
+		}
+		tid, err := h.backend.TableService.Create(cmd.Context(), info)
+		if err != nil {
+			return err
+		}
+		detail, err := h.backend.TableService.GetTableDetail(cmd.Context(), tid)
+		if err != nil {
+			return err
+		}
+		created[info.Name] = detail
+	}
+	fmt.Println("")
+	fmt.Println("Table creation is complete. You can now generate content for the tables using either the CLI or WebUI. The recommended table generation order is as follows:")
+	tableNames := []string{}
+	for _, tb := range tables {
+		tableNames = append(tableNames, tb.Name)
+	}
+	fmt.Println(strings.Join(tableNames, " -> "))
 	return nil
 }

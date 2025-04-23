@@ -4,7 +4,7 @@
 
 # Tablepilot
 
-Tablepilot is a CLI/API/WebUI tool for generating rows or autofilling columns in your tables using AI. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
+Tablepilot is a powerful CLI/API/WebUI tool that lets you create tables using natural language and effortlessly generate or autofill content with AI. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
 
 As a CLI tool, Tablepilot uses a declarative schema format. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. A WebUI is also available. See the demo below:
 
@@ -18,6 +18,19 @@ The concept behind Tablepilot is simple yet powerful. Suppose you want to genera
 
 Instead of relying on context, suppose we add two columns to the table: cuisine and meal type, and assign random values to them (e.g., Chinese and Lunch) for each of the 1,000 recipes. These values then serve as context for generation, naturally increases diversity in the results without needing previous generations as context. The key question is: How do we get random values for columns like cuisine and meal type? This is where Tablepilot excels. You can source data from other tables, local CSV or Parquet files, AI-generated options, or remote datasets from Kaggle and Hugging Face.
 
+#### Capabilities and Model Requirements
+
+| Mode                         | Description                                                         | Available            | Model Requirements                                                      |
+|------------------------------|---------------------------------------------------------------------|----------------------|-------------------------------------------------------------------------|
+| builder                      | Create tables interactively using natural language                  | CLI                  | OpenAI Chat Completion API with support for parallel function calls       |
+| generate(text)                | Generate rows (text) for the table                                  | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output            |
+| autofill(text)                | Autofill columns (text) for existing rows in the table              | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output            |
+| generate(text + vision)     | Generate rows (text) for the table, with image context              | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output and Vision |
+| autofill(text + vision)     | Autofill columns (text) for existing rows, with image context       | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output and Vision |
+| generate(text + image generation/edit) | Generate rows (text or image) for the table, with image context | CLI, API, WebUI      | Only `gemini-2.0-flash-exp-image-generation` supported                      |
+| autofill(text + image generation/edit) | Autofill columns (text or image) for existing rows, with image context | CLI, API, WebUI | Only `gemini-2.0-flash-exp-image-generation` supported                      |
+
+
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly.
 
@@ -26,6 +39,13 @@ Ensure that Go is installed on your system. Then run `go install github.com/Yili
 
 #### Install from Source
 Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use.  This includes CLI, API, and WebUI. However, to use the WebUI, you need to build the frontend first. Ensure you have `pnpm`, `tsc` and `node` installed, then run `make build-ui`, Once built, you can start the server using `serve` command.
+
+#### CLI and API Documentation
+
+Tablepilot provides a full set of CLI commands, including `builder`, `create`, `update`, `autofill` and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI. Use `tablepilot serve` command to start API server and WebUI.
+
+- For a complete list of CLI commands, see [this doc](CLI.md).
+- For all available API endpoints, see [this doc](API.md).
 
 ## Guide
 
@@ -135,11 +155,3 @@ Example: autofill `ingredients` and `steps` using `name` and `meal` as context:
 ```sh
 tablepilot autofill recipes columns=ingredients columns=steps context_columns=name context_columns=meal -c=30 -b=5
 ```
-
-
-## CLI and API
-
-Tablepilot provides a full set of CLI commands, including `create`, `update`, `list`, `delete`, and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI. Use `tablepilot serve` command to start API server and WebUI.
-
-- For a complete list of CLI commands, see [this doc](CLI.md).
-- For all available API endpoints, see [this doc](API.md).

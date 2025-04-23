@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/invopop/jsonschema"
+	"github.com/openai/openai-go"
 )
 
 type ContentType string
@@ -82,10 +83,57 @@ func SystemMessage(content string) *Message {
 	}
 }
 
+type ChatToolParam struct {
+	Name        string
+	Type        string
+	Enum        []string
+	Description string
+}
+
+type ChatTool struct {
+	Name        string
+	Description string
+	Parameters  []ChatToolParam
+}
+
+func (c *ChatTool) OpenAITool() openai.ChatCompletionToolParam {
+	props := map[string]any{}
+	required := []string{}
+	for _, param := range c.Parameters {
+		p := map[string]any{"description": param.Description}
+		switch param.Type {
+		case "[]string":
+			p["type"] = "array"
+			p["items"] = map[string]string{
+				"type": "string",
+			}
+		default:
+			p["type"] = param.Type
+		}
+		if len(param.Enum) > 0 {
+			p["enum"] = param.Enum
+		}
+		required = append(required, param.Name)
+		props[param.Name] = p
+	}
+	return openai.ChatCompletionToolParam{
+		Function: openai.FunctionDefinitionParam{
+			Name:        c.Name,
+			Description: openai.String(c.Description),
+			Parameters: openai.FunctionParameters{
+				"type":       "object",
+				"properties": props,
+				"required":   required,
+			},
+		},
+	}
+}
+
 type ChatRequest struct {
 	Messages        []*Message
 	Temperature     float64
 	Schema          *jsonschema.Schema
+	Tools           []ChatTool
 	Model           string
 	ImageModel      string
 	MaxOutputTokens int64
@@ -95,6 +143,17 @@ type ChatRequest struct {
 type ChatResponse struct {
 	Content string `json:"content"`
 	Tokens  int64  `json:"tokens"`
+}
+
+type FunctionCall struct {
+	Name      string         `json:"name"`
+	Arguments map[string]any `json:"arguments"`
+}
+
+type FunctionCallResponse struct {
+	Text          string         `json:"text"`
+	FunctionCalls []FunctionCall `json:"function_calls"`
+	Tokens        int64          `json:"tokens"`
 }
 
 type ImageGenResponse struct {

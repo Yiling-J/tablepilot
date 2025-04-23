@@ -22,6 +22,9 @@ var _ AiService = &AiServiceMock{}
 //			ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
 //				panic("mock out the Chat method")
 //			},
+//			FunctionCallFunc: func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
+//				panic("mock out the FunctionCall method")
+//			},
 //			ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
 //				panic("mock out the ImageGen method")
 //			},
@@ -38,6 +41,9 @@ type AiServiceMock struct {
 	// ChatFunc mocks the Chat method.
 	ChatFunc func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error)
 
+	// FunctionCallFunc mocks the FunctionCall method.
+	FunctionCallFunc func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
+
 	// ImageGenFunc mocks the ImageGen method.
 	ImageGenFunc func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
 
@@ -48,6 +54,13 @@ type AiServiceMock struct {
 	calls struct {
 		// Chat holds details about calls to the Chat method.
 		Chat []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Request is the request argument value.
+			Request *client.ChatRequest
+		}
+		// FunctionCall holds details about calls to the FunctionCall method.
+		FunctionCall []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Request is the request argument value.
@@ -66,9 +79,10 @@ type AiServiceMock struct {
 			Ctx context.Context
 		}
 	}
-	lockChat       sync.RWMutex
-	lockImageGen   sync.RWMutex
-	lockListModels sync.RWMutex
+	lockChat         sync.RWMutex
+	lockFunctionCall sync.RWMutex
+	lockImageGen     sync.RWMutex
+	lockListModels   sync.RWMutex
 }
 
 // Chat calls ChatFunc.
@@ -104,6 +118,42 @@ func (mock *AiServiceMock) ChatCalls() []struct {
 	mock.lockChat.RLock()
 	calls = mock.calls.Chat
 	mock.lockChat.RUnlock()
+	return calls
+}
+
+// FunctionCall calls FunctionCallFunc.
+func (mock *AiServiceMock) FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
+	if mock.FunctionCallFunc == nil {
+		panic("AiServiceMock.FunctionCallFunc: method is nil but AiService.FunctionCall was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Request *client.ChatRequest
+	}{
+		Ctx:     ctx,
+		Request: request,
+	}
+	mock.lockFunctionCall.Lock()
+	mock.calls.FunctionCall = append(mock.calls.FunctionCall, callInfo)
+	mock.lockFunctionCall.Unlock()
+	return mock.FunctionCallFunc(ctx, request)
+}
+
+// FunctionCallCalls gets all the calls that were made to FunctionCall.
+// Check the length with:
+//
+//	len(mockedAiService.FunctionCallCalls())
+func (mock *AiServiceMock) FunctionCallCalls() []struct {
+	Ctx     context.Context
+	Request *client.ChatRequest
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Request *client.ChatRequest
+	}
+	mock.lockFunctionCall.RLock()
+	calls = mock.calls.FunctionCall
+	mock.lockFunctionCall.RUnlock()
 	return calls
 }
 

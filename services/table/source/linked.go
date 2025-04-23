@@ -13,7 +13,7 @@ import (
 )
 
 type LinkedSource struct {
-	Type    string `json:"type"`
+	BasicSource
 	db      *ent.Client
 	Table   string `json:"table"`
 	data    []*ent.TableRow

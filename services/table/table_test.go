@@ -151,9 +151,9 @@ func TestTableService_Create(t *testing.T) {
 	require.NoError(t, err)
 
 	savedSources := map[string]json.RawMessage{
-		"countries": []byte(`{"type":"list","options":["China","Japan","England","Thai","France"]}`),
-		"tags":      []byte(`{"type":"ai","prompt":"Generate 20 tags.","options":null}`),
-		"users":     []byte(fmt.Sprintf(`{"type":"linked","table":"%s"}`, userTable.Nanoid)),
+		"countries": []byte(`{"name":"countries","type":"list","options":["China","Japan","England","Thai","France"]}`),
+		"tags":      []byte(`{"name":"tags","type":"ai","prompt":"Generate 20 tags.","options":null}`),
+		"users":     []byte(fmt.Sprintf(`{"name":"users","type":"linked","table":"%s"}`, userTable.Nanoid)),
 	}
 
 	id, err := srv.Create(ctx, &TableGenRequest{
@@ -594,10 +594,10 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 		name   string
 		source source.Source
 	}{
-		{"list", &source.ListSource{Type: "list", Options: []string{"a"}}},
-		{"linked", &source.LinkedSource{Type: "linked", Table: "lk"}},
-		{"csv", &source.CsvSource{Type: "csv", Paths: []string{"tmp_table_import.csv"}}},
-		{"parquet", &source.ParquetSource{Type: "parquet", Paths: []string{"tmp_table_import.parquet"}}},
+		{"list", &source.ListSource{BasicSource: source.BasicSource{Type: "list"}, Options: []string{"a"}}},
+		{"linked", &source.LinkedSource{BasicSource: source.BasicSource{Type: "linked"}, Table: "lk"}},
+		{"csv", &source.CsvSource{BasicSource: source.BasicSource{Type: "csv"}, Paths: []string{"tmp_table_import.csv"}}},
+		{"parquet", &source.ParquetSource{BasicSource: source.BasicSource{Type: "parquet"}, Paths: []string{"tmp_table_import.parquet"}}},
 	}
 
 	for _, tc := range cases {
@@ -1203,4 +1203,34 @@ func TestTableService_GetTableSchema(t *testing.T) {
 	b, err := json.Marshal(schema)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(b))
+}
+
+func TestTableService_Validate(t *testing.T) {
+	cases := []struct {
+		req *TableGenRequest
+		err string
+	}{
+		{
+			req: &TableGenRequest{},
+			err: "columns should not be empty.",
+		},
+		{
+			req: &TableGenRequest{
+				Columns: []TableGenColumn{
+					{Source: "s1"},
+				},
+			},
+			err: "source s1 not found.",
+		},
+	}
+
+	db := db.NewTestDB()
+	ctx := context.Background()
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	for _, tc := range cases {
+		err := srv.Validate(ctx, tc.req)
+		require.Equal(t, tc.err, err.Error())
+	}
 }

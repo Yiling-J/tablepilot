@@ -42,6 +42,10 @@ func (c *GeminiClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 	return nil, errors.New("Not implemented")
 }
 
+func (c *GeminiClient) FunctionCall(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error) {
+	return nil, errors.New("Not implemented")
+}
+
 var imageIdRE = regexp.MustCompile(`<info\s+row_id="([0-9a-zA-Z]+)"\s+column_id="([0-9a-zA-Z]+)"\s*\/>`)
 
 func (c *GeminiClient) ImageGen(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error) {

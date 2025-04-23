@@ -2,6 +2,7 @@ package table
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -358,7 +359,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 	t.Run("pick-type column", func(t *testing.T) {
 		db := db.NewTestDB()
 		ctx := context.Background()
-		sc := &source.ListSource{Options: []string{"a", "b"}, Type: "list"}
+		sc := &source.ListSource{Options: []string{"a", "b"}, BasicSource: source.BasicSource{Type: "list"}}
 		sb, err := json.Marshal(sc)
 		require.NoError(t, err)
 		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").SetSources(map[string]json.RawMessage{"so": sb}).Save(ctx)
@@ -1272,4 +1273,124 @@ func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
 		Value: "bar",
 	}, v[0][c1.Nanoid])
 	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["id"])
+}
+
+func TestRowsGenerator_PrepareContextRowsWithImage(t *testing.T) {
+	defer func() { _ = os.RemoveAll("tablepilot_images") }()
+	ctx := context.TODO()
+	db := db.NewTestDB()
+	tb, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	col1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetContextLength(1).
+		SetType(tablecolumn.TypeImage).Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetContextLength(0).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+
+	counter := 0
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			imagePath := "fooo.png"
+			if counter == 1 {
+				row, err := tb.QueryRows().Order(ent.Desc("id")).First(ctx)
+				require.NoError(t, err)
+				imagePath = cast.ToString(row.Cells[0].Value)
+				require.True(t, strings.HasPrefix(imagePath, "tablepilot_images/UkLWZg/0-UkLWZg"), imagePath)
+			}
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("bar")
+			err = builder.AddColumnContextData(col1.Nanoid, []any{imagePath})
+			require.NoError(t, err)
+			builder.AddTableColumns([]*ent.TableColumn{col1, col2}, false)
+			// image will be generated in separate call(ImageGen)
+			builder.AddMissingColumns([]*ent.TableColumn{col2}, true)
+			p, err := builder.Prompt()
+			require.NoError(t, err)
+			require.Equal(t, []*client.Message{
+				{Role: "user", Content: []client.Content{
+					{Type: client.ContentTypeText, Data: p},
+					{Type: client.ContentTypeText, Data: "\nBelow is the image with ID: " + fmt.Sprintf("<%s>", imagePath)},
+					{Type: client.ContentTypeImage, Data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC"},
+				}},
+			}, request.Messages)
+			data := []map[string]any{
+				{"id": "0", col2.Nanoid: "baz"},
+			}
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+		ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
+			imagePath := "fooo.png"
+			if counter == 1 {
+				row, err := tb.QueryRows().Order(ent.Desc("id")).First(ctx)
+				require.NoError(t, err)
+				imagePath = cast.ToString(row.Cells[0].Value)
+				require.True(t, strings.HasPrefix(imagePath, "tablepilot_images/UkLWZg/0-UkLWZg"), imagePath)
+			}
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("bar")
+			err = builder.AddColumnContextData(col1.Nanoid, []any{imagePath})
+			require.NoError(t, err)
+			builder.AddTableColumns([]*ent.TableColumn{col1, col2}, false)
+			builder.AddMissingColumns([]*ent.TableColumn{col1}, false)
+			err = builder.AddExistings([]map[string]any{
+				{col2.Nanoid: "baz", "id": "0"},
+			})
+			require.NoError(t, err)
+			p, err := builder.ImageGenPrompt()
+			require.NoError(t, err)
+			require.Equal(t, []*client.Message{
+				{Role: "user", Content: []client.Content{
+					{Type: client.ContentTypeText, Data: p},
+					{Type: client.ContentTypeText, Data: "\nBelow is the image with ID: " + fmt.Sprintf("<%s>", imagePath)},
+					{Type: client.ContentTypeImage, Data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC"},
+				}},
+			}, request.Messages)
+			id := fmt.Sprintf("%s-%s", "0", col1.Nanoid)
+			pb, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC")
+			require.NoError(t, err)
+			return &client.ImageGenResponse{
+				Images: map[string][]byte{id: pb},
+			}, nil
+		},
+	}
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: "foo",
+		Batch: 1,
+		Count: 2,
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	err = db.TableRow.Create().SetTablemeta(tb).SetCells(
+		[]*schema.CellValue{{Value: "fooo.png"}, {Value: "v1"}},
+	).Exec(ctx)
+	err = createPNG("fooo.png")
+	require.NoError(t, err)
+	defer func() { _ = os.Remove("fooo.png") }()
+	v, err := generator.Next(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(v))
+	require.Equal(t, 1, len(aiService.ChatCalls()))
+	require.Equal(t, 1, len(aiService.ImageGenCalls()))
+
+	counter += 1
+	v, err = generator.Next(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(v))
+	require.Equal(t, 2, len(aiService.ChatCalls()))
+	require.Equal(t, 2, len(aiService.ImageGenCalls()))
 }

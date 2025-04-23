@@ -162,6 +162,7 @@ func (g *AIRowsGenerator) newBatch(ctx context.Context, batch int) error {
 	g.builder = promptbuilder.NewRowsBuilder(batch)
 	g.builder.AddDescription(g.table.Description)
 	g.rows = g.rows[:0]
+	g.images = make(map[string]string)
 	return g.prepareContextRows(ctx)
 }
 
@@ -202,6 +203,23 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 					break
 				}
 				cv := contextRows[i][col.Nanoid]
+				if col.Type == tablecolumn.TypeImage {
+					v := cast.ToString(cv.Value)
+					if v != "" {
+						vk := v
+						if strings.HasPrefix(v, "data:") && len(v) > 200 {
+							// #nosec
+							vk = fmt.Sprintf("%x", md5.Sum([]byte(v)))
+						}
+						if _, ok := g.images[vk]; !ok {
+							url, err := g.imageURL(ctx, v)
+							if err != nil {
+								return err
+							}
+							g.images[vk] = url
+						}
+					}
+				}
 				if cv.ContextValue != nil {
 					values = append(values, cv.ContextValue)
 				} else {
@@ -248,7 +266,6 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 }
 
 func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
-	g.images = map[string]string{}
 	if g.autofill.Enable {
 		rows, err := g.table.QueryRows().Order(
 			ent.Asc(tablerow.FieldID),
@@ -515,11 +532,7 @@ func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawM
 }
 
 func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*schema.CellValue, error) {
-	err := g.newBatch(ctx, batch)
-	if err != nil {
-		return nil, err
-	}
-	err = g.prepareRows(ctx, batch)
+	err := g.prepareRows(ctx, batch)
 	if err != nil {
 		return nil, err
 	}
@@ -698,7 +711,10 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 		batchSize = left
 	}
 	rows := g.rows
-	var err error
+	err := g.newBatch(ctx, batchSize)
+	if err != nil {
+		return nil, err
+	}
 	if len(g.missingColumns) > 0 {
 		rows, err = g.generate(ctx, batchSize)
 		if err != nil {
