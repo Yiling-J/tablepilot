@@ -1,6 +1,6 @@
 ### CLI Commands:
 
-- **buider**
+- **builder**
   Start the Tablepilot builder to create tables interactively using natural language. During the process, Tablepilot will guide you through:
 
   - Asking what you want to build.
