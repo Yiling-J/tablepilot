@@ -1,5 +1,23 @@
 ### CLI Commands:
 
+- **buider**
+  Start the Tablepilot builder to create tables interactively using natural language. During the process, Tablepilot will guide you through:
+
+  - Asking what you want to build.
+  - Creating a draft list.
+  - Asking if you'd like to improve it.
+  - Generating tables and columns one by one.
+
+  The instructions are straightforward, just follow the guide. Note: The builder command only creates the table structure; it does not populate the table with data. You’ll need to use the `generate` command separately to fill in the rows.
+  ```
+  tablepilot builder
+  ```
+  	- `-m, --model string`
+	  Specify the model used to generate rows. If not provided, the default model will be used.
+
+	- `-t, --temperature float`
+	  The sampling temperature. Higher values will make the output more random. (default 0.3)
+
 - **create**
   Create tables from schema JSON files.
   ```
