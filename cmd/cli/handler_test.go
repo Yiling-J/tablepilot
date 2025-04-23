@@ -612,18 +612,18 @@ func TestHandler_Autofill(t *testing.T) {
 
 func TestHandler_Builder(t *testing.T) {
 	tableMock := &table.TableServiceMock{
-		GenerateBuilderTablesFunc: func(ctx context.Context, prompt string) ([]table.BuilderTable, error) {
+		GenerateBuilderTablesFunc: func(ctx context.Context, prompt string, params table.ModelParams) ([]table.BuilderTable, error) {
 			return []table.BuilderTable{
 				{Name: "tb1", Description: "d1"},
 			}, nil
 		},
-		PolishBuilderTablesFunc: func(ctx context.Context, tables []table.BuilderTable, prompt string) ([]table.BuilderTable, error) {
+		PolishBuilderTablesFunc: func(ctx context.Context, tables []table.BuilderTable, prompt string, params table.ModelParams) ([]table.BuilderTable, error) {
 			return []table.BuilderTable{
 				{Name: "tb1", Description: "d1"},
 				{Name: "tb2", Description: "d2", Depends: []string{"tb1"}},
 			}, nil
 		},
-		BuildTableFunc: func(ctx context.Context, name, description string, depends []string, exists []*table.TableInfo) (*table.TableGenRequest, error) {
+		BuildTableFunc: func(ctx context.Context, name, description string, depends []string, exists []*table.TableInfo, params table.ModelParams) (*table.TableGenRequest, error) {
 			if name == "tb1" {
 				require.Equal(t, 0, len(exists))
 				return &table.TableGenRequest{
@@ -643,7 +643,7 @@ func TestHandler_Builder(t *testing.T) {
 			}
 			return nil, errors.New("build table err")
 		},
-		PolishBuilderTableFunc: func(ctx context.Context, req *table.TableGenRequest, prompt string, exists []*table.TableInfo) (*table.TableGenRequest, error) {
+		PolishBuilderTableFunc: func(ctx context.Context, req *table.TableGenRequest, prompt string, exists []*table.TableInfo, params table.ModelParams) (*table.TableGenRequest, error) {
 			return &table.TableGenRequest{
 				Name:        "tb1",
 				Description: "d1",
@@ -685,6 +685,8 @@ func TestHandler_Builder(t *testing.T) {
 		),
 	)
 	cmd := &cobra.Command{}
+	cmd.Flags().Float64P("temperature", "", 0.3, "")
+	cmd.Flags().StringP("model", "", "", "")
 	cmd.SetContext(context.TODO())
 	cmd.SetIn(bytes.NewReader([]byte("foo\nbar\n\nbaz\n\n\n")))
 	err := handler.Builder(cmd, []string{})

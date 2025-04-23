@@ -106,3 +106,8 @@ type SharedSource struct {
 	// only used in csv/parquet type source, this is required by API+WebUI, so user can select columns in UI
 	Columns []string `json:"columns"`
 }
+
+type ModelParams struct {
+	Temperature float64 `json:"temperature"`
+	Model       string  `json:"model"`
+}

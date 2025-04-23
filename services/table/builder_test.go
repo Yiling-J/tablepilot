@@ -27,6 +27,8 @@ func TestBuilder_GenerateBuilderTables(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			require.Equal(t, "user", request.Messages[0].Role)
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, 0.32, request.Temperature)
 			pb := promptbuilder.NewTablesBuilder("gogo")
 			prompt, err := pb.Prompt()
 			require.NoError(t, err)
@@ -42,7 +44,10 @@ func TestBuilder_GenerateBuilderTables(t *testing.T) {
 	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
-	tables, err := srv.GenerateBuilderTables(ctx, "gogo")
+	tables, err := srv.GenerateBuilderTables(ctx, "gogo", ModelParams{
+		Model:       "m1",
+		Temperature: 0.32,
+	})
 	require.NoError(t, err)
 	require.Equal(t, builderTables, tables)
 }
@@ -61,6 +66,8 @@ func TestBuilder_PolishBuilderTables(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			require.Equal(t, "user", request.Messages[0].Role)
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, 0.32, request.Temperature)
 			pb := promptbuilder.NewTablesPolishBuilder(string(tr), "gogo")
 			prompt, err := pb.Prompt()
 			require.NoError(t, err)
@@ -83,7 +90,8 @@ func TestBuilder_PolishBuilderTables(t *testing.T) {
 	tables, err := srv.PolishBuilderTables(ctx, []BuilderTable{
 		{Name: "t1", Description: "d1"},
 		{Name: "t2", Description: "d2", Depends: []string{"t1"}},
-	}, "gogo")
+	}, "gogo", ModelParams{Model: "m1",
+		Temperature: 0.32})
 	require.NoError(t, err)
 	require.Equal(t, []BuilderTable{
 		{Name: "t1", Description: "d-1"},
@@ -96,6 +104,8 @@ func TestBuilder_BuildTable(t *testing.T) {
 	ctx := context.Background()
 	aiService := &ai.AiServiceMock{
 		FunctionCallFunc: func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, 0.32, request.Temperature)
 			pm := promptbuilder.NewTableGenBuilder("foo", "bar", []string{"baz"}, []promptbuilder.TableInfoSimple{
 				{Name: "baz", Description: "abc", Columns: []promptbuilder.TableColumnSimple{
 					{Name: "c1", Description: "c1d"},
@@ -136,7 +146,8 @@ func TestBuilder_BuildTable(t *testing.T) {
 		{Name: "baz", Description: "abc", Columns: []TableColumnInfo{
 			{Name: "c1", Description: "c1d"},
 		}},
-	})
+	}, ModelParams{Model: "m1",
+		Temperature: 0.32})
 	require.NoError(t, err)
 	s := &source.AISource{
 		BasicSource: source.BasicSource{
@@ -187,6 +198,8 @@ func TestBuilder_PolishBuilderTable(t *testing.T) {
 	}
 	aiService := &ai.AiServiceMock{
 		FunctionCallFunc: func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, 0.32, request.Temperature)
 			cb, err := json.Marshal(req.Columns)
 			require.NoError(t, err)
 			sb, err := json.Marshal(req.Sources)
@@ -219,7 +232,8 @@ func TestBuilder_PolishBuilderTable(t *testing.T) {
 		{Name: "baz", Description: "abc", Columns: []TableColumnInfo{
 			{Name: "c1", Description: "c1d"},
 		}},
-	})
+	}, ModelParams{Model: "m1",
+		Temperature: 0.32})
 	require.NoError(t, err)
 	require.Equal(t, &TableGenRequest{
 		Name:        "foo",

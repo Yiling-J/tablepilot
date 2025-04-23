@@ -209,12 +209,18 @@ func BuildCLI(root *cobra.Command) *CLI {
 	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing. Defaults to file name if not set")
 	cmd.AddCommand(importCmd)
 
-	cmd.AddCommand(&cobra.Command{
+	builder := &cobra.Command{
 		Use:   "builder",
-		Short: "Start tablepilot builder",
+		Short: "Start tablepilot builder, create tables interactively using natural language",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return handler.Builder(cmd, args)
 		},
-	})
+	}
+	builder.Flags().Float64P("temperature", "t", 0.3, "The sampling temperature. Higher values will make the output more random.")
+	builder.Flags().StringP(
+		"model", "m", "",
+		"specify the model used by builder. If not provided, the default model will be used",
+	)
+	cmd.AddCommand(builder)
 	return cli
 }

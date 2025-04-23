@@ -15,7 +15,7 @@ type BuilderTable struct {
 	Depends     []string `json:"depends"`
 }
 
-func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt string) ([]BuilderTable, error) {
+func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt string, params ModelParams) ([]BuilderTable, error) {
 	pm := promptbuilder.NewTablesBuilder(prompt)
 	message, err := pm.Prompt()
 	if err != nil {
@@ -24,7 +24,8 @@ func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt str
 	resp, err := t.ai.Chat(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
 		Schema:          reflector.Reflect([]BuilderTable{}),
-		Temperature:     0.8,
+		Temperature:     params.Temperature,
+		Model:           params.Model,
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
@@ -37,7 +38,7 @@ func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt str
 	return tables, nil
 }
 
-func (t *TableServiceImpl) PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string) ([]BuilderTable, error) {
+func (t *TableServiceImpl) PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string, params ModelParams) ([]BuilderTable, error) {
 	tr, err := json.Marshal(map[string]any{"data": tables})
 	if err != nil {
 		return nil, err
@@ -50,7 +51,8 @@ func (t *TableServiceImpl) PolishBuilderTables(ctx context.Context, tables []Bui
 	resp, err := t.ai.Chat(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
 		Schema:          reflector.Reflect([]BuilderTable{}),
-		Temperature:     0.8,
+		Temperature:     params.Temperature,
+		Model:           params.Model,
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
@@ -167,7 +169,7 @@ func getTools(polish bool, imageGen bool) []client.ChatTool {
 	return tools
 }
 
-func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description string, depends []string, exists []*TableInfo) (*TableGenRequest, error) {
+func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description string, depends []string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error) {
 	tbs := []promptbuilder.TableInfoSimple{}
 	for _, tb := range exists {
 		info := promptbuilder.TableInfoSimple{
@@ -194,7 +196,8 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 	}
 	resp, err := t.ai.FunctionCall(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
-		Temperature:     0.6,
+		Temperature:     params.Temperature,
+		Model:           params.Model,
 		Tools:           getTools(false, imageGen),
 		MaxOutputTokens: 6000,
 	})
@@ -216,7 +219,7 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 	return builder.table, nil
 }
 
-func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo) (*TableGenRequest, error) {
+func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error) {
 	cb, err := json.Marshal(table.Columns)
 	if err != nil {
 		return nil, err
@@ -251,7 +254,8 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	}
 	resp, err := t.ai.FunctionCall(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
-		Temperature:     0.2,
+		Temperature:     params.Temperature,
+		Model:           params.Model,
 		Tools:           getTools(true, imageGen),
 		MaxOutputTokens: 6000,
 	})

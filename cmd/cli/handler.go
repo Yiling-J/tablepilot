@@ -472,6 +472,15 @@ func topoSortTables(tables []table.BuilderTable) ([]table.BuilderTable, error) {
 var tableNameRegex = regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
+
 	reader := bufio.NewReader(cmd.InOrStdin())
 
 	fmt.Println("This command will create a set of tables based on your requirement.")
@@ -484,7 +493,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 	}
 	userPrompt = strings.TrimSpace(userPrompt)
 
-	tables, err := h.backend.TableService.GenerateBuilderTables(cmd.Context(), userPrompt)
+	tables, err := h.backend.TableService.GenerateBuilderTables(cmd.Context(), userPrompt, table.ModelParams{
+		Model:       model,
+		Temperature: temperature,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to generate tables: %w", err)
 	}
@@ -504,7 +516,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 			break
 		}
 
-		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, input)
+		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, input, table.ModelParams{
+			Model:       model,
+			Temperature: temperature,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to polish tables: %w", err)
 		}
@@ -525,7 +540,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 	if len(errors) > 0 {
 		fmt.Printf("\nAuto fixing these errors:\n%s", strings.Join(errors, "\n"))
 		msg := fmt.Sprintf(`Please fix these errors:\n %s`, strings.Join(errors, `\n`))
-		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, msg)
+		tables, err = h.backend.TableService.PolishBuilderTables(cmd.Context(), tables, msg, table.ModelParams{
+			Model:       model,
+			Temperature: temperature,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to polish tables: %w", err)
 		}
@@ -546,7 +564,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		for _, c := range created {
 			exists = append(exists, c)
 		}
-		info, err := h.backend.TableService.BuildTable(cmd.Context(), tb.Name, tb.Description, tb.Depends, exists)
+		info, err := h.backend.TableService.BuildTable(cmd.Context(), tb.Name, tb.Description, tb.Depends, exists, table.ModelParams{
+			Model:       model,
+			Temperature: temperature,
+		})
 		if err != nil {
 			return err
 		}
@@ -556,7 +577,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 
 			info, err = h.backend.TableService.PolishBuilderTable(
 				cmd.Context(), info, fmt.Sprintf("Please fix this error: %s", err.Error()), exists,
-			)
+				table.ModelParams{
+					Model:       model,
+					Temperature: temperature,
+				})
 			if err != nil {
 				return fmt.Errorf("failed to fix table: %w", err)
 			}
@@ -594,7 +618,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 				break
 			}
 
-			info, err = h.backend.TableService.PolishBuilderTable(cmd.Context(), info, input, exists)
+			info, err = h.backend.TableService.PolishBuilderTable(cmd.Context(), info, input, exists, table.ModelParams{
+				Model:       model,
+				Temperature: temperature,
+			})
 			if err != nil {
 				return fmt.Errorf("failed to polish tables: %w", err)
 			}
@@ -605,7 +632,10 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 
 					info, err = h.backend.TableService.PolishBuilderTable(
 						cmd.Context(), info, fmt.Sprintf("Please fix this error: %s", err.Error()), exists,
-					)
+						table.ModelParams{
+							Model:       model,
+							Temperature: temperature,
+						})
 					if err != nil {
 						return fmt.Errorf("failed to fix table: %w", err)
 					}
