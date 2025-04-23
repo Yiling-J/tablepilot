@@ -46,6 +46,8 @@
   ```
   tablepilot describe recipes
   ```
+  - `-o, --output string`
+	Specifies the output format. Possible values are 'table' or 'json'. Defaults to 'table'.
 
 - **export**
   Export the table as a CSV file.

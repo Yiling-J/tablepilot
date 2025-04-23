@@ -111,6 +111,22 @@ func (h *Handler) List(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) Describe(cmd *cobra.Command, args []string) error {
+	output, err := cmd.Flags().GetString("output")
+	if err != nil {
+		return err
+	}
+	if output == "json" {
+		schema, err := h.backend.TableService.GetTableSchema(cmd.Context(), args[0])
+		if err != nil {
+			return err
+		}
+		data, err := json.MarshalIndent(schema, "", "  ")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(data))
+		return nil
+	}
 	detail, err := h.backend.TableService.GetTableDetail(cmd.Context(), args[0])
 	if err != nil {
 		return err

@@ -458,6 +458,12 @@ func TestHandler_Describe(t *testing.T) {
 					{ID: "2", Name: "c2", Type: "int", FillMode: "bi", Description: "d2"},
 				}}, nil
 		},
+		GetTableSchemaFunc: func(ctx context.Context, tb string) (*table.TableGenRequest, error) {
+			require.Equal(t, "foo", tb)
+			return &table.TableGenRequest{
+				Name: "abc",
+			}, nil
+		},
 	}
 	printer := &tableprinter.TablePrinterMock{
 		AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
@@ -473,6 +479,7 @@ func TestHandler_Describe(t *testing.T) {
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 	cmd := &cobra.Command{}
+	cmd.Flags().String("output", "table", "")
 	err := handler.Describe(cmd, []string{"foo"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(printer.AddHeaderCalls()))
@@ -485,6 +492,12 @@ func TestHandler_Describe(t *testing.T) {
 	require.Equal(t, []string{"1", "c1", "string", "ai", "d1", "2", "c2", "int", "bi", "d2"}, fields)
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
+
+	err = cmd.Flags().Set("output", "json")
+	require.NoError(t, err)
+	err = handler.Describe(cmd, []string{"foo"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tableMock.GetTableSchemaCalls()))
 }
 
 func TestHandler_Autofill(t *testing.T) {

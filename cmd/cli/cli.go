@@ -87,13 +87,15 @@ func BuildCLI(root *cobra.Command) *CLI {
 		},
 	})
 
-	cmd.AddCommand(&cobra.Command{
+	describeCommand := &cobra.Command{
 		Use:   "describe <table id or name>",
 		Short: "Show details about the columns in a specified table",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return handler.Describe(cmd, args)
 		},
-	})
+	}
+	describeCommand.Flags().StringP("output", "o", "table", "specifies the output format. Possible values are 'table' or 'json'. Defaults to 'table'")
+	cmd.AddCommand(describeCommand)
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "show <table id or name>",
