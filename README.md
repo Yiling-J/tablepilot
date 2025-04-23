@@ -30,6 +30,7 @@ Instead of relying on context, suppose we add two columns to the table: cuisine 
 | generate(text + image generation/edit) | Generate rows (text or image) for the table, with image context | CLI, API, WebUI      | Only `gemini-2.0-flash-exp-image-generation` supported                      |
 | autofill(text + image generation/edit) | Autofill columns (text or image) for existing rows, with image context | CLI, API, WebUI | Only `gemini-2.0-flash-exp-image-generation` supported                      |
 
+> OpenAI Chat Completion API refers to any API compatible with OpenAI, such as Gemini, vLLM, Ollama, and xAI.
 
 #### Download Binary Release
 Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly.
