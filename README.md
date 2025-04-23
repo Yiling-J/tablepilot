@@ -126,6 +126,21 @@ If the column is filled from a source, you can define how values are selected: r
 You can also configure the **context length**, which determines how many previous values from the column are passed to the AI during generation. For example, if the "Name" column has a context length of 20, the last 20 names will be included when generating the next row.
 
 ---
+### Builder Mode
+
+The builder command allows you to create tables interactively using natural language. You start by describing to Tablepilot what you want to build, and it will draft the initial tables for your system. Then, it will try generating detailed schemas for each table one by one.
+
+After each table schema is generated, you’ll have the opportunity to review and modify it. Simply tell Tablepilot what you’d like to change or improve, and it will update the schema accordingly.
+
+Note: The builder command only helps you design and create tables. To generate the actual rows for your tables, you’ll still need to use the `generate` command via the CLI or Web UI.
+
+To start builder mode, simple run:
+
+```console
+tablepilot builder
+```
+
+---
 
 ### Generate Mode
 
@@ -134,7 +149,7 @@ Generate mode is simple: specify which table to generate, how many rows, and the
 
 Example: generate 30 recipes, 5 per batch:
 
-```sh
+```console
 tablepilot generate recipes -c=30 -b=5
 ```
 
@@ -153,6 +168,6 @@ Tablepilot then processes the table row by row.
 
 Example: autofill `ingredients` and `steps` using `name` and `meal` as context:
 
-```sh
+```console
 tablepilot autofill recipes columns=ingredients columns=steps context_columns=name context_columns=meal -c=30 -b=5
 ```
