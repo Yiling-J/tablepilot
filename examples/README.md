@@ -16,9 +16,6 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
 - **recipes_cuisine_meal**
   Building on the `recipes_cuisine` example, this variation adds a "meal" column, where the value is selected from 6 meal options, creating more diversity in the results.
 
-- **recipes_cuisine_meal_ingredients**
-  Building on the `recipes_cuisine_meal` example, this variation adds two must-have-ingredient column, where the value is selected from 50 AI generated ingredients, creating even more diversity in the results. (But it doesn't seem very creative, maybe write a better prompt in table description or try a different model.)
-
 - **recipes_by_country**
   This example demonstrates how to repeat column values. The generated table will include 6 recipes for each country: 2 Breakfast recipes, 2 Lunch recipes, and 2 Dinner recipes.
 
@@ -49,6 +46,9 @@ All examples are generated using gemini-2.0-flash-001 with a tempature of 0.6.
   This example create a joke from two random icon images, shows how to use images as input prompts(column type image). Include both generate and autofill examples.
 
 #### [Experimental] Generate/Edit image
+
+- **100_recipes**
+  A comprehensive, step-by-step tutorial on how to generate 100 recipes with images.
 
 - **recipes_with_image**
   This example demonstrates how to generate images in three different ways:

@@ -54,6 +54,8 @@
   ```console
   tablepilot export recipes
   ```
+  - `-t, --to string`
+	Specifies the output file path.
 
 - **generate**
   Generate data for a specified table.
