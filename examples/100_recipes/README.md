@@ -56,7 +56,7 @@ Make sure to replace the `key` with your Gemini key. Both models should be free 
 
 ## Step 3: Create the Table
 
-Start by creating the table in the Tablepilot database (SQLite file `data.db`). After that, you can generate rows for the table using either the CLI or WebUI.
+Start by creating the table in the Tablepilot database (SQLite file `data.db`). After that, you can generate rows for the table using either the CLI or WebUI. Tablepilot uses a JSON file as the table schema to define the structure. I've already included the example schema, which you can use directly if you clone the repository. If you're using the release binary, create a JSON file in your current working directory and copy the example content into it.
 
 ```console
 tablepilot create examples/100_recipes/recipes.json
