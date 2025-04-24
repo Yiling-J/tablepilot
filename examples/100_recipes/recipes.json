@@ -1,0 +1,87 @@
+{
+  "name": "recipes",
+  "description": "table of creative recipes",
+  "sources": [
+    {
+      "name": "cuisines",
+      "type": "ai",
+      "prompt": "Generate 20 recipe cuisines."
+    },
+    {
+      "name": "ingredients",
+      "type": "ai",
+      "prompt": "Generate 50 common ingredients."
+    },
+    {
+      "name": "meals",
+      "type": "list",
+      "options": ["Dinner", "Lunch", "Desserts", "Appetizers"]
+    }
+  ],
+  "columns": [
+    {
+      "name": "Name",
+      "description": "recipe name, should be creative and match the cuisine. Don't use naive format such as combine of ingredient names or cuisines + ingredient names. be creative and find a attractive and interesting name, for example: Tropical Bomber",
+      "type": "string",
+      "fill_mode": "ai",
+      "context_length": 5
+    },
+    {
+      "name": "Name Reason",
+      "description": "why you pick this creative and attractive name for the recipe",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Must Have Ingredient",
+      "description": "the ingredient recipe must include",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "ingredients",
+      "random": true,
+      "replacement": false
+    },
+    {
+      "name": "Ingredients",
+      "description": "list of ingredients",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Instructions",
+      "description": "list of steps for this recipe, try as detailed as possible for beginners",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Cooking Time",
+      "description": "time required to cook the recipe (minutes)",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Cuisine",
+      "description": "type of cuisine",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "cuisines",
+      "random": true,
+      "replacement": false
+    },
+    {
+      "name": "Meal",
+      "description": "meal of the recipe",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "meals",
+      "random": true,
+      "replacement": true
+    },
+    {
+      "name": "Difficulty Level",
+      "description": "difficulty level of the recipe (1-5)",
+      "type": "integer",
+      "fill_mode": "ai"
+    }
+  ]
+}
