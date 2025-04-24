@@ -21,7 +21,7 @@
   "columns": [
     {
       "name": "Name",
-      "description": "recipe name, should be creative and match the cuisine. Don't use naive format such as combine of ingredient names or cuisines + ingredient names. be creative and find a attractive and interesting name, for example: Tropical Bomber",
+      "description": "creative and engaging recipe name that aligns with the cuisine. Avoid simple, formulaic names like combining ingredient names or using a straightforward 'cuisine + ingredient' format. Instead, aim for something unique and appealing, such as 'Tropical Bomber,' that captures the essence and intrigue of the dish.",
       "type": "string",
       "fill_mode": "ai",
       "context_length": 5
