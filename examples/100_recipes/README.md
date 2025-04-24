@@ -66,7 +66,7 @@ You can review the [JSON file](./recipes.json) for reference. The important part
 
 ## Step 4: Generate 100 Recipes (Text)
 
-We will generate the text for the recipes in two steps: one for the text columns and another for the image column. Text generation using `gemini-2.0-flash-001` is fast and stable, so you can generate in batches. It’s recommended to use the WebUI for a clearer view of the generated content.
+We will generate the text for the recipes in two steps: one for the text columns and another for the image column. Text generation using `gemini-2.0-flash-001` is fast and stable, so you can generate in batches. You can use either the CLI or WebUI in the following steps, though the WebUI is recommended for a clearer view of the generated content.
 
 CLI:
 ```console
