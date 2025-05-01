@@ -71,6 +71,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.21.2
         version: 8.21.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tauri-apps/plugin-shell':
+        specifier: ~2
+        version: 2.2.1
       '@testing-library/user-event':
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.0)
@@ -1169,6 +1172,9 @@ packages:
     resolution: {integrity: sha512-uvXk/U4cBiFMxt+p9/G7yUWI/UbHYbyghLCjlpWZ3mLeIZiUBSKcUnw9UnKkdRz7Z/N4UBuFLWQdJCjUe7HjvA==}
     engines: {node: '>=12'}
 
+  '@tauri-apps/api@2.5.0':
+    resolution: {integrity: sha512-Ldux4ip+HGAcPUmuLT8EIkk6yafl5vK0P0c0byzAKzxJh7vxelVtdPONjfgTm96PbN24yjZNESY8CKo8qniluA==}
+
   '@tauri-apps/cli-darwin-arm64@2.5.0':
     resolution: {integrity: sha512-VuVAeTFq86dfpoBDNYAdtQVLbP0+2EKCHIIhkaxjeoPARR0sLpFHz2zs0PcFU76e+KAaxtEtAJAXGNUc8E1PzQ==}
     engines: {node: '>= 10'}
@@ -1239,6 +1245,9 @@ packages:
     resolution: {integrity: sha512-rAtHqG0Gh/IWLjN2zTf3nZqYqbo81oMbqop56rGTjrlWk9pTTAjkqOjSL9XQLIMZ3RbeVjveCqqCA0s8RnLdMg==}
     engines: {node: '>= 10'}
     hasBin: true
+
+  '@tauri-apps/plugin-shell@2.2.1':
+    resolution: {integrity: sha512-G1GFYyWe/KlCsymuLiNImUgC8zGY0tI0Y3p8JgBCWduR5IEXlIJS+JuG1qtveitwYXlfJrsExt3enhv5l2/yhA==}
 
   '@testing-library/dom@10.4.0':
     resolution: {integrity: sha512-pemlzrSESWbdAloYml3bAJMEfNh1Z7EduzqPKprCH5S341frlpYnUEW0H72dLxa6IsYr+mPno20GiSm+h9dEdQ==}
@@ -3622,6 +3631,8 @@ snapshots:
 
   '@tanstack/table-core@8.21.2': {}
 
+  '@tauri-apps/api@2.5.0': {}
+
   '@tauri-apps/cli-darwin-arm64@2.5.0':
     optional: true
 
@@ -3668,6 +3679,10 @@ snapshots:
       '@tauri-apps/cli-win32-arm64-msvc': 2.5.0
       '@tauri-apps/cli-win32-ia32-msvc': 2.5.0
       '@tauri-apps/cli-win32-x64-msvc': 2.5.0
+
+  '@tauri-apps/plugin-shell@2.2.1':
+    dependencies:
+      '@tauri-apps/api': 2.5.0
 
   '@testing-library/dom@10.4.0':
     dependencies:

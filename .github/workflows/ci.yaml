@@ -128,6 +128,13 @@ jobs:
         working-directory: ./ui
         run: pnpm build
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Build Server
+        run: go build -o "build/tablepilot-$(go run host/host.go)"
+
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
