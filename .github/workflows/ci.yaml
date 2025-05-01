@@ -70,14 +70,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: "macos-latest" # for Arm based macs (M1 and above).
-            args: "--target aarch64-apple-darwin"
-          - platform: "macos-latest" # for Intel based macs.
-            args: "--target x86_64-apple-darwin"
-          - platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
-            args: ""
-          - platform: "windows-latest"
-            args: ""
+          - platform: macos-latest
+            go: amd64
+            rust: x86_64-apple-darwin
+          - platform: macos-latest
+            go: arm64
+            rust: aarch64-apple-darwin
+          - platform: windows-latest
+            go: amd64
+            rust: x86_64-pc-windows-msvc
+          - platform: windows-latest
+            go: arm64
+            rust: aarch64-pc-windows-msvc
+          - platform: ubuntu-22.04
+            go: amd64
+            rust: x86_64-unknown-linux-gnu
+          # - platform: ubuntu-22.04-arm
+          #   go: arm64
+          #   rust: aarch64-unknown-linux-gnu
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -128,28 +138,26 @@ jobs:
         working-directory: ./ui
         run: pnpm build
 
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust }}
+
       - uses: actions/setup-go@v5
         with:
           go-version: stable
 
       - name: Build Server
-        run: go build -o "build/tablepilot-$(go run host/host.go)"
-
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+        run: |
+          echo "GOARCH=${{ matrix.go }}" >> "$GITHUB_ENV"
+          go build -o "build/tablepilot-${{matrix.rust}}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}"
+          ls build
 
       - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        if: matrix.platform == 'ubuntu-22.04' || matrix.platform == 'ubuntu-24.04-arm'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
-        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
-
-      # If tagName and releaseId are omitted tauri-action will only build the app and won't try to upload any assets.
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -157,5 +165,5 @@ jobs:
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ env.CERT_ID }}
         with:
-          args: ${{ matrix.args }}
+          args: "--target ${{ matrix.rust }}"
           projectPath: ./ui
