@@ -1,6 +1,7 @@
 /*.db
 /*.toml
 /*.json
+build
 
 # Logs
 logs
@@ -27,4 +28,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-

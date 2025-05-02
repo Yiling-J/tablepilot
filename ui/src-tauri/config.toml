@@ -1,0 +1,6 @@
+[database]
+driver = "sqlite3"
+dsn = "data.db?_pragma=foreign_keys(1)"
+
+[server]
+address = ":8083"
