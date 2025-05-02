@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "enables the default permissions",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": [
+            "serve"
+          ],
+          "name": "../../build/tablepilot",
+          "sidecar": true
+        }
+      ]
+    },
+    "shell:allow-open",
+    "log:default"
+  ]
+}
