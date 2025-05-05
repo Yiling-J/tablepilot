@@ -33,7 +33,7 @@ Instead of relying on context, suppose we add two columns to the table: cuisine 
 > OpenAI Chat Completion API refers to any API compatible with OpenAI, such as Gemini, vLLM, Ollama, and xAI.
 
 #### Download Binary Release
-Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly.
+Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly. Please download `tablepilot_cli` and ignore `tablepilot_app` for now. The desktop app is currently for testing purposes only and is not functional.
 
 #### Install with Go
 Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot@latest`. Only **CLI and API** are supported.
