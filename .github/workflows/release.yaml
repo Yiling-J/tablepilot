@@ -129,8 +129,9 @@ jobs:
           go-version: stable
 
       - name: Build Server
+        env:
+          GOARCH: ${{ matrix.go }}
         run: |
-          echo "GOARCH=${{ matrix.go }}" >> "$GITHUB_ENV"
           go build -o "build/tablepilot-${{matrix.rust}}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}"
           ls build
 
