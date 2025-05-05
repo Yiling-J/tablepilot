@@ -2,13 +2,14 @@ package ai
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
+	"github.com/Yiling-J/tablepilot/services/provider"
 
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -22,15 +23,8 @@ type AiService interface {
 	FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
 }
 
-type model struct {
-	model     string
-	alias     string
-	client    string
-	maxTokens int64
-	limiter   *rate.Limiter
-}
-
 type AiServiceImpl struct {
+	providerService   provider.ProviderService
 	clients           map[string]client.ChatClient
 	models            map[string]*model
 	logger            *zap.SugaredLogger
@@ -39,73 +33,89 @@ type AiServiceImpl struct {
 	config            *config.Config
 }
 
-func NewAiService(cfg *config.Config, clients map[string]client.ChatClient, logger *zap.SugaredLogger) (*AiServiceImpl, error) {
+func (ai *AiServiceImpl) syncProviders(ctx context.Context, providers []provider.Provider) {
+	clients := map[string]client.ChatClient{}
+	models := map[string]*model{}
+	defaultModel := ""
+	defaultImageModel := ""
+	for _, p := range providers {
+		if _, ok := ai.clients[p.Name]; !ok {
+			c, err := client.NewClient(p, ai.logger)
+			if err != nil {
+				ai.logger.Errorw("sync providers failed", "error", err)
+				return
+			}
+			clients[p.Name] = c
+		}
+
+		for _, m := range p.Models {
+			_, ok := clients[m.Client]
+			if !ok {
+				ai.logger.Error("provider not found")
+				return
+			}
+
+			var limiter *rate.Limiter
+			if m.Rpm > 0 {
+				limiter = rate.NewLimiter(
+					rate.Every(time.Minute/time.Duration(m.Rpm)), m.Rpm,
+				)
+			}
+			md := &model{
+				model:     m.Model,
+				maxTokens: m.MaxTokens,
+				alias:     m.Alias,
+				limiter:   limiter,
+				client:    m.Client,
+				image:     m.Image,
+			}
+			models[md.model] = md
+			if md.alias != "" {
+				models[md.alias] = md
+			}
+			if md.image {
+				if defaultImageModel == "" || m.Default {
+					if m.Alias != "" {
+						defaultImageModel = m.Alias
+					} else {
+						defaultImageModel = m.Model
+					}
+				}
+			} else {
+				if defaultModel == "" || m.Default {
+					if m.Alias != "" {
+						defaultModel = m.Alias
+					} else {
+						defaultModel = m.Model
+					}
+				}
+			}
+		}
+	}
+	ai.clients = clients
+	ai.models = models
+	ai.defaultModel = defaultModel
+	ai.defaultImageModel = defaultImageModel
+}
+
+func NewAiService(cfg *config.Config, providerService provider.ProviderService, logger *zap.SugaredLogger) (*AiServiceImpl, error) {
 	srv := &AiServiceImpl{
-		clients: clients,
-		models:  map[string]*model{},
-		logger:  logger,
-		config:  cfg,
+		models:          map[string]*model{},
+		logger:          logger.With("service", "ai"),
+		config:          cfg,
+		providerService: providerService,
 	}
-
-	for i, m := range cfg.Models {
-		if i == 0 || m.Default {
-			if m.Alias != "" {
-				srv.defaultModel = m.Alias
-			} else {
-				srv.defaultModel = m.Model
-			}
-		}
-		_, ok := srv.clients[m.Client]
-		if !ok {
-			return nil, errors.New("not found")
-		}
-
-		var limiter *rate.Limiter
-		if m.RPM > 0 {
-			limiter = rate.NewLimiter(rate.Every(time.Minute/time.Duration(m.RPM)), m.RPM)
-		}
-		md := &model{
-			model:     m.Model,
-			maxTokens: m.MaxTokens,
-			alias:     m.Alias,
-			limiter:   limiter,
-			client:    m.Client,
-		}
-		srv.models[md.model] = md
-		if md.alias != "" {
-			srv.models[md.alias] = md
-		}
+	ctx := context.Background()
+	err := srv.providerService.BuildProviders(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	for i, m := range cfg.ImageModels {
-		if i == 0 || m.Default {
-			if m.Alias != "" {
-				srv.defaultImageModel = m.Alias
-			} else {
-				srv.defaultImageModel = m.Model
-			}
-		}
-		_, ok := srv.clients[m.Client]
-		if !ok {
-			return nil, errors.New("not found")
-		}
-
-		var limiter *rate.Limiter
-		if m.RPM > 0 {
-			limiter = rate.NewLimiter(rate.Every(time.Minute/time.Duration(m.RPM)), m.RPM)
-		}
-		md := &model{
-			model:     m.Model,
-			maxTokens: m.MaxTokens,
-			alias:     m.Alias,
-			limiter:   limiter,
-			client:    m.Client,
-		}
-		srv.models[md.model] = md
-		if md.alias != "" {
-			srv.models[md.alias] = md
-		}
+	providers, err := srv.providerService.ListProviders(ctx)
+	if err != nil {
+		return nil, err
 	}
+	srv.syncProviders(ctx, providers)
+	srv.providerService.WithSyncCallback(srv.syncProviders)
 	return srv, nil
 }
 
@@ -123,6 +133,7 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	if modelMaxTokens != 0 {
 		request.MaxOutputTokens = modelMaxTokens
 	}
+
 	ai.logger.Debugln("send chat request", "model", request.Model, "temperature", request.Temperature)
 	for _, message := range request.Messages {
 		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)
@@ -150,6 +161,7 @@ func (ai *AiServiceImpl) FunctionCall(ctx context.Context, request *client.ChatR
 	if modelMaxTokens != 0 {
 		request.MaxOutputTokens = modelMaxTokens
 	}
+
 	ai.logger.Debugln("send function call request", "model", request.Model, "temperature", request.Temperature)
 	for _, message := range request.Messages {
 		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)
@@ -212,14 +224,8 @@ func (ai *AiServiceImpl) getChatClientByModel(ctx context.Context, model string)
 	return nil, fmt.Errorf("client not found for %s", model)
 }
 
-type ModelList struct {
-	Models  []string `json:"models"`
-	Default string   `json:"default"`
-}
-
 func (ai *AiServiceImpl) ListModels(ctx context.Context) *ModelList {
-	models := []string{}
-	var defaultModel string
+	list := &ModelList{}
 	for key, model := range ai.models {
 		if model.alias != "" && key != model.alias {
 			// only keep alias name in return list
@@ -231,14 +237,19 @@ func (ai *AiServiceImpl) ListModels(ctx context.Context) *ModelList {
 		} else {
 			name = model.model
 		}
-		models = append(models, name)
+		list.Models = append(list.Models, ModelListItem{
+			Name:  name,
+			Image: model.image,
+		})
 		if key == ai.defaultModel {
-			defaultModel = name
+			list.DefaultModel = name
+		}
+		if key == ai.defaultImageModel {
+			list.DefaultImageModel = name
 		}
 	}
-	slices.Sort(models)
-	return &ModelList{
-		Models:  models,
-		Default: defaultModel,
-	}
+	slices.SortFunc(list.Models, func(a, b ModelListItem) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	return list
 }

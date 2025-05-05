@@ -307,8 +307,8 @@ func TestAPI_Truncate(t *testing.T) {
 
 func TestAPI_ListModels(t *testing.T) {
 	expected := &ai.ModelList{
-		Default: "foo",
-		Models:  []string{"foo", "bar"},
+		DefaultModel: "foo",
+		Models:       []ai.ModelListItem{{Name: "foo"}, {Name: "bar"}},
 	}
 	aiMock := &ai.AiServiceMock{
 		ListModelsFunc: func(ctx context.Context) *ai.ModelList {

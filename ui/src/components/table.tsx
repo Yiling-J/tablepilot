@@ -244,7 +244,7 @@ export function Table({ id }: TableProps) {
       await refreshTables();
 
       const models = await getModels();
-      let currentModel = models.default;
+      let currentModel = models.default_model;
       if (table.model) {
         currentModel = table.model;
       }
@@ -442,8 +442,8 @@ export function Table({ id }: TableProps) {
                 <SelectGroup>
                   {models?.models.map((model) => (
                     <SelectPrimitive.Item
-                      value={model}
-                      key={model}
+                      value={model.name}
+                      key={model.name}
                       className={cn(
                         "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
                         "",
@@ -457,7 +457,7 @@ export function Table({ id }: TableProps) {
 
                       <div>
                         <SelectPrimitive.ItemText>
-                          <p>{model}</p>
+                          <p>{model.name}</p>
                         </SelectPrimitive.ItemText>
                       </div>
                     </SelectPrimitive.Item>

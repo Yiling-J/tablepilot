@@ -12,6 +12,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/Yiling-J/tablepilot/ent/model"
+	"github.com/Yiling-J/tablepilot/ent/provider"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/ent/tablerow"
@@ -75,6 +77,8 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			model.Table:       model.ValidColumn,
+			provider.Table:    provider.ValidColumn,
 			tablecolumn.Table: tablecolumn.ValidColumn,
 			tablemeta.Table:   tablemeta.ValidColumn,
 			tablerow.Table:    tablerow.ValidColumn,

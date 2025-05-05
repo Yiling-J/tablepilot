@@ -56,7 +56,13 @@ describe("Table", () => {
     });
 
     const mockedGetModels = vi.mocked(getModels);
-    mockedGetModels.mockResolvedValue({ default: "ai", models: ["ai", "bi"] });
+    mockedGetModels.mockResolvedValue({
+      default_model: "ai",
+      models: [
+        { name: "ai", image: false },
+        { name: "bi", image: false },
+      ],
+    });
   });
 
   it("should render Table component", async () => {

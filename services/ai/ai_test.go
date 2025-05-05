@@ -8,6 +8,7 @@ import (
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
+	"github.com/Yiling-J/tablepilot/services/provider"
 
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/require"
@@ -40,11 +41,12 @@ func TestAIService_Chat(t *testing.T) {
 					{Model: "default", Client: "chat"},
 					{Model: "exists", Alias: "alias", Client: "chat"},
 				},
-			}, map[string]client.ChatClient{
-				"chat": chatClient,
-			}, zap.NewNop().Sugar())
+			}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
 			require.NoError(t, err)
 			srv.defaultModel = "default"
+			srv.clients = map[string]client.ChatClient{
+				"chat": chatClient,
+			}
 
 			_, err = srv.Chat(context.TODO(), &client.ChatRequest{
 				Messages:        []*client.Message{client.UserMessage("foo")},
@@ -75,14 +77,15 @@ func TestAIService_ListModels(t *testing.T) {
 			{Model: "m1", Client: "chat"},
 			{Model: "m2", Alias: "m2a", Client: "chat"},
 		},
-	}, map[string]client.ChatClient{
-		"chat": nil,
-	}, zap.NewNop().Sugar())
+	}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
 	require.NoError(t, err)
+	srv.clients = map[string]client.ChatClient{
+		"chat": nil,
+	}
 	ml := srv.ListModels(ctx)
 	require.Equal(t, &ModelList{
-		Default: "m1",
-		Models:  []string{"m1", "m2a"},
+		DefaultModel: "m1",
+		Models:       []ModelListItem{{Name: "m1"}, {Name: "m2a"}},
 	}, ml)
 
 	srv, err = NewAiService(&config.Config{
@@ -90,14 +93,15 @@ func TestAIService_ListModels(t *testing.T) {
 			{Model: "m2", Alias: "m2a", Client: "chat"},
 			{Model: "m1", Client: "chat"},
 		},
-	}, map[string]client.ChatClient{
-		"chat": nil,
-	}, zap.NewNop().Sugar())
+	}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
 	require.NoError(t, err)
+	srv.clients = map[string]client.ChatClient{
+		"chat": nil,
+	}
 	ml = srv.ListModels(ctx)
 	require.Equal(t, &ModelList{
-		Default: "m2a",
-		Models:  []string{"m1", "m2a"},
+		DefaultModel: "m2a",
+		Models:       []ModelListItem{{Name: "m1"}, {Name: "m2a"}},
 	}, ml)
 
 	srv, err = NewAiService(&config.Config{
@@ -105,14 +109,15 @@ func TestAIService_ListModels(t *testing.T) {
 			{Model: "m1", Client: "chat"},
 			{Model: "m2", Client: "chat", Default: true},
 		},
-	}, map[string]client.ChatClient{
-		"chat": nil,
-	}, zap.NewNop().Sugar())
+	}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
 	require.NoError(t, err)
+	srv.clients = map[string]client.ChatClient{
+		"chat": nil,
+	}
 	ml = srv.ListModels(ctx)
 	require.Equal(t, &ModelList{
-		Default: "m2",
-		Models:  []string{"m1", "m2"},
+		DefaultModel: "m2",
+		Models:       []ModelListItem{{Name: "m1"}, {Name: "m2"}},
 	}, ml)
 }
 

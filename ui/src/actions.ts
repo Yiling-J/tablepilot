@@ -167,9 +167,14 @@ export async function updateTable(
   return res.json();
 }
 
+export interface ModelListItem {
+  name: string;
+  image: boolean;
+}
+
 export interface ModelList {
-  default: string;
-  models: string[];
+  default_model: string;
+  models: ModelListItem[];
 }
 
 export async function getModels(): Promise<ModelList> {

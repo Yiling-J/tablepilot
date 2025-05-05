@@ -5,7 +5,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/Yiling-J/tablepilot/services/ai"
-	"github.com/Yiling-J/tablepilot/services/ai/client"
+	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
@@ -70,7 +70,7 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 		panic(err)
 	}
 
-	err = container.Provide(client.NewClients)
+	err = container.Provide(provider.NewProviderService, dig.As(new((provider.ProviderService))))
 	if err != nil {
 		panic(err)
 	}

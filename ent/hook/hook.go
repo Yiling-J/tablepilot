@@ -9,6 +9,30 @@ import (
 	"github.com/Yiling-J/tablepilot/ent"
 )
 
+// The ModelFunc type is an adapter to allow the use of ordinary
+// function as Model mutator.
+type ModelFunc func(context.Context, *ent.ModelMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ModelFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ModelMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModelMutation", m)
+}
+
+// The ProviderFunc type is an adapter to allow the use of ordinary
+// function as Provider mutator.
+type ProviderFunc func(context.Context, *ent.ProviderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProviderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProviderMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProviderMutation", m)
+}
+
 // The TableColumnFunc type is an adapter to allow the use of ordinary
 // function as TableColumn mutator.
 type TableColumnFunc func(context.Context, *ent.TableColumnMutation) (ent.Value, error)
