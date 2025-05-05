@@ -36,12 +36,18 @@ func TestAIService_Chat(t *testing.T) {
 					return &client.ChatResponse{}, nil
 				},
 			}
-			srv, err := NewAiService(&config.Config{
-				Models: []config.Model{
-					{Model: "default", Client: "chat"},
-					{Model: "exists", Alias: "alias", Client: "chat"},
+			srv, err := NewAiService(&config.Config{}, &provider.ProviderServiceMock{
+				BuildProvidersFunc: func(ctx context.Context) error { return nil },
+				ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
+					return []provider.Provider{
+						{Name: "chat", Type: "openai", Models: []provider.Model{
+							{Model: "default", Client: "chat"},
+							{Model: "exists", Alias: "alias", Client: "chat"},
+						}},
+					}, nil
 				},
-			}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
+				WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
+			}, zap.NewNop().Sugar())
 			require.NoError(t, err)
 			srv.defaultModel = "default"
 			srv.clients = map[string]client.ChatClient{
@@ -59,6 +65,7 @@ func TestAIService_Chat(t *testing.T) {
 			if c.error {
 				require.Error(t, err)
 			} else {
+				require.NoError(t, err)
 				require.Equal(t, c.chatModel, req.Model)
 				require.Equal(t, 1234, int(req.MaxOutputTokens))
 				require.Equal(t, 0.35, req.Temperature)
@@ -72,12 +79,18 @@ func TestAIService_Chat(t *testing.T) {
 
 func TestAIService_ListModels(t *testing.T) {
 	ctx := context.TODO()
-	srv, err := NewAiService(&config.Config{
-		Models: []config.Model{
-			{Model: "m1", Client: "chat"},
-			{Model: "m2", Alias: "m2a", Client: "chat"},
+	srv, err := NewAiService(&config.Config{}, &provider.ProviderServiceMock{
+		BuildProvidersFunc: func(ctx context.Context) error { return nil },
+		ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
+			return []provider.Provider{
+				{Name: "chat", Type: "openai", Models: []provider.Model{
+					{Model: "m1", Client: "chat"},
+					{Model: "m2", Client: "chat", Alias: "m2a"},
+				}},
+			}, nil
 		},
-	}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
+		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
+	}, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	srv.clients = map[string]client.ChatClient{
 		"chat": nil,
@@ -88,12 +101,18 @@ func TestAIService_ListModels(t *testing.T) {
 		Models:       []ModelListItem{{Name: "m1"}, {Name: "m2a"}},
 	}, ml)
 
-	srv, err = NewAiService(&config.Config{
-		Models: []config.Model{
-			{Model: "m2", Alias: "m2a", Client: "chat"},
-			{Model: "m1", Client: "chat"},
+	srv, err = NewAiService(&config.Config{}, &provider.ProviderServiceMock{
+		BuildProvidersFunc: func(ctx context.Context) error { return nil },
+		ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
+			return []provider.Provider{
+				{Name: "chat", Type: "openai", Models: []provider.Model{
+					{Model: "m2", Client: "chat", Alias: "m2a"},
+					{Model: "m1", Client: "chat"},
+				}},
+			}, nil
 		},
-	}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
+		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
+	}, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	srv.clients = map[string]client.ChatClient{
 		"chat": nil,
@@ -104,12 +123,18 @@ func TestAIService_ListModels(t *testing.T) {
 		Models:       []ModelListItem{{Name: "m1"}, {Name: "m2a"}},
 	}, ml)
 
-	srv, err = NewAiService(&config.Config{
-		Models: []config.Model{
-			{Model: "m1", Client: "chat"},
-			{Model: "m2", Client: "chat", Default: true},
+	srv, err = NewAiService(&config.Config{}, &provider.ProviderServiceMock{
+		BuildProvidersFunc: func(ctx context.Context) error { return nil },
+		ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
+			return []provider.Provider{
+				{Name: "chat", Type: "openai", Models: []provider.Model{
+					{Model: "m1", Client: "chat"},
+					{Model: "m2", Client: "chat", Default: true},
+				}},
+			}, nil
 		},
-	}, &provider.ProviderServiceMock{}, zap.NewNop().Sugar())
+		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
+	}, zap.NewNop().Sugar())
 	require.NoError(t, err)
 	srv.clients = map[string]client.ChatClient{
 		"chat": nil,
@@ -127,14 +152,21 @@ func TestAIService_ChatModelLimiter(t *testing.T) {
 			return &client.ChatResponse{}, nil
 		},
 	}
-	srv, err := NewAiService(&config.Config{
-		Models: []config.Model{
-			{Model: "default", Client: "chat", RPM: 20},
-			{Model: "default2", Client: "chat"},
+	srv, err := NewAiService(&config.Config{}, &provider.ProviderServiceMock{
+		BuildProvidersFunc: func(ctx context.Context) error { return nil },
+		ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
+			return []provider.Provider{
+				{Name: "chat", Type: "openai", Models: []provider.Model{
+					{Model: "default", Client: "chat", Rpm: 20},
+					{Model: "default2", Client: "chat"},
+				}},
+			}, nil
 		},
-	}, map[string]client.ChatClient{
-		"chat": chatClient,
+		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
 	}, zap.NewNop().Sugar())
+	srv.clients = map[string]client.ChatClient{
+		"chat": chatClient,
+	}
 	require.NoError(t, err)
 	srv.defaultModel = "default"
 
