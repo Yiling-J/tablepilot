@@ -17,9 +17,12 @@ archives:
   - id: linux-archive
     ids: [linux]
     formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   - id: macos-archive
     ids: [macos]
     formats: [zip]
+    name_template: "{{ .ProjectName }}_cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   - id: windows-archive
     ids: [windows]
     formats: [zip]
+    name_template: "{{ .ProjectName }}_cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
