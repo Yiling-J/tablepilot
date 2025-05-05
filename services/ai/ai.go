@@ -113,7 +113,7 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	if request.Model == "" {
 		request.Model = ai.defaultModel
 	}
-	client, err := ai.getChatClientByModel(request.Model)
+	client, err := ai.getChatClientByModel(ctx, request.Model)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +140,7 @@ func (ai *AiServiceImpl) FunctionCall(ctx context.Context, request *client.ChatR
 	if request.Model == "" {
 		request.Model = ai.defaultModel
 	}
-	client, err := ai.getChatClientByModel(request.Model)
+	client, err := ai.getChatClientByModel(ctx, request.Model)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatReque
 	if request.ImageModel == "" {
 		request.ImageModel = ai.defaultImageModel
 	}
-	aiClient, err := ai.getChatClientByModel(request.ImageModel)
+	aiClient, err := ai.getChatClientByModel(ctx, request.ImageModel)
 	if err != nil {
 		return nil, err
 	}
@@ -197,9 +197,15 @@ func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatReque
 	return resp, nil
 }
 
-func (ai *AiServiceImpl) getChatClientByModel(model string) (client.ChatClient, error) {
+func (ai *AiServiceImpl) getChatClientByModel(ctx context.Context, model string) (client.ChatClient, error) {
 	for _, m := range ai.models {
 		if m.model == model || m.alias == model {
+			if m.limiter != nil {
+				err := m.limiter.Wait(ctx)
+				if err != nil {
+					return nil, err
+				}
+			}
 			return ai.clients[m.client], nil
 		}
 	}

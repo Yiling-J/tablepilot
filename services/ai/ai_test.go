@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
@@ -113,4 +114,53 @@ func TestAIService_ListModels(t *testing.T) {
 		Default: "m2",
 		Models:  []string{"m1", "m2"},
 	}, ml)
+}
+
+func TestAIService_ChatModelLimiter(t *testing.T) {
+	chatClient := &client.ChatClientMock{
+		ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			return &client.ChatResponse{}, nil
+		},
+	}
+	srv, err := NewAiService(&config.Config{
+		Models: []config.Model{
+			{Model: "default", Client: "chat", RPM: 20},
+			{Model: "default2", Client: "chat"},
+		},
+	}, map[string]client.ChatClient{
+		"chat": chatClient,
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	srv.defaultModel = "default"
+
+	now := time.Now()
+	for i := 0; i < 25; i++ {
+		_, err = srv.Chat(context.TODO(), &client.ChatRequest{
+			Messages:        []*client.Message{client.UserMessage("foo")},
+			Temperature:     0.35,
+			Schema:          &jsonschema.Schema{Version: "v-test"},
+			Model:           "default",
+			MaxOutputTokens: 1234,
+			PresencePenalty: 1.0,
+		})
+		require.NoError(t, err)
+	}
+	delta := time.Since(now).Seconds()
+	require.True(t, delta > 10)
+	require.True(t, delta < 20)
+
+	now = time.Now()
+	for i := 0; i < 25; i++ {
+		_, err = srv.Chat(context.TODO(), &client.ChatRequest{
+			Messages:        []*client.Message{client.UserMessage("foo")},
+			Temperature:     0.35,
+			Schema:          &jsonschema.Schema{Version: "v-test"},
+			Model:           "default2",
+			MaxOutputTokens: 1234,
+			PresencePenalty: 1.0,
+		})
+		require.NoError(t, err)
+	}
+	delta = time.Since(now).Seconds()
+	require.True(t, delta < 1)
 }
