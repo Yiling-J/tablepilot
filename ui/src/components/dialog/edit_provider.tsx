@@ -76,7 +76,11 @@ export function ProviderDialog({
     }));
   };
 
-  const handleModelChange = (index: number, field: keyof Model, value: any) => {
+  const handleModelChange = (
+    index: number,
+    field: keyof Model,
+    value: string | number,
+  ) => {
     setFormData((prev) => {
       const updatedModels = [...prev.models];
       updatedModels[index] = {

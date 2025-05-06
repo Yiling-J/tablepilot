@@ -44,7 +44,7 @@ export function ProvidersListDialog({
 
   const fetchProviders = async () => {
     setLoading(true);
-    let providers = await getProviders();
+    const providers = await getProviders();
     setProviders(providers);
     setLoading(false);
   };
