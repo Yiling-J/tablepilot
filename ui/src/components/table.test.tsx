@@ -6,9 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { beforeEach } from "vitest";
 import {
     GenerateRequest,
+    Provider,
     TableInfo,
     generate,
     getModels,
+    getProviders,
     getRows,
     getTable,
     getTableSchema,
@@ -63,6 +65,15 @@ describe("Table", () => {
         { name: "bi", image: false },
       ],
     });
+    const mockedGetProviders = vi.mocked(getProviders);
+    mockedGetProviders.mockResolvedValue([
+      {
+        id: 1,
+        name: "p",
+        type: "openai",
+        models: [{ model: "ai" }],
+      } as Provider,
+    ]);
   });
 
   it("should render Table component", async () => {
