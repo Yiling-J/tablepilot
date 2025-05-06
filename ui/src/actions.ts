@@ -4,6 +4,8 @@ import {
     autofillUrl,
     generateUrl,
     modelsUrl,
+    providerUrl,
+    providersUrl,
     rowsUrl,
     schemaUrl,
     sourcesUrl,
@@ -309,6 +311,83 @@ export async function getTableSchema(
 ): Promise<TableCreateRequest> {
   const res = await fetch(schemaUrl(table), {
     method: "GET",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
+}
+
+export interface Model {
+  model: string;
+  alias: string;
+  max_tokens: number;
+  rpm: number;
+  image: boolean;
+}
+
+export interface Provider {
+  id: number;
+  name: string;
+  type: string;
+  key: string;
+  base_url: string;
+  models: Model[];
+  editable: boolean;
+}
+
+export async function getProviders(): Promise<Provider[]> {
+  const res = await fetch(providersUrl(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch providers");
+  }
+
+  return res.json();
+}
+
+export async function deleteProvider(id: string) {
+  const res = await fetch(providerUrl(id), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.status;
+}
+
+export async function createProvider(provider: Provider): Promise<TableInfo> {
+  const res = await fetch(providersUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(provider),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
+}
+
+export async function updateProvider(
+  id: string,
+  provider: Provider,
+): Promise<TableInfo> {
+  const res = await fetch(providerUrl(id), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(provider),
   });
   if (!res.ok) {
     throw new Error("Failed to fetch data");

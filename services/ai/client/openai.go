@@ -223,5 +223,5 @@ func (c *OpenAIClient) FunctionCall(ctx context.Context, request *ChatRequest) (
 }
 
 func (c *OpenAIClient) ImageGen(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error) {
-	return nil, errors.New("Not implemented")
+	return nil, errors.New("not implemented")
 }

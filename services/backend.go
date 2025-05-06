@@ -13,23 +13,25 @@ import (
 )
 
 type Backend struct {
-	Config       *config.Config
-	DB           *ent.Client
-	Logger       *zap.SugaredLogger
-	AIService    ai.AiService
-	TableService table.TableService
+	Config          *config.Config
+	DB              *ent.Client
+	Logger          *zap.SugaredLogger
+	AIService       ai.AiService
+	TableService    table.TableService
+	ProviderService provider.ProviderService
 }
 
 func NewBackend(
 	config *config.Config, db *ent.Client,
-	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
+	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService, providerService provider.ProviderService,
 ) *Backend {
 	return &Backend{
-		Config:       config,
-		DB:           db,
-		Logger:       logger,
-		AIService:    aiService,
-		TableService: tableService,
+		Config:          config,
+		DB:              db,
+		Logger:          logger,
+		AIService:       aiService,
+		TableService:    tableService,
+		ProviderService: providerService,
 	}
 }
 

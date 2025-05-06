@@ -88,7 +88,7 @@ func (p *ProviderServiceImpl) UpdateProvider(ctx context.Context, id int, provid
 	if err != nil {
 		return ent.Rollback(tx, err)
 	}
-	pv, err := tx.Provider.Query().Where(db_provider.ID(id)).ForUpdate().Only(ctx)
+	pv, err := tx.Provider.Query().Where(db_provider.ID(id)).Only(ctx)
 	if err != nil {
 		return ent.Rollback(tx, err)
 	}
@@ -96,12 +96,12 @@ func (p *ProviderServiceImpl) UpdateProvider(ctx context.Context, id int, provid
 	if err != nil {
 		return ent.Rollback(tx, err)
 	}
-	err = pv.Update().ClearModels().Exec(ctx)
+	_, err = tx.Model.Delete().Where(model.HasProviderWith(db_provider.ID(pv.ID))).Exec(ctx)
 	if err != nil {
 		return ent.Rollback(tx, err)
 	}
 	for _, m := range provider.Models {
-		err = tx.Model.Create().SetModel(m.Model).SetImage(m.Image).SetAlias(m.Alias).SetProvider(pv).Exec(ctx)
+		err = tx.Model.Create().SetModel(m.Model).SetImage(m.Image).SetAlias(m.Alias).SetMaxTokens(int(m.MaxTokens)).SetRpm(m.Rpm).SetProvider(pv).Exec(ctx)
 		if err != nil {
 			return ent.Rollback(tx, err)
 		}

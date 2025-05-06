@@ -39,13 +39,15 @@ func (ai *AiServiceImpl) syncProviders(ctx context.Context, providers []provider
 	defaultModel := ""
 	defaultImageModel := ""
 	for _, p := range providers {
-		if _, ok := ai.clients[p.Name]; !ok {
+		if ac, ok := ai.clients[p.Name]; !ok {
 			c, err := client.NewClient(p, ai.logger)
 			if err != nil {
 				ai.logger.Errorw("sync providers failed", "error", err)
 				return
 			}
 			clients[p.Name] = c
+		} else {
+			clients[p.Name] = ac
 		}
 
 		for _, m := range p.Models {
@@ -236,6 +238,9 @@ func (ai *AiServiceImpl) ListModels(ctx context.Context) *ModelList {
 			name = model.alias
 		} else {
 			name = model.model
+		}
+		if _, ok := ai.clients[model.client]; !ok {
+			continue
 		}
 		list.Models = append(list.Models, ModelListItem{
 			Name:  name,

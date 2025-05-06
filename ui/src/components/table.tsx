@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AutofillDialog } from "./dialog/autofill-start.tsx";
 import { CellTextDialog } from "./dialog/cell-text.tsx";
+import { ProvidersListDialog } from "./dialog/providers.tsx";
 import { DataGrid } from "./grid/data-grid";
 import { Button } from "./ui/button";
 
@@ -144,7 +145,9 @@ export function Table({ id }: TableProps) {
   const [generating, setGenerating] = useState(false);
   const [expandCellOpen, setExpandCellOpen] = useState(false);
   const [autofillOpen, setAutofillOpen] = useState(false);
+  const [providerListOpen, setProviderListOpen] = useState(false);
   const [model, setModel] = useState("");
+  const [modelSelectOpen, setModelSelectOpen] = useState(false);
   const [button, setButton] = useState<TableButton>({
     text: "Start",
     enabled: true,
@@ -371,7 +374,6 @@ export function Table({ id }: TableProps) {
     const csv = generateCsv(csvConfig)(exported);
     download(csvConfig)(csv);
   };
-
   return (
     <div className="grow overflow-hidden h-full flex flex-col pl-0 peer-[[data-state=open]]:lg:pl-[300px] peer-[[data-state=open]]:xl:pl-[300px]">
       <CellTextDialog
@@ -405,6 +407,14 @@ export function Table({ id }: TableProps) {
           });
         }}
       />
+      <ProvidersListDialog
+        isOpen={providerListOpen}
+        setIsOpen={async (v) => {
+          const models = await getModels();
+          setModels(models);
+          setProviderListOpen(v);
+        }}
+      />
       <TablepilotHeader
         title={table.name}
         modeRef={modeRef}
@@ -418,7 +428,12 @@ export function Table({ id }: TableProps) {
             onClick={() => {
               clickButton(button.clickState);
             }}
-            disabled={!button.enabled}
+            disabled={
+              !button.enabled ||
+              models === undefined ||
+              models?.models === null ||
+              models.models.length === 0
+            }
           >
             <div className="flex pr-2 justify-center">
               <span className="cursor-pointer material-symbols-rounded">
@@ -427,45 +442,79 @@ export function Table({ id }: TableProps) {
             </div>
             {button.text}
           </Button>
-          <div className="flex ml-4 border rounded-sm">
-            <Select
-              value={model}
-              disabled={generating}
-              onValueChange={async (v) => {
-                setModel(v);
-              }}
-            >
-              <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {models?.models.map((model) => (
-                    <SelectPrimitive.Item
-                      value={model.name}
-                      key={model.name}
-                      className={cn(
-                        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                        "",
-                      )}
-                    >
-                      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                        <SelectPrimitive.ItemIndicator>
-                          <Check className="h-4 w-4" />
-                        </SelectPrimitive.ItemIndicator>
-                      </span>
 
-                      <div>
-                        <SelectPrimitive.ItemText>
-                          <p>{model.name}</p>
-                        </SelectPrimitive.ItemText>
-                      </div>
-                    </SelectPrimitive.Item>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+          {(models === undefined ||
+            models?.models === null ||
+            models.models.length === 0) && (
+            <div className="flex ml-4 border rounded-sm">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setProviderListOpen(true);
+                }}
+              >
+                Add Models
+              </Button>
+            </div>
+          )}
+
+          {models && models.models && models.models.length > 0 && (
+            <div className="flex ml-4 border rounded-sm">
+              <Select
+                value={model}
+                disabled={generating}
+                onValueChange={async (v) => {
+                  setModel(v);
+                }}
+                open={modelSelectOpen}
+                onOpenChange={setModelSelectOpen}
+              >
+                <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {models?.models.map((model) => (
+                      <SelectPrimitive.Item
+                        value={model.name}
+                        key={model.name}
+                        className={cn(
+                          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                          "",
+                        )}
+                      >
+                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                          <SelectPrimitive.ItemIndicator>
+                            <Check className="h-4 w-4" />
+                          </SelectPrimitive.ItemIndicator>
+                        </span>
+
+                        <div>
+                          <SelectPrimitive.ItemText>
+                            <p>{model.name}</p>
+                          </SelectPrimitive.ItemText>
+                        </div>
+                      </SelectPrimitive.Item>
+                    ))}
+                  </SelectGroup>
+                  <Separator className="my-1" />
+
+                  <div>
+                    <div
+                      className="flex pt-2 pl-2 pb-2 text-sm items-center cursor-pointer"
+                      onClick={() => {
+                        setModelSelectOpen(false);
+                        setProviderListOpen(true);
+                      }}
+                    >
+                      <GearIcon className="mr-1" />
+                      <p>Model Settings</p>
+                    </div>
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {generating && (

@@ -39,11 +39,11 @@ func NewGeminiClient(config *config.Gemini, logger *zap.SugaredLogger) (*GeminiC
 }
 
 func (c *GeminiClient) Chat(ctx context.Context, request *ChatRequest) (*ChatResponse, error) {
-	return nil, errors.New("Not implemented")
+	return nil, errors.New("not implemented")
 }
 
 func (c *GeminiClient) FunctionCall(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error) {
-	return nil, errors.New("Not implemented")
+	return nil, errors.New("ot implemented")
 }
 
 var imageIdRE = regexp.MustCompile(`<info\s+row_id="([0-9a-zA-Z]+)"\s+column_id="([0-9a-zA-Z]+)"\s*\/>`)

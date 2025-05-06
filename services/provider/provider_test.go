@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Yiling-J/tablepilot/config"
+	"github.com/Yiling-J/tablepilot/ent/provider"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -33,6 +34,73 @@ func TestProviderService_ListProviders(t *testing.T) {
 	providers, err := srv.ListProviders(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, srv.providers, providers)
+}
+
+func TestProviderService_CreateProvider(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.TODO()
+	srv := NewProviderService(&config.Config{}, db, zap.NewNop().Sugar())
+	err := srv.CreateProvider(ctx, Provider{
+		Name:    "p1",
+		Type:    "openai",
+		Key:     "k",
+		BaseURL: "b",
+		Models: []Model{
+			{Model: "m1", Alias: "m", Rpm: 12, MaxTokens: 100},
+		},
+	})
+	require.NoError(t, err)
+	p, err := db.Provider.Query().Where(provider.Name("p1")).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "k", p.Key)
+	require.Equal(t, "b", p.BaseURL)
+	require.Equal(t, provider.TypeOpenai, p.Type)
+	models, err := p.QueryModels().All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(models))
+	require.Equal(t, "m1", models[0].Model)
+	require.Equal(t, "m", models[0].Alias)
+	require.Equal(t, 12, models[0].Rpm)
+	require.Equal(t, 100, models[0].MaxTokens)
+}
+
+func TestProviderService_UpdateProvider(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.TODO()
+	srv := NewProviderService(&config.Config{}, db, zap.NewNop().Sugar())
+	err := srv.CreateProvider(ctx, Provider{
+		Name:    "p1",
+		Type:    "openai",
+		Key:     "k",
+		BaseURL: "b",
+		Models: []Model{
+			{Model: "m1", Alias: "m"},
+			{Model: "m2"},
+		},
+	})
+	require.NoError(t, err)
+	p, err := db.Provider.Query().Where(provider.Name("p1")).Only(ctx)
+	require.NoError(t, err)
+
+	err = srv.UpdateProvider(ctx, p.ID, Provider{
+		Name:    "p1",
+		Type:    "openai",
+		Key:     "k",
+		BaseURL: "b",
+		Models: []Model{
+			{Model: "m1", Alias: "mm", Rpm: 12, MaxTokens: 100},
+			{Model: "m3"},
+		},
+	})
+	require.NoError(t, err)
+	models, err := p.QueryModels().All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(models))
+	require.Equal(t, "m1", models[0].Model)
+	require.Equal(t, "mm", models[0].Alias)
+	require.Equal(t, 12, models[0].Rpm)
+	require.Equal(t, 100, models[0].MaxTokens)
+	require.Equal(t, "m3", models[1].Model)
 }
 
 func TestProviderService_genProviders(t *testing.T) {

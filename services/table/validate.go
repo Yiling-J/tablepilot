@@ -12,7 +12,7 @@ import (
 )
 
 func ErrColumnNotFound(input string) error {
-	return fmt.Errorf("Column not found: %s", input)
+	return fmt.Errorf("column not found: %s", input)
 }
 
 func validateLinkedColumnInfo(ctx context.Context, tx *ent.Tx, columns []TableGenColumn, sources map[string]json.RawMessage) error {
