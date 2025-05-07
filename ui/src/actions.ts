@@ -197,6 +197,7 @@ export interface GenerateRequest {
   count: number;
   temperature: number;
   model: string;
+  image_model: string;
 }
 
 export async function generate(

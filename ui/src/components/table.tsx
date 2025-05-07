@@ -40,7 +40,7 @@ import { TablepilotHeader } from "./header.tsx";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check } from "lucide-react";
+import { BookTypeIcon, Check, ImageIcon } from "lucide-react";
 
 export function TablePage() {
   const { id } = useParams();
@@ -147,7 +147,9 @@ export function Table({ id }: TableProps) {
   const [autofillOpen, setAutofillOpen] = useState(false);
   const [providerListOpen, setProviderListOpen] = useState(false);
   const [model, setModel] = useState("");
+  const [imageModel, setImageModel] = useState("");
   const [modelSelectOpen, setModelSelectOpen] = useState(false);
+  const [imageModelSelectOpen, setImageModelSelectOpen] = useState(false);
   const [button, setButton] = useState<TableButton>({
     text: "Start",
     enabled: true,
@@ -177,6 +179,9 @@ export function Table({ id }: TableProps) {
     openNewTableDialog();
     withSubmitCallback(fetchData);
   };
+
+  const imageColumnExists =
+    table?.columns.find((c) => c.type === "image") !== undefined;
 
   const fetchData = async () => {
     try {
@@ -317,6 +322,7 @@ export function Table({ id }: TableProps) {
     switch (state) {
       case "start": {
         genRequestRef.current.model = model;
+        genRequestRef.current.image_model = imageModel;
         if (modeRef.current === "autofill") {
           autofillOffsetRef.current = 0;
           setAutofillOpen(true);
@@ -459,7 +465,13 @@ export function Table({ id }: TableProps) {
           )}
 
           {models && models.models && models.models.length > 0 && (
-            <div className="flex ml-4 border rounded-sm">
+            <div
+              className={cn(
+                "flex ml-4 rounded-sm items-center",
+                imageColumnExists ? "" : "border",
+              )}
+            >
+              {imageColumnExists && <BookTypeIcon className="mr-2" />}
               <Select
                 value={model}
                 disabled={generating}
@@ -515,6 +527,70 @@ export function Table({ id }: TableProps) {
               </Select>
             </div>
           )}
+
+          {imageColumnExists &&
+            models &&
+            models.models &&
+            models.models.length > 0 && (
+              <div className="flex ml-4 rounded-sm items-center">
+                <ImageIcon className="mr-2" />
+                <Select
+                  value={imageModel}
+                  disabled={generating}
+                  onValueChange={async (v) => {
+                    setImageModel(v);
+                  }}
+                  open={imageModelSelectOpen}
+                  onOpenChange={setImageModelSelectOpen}
+                >
+                  <SelectTrigger className="w-[200px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
+                    <SelectValue placeholder="Select image gen model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {models?.models
+                        .filter((m) => m.image)
+                        .map((model) => (
+                          <SelectPrimitive.Item
+                            value={model.name}
+                            key={model.name}
+                            className={cn(
+                              "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                              "",
+                            )}
+                          >
+                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                              <SelectPrimitive.ItemIndicator>
+                                <Check className="h-4 w-4" />
+                              </SelectPrimitive.ItemIndicator>
+                            </span>
+
+                            <div>
+                              <SelectPrimitive.ItemText>
+                                <p>{model.name}</p>
+                              </SelectPrimitive.ItemText>
+                            </div>
+                          </SelectPrimitive.Item>
+                        ))}
+                    </SelectGroup>
+                    <Separator className="my-1" />
+
+                    <div>
+                      <div
+                        className="flex pt-2 pl-2 pb-2 text-sm items-center cursor-pointer"
+                        onClick={() => {
+                          setModelSelectOpen(false);
+                          setProviderListOpen(true);
+                        }}
+                      >
+                        <GearIcon className="mr-1" />
+                        <p>Model Settings</p>
+                      </div>
+                    </div>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
         </div>
 
         {generating && (

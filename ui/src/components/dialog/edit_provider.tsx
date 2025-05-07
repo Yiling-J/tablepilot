@@ -194,7 +194,6 @@ export function ProviderDialog({
                     name="base_url"
                     value={formData.base_url}
                     onChange={handleChange}
-                    required
                   />
                 </div>
               </div>
@@ -254,7 +253,6 @@ export function ProviderDialog({
                           onChange={(e) =>
                             handleModelChange(index, "alias", e.target.value)
                           }
-                          required
                         />
                       </div>
                     </div>
