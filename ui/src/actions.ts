@@ -176,6 +176,7 @@ export interface ModelListItem {
 
 export interface ModelList {
   default_model: string;
+  default_image_model: string;
   models: ModelListItem[];
 }
 

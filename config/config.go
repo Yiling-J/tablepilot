@@ -25,14 +25,14 @@ type Model struct {
 	Model     string
 	MaxTokens int64 `mapstructure:"max_tokens"`
 	Alias     string
-	Client    string
+	Provider  string
 	RPM       int
 	Image     bool
 }
 
-type Client interface{}
+type Provider any
 
-type BasicClient struct {
+type BasicProvider struct {
 	Name string
 	Type string
 }
@@ -51,12 +51,12 @@ type Gemini struct {
 }
 
 type Config struct {
-	Common   Common
-	Server   Server
-	Database *Database
-	Models   []Model
-	Clients  []Client
-	Sources  []map[string]any
+	Common    Common
+	Server    Server
+	Database  *Database
+	Models    []Model
+	Providers []Provider
+	Sources   []map[string]any
 }
 
 func NewConfig(name string) (config *Config, err error) {
@@ -66,14 +66,14 @@ func NewConfig(name string) (config *Config, err error) {
 	if err != nil {
 		return config, err
 	}
-	var bc []BasicClient
-	err = viper.UnmarshalKey("clients", &bc)
+	var bc []BasicProvider
+	err = viper.UnmarshalKey("providers", &bc)
 	if err != nil {
 		return config, err
 	}
-	var clients []Client
+	var providers []Provider
 	for i, client := range bc {
-		key := fmt.Sprintf("clients.%d", i)
+		key := fmt.Sprintf("providers.%d", i)
 		switch client.Type {
 		case "openai":
 			var oai OpenAI
@@ -81,14 +81,14 @@ func NewConfig(name string) (config *Config, err error) {
 			if err != nil {
 				return config, err
 			}
-			clients = append(clients, &oai)
+			providers = append(providers, &oai)
 		case "gemini":
 			var genai Gemini
 			err = viper.UnmarshalKey(key, &genai)
 			if err != nil {
 				return config, err
 			}
-			clients = append(clients, &genai)
+			providers = append(providers, &genai)
 		default:
 			return nil, errors.New("unknown client")
 		}
@@ -98,7 +98,7 @@ func NewConfig(name string) (config *Config, err error) {
 	if err != nil {
 		return nil, err
 	}
-	config.Clients = clients
+	config.Providers = providers
 	if config.Server.Address == "" {
 		config.Server.Address = ":8080"
 	}

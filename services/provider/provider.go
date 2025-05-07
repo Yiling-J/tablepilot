@@ -147,7 +147,7 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 	// add providers from config file
 	providers := []Provider{}
 	pm := map[string]int{}
-	for i, c := range p.cfg.Clients {
+	for i, c := range p.cfg.Providers {
 		switch v := c.(type) {
 		case *config.OpenAI:
 			providers = append(providers, Provider{
@@ -171,12 +171,12 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 		}
 	}
 	for _, m := range p.cfg.Models {
-		if ic, ok := pm[m.Client]; ok {
+		if ic, ok := pm[m.Provider]; ok {
 			md := Model{
 				Model:     m.Model,
 				MaxTokens: m.MaxTokens,
 				Alias:     m.Alias,
-				Client:    m.Client,
+				Client:    m.Provider,
 				Rpm:       m.RPM,
 				Image:     m.Image,
 				Default:   m.Default,

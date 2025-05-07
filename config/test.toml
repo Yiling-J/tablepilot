@@ -4,13 +4,13 @@ debug = false
 driver = "sqlite3"
 dsn = "data.db?_pragma=foreign_keys(1)"
 
-[[clients]]
+[[providers]]
 name = "gemini"
 type = "openai"
 key = "a"
 base_url = "urla"
 
-[[clients]]
+[[providers]]
 name = "oai"
 type = "openai"
 key = "b"
@@ -18,7 +18,7 @@ base_url = "urlb"
 
 [[models]]
 model = "gemini-2.0-flash-001"
-client = "gemini"
+provider = "gemini"
 default = true
 max_tokens = 1200
 rpm = 10
@@ -26,5 +26,5 @@ rpm = 10
 [[models]]
 model = "gpt-4o"
 alias = "gpt4o"
-client = "oai"
+provider = "oai"
 rpm = 5
