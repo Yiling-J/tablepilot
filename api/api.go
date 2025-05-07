@@ -232,7 +232,7 @@ func (hs *HTTPServer) DeleteProvider(ctx *gin.Context) {
 		errorResponse(ctx, 500, err)
 		return
 	}
-	ctx.JSON(200, nil)
+	ctx.JSON(200, "")
 }
 
 func (hs *HTTPServer) CreateProvider(ctx *gin.Context) {
@@ -247,7 +247,7 @@ func (hs *HTTPServer) CreateProvider(ctx *gin.Context) {
 		errorResponse(ctx, 500, err)
 		return
 	}
-	ctx.JSON(200, nil)
+	ctx.JSON(200, "")
 }
 
 func (hs *HTTPServer) UpdateProvider(ctx *gin.Context) {
@@ -262,7 +262,7 @@ func (hs *HTTPServer) UpdateProvider(ctx *gin.Context) {
 		errorResponse(ctx, 500, err)
 		return
 	}
-	ctx.JSON(200, nil)
+	ctx.JSON(200, "")
 }
 
 func (hs *HTTPServer) addRouters() {

@@ -103,6 +103,51 @@ func TestProviderService_UpdateProvider(t *testing.T) {
 	require.Equal(t, "m3", models[1].Model)
 }
 
+func TestProviderService_DeleteProvider(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.TODO()
+	srv := NewProviderService(&config.Config{}, db, zap.NewNop().Sugar())
+	err := srv.CreateProvider(ctx, Provider{
+		Name:    "p1",
+		Type:    "openai",
+		Key:     "k",
+		BaseURL: "b",
+		Models: []Model{
+			{Model: "m1", Alias: "m", Rpm: 12, MaxTokens: 100},
+		},
+	})
+	require.NoError(t, err)
+	err = srv.CreateProvider(ctx, Provider{
+		Name:    "p2",
+		Type:    "openai",
+		Key:     "k",
+		BaseURL: "b",
+		Models: []Model{
+			{Model: "m2", Alias: "mm", Rpm: 12, MaxTokens: 100},
+		},
+	})
+	require.NoError(t, err)
+	p, err := db.Provider.Query().Where(provider.Name("p1")).Only(ctx)
+	require.NoError(t, err)
+
+	err = srv.DeleteProvider(ctx, p.ID)
+	require.NoError(t, err)
+
+	providers, err := db.Provider.Query().All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(providers))
+	require.Equal(t, "p2", providers[0].Name)
+
+	models, err := providers[0].QueryModels().All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(models))
+	require.Equal(t, "m2", models[0].Model)
+	modelsDB, err := db.Model.Query().All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(modelsDB))
+	require.Equal(t, models[0].ID, modelsDB[0].ID)
+}
+
 func TestProviderService_genProviders(t *testing.T) {
 	db := db.NewTestDB()
 	srv := NewProviderService(&config.Config{
