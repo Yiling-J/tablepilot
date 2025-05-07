@@ -135,7 +135,7 @@ export function ProvidersListDialog({
                     <TableCell className="w-[30%] truncate">
                       {provider.base_url}
                     </TableCell>
-                    <TableCell>{provider.models.length}</TableCell>
+                    <TableCell>{provider.models?.length ?? 0}</TableCell>
                     <TableCell>
                       <div className="flex justify-end space-x-2">
                         <Button

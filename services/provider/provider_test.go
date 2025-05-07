@@ -151,7 +151,7 @@ func TestProviderService_DeleteProvider(t *testing.T) {
 func TestProviderService_genProviders(t *testing.T) {
 	db := db.NewTestDB()
 	srv := NewProviderService(&config.Config{
-		Clients: []config.Client{
+		Providers: []config.Provider{
 			&config.OpenAI{
 				Name:    "p1",
 				Key:     "k",
@@ -160,9 +160,9 @@ func TestProviderService_genProviders(t *testing.T) {
 			},
 		},
 		Models: []config.Model{
-			{Model: "m", Alias: "ma", Client: "p1", MaxTokens: 100, RPM: 5},
-			{Model: "m2", Alias: "ma2", Client: "p1", MaxTokens: 200, RPM: 25},
-			{Model: "mi", Alias: "mia", Client: "p1", MaxTokens: 10, RPM: 3, Image: true},
+			{Model: "m", Alias: "ma", Provider: "p1", MaxTokens: 100, RPM: 5},
+			{Model: "m2", Alias: "ma2", Provider: "p1", MaxTokens: 200, RPM: 25},
+			{Model: "mi", Alias: "mia", Provider: "p1", MaxTokens: 10, RPM: 3, Image: true},
 		},
 	}, db, zap.NewNop().Sugar())
 	err := srv.CreateProvider(context.TODO(), Provider{

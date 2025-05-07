@@ -9,7 +9,7 @@ import (
 func TestConfig_New(t *testing.T) {
 	cfg, err := NewConfig("test.toml")
 	require.NoError(t, err)
-	clientA, ok := cfg.Clients[0].(*OpenAI)
+	clientA, ok := cfg.Providers[0].(*OpenAI)
 	require.True(t, ok)
 	require.Equal(t, &OpenAI{
 		Name:    "gemini",
@@ -17,7 +17,7 @@ func TestConfig_New(t *testing.T) {
 		Key:     "a",
 		BaseURL: "urla",
 	}, clientA)
-	clientB, ok := cfg.Clients[1].(*OpenAI)
+	clientB, ok := cfg.Providers[1].(*OpenAI)
 	require.True(t, ok)
 	require.Equal(t, &OpenAI{
 		Name:    "oai",
@@ -29,13 +29,13 @@ func TestConfig_New(t *testing.T) {
 		Default:   true,
 		Model:     "gemini-2.0-flash-001",
 		MaxTokens: 1200,
-		Client:    "gemini",
+		Provider:  "gemini",
 		RPM:       10,
 	}, cfg.Models[0])
 	require.Equal(t, Model{
-		Model:  "gpt-4o",
-		Alias:  "gpt4o",
-		Client: "oai",
-		RPM:    5,
+		Model:    "gpt-4o",
+		Alias:    "gpt4o",
+		Provider: "oai",
+		RPM:      5,
 	}, cfg.Models[1])
 }

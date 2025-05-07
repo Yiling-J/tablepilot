@@ -30,26 +30,27 @@ dsn = "data.db?_pragma=foreign_keys(1)"
 [server]
 address = ":8080"
 
-[[clients]]
+[[providers]]
 name = "gemini"
 type = "openai"
 key = ""
 base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
-[[clients]]
+[[providers]]
 name = "gemini-image"
 type = "gemini"
 key = ""
 
 [[models]]
 model = "gemini-2.0-flash-001"
-client = "gemini"
+provider = "gemini"
 rpm = 10
 
-[[image_models]]
+[[models]]
 model = "gemini-2.0-flash-exp-image-generation"
-client = "gemini-image"
+provider = "gemini-image"
 rpm = 10
+image = true
 ```
 
 Make sure to replace the `key` with your Gemini key. Both models should be free to use. Save this configuration to a file named `config.toml` in your current working directory.

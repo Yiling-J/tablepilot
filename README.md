@@ -57,7 +57,7 @@ To start, first you need to prepare a toml config file. Below is an example `con
 driver = "sqlite3"
 dsn = "data.db?_pragma=foreign_keys(1)"
 
-[[clients]]
+[[providers]]
 name = "gemini"
 type = "openai"
 key = "your_api_key"
@@ -65,7 +65,7 @@ base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 [[models]]
 model = "gemini-2.0-flash-001"
-client = "gemini"
+provider = "gemini"
 rpm = 20
 ```
 

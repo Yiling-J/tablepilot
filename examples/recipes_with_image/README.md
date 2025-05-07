@@ -33,29 +33,30 @@ dsn = "data.db?_pragma=foreign_keys(1)"
 [server]
 address = ":8080"
 
-[[clients]]
+[[providers]]
 name = "gemini"
 type = "openai"
 key = "key"
 base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
-[[clients]]
+[[providers]]
 name = "gemini-image"
 type = "gemini"
 key = "key"
 
 [[models]]
 model = "gemini-2.0-flash-001"
-client = "gemini"
+provider = "gemini"
 rpm = 10
 
-[[image_models]]
+[[models]]
 model = "gemini-2.0-flash-exp-image-generation"
-client = "gemini-image"
+provider = "gemini-image"
 rpm = 10
+image = true
 ```
 
-The client type must be `gemini` and the model must be `gemini-2.0-flash-exp-image-generation`. Once configured, Tablepilot will use this image model when generating images. The generated images will be saved in the `{source_data_dir}/tablepilot_images/{table_id}` directory.
+The provider type must be `gemini` and the model must be `gemini-2.0-flash-exp-image-generation`. Once configured, Tablepilot will use this image model when generating images. The generated images will be saved in the `{source_data_dir}/tablepilot_images/{table_id}` directory.
 
 **View Generated Images in Real Time**
 

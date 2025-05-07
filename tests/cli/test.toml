@@ -7,7 +7,7 @@ dsn = "test.db?_pragma=foreign_keys(1)"
 [server]
 address = ":8080"
 
-[[clients]]
+[[providers]]
 name = "openai"
 type = "openai"
 key = "abc"
@@ -15,5 +15,5 @@ base_url = "https://models.inference.ai.azure.com"
 
 [[models]]
 model = "gemini-2.0-flash-001"
-client = "openai"
+provider = "openai"
 rpm = 10
