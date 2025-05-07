@@ -4,9 +4,9 @@
 
 # Tablepilot
 
-Tablepilot is a powerful CLI/API/WebUI tool that lets you create tables using natural language and effortlessly generate or autofill content with AI. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
+Tablepilot is a powerful CLI/API/WebUI/App tool that lets you create tables using natural language and effortlessly generate or autofill content with AI. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
 
-As a CLI tool, Tablepilot uses a declarative schema format. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. A WebUI is also available. See the demo below:
+As a CLI tool, Tablepilot uses a declarative schema format. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. WebUI/Desktop App is also available. See the demo below:
 
 ![Demo](./demo.gif)
 
@@ -23,17 +23,21 @@ Instead of relying on context, suppose we add two columns to the table: cuisine 
 | Mode                         | Description                                                         | Available            | Model Requirements                                                      |
 |------------------------------|---------------------------------------------------------------------|----------------------|-------------------------------------------------------------------------|
 | builder                      | Create tables interactively using natural language                  | CLI                  | OpenAI Chat Completion API with support for parallel function calls       |
-| generate(text)                | Generate rows (text) for the table                                  | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output            |
-| autofill(text)                | Autofill columns (text) for existing rows in the table              | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output            |
-| generate(text + vision)     | Generate rows (text) for the table, with image context              | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output and Vision |
-| autofill(text + vision)     | Autofill columns (text) for existing rows, with image context       | CLI, API, WebUI      | OpenAI Chat Completion API with support for Structured Output and Vision |
-| generate(text + image generation/edit) | Generate rows (text or image) for the table, with image context | CLI, API, WebUI      | Only `gemini-2.0-flash-exp-image-generation` supported                      |
-| autofill(text + image generation/edit) | Autofill columns (text or image) for existing rows, with image context | CLI, API, WebUI | Only `gemini-2.0-flash-exp-image-generation` supported                      |
+| generate(text)                | Generate rows (text) for the table                                  | CLI, API, WebUI, App      | OpenAI Chat Completion API with support for Structured Output            |
+| autofill(text)                | Autofill columns (text) for existing rows in the table              | CLI, API, WebUI, App      | OpenAI Chat Completion API with support for Structured Output            |
+| generate(text + vision)     | Generate rows (text) for the table, with image context              | CLI, API, WebUI, App      | OpenAI Chat Completion API with support for Structured Output and Vision |
+| autofill(text + vision)     | Autofill columns (text) for existing rows, with image context       | CLI, API, WebUI, App      | OpenAI Chat Completion API with support for Structured Output and Vision |
+| generate(text + image generation/edit) | Generate rows (text or image) for the table, with image context | CLI, API, WebUI, App      | The provider type must be `gemini`, and only `gemini-2.0-flash-exp-image-generation/gemini-2.0-flash-exp` is currently supported                     |
+| autofill(text + image generation/edit) | Autofill columns (text or image) for existing rows, with image context | CLI, API, WebUI, App | The provider type must be `gemini`, and only `gemini-2.0-flash-exp-image-generation/gemini-2.0-flash-exp` is currently supported                       |
 
 > OpenAI Chat Completion API refers to any API compatible with OpenAI, such as Gemini, vLLM, Ollama, and xAI.
 
 #### Download Binary Release
-Pre-built binaries for different operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page. The binary includes everything - CLI/API/WebUI, so you can start using Tablepilot instantly. Please download `tablepilot_cli` and ignore `tablepilot_app` for now. The desktop app is currently for testing purposes only and is not functional.
+
+Pre-built binaries for various operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
+
+* Files with the `tablepilot_cli` prefix are for command-line interface (CLI) use. These include the CLI itself, as well as the API and WebUI.
+* To use the Tablepilot desktop app on macOS or Windows, download the file with the `tablepilot_app` prefix that matches your platform (`.dmg` for macOS, `.exe` or `.msi` for Windows).
 
 #### Install with Go
 Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot@latest`. Only **CLI and API** are supported.
@@ -41,16 +45,18 @@ Ensure that Go is installed on your system. Then run `go install github.com/Yili
 #### Install from Source
 Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use. This includes **CLI and API**. To use the WebUI, you need to **build the frontend first, before running make install**. Ensure you have `pnpm`, `tsc` and `node` installed, then run `make build-ui`, Once built, you can start the server using `serve` command.
 
+To build the Desktop App, you'll need everything required for the WebUI, plus Rust and Tauri. Once set up, run  `make tauri-dev`, this will build and launch the Tauri app in development mode.
+
 #### CLI and API Documentation
 
-Tablepilot provides a full set of CLI commands, including `builder`, `create`, `update`, `autofill` and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI. Use `tablepilot serve` command to start API server and WebUI.
+Tablepilot provides a full set of CLI commands, including `builder`, `create`, `update`, `autofill` and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI or App. Use `tablepilot serve` command to start API server and WebUI.
 
 - For a complete list of CLI commands, see [this doc](CLI.md).
 - For all available API endpoints, see [this doc](API.md).
 
 ## Guide
 
-To start, first you need to prepare a toml config file. Below is an example `config.toml` file using an SQLite3 database (`data.db`) and use `gemini-2.0-flash-001`(openai compatible API mode). Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
+If you're using Tablepilot in CLI or WebUI mode, the first step is to prepare a TOML config file. Below is an example `config.toml` file using an SQLite3 database (`data.db`) and use `gemini-2.0-flash-001`(openai compatible API mode). Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
 
 ```toml
 [database]
@@ -70,6 +76,8 @@ rpm = 20
 ```
 
 > For more config details, check the [documentation](docs/config).
+
+If you're using the Tablepilot desktop app, you **do not need a config file** to get started. Providers and models can be added dynamically through the UI, and the database file will be created automatically in the app's data directory.
 
 Tablepilot has two modes: generate and autofill. Use generate mode when you want to create new rows from scratch. Use autofill mode when you already have a table with data, and you’ve added new columns that needs to be filled in. Before diving into these two modes, let’s go over a few basic concepts.
 
