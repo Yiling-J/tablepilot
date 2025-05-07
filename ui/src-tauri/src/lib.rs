@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use std::fs;
 use tauri::Manager;
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
@@ -18,14 +19,25 @@ pub fn run() {
         )
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            let dir = app
+                .path()
+                .resolve("", tauri::path::BaseDirectory::AppData)
+                .unwrap();
             let config_file_path = app
                 .path()
                 .resolve("config.toml", tauri::path::BaseDirectory::Resource)
                 .unwrap();
+
+            let dest_path = dir.join("config.toml");
+            if let Some(parent) = dest_path.parent() {
+                fs::create_dir_all(parent).expect("failed to create directories");
+            }
+            fs::copy(&config_file_path, &dest_path).expect("failed to copy config.toml");
+
             let sidecar_command = app.shell().sidecar("tablepilot").unwrap();
             let (mut rx, child) = sidecar_command
                 .args(["serve"])
-                .current_dir(config_file_path.parent().unwrap())
+                .current_dir(dir)
                 .spawn()
                 .unwrap();
 
