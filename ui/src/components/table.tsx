@@ -16,6 +16,8 @@ import { useCreateTableDialog } from "@/context/create-table";
 import { cn } from "@/lib/utils";
 import { imageUrl } from "@/urls.tsx";
 import { ColumnDef } from "@tanstack/react-table";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AutofillDialog } from "./dialog/autofill-start.tsx";
@@ -33,13 +35,14 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GearIcon, ReloadIcon } from "@radix-ui/react-icons";
-import { download, generateCsv, mkConfig } from "export-to-csv";
+import { asString, download, generateCsv, mkConfig } from "export-to-csv";
 import { GridHeader } from "./grid-header.tsx";
 import { TablepilotHeader } from "./header.tsx";
 
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import * as SelectPrimitive from "@radix-ui/react-select";
+import { info } from "@tauri-apps/plugin-log";
 import { BookTypeIcon, Check, ImageIcon } from "lucide-react";
 
 export function TablePage() {
@@ -365,7 +368,7 @@ export function Table({ id }: TableProps) {
     throw new Error("data undefined");
   }
 
-  const handleExportRows = () => {
+  const handleExportRows = async () => {
     const exported = rows.map((row) => {
       return Object.fromEntries(
         table!.columns.map((header) => {
@@ -381,7 +384,29 @@ export function Table({ id }: TableProps) {
       );
     });
     const csv = generateCsv(csvConfig)(exported);
-    download(csvConfig)(csv);
+
+    if ("__TAURI_INTERNALS__" in window) {
+      const path = await save({
+        filters: [
+          {
+            name: "output.csv",
+            extensions: ["csv"],
+          },
+        ],
+      });
+      if (path) {
+        try {
+          await writeTextFile(path, asString(csv));
+        } catch (e) {
+          info(e as string);
+        }
+        info("CSV file saved successfully to:" + path);
+      } else {
+        info("Save operation cancelled by user.");
+      }
+    } else {
+      download(csvConfig)(csv);
+    }
   };
   return (
     <div className="grow overflow-hidden h-full flex flex-col pl-0 peer-[[data-state=open]]:lg:pl-[300px] peer-[[data-state=open]]:xl:pl-[300px]">
