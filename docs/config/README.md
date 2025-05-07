@@ -71,6 +71,8 @@ You can define multiple models and assign them to different providers or differe
 - **default**: Set to `true` if this is the default model. Only one model can be set as `default`. If no model is marked as `default`, the first model in the list will be used. The default model is used when no specific model is provided in the table JSON schema or the `--model` flag. Optional.
 - **max_tokens**: The maximum number of tokens that can be generated in the chat completion (default 6000). Optional.
 - **rpm**: The rate limit for this model, specified in requests per minute. This is used to control the rate of API calls and enforce a model-specific rate limiter (default no limit). Optional.
+- **image**: Indicates whether the model supports native image generation (e.g., GPT-4o or Gemini 2.0 Flash Exp). Tablepilot's image generation feature requires this native capability. If set to `true`, the model will be selectable for image generation in the WebUI and desktop app. Defaults to `false`.
+
 
 **Important**: All models must support [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs).
 
