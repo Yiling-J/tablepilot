@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "tablepilot_app",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "identifier": "tablepilot",
   "build": {
     "frontendDist": "../dist",
