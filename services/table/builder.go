@@ -191,7 +191,8 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 		return nil, err
 	}
 	imageGen := false
-	if len(t.config.ImageModels) > 0 {
+	models := t.ai.ListModels(ctx)
+	if models.DefaultImageModel != "" {
 		imageGen = true
 	}
 	resp, err := t.ai.FunctionCall(ctx, &client.ChatRequest{
@@ -249,7 +250,8 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 		return nil, err
 	}
 	imageGen := false
-	if len(t.config.ImageModels) > 0 {
+	models := t.ai.ListModels(ctx)
+	if models.DefaultImageModel != "" {
 		imageGen = true
 	}
 	resp, err := t.ai.FunctionCall(ctx, &client.ChatRequest{

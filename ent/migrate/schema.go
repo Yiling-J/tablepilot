@@ -8,6 +8,49 @@ import (
 )
 
 var (
+	// ModelsColumns holds the columns for the "models" table.
+	ModelsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "model", Type: field.TypeString, Unique: true},
+		{Name: "alias", Type: field.TypeString, Nullable: true},
+		{Name: "rpm", Type: field.TypeInt, Nullable: true},
+		{Name: "max_tokens", Type: field.TypeInt, Nullable: true},
+		{Name: "default", Type: field.TypeBool, Default: false},
+		{Name: "image", Type: field.TypeBool, Default: false},
+		{Name: "provider_models", Type: field.TypeInt, Nullable: true},
+	}
+	// ModelsTable holds the schema information for the "models" table.
+	ModelsTable = &schema.Table{
+		Name:       "models",
+		Columns:    ModelsColumns,
+		PrimaryKey: []*schema.Column{ModelsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "models_providers_models",
+				Columns:    []*schema.Column{ModelsColumns[9]},
+				RefColumns: []*schema.Column{ProvidersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// ProvidersColumns holds the columns for the "providers" table.
+	ProvidersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"openai", "gemini"}},
+		{Name: "key", Type: field.TypeString, Nullable: true},
+		{Name: "base_url", Type: field.TypeString, Nullable: true},
+	}
+	// ProvidersTable holds the schema information for the "providers" table.
+	ProvidersTable = &schema.Table{
+		Name:       "providers",
+		Columns:    ProvidersColumns,
+		PrimaryKey: []*schema.Column{ProvidersColumns[0]},
+	}
 	// TableColumnsColumns holds the columns for the "table_columns" table.
 	TableColumnsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -90,6 +133,8 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ModelsTable,
+		ProvidersTable,
 		TableColumnsTable,
 		TableMetaTable,
 		TableRowsTable,
@@ -97,6 +142,7 @@ var (
 )
 
 func init() {
+	ModelsTable.ForeignKeys[0].RefTable = ProvidersTable
 	TableColumnsTable.ForeignKeys[0].RefTable = TableMetaTable
 	TableRowsTable.ForeignKeys[0].RefTable = TableMetaTable
 }

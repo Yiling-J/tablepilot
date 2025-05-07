@@ -504,6 +504,8 @@ describe("CreateTableFormWithRows", () => {
 
 describe("UpdateTableForm", () => {
   it("should call update api when complete", async () => {
+    vi.mock("react-router-dom");
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
     vi.mock("@/actions");
     const table = {
       id: "abc",

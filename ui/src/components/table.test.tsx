@@ -6,9 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { beforeEach } from "vitest";
 import {
     GenerateRequest,
+    Provider,
     TableInfo,
     generate,
     getModels,
+    getProviders,
     getRows,
     getTable,
     getTableSchema,
@@ -56,7 +58,23 @@ describe("Table", () => {
     });
 
     const mockedGetModels = vi.mocked(getModels);
-    mockedGetModels.mockResolvedValue({ default: "ai", models: ["ai", "bi"] });
+    mockedGetModels.mockResolvedValue({
+      default_model: "ai",
+      models: [
+        { name: "ai", image: false },
+        { name: "bi", image: false },
+        { name: "ci", image: true },
+      ],
+    });
+    const mockedGetProviders = vi.mocked(getProviders);
+    mockedGetProviders.mockResolvedValue([
+      {
+        id: 1,
+        name: "p",
+        type: "openai",
+        models: [{ model: "ai" }],
+      } as Provider,
+    ]);
   });
 
   it("should render Table component", async () => {
@@ -102,6 +120,7 @@ describe("Table", () => {
         count: 50,
         temperature: 0.6,
         model: "ai",
+        image_model: "",
       },
     );
   });
@@ -134,6 +153,69 @@ describe("Table", () => {
         count: 100,
         temperature: 0.6,
         model: "bi",
+        image_model: "",
+      },
+    );
+  });
+
+  it("should call generate API with given params, image column", async () => {
+    const mockedGetTable = vi.mocked(getTable);
+    const table = {
+      id: "abc",
+      name: "users",
+      description: "users table",
+      columns: [
+        {
+          id: "col1",
+          name: "name",
+          description: "user name",
+          type: "string",
+          fill_mode: "ai",
+        },
+        {
+          id: "col2",
+          name: "image",
+          description: "user image",
+          type: "image",
+          fill_mode: "ai",
+        },
+      ],
+      model: "",
+    } as TableInfo;
+    mockedGetTable.mockResolvedValue(table);
+
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+    const b = screen.getByRole("button", { name: /Start/i });
+    expect(b).toBeInTheDocument();
+    expect((b as HTMLButtonElement).disabled).toBe(true);
+
+    await screen.findByText("users");
+    const mockedGenerate = vi.mocked(generate);
+    await userEvent.dblClick(screen.getByDisplayValue("10"));
+    await userEvent.keyboard("35");
+    await userEvent.dblClick(screen.getByDisplayValue("50"));
+    await userEvent.keyboard("100");
+    await userEvent.click(screen.getByText("ai").closest("button")!);
+    await userEvent.click(screen.getByText("bi"));
+    await userEvent.click(
+      screen.getByText("Select image gen model").closest("button")!,
+    );
+    await userEvent.click(screen.getByText("ci"));
+    await userEvent.click(screen.getByRole("button", { name: /Start/i }));
+    expect(mockedGenerate).toHaveBeenCalledWith(
+      "foo",
+      expect.anything(),
+      expect.anything(),
+      {
+        batch: 35,
+        count: 100,
+        temperature: 0.6,
+        model: "bi",
+        image_model: "ci",
       },
     );
   });

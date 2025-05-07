@@ -27,6 +27,7 @@ type Model struct {
 	Alias     string
 	Client    string
 	RPM       int
+	Image     bool
 }
 
 type Client interface{}
@@ -50,13 +51,12 @@ type Gemini struct {
 }
 
 type Config struct {
-	Common      Common
-	Server      Server
-	Database    *Database
-	Models      []Model
-	ImageModels []Model `mapstructure:"image_models"`
-	Clients     []Client
-	Sources     []map[string]any
+	Common   Common
+	Server   Server
+	Database *Database
+	Models   []Model
+	Clients  []Client
+	Sources  []map[string]any
 }
 
 func NewConfig(name string) (config *Config, err error) {

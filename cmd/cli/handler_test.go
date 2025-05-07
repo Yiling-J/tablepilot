@@ -41,7 +41,7 @@ func TestHandler_Create(t *testing.T) {
 	handler := &Handler{
 		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	}
 	cmd := &cobra.Command{}
@@ -76,7 +76,7 @@ func TestHandler_Update(t *testing.T) {
 	handler := &Handler{
 		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	}
 	cmd := &cobra.Command{}
@@ -124,7 +124,7 @@ func TestHandler_Show(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -164,7 +164,7 @@ func TestHandler_List(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -193,7 +193,7 @@ func TestHandler_Delete(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	)
 	cmd := &cobra.Command{}
@@ -229,7 +229,7 @@ func TestHandler_Export(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock,
+					nil, tableMock, nil,
 				),
 			)
 			cmd := &cobra.Command{}
@@ -325,7 +325,7 @@ func TestHandler_Generate(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock,
+					nil, tableMock, nil,
 				),
 			)
 			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -414,7 +414,7 @@ func TestHandler_Import(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock,
+					nil, tableMock, nil,
 				),
 			)
 			cmd := &cobra.Command{}
@@ -439,7 +439,7 @@ func TestHandler_Truncate(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	)
 	cmd := &cobra.Command{}
@@ -474,7 +474,7 @@ func TestHandler_Describe(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -557,7 +557,7 @@ func TestHandler_Autofill(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock,
+					nil, tableMock, nil,
 				),
 			)
 			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -637,14 +637,15 @@ func TestHandler_Builder(t *testing.T) {
 			}, nil
 		},
 		BuildTableFunc: func(ctx context.Context, name, description string, depends []string, exists []*table.TableInfo, params table.ModelParams) (*table.TableGenRequest, error) {
-			if name == "tb1" {
+			switch name {
+			case "tb1":
 				require.Equal(t, 0, len(exists))
 				return &table.TableGenRequest{
 					Name:        "tb1",
 					Description: "d1",
 					Columns:     []table.TableGenColumn{},
 				}, nil
-			} else if name == "tb2" {
+			case "tb2":
 				require.Equal(t, []*table.TableInfo{
 					{Name: "tbb1"},
 				}, exists)
@@ -694,7 +695,7 @@ func TestHandler_Builder(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, db.NewTestDB(), zap.NewNop().Sugar(),
-			nil, tableMock,
+			nil, tableMock, nil,
 		),
 	)
 	cmd := &cobra.Command{}

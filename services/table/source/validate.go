@@ -77,7 +77,7 @@ func ValidateSource(ctx context.Context, raw json.RawMessage, db *ent.Client) (S
 			return nil, errors.New("paths is empty")
 		}
 		if ls.Huggingface != nil && ls.Huggingface.Dataset == "" {
-			return nil, errors.New("Hugging Face dataset is empty")
+			return nil, errors.New("hugging Face dataset is empty")
 		}
 		s = &ls
 	case "files":

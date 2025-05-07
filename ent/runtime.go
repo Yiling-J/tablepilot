@@ -5,6 +5,8 @@ package ent
 import (
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/model"
+	"github.com/Yiling-J/tablepilot/ent/provider"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
@@ -15,6 +17,48 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	modelMixin := schema.Model{}.Mixin()
+	modelMixinFields0 := modelMixin[0].Fields()
+	_ = modelMixinFields0
+	modelFields := schema.Model{}.Fields()
+	_ = modelFields
+	// modelDescCreatedAt is the schema descriptor for created_at field.
+	modelDescCreatedAt := modelMixinFields0[0].Descriptor()
+	// model.DefaultCreatedAt holds the default value on creation for the created_at field.
+	model.DefaultCreatedAt = modelDescCreatedAt.Default.(func() time.Time)
+	// modelDescUpdatedAt is the schema descriptor for updated_at field.
+	modelDescUpdatedAt := modelMixinFields0[1].Descriptor()
+	// model.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	model.DefaultUpdatedAt = modelDescUpdatedAt.Default.(func() time.Time)
+	// model.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	model.UpdateDefaultUpdatedAt = modelDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// modelDescModel is the schema descriptor for model field.
+	modelDescModel := modelFields[0].Descriptor()
+	// model.ModelValidator is a validator for the "model" field. It is called by the builders before save.
+	model.ModelValidator = modelDescModel.Validators[0].(func(string) error)
+	// modelDescDefault is the schema descriptor for default field.
+	modelDescDefault := modelFields[4].Descriptor()
+	// model.DefaultDefault holds the default value on creation for the default field.
+	model.DefaultDefault = modelDescDefault.Default.(bool)
+	// modelDescImage is the schema descriptor for image field.
+	modelDescImage := modelFields[5].Descriptor()
+	// model.DefaultImage holds the default value on creation for the image field.
+	model.DefaultImage = modelDescImage.Default.(bool)
+	providerMixin := schema.Provider{}.Mixin()
+	providerMixinFields0 := providerMixin[0].Fields()
+	_ = providerMixinFields0
+	providerFields := schema.Provider{}.Fields()
+	_ = providerFields
+	// providerDescCreatedAt is the schema descriptor for created_at field.
+	providerDescCreatedAt := providerMixinFields0[0].Descriptor()
+	// provider.DefaultCreatedAt holds the default value on creation for the created_at field.
+	provider.DefaultCreatedAt = providerDescCreatedAt.Default.(func() time.Time)
+	// providerDescUpdatedAt is the schema descriptor for updated_at field.
+	providerDescUpdatedAt := providerMixinFields0[1].Descriptor()
+	// provider.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	provider.DefaultUpdatedAt = providerDescUpdatedAt.Default.(func() time.Time)
+	// provider.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	provider.UpdateDefaultUpdatedAt = providerDescUpdatedAt.UpdateDefault.(func() time.Time)
 	tablecolumnMixin := schema.TableColumn{}.Mixin()
 	tablecolumnMixinFields0 := tablecolumnMixin[0].Fields()
 	_ = tablecolumnMixinFields0

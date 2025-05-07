@@ -138,6 +138,12 @@ func TestBuilder_BuildTable(t *testing.T) {
 				},
 			}, nil
 		},
+		ListModelsFunc: func(ctx context.Context) *ai.ModelList {
+			return &ai.ModelList{
+				Models:       []ai.ModelListItem{{Name: "m1", Image: false}},
+				DefaultModel: "m1",
+			}
+		},
 	}
 	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
 	require.NoError(t, err)
@@ -223,6 +229,12 @@ func TestBuilder_PolishBuilderTable(t *testing.T) {
 					}},
 				},
 			}, nil
+		},
+		ListModelsFunc: func(ctx context.Context) *ai.ModelList {
+			return &ai.ModelList{
+				Models:       []ai.ModelListItem{{Name: "m1", Image: false}},
+				DefaultModel: "m1",
+			}
 		},
 	}
 	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())

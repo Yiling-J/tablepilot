@@ -683,11 +683,12 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 			}).Where(tablemeta.Nanoid(id)).First(ctx)
 			require.NoError(t, err)
 			cell := table.Edges.Rows[0].Cells[0]
-			if tc.name == "list" {
+			switch tc.name {
+			case "list":
 				require.Equal(t, &schema.CellValue{
 					Value: "bar",
 				}, cell)
-			} else if tc.name == "linked" {
+			case "linked":
 				require.Equal(t, &schema.CellValue{
 					Value: "bar",
 					ContextValue: map[string]any{"col": map[string]any{
@@ -695,7 +696,7 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 						"description": "c1d",
 					}},
 				}, cell)
-			} else {
+			default:
 				require.Equal(t, &schema.CellValue{
 					Value:        "bar",
 					ContextValue: map[string]any{"col": "bar"},
@@ -1212,7 +1213,7 @@ func TestTableService_Validate(t *testing.T) {
 	}{
 		{
 			req: &TableGenRequest{},
-			err: "columns should not be empty.",
+			err: "columns should not be empty",
 		},
 		{
 			req: &TableGenRequest{
@@ -1220,7 +1221,7 @@ func TestTableService_Validate(t *testing.T) {
 					{Source: "s1"},
 				},
 			},
-			err: "source s1 not found.",
+			err: "source s1 not found",
 		},
 	}
 

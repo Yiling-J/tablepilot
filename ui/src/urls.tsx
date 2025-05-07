@@ -39,3 +39,11 @@ export function imageUrl(path: string) {
 export function schemaUrl(id: string) {
   return `${address}/api/v1/tables/${id}/schema`;
 }
+
+export function providersUrl() {
+  return `${address}/api/v1/providers`;
+}
+
+export function providerUrl(id: string) {
+  return `${address}/api/v1/providers/${id}`;
+}

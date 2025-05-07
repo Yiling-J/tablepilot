@@ -1,9 +1,11 @@
 package api
 
 import (
+	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/google/uuid"
+	"github.com/spf13/cast"
 
 	"github.com/gin-gonic/gin"
 )
@@ -215,6 +217,54 @@ func (hs *HTTPServer) GetTableSchema(ctx *gin.Context) {
 	ctx.JSON(200, schema)
 }
 
+func (hs *HTTPServer) GetProviders(ctx *gin.Context) {
+	providers, err := hs.ProviderService.ListProviders(ctx)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, providers)
+}
+
+func (hs *HTTPServer) DeleteProvider(ctx *gin.Context) {
+	err := hs.ProviderService.DeleteProvider(ctx, cast.ToInt(ctx.Param("id")))
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, "")
+}
+
+func (hs *HTTPServer) CreateProvider(ctx *gin.Context) {
+	var provider provider.Provider
+	err := ctx.ShouldBindJSON(&provider)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	err = hs.ProviderService.CreateProvider(ctx, provider)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, "")
+}
+
+func (hs *HTTPServer) UpdateProvider(ctx *gin.Context) {
+	var provider provider.Provider
+	err := ctx.ShouldBindJSON(&provider)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	err = hs.ProviderService.UpdateProvider(ctx, cast.ToInt(ctx.Param("id")), provider)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, "")
+}
+
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
@@ -229,4 +279,8 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/tables/:table/rows", hs.Rows)
 	hs.apiv1.GET("/sources", hs.SharedSources)
 	hs.apiv1.GET("/tables/:table/schema", hs.GetTableSchema)
+	hs.apiv1.GET("/providers", hs.GetProviders)
+	hs.apiv1.POST("/providers", hs.CreateProvider)
+	hs.apiv1.DELETE("/providers/:id", hs.DeleteProvider)
+	hs.apiv1.PATCH("/providers/:id", hs.UpdateProvider)
 }

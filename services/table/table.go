@@ -891,7 +891,7 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 
 func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) error {
 	if len(req.Columns) == 0 {
-		return errors.New("columns should not be empty.")
+		return errors.New("columns should not be empty")
 	}
 	sources := map[string]bool{}
 	for _, raw := range req.Sources {
@@ -904,7 +904,7 @@ func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) e
 	for _, col := range req.Columns {
 		if col.Source != "" {
 			if _, ok := sources[col.Source]; !ok {
-				return fmt.Errorf("source %s not found.", col.Source)
+				return fmt.Errorf("source %s not found", col.Source)
 			}
 		}
 	}

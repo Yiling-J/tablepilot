@@ -6,6 +6,12 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Model is the predicate function for model builders.
+type Model func(*sql.Selector)
+
+// Provider is the predicate function for provider builders.
+type Provider func(*sql.Selector)
+
 // TableColumn is the predicate function for tablecolumn builders.
 type TableColumn func(*sql.Selector)
 

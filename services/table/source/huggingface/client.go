@@ -133,7 +133,7 @@ func (c *ClientImpl) GetDatasetRows(ctx context.Context, offset, length int) (*R
 			return nil, err
 		}
 		c.logger.Errorw("Hugging Face get rows API error", "status", resp.StatusCode, "message", string(bodyBytes))
-		return nil, errors.New("Hugging Face get rows API error")
+		return nil, errors.New("hugging Face get rows API error")
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err

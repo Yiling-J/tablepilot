@@ -1,4 +1,4 @@
-.PHONY: test lint gen run build build-ui install snapshots tauri-dev
+.PHONY: test lint gen run-server build build-ui install snapshots tauri-dev tauri-build
 
 test:
 	go test ./...
@@ -6,8 +6,8 @@ lint:
 	golangci-lint run
 gen:
 	go generate ./...
-run:
-	go run main.go --config config.toml
+run-server:
+	go run main.go serve --config config.toml
 build:
 	go build -o tablepilot
 build-ui:
@@ -19,3 +19,6 @@ snapshots:
 tauri-dev:
 	go build -o "build/tablepilot-$(shell go run host/host.go)"
 	cd ui && pnpm tauri dev
+tauri-build:
+	go build -o "build/tablepilot-$(shell go run host/host.go)"
+	cd ui && pnpm tauri build
