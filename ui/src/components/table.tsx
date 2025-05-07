@@ -258,7 +258,7 @@ export function Table({ id }: TableProps) {
       }
       setModel(currentModel);
       genRequestRef.current.model = currentModel;
-      let currentImageModel = models.default_image_model;
+      const currentImageModel = models.default_image_model;
       setImageModel(currentImageModel);
       genRequestRef.current.image_model = currentImageModel;
       setModels(models);
