@@ -138,6 +138,7 @@ func (hs *HTTPServer) Regenerate(ctx *gin.Context) {
 		return
 	}
 	request.Autofill.Enable = true
+	request.Count = len(request.Autofill.Rows)
 
 	// add all columns as context columns
 	table, err := hs.TableService.GetTableDetail(ctx, request.Table)
@@ -305,5 +306,5 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/providers", hs.CreateProvider)
 	hs.apiv1.DELETE("/providers/:id", hs.DeleteProvider)
 	hs.apiv1.PATCH("/providers/:id", hs.UpdateProvider)
-	hs.apiv1.POST("/generate/tables/:table/regenerate", hs.Regenerate)
+	hs.apiv1.POST("/regenerate/tables/:table", hs.Regenerate)
 }
