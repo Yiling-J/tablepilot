@@ -331,6 +331,10 @@ export function Table({ id }: TableProps) {
       case "start": {
         genRequestRef.current.model = model;
         genRequestRef.current.image_model = imageModel;
+        if (regenerateRows.length > 0) {
+          setLoadingRows([...regenerateRows]);
+          setRegenerateRows([]);
+        }
         if (modeRef.current === "autofill") {
           autofillOffsetRef.current = 0;
           setAutofillOpen(true);
