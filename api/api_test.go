@@ -569,6 +569,7 @@ func TestAPI_Regenerate(t *testing.T) {
 	}
 	tableMock := &table.TableServiceMock{
 		GetTableDetailFunc: func(ctx context.Context, tb string) (*table.TableInfo, error) {
+			require.Equal(t, "foo", tb)
 			return &table.TableInfo{
 				Columns: []table.TableColumnInfo{
 					{ID: "cc1"}, {ID: "cc2"},

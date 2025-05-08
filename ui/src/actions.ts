@@ -6,6 +6,7 @@ import {
     modelsUrl,
     providerUrl,
     providersUrl,
+    regenerateUrl,
     rowsUrl,
     schemaUrl,
     sourcesUrl,
@@ -227,6 +228,8 @@ export interface AutofillParams {
   columns: string[];
   context_columns: string[];
   offset: number;
+  prompt: string;
+  rows: string[];
 }
 
 export interface AutofillRequest {
@@ -241,6 +244,35 @@ export async function autofill(
   { genRequest, autofill }: AutofillRequest,
 ) {
   await fetchEventSource(autofillUrl(table), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    openWhenHidden: true,
+    body: JSON.stringify({
+      batch: genRequest.batch,
+      count: genRequest.count,
+      temperature: genRequest.temperature,
+      model: genRequest.model,
+      stream: true,
+      autofill,
+    }),
+    signal: signal,
+    onclose() {
+      callback("[DONE]");
+    },
+    onmessage(ev) {
+      callback(ev.data);
+    },
+  });
+  callback("[DONE]");
+}
+
+export async function regenerate(
+  table: string,
+  signal: AbortSignal,
+  callback: (data: string) => void,
+  { genRequest, autofill }: AutofillRequest,
+) {
+  await fetchEventSource(regenerateUrl(table), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     openWhenHidden: true,

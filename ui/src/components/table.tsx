@@ -9,6 +9,7 @@ import {
     getRows,
     getTable,
     getTableSchema,
+    regenerate,
     truncateTable,
 } from "@/actions";
 import { Separator } from "@/components/ui/separator";
@@ -44,6 +45,7 @@ import { JSONObject } from "@/json.ts";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { info } from "@tauri-apps/plugin-log";
 import { BookTypeIcon, Check, ImageIcon } from "lucide-react";
+import { RegenerateDialog } from "./dialog/regenerate.tsx";
 
 export function TablePage() {
   const { id } = useParams();
@@ -169,6 +171,7 @@ export function Table({ id }: TableProps) {
   } as GenerateRequest);
   const [regenerateRows, setRegenerateRows] = useState([] as string[]);
   const [loadingRows, setLoadingRows] = useState([] as string[]);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
   const abortControllerRef = useRef(new AbortController());
   const columnsRef = useRef([] as ColumnDef<JSONObject, string>[]);
   const modeRef = useRef<"generate" | "autofill">("generate");
@@ -326,14 +329,54 @@ export function Table({ id }: TableProps) {
     }
   };
 
+  function updateRows(
+    oldRows: JSONObject[],
+    newRows: JSONObject[],
+  ): JSONObject[] {
+    const newRowsMap = new Map(
+      newRows.map((row) => [row.__id__ as string, row]),
+    );
+    setLoadingRows((old) => old.filter((row) => !newRowsMap.has(row)));
+
+    return oldRows.map((row) => {
+      const id = row.__id__ as string;
+      if (newRowsMap.has(id)) {
+        return newRowsMap.get(id)!;
+      }
+      return row;
+    });
+  }
+
+  const handleRegenerateEvent = (data: string): void => {
+    if (data === "[DONE]") {
+      setButton({
+        text: "Start",
+        enabled: true,
+        clickState: "start",
+        icon: "play_circle",
+        color: "bg-green-600",
+      });
+      setGenerating(false);
+      return;
+    }
+    try {
+      const newRows: JSONObject[] = JSON.parse(data).data;
+      setRows((old) => {
+        return updateRows(old, newRows);
+      });
+    } catch (error) {
+      console.error("Error generating data:", error);
+    }
+  };
+
   const clickButton = (state: string) => {
     switch (state) {
       case "start": {
         genRequestRef.current.model = model;
         genRequestRef.current.image_model = imageModel;
         if (regenerateRows.length > 0) {
-          setLoadingRows([...regenerateRows]);
-          setRegenerateRows([]);
+          setRegenerateDialogOpen(true);
+          return;
         }
         if (modeRef.current === "autofill") {
           autofillOffsetRef.current = 0;
@@ -443,6 +486,8 @@ export function Table({ id }: TableProps) {
               columns: columns.map((c) => c.id),
               context_columns: contextColumns.map((c) => c.id),
               offset: 0,
+              rows: [],
+              prompt: "",
             },
           });
         }}
@@ -453,6 +498,41 @@ export function Table({ id }: TableProps) {
           const models = await getModels();
           setModels(models);
           setProviderListOpen(v);
+        }}
+      />
+      <RegenerateDialog
+        open={regenerateDialogOpen}
+        onOpenChange={setRegenerateDialogOpen}
+        tableInfo={table}
+        onRegenerate={(config) => {
+          const rows = [...regenerateRows];
+          setLoadingRows([...regenerateRows]);
+          setRegenerateRows([]);
+          setButton({
+            text: "Stop",
+            enabled: true,
+            clickState: "stop",
+            icon: "stop_circle",
+            color: "bg-red-600",
+          });
+          setGenerating(true);
+          genRef.current = true;
+          abortControllerRef.current = new AbortController();
+          regenerate(
+            id,
+            abortControllerRef.current.signal,
+            handleRegenerateEvent,
+            {
+              genRequest: genRequestRef.current,
+              autofill: {
+                columns: config.columnsToRegenerate,
+                context_columns: [],
+                offset: 0,
+                rows: rows,
+                prompt: config.prompt,
+              },
+            },
+          );
         }}
       />
       <TablepilotHeader

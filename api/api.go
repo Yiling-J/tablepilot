@@ -141,7 +141,7 @@ func (hs *HTTPServer) Regenerate(ctx *gin.Context) {
 	request.Count = len(request.Autofill.Rows)
 
 	// add all columns as context columns
-	table, err := hs.TableService.GetTableDetail(ctx, request.Table)
+	table, err := hs.TableService.GetTableDetail(ctx, ctx.Param("table"))
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
