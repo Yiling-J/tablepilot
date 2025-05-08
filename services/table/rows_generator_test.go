@@ -237,6 +237,10 @@ func TestRowsGenerator_Next(t *testing.T) {
 					break
 				}
 				l = append(l, len(v))
+				for _, row := range v {
+					_, ok := row["__id__"]
+					require.True(t, ok)
+				}
 			}
 			left := 10
 			for i, v := range l {
@@ -638,6 +642,10 @@ func TestRowsGenerator_AutofillNext(t *testing.T) {
 					break
 				}
 				l = append(l, len(v))
+				for _, row := range v {
+					_, ok := row["__id__"]
+					require.True(t, ok)
+				}
 			}
 			left := 10
 			for i, v := range l {
@@ -1224,7 +1232,7 @@ func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
 	require.Equal(t, &schema.CellValue{
 		Value: "foobar",
 	}, v[0][c1.Nanoid])
-	require.Equal(t, &schema.CellValue{Value: float64(0)}, v[0]["__id__"])
+	require.Equal(t, &schema.CellValue{Value: "UkLWZg"}, v[0]["__id__"])
 }
 
 func TestRowsGenerator_AutofillImageWithText(t *testing.T) {

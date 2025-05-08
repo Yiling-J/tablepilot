@@ -108,9 +108,9 @@ func TestHandler_Show(t *testing.T) {
 					{Nanoid: "2", Name: "c2"},
 				},
 				Rows: []*ent.TableRow{
-					{Cells: []*schema.CellValue{{Value: "a1"}, {Value: "b1"}}},
-					{Cells: []*schema.CellValue{{Value: "a2"}, {Value: "b2"}}},
-					{Cells: []*schema.CellValue{{Value: "a3"}, {Value: "b3"}}},
+					{Nanoid: "n1", Cells: []*schema.CellValue{{Value: "a1"}, {Value: "b1"}}},
+					{Nanoid: "n2", Cells: []*schema.CellValue{{Value: "a2"}, {Value: "b2"}}},
+					{Nanoid: "n3", Cells: []*schema.CellValue{{Value: "a3"}, {Value: "b3"}}},
 				},
 			}, nil
 		},
@@ -132,13 +132,13 @@ func TestHandler_Show(t *testing.T) {
 	err := handler.Show(cmd, []string{"foo"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(printer.AddHeaderCalls()))
-	require.Equal(t, []string{"c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
-	require.Equal(t, 6, len(printer.AddFieldCalls()))
+	require.Equal(t, []string{"[ID]", "c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, 9, len(printer.AddFieldCalls()))
 	fields := []string{}
 	for _, call := range printer.AddFieldCalls() {
 		fields = append(fields, call.S)
 	}
-	require.Equal(t, []string{"a1", "b1", "a2", "b2", "a3", "b3"}, fields)
+	require.Equal(t, []string{"n1", "a1", "b1", "n2", "a2", "b2", "n3", "a3", "b3"}, fields)
 	require.Equal(t, 3, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }
@@ -282,8 +282,9 @@ func TestHandler_Generate(t *testing.T) {
 					if counter < 2 {
 						return []map[string]*schema.CellValue{
 							{
-								"1": &schema.CellValue{Value: cast.ToString(counter)},
-								"2": &schema.CellValue{Value: "t" + cast.ToString(counter)},
+								"__id__": &schema.CellValue{Value: "id"},
+								"1":      &schema.CellValue{Value: cast.ToString(counter)},
+								"2":      &schema.CellValue{Value: "t" + cast.ToString(counter)},
 							},
 						}, nil
 					}
@@ -356,13 +357,22 @@ func TestHandler_Generate(t *testing.T) {
 			}
 
 			require.Equal(t, 1, len(printer.AddHeaderCalls()))
-			require.Equal(t, []string{"c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
-			require.Equal(t, 4, len(printer.AddFieldCalls()))
+			if saveTo {
+				require.Equal(t, []string{"c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+				require.Equal(t, 4, len(printer.AddFieldCalls()))
+			} else {
+				require.Equal(t, []string{"[ID]", "c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+				require.Equal(t, 6, len(printer.AddFieldCalls()))
+			}
 			fields := []string{}
 			for _, call := range printer.AddFieldCalls() {
 				fields = append(fields, call.S)
 			}
-			require.Equal(t, []string{"0", "t0", "1", "t1"}, fields)
+			if saveTo {
+				require.Equal(t, []string{"0", "t0", "1", "t1"}, fields)
+			} else {
+				require.Equal(t, []string{"id", "0", "t0", "id", "1", "t1"}, fields)
+			}
 			require.Equal(t, 2, len(printer.EndRowCalls()))
 			require.Equal(t, 2, len(printer.RenderCalls()))
 
@@ -510,8 +520,9 @@ func TestHandler_Autofill(t *testing.T) {
 					if counter < 2 {
 						return []map[string]*schema.CellValue{
 							{
-								"1": &schema.CellValue{Value: cast.ToString(counter)},
-								"2": &schema.CellValue{Value: "t" + cast.ToString(counter)},
+								"__id__": &schema.CellValue{Value: "id"},
+								"1":      &schema.CellValue{Value: cast.ToString(counter)},
+								"2":      &schema.CellValue{Value: "t" + cast.ToString(counter)},
 							},
 						}, nil
 					}
@@ -597,13 +608,22 @@ func TestHandler_Autofill(t *testing.T) {
 			}
 
 			require.Equal(t, 1, len(printer.AddHeaderCalls()))
-			require.Equal(t, []string{"c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
-			require.Equal(t, 4, len(printer.AddFieldCalls()))
+			if saveTo {
+				require.Equal(t, []string{"c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+				require.Equal(t, 4, len(printer.AddFieldCalls()))
+			} else {
+				require.Equal(t, []string{"[ID]", "c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+				require.Equal(t, 6, len(printer.AddFieldCalls()))
+			}
 			fields := []string{}
 			for _, call := range printer.AddFieldCalls() {
 				fields = append(fields, call.S)
 			}
-			require.Equal(t, []string{"0", "t0", "1", "t1"}, fields)
+			if saveTo {
+				require.Equal(t, []string{"0", "t0", "1", "t1"}, fields)
+			} else {
+				require.Equal(t, []string{"id", "0", "t0", "id", "1", "t1"}, fields)
+			}
 			require.Equal(t, 2, len(printer.EndRowCalls()))
 			require.Equal(t, 2, len(printer.RenderCalls()))
 

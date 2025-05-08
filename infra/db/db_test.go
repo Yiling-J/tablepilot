@@ -20,8 +20,12 @@ func TestDB_InsertManyOrder(t *testing.T) {
 	for i := range 50 {
 		creates = append(creates, db.TableRow.Create().SetCells([]*schema.CellValue{{Value: i}}).SetTablemeta(tb))
 	}
-	err = db.TableRow.CreateBulk(creates...).Exec(ctx)
+	saved, err := db.TableRow.CreateBulk(creates...).Save(ctx)
 	require.NoError(t, err)
+	require.Equal(t, 50, len(saved))
+	for i, row := range saved {
+		require.Equal(t, i, row.Cells[0].Value)
+	}
 
 	dbrows, err := db.TableRow.Query().Where(tablerow.HasTablemetaWith(tablemeta.Nanoid(tb.Nanoid))).Order(ent.Asc("id")).All(ctx)
 	require.NoError(t, err)

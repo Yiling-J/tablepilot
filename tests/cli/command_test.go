@@ -102,10 +102,10 @@ uw2YK1	Difficulty Level	integer	ai	difficulty level of the recipe (1-5)
 	out, err = captureStdout(root.Execute)
 	require.NoError(t, err)
 	expectedGenerate := `
-foo	["ing1","ing2"]	10	cc	1
-foo1	["ing3","ing4"]	12	cc1	2
-bar	["ing-1","ing-2"]	3	cd	2
-bar1	["ing-3","ing-4"]	15	cd1	2
+UkLWZg	foo	["ing1","ing2"]	10	cc	1
+gbHJdm	foo1	["ing3","ing4"]	12	cc1	2
+EfhxLZ	bar	["ing-1","ing-2"]	3	cd	2
+VqXmZF	bar1	["ing-3","ing-4"]	15	cd1	2
 `
 	require.Equal(t, strings.TrimSpace(expectedGenerate), strings.TrimSpace(out))
 
@@ -133,10 +133,10 @@ bar1	["ing-3","ing-4"]	15	cd1	2
 	out, err = captureStdout(root.Execute)
 	require.NoError(t, err)
 	expectedShow := `
-foo	["ing1","ing2"]	10	cc	1
-foo1	["ing3","ing4"]	12	cc1	2
-bar	["ing-1","ing-2"]	3	cd	2
-bar1	["ing-3","ing-4"]	15	cd1	2
+UkLWZg	foo	["ing1","ing2"]	10	cc	1
+gbHJdm	foo1	["ing3","ing4"]	12	cc1	2
+EfhxLZ	bar	["ing-1","ing-2"]	3	cd	2
+VqXmZF	bar1	["ing-3","ing-4"]	15	cd1	2
 `
 	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
 
@@ -201,9 +201,9 @@ func TestIntegrationCLI_Import(t *testing.T) {
 	out, err := captureStdout(root.Execute)
 	require.NoError(t, err)
 	expectedShow := `
-Rob	Pike	rob
-Ken	Thompson	ken
-Robert	Griesemer	gri
+UkLWZg	Rob	Pike	rob
+gbHJdm	Ken	Thompson	ken
+EfhxLZ	Robert	Griesemer	gri
 `
 	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
 
@@ -214,9 +214,9 @@ Robert	Griesemer	gri
 	out, err = captureStdout(root.Execute)
 	require.NoError(t, err)
 	expectedShow = `
-Rob	Pike	rob
-Ken	Thompson	ken
-Robert	Griesemer	gri
+VqXmZF	Rob	Pike	rob
+uw2YK1	Ken	Thompson	ken
+OIJLhN	Robert	Griesemer	gri
 `
 	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
 }

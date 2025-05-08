@@ -788,12 +788,8 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 			if err != nil {
 				return nil, err
 			}
-			for _, dbrow := range dbrows {
-				row, err := indexer.SliceToRowMap(dbrow.Cells)
-				if err != nil {
-					return nil, err
-				}
-				row["__id__"] = &schema.CellValue{Value: dbrow.Nanoid}
+			for i, dbrow := range dbrows {
+				rows[i]["__id__"] = &schema.CellValue{Value: dbrow.Nanoid}
 			}
 		}
 	}

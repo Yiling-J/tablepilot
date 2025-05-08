@@ -18,6 +18,7 @@ import (
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 	"github.com/gammazero/toposort"
 
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
 
@@ -84,8 +85,11 @@ func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 	}
 	indexer := util.NewColumnIndexer(rows.Columns)
 	tp := h.getPrinter()
-	tp.AddHeader(indexer.ColumnNames())
+	headers := []string{"[ID]"}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
 	for _, row := range rows.Rows {
+		tp.AddField(row.Nanoid)
 		for _, cell := range row.Cells {
 			tp.AddField(cellString(cell.Value))
 		}
@@ -236,7 +240,12 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 	}
 	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
 	tp := h.getPrinter()
-	tp.AddHeader(indexer.ColumnNames())
+	headers := []string{}
+	if saveTo == "" {
+		headers = append(headers, "[ID]")
+	}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
 	var csvWriter *csv.Writer
 	if saveTo != "" {
 		file, err := os.Create(saveTo)
@@ -263,6 +272,9 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 			break
 		}
 		for _, row := range batch {
+			if saveTo == "" {
+				tp.AddField(cast.ToString(row["__id__"].Value))
+			}
 			sr := []string{}
 			v, err := indexer.RowMapToSlice(row)
 			if err != nil {
@@ -385,7 +397,12 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 
 	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
 	tp := h.getPrinter()
-	tp.AddHeader(indexer.ColumnNames())
+	headers := []string{}
+	if saveTo == "" {
+		headers = append(headers, "[ID]")
+	}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
 	var csvWriter *csv.Writer
 	if saveTo != "" {
 		file, err := os.Create(saveTo)
@@ -412,6 +429,9 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 			break
 		}
 		for _, row := range batch {
+			if saveTo == "" {
+				tp.AddField(cast.ToString(row["__id__"].Value))
+			}
 			sr := []string{}
 			v, err := indexer.RowMapToSlice(row)
 			if err != nil {
