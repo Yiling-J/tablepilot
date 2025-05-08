@@ -15,6 +15,7 @@ import {
     getTable,
     getTableSchema,
     getTables,
+    regenerate,
     truncateTable,
 } from "../actions";
 import { Table } from "./table";
@@ -49,7 +50,9 @@ describe("Table", () => {
     } as TableInfo;
     mockedGetTable.mockResolvedValue(table);
     const mockedGetRows = vi.mocked(getRows);
-    mockedGetRows.mockResolvedValue([{ col1: "v1", col2: "v2" }]);
+    mockedGetRows.mockResolvedValue([
+      { __id__: "id1", col1: "v1", col2: "v2" },
+    ]);
 
     const mockedGetTables = vi.mocked(getTables);
     mockedGetTables.mockResolvedValue({
@@ -322,7 +325,9 @@ describe("Table", () => {
     } as TableInfo;
     mockedGetTable.mockResolvedValue(table);
     const mockedGetRows = vi.mocked(getRows);
-    mockedGetRows.mockResolvedValue([{ col1: ["ll0", "ll1", "ll2"] }]);
+    mockedGetRows.mockResolvedValue([
+      { __id__: "id1", col1: ["ll0", "ll1", "ll2"] },
+    ]);
 
     render(
       <TestProvider>
@@ -421,5 +426,88 @@ describe("Table", () => {
     expect(
       screen.getByText("Update your table configuration or import JSON"),
     ).toBeInTheDocument();
+  });
+
+  it("should switch to regenerate mode when click index cell", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    await userEvent.hover(screen.getByText("1"));
+    await userEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByText("Regenerate")).toBeInTheDocument();
+  });
+
+  it("should open regenerate dialog", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+    await screen.findByText("users");
+    await userEvent.hover(screen.getByText("1"));
+    await userEvent.click(screen.getByRole("checkbox"));
+    await userEvent.click(screen.getByRole("button", { name: /Regenerate/i }));
+    await screen.findByText("Regenerate selected rows");
+  });
+
+  it("should call regenerate api", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+
+    await screen.findByText("users");
+    await userEvent.hover(screen.getByText("1"));
+    await userEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByText("Regenerate")).toBeInTheDocument();
+  });
+
+  it("should open regenerate dialog", async () => {
+    render(
+      <TestProvider>
+        <Table id="foo" />
+      </TestProvider>,
+    );
+    await screen.findByText("users");
+    await userEvent.hover(screen.getByText("1"));
+    await userEvent.click(screen.getByRole("checkbox"));
+    await userEvent.click(screen.getByRole("button", { name: /Regenerate/i }));
+    await screen.findByText("Regenerate selected rows");
+    await userEvent.click(
+      screen.getAllByTestId("regen-span").at(0)!.parentElement!,
+    );
+    const input = screen.getByPlaceholderText(
+      "E.g., Make the product descriptions more engaging and highlight key features.",
+    );
+    await userEvent.click(input);
+    await userEvent.keyboard("test foobar");
+    const mockedRegenerate = vi.mocked(regenerate);
+    await userEvent.click(screen.getByRole("button", { name: /Regenerate/i }));
+    expect(mockedRegenerate).toHaveBeenCalledWith(
+      "foo",
+      expect.anything(),
+      expect.anything(),
+      {
+        genRequest: {
+          batch: 10,
+          count: 50,
+          temperature: 0.6,
+          model: "ai",
+          image_model: "",
+        },
+        autofill: {
+          columns: ["col1"],
+          prompt: "test foobar",
+          context_columns: [],
+          rows: ["id1"],
+          offset: 0,
+        },
+      },
+    );
   });
 });

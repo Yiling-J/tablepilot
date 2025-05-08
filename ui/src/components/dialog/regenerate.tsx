@@ -131,6 +131,7 @@ export function RegenerateDialog({
                             )}
                           </div>
                           <span
+                            data-testid="regen-span"
                             className={cn(
                               "font-medium",
                               columnsToRegenerate.includes(column.id) &&
