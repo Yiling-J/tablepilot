@@ -9,6 +9,7 @@ import {
 
 import { CellTextDialog } from "@/components/dialog/cell-text.tsx";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
     TableBody,
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { SizeIcon } from "@radix-ui/react-icons";
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { MutableRefObject, memo, useRef, useState } from "react";
+import { Checkbox } from "../ui/checkbox";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 declare module "@tanstack/react-table" {
@@ -34,10 +36,14 @@ function TableCellEx({
   cell,
   setExpandCellOpen,
   expandCellTextRef,
+  selected,
+  onRowSelectChange,
 }: {
   cell: Cell<JSONObject, string>;
   setExpandCellOpen: (v: boolean) => void;
   expandCellTextRef: MutableRefObject<string>;
+  onRowSelectChange: (row: string, selected: boolean) => void;
+  selected: boolean;
 }) {
   const [hoverCell, setHoverCell] = useState(false);
   const columnType = cell.column.columnDef.meta?.columnType;
@@ -56,6 +62,30 @@ function TableCellEx({
   const showExpand = useRef(
     ["string", "array"].includes(columnType!.toString()),
   );
+
+  if (
+    (selected && cell.column.id == "rowIndex") ||
+    (hoverCell && cell.column.id == "rowIndex")
+  ) {
+    return (
+      <TableCell
+        key={cell.id}
+        className="border-l border-b last:border-r border-sky-900 max-w-lg max-h-80 whitespace-pre-wrap relative z-0"
+        onMouseEnter={hover.current}
+        onMouseLeave={unHover.current}
+      >
+        <div className="w-10 h-4">
+          <Checkbox
+            id="row-selected"
+            checked={selected}
+            onCheckedChange={(v) => {
+              onRowSelectChange(cell.row.id, v as boolean);
+            }}
+          />
+        </div>
+      </TableCell>
+    );
+  }
 
   return (
     <TableCell
@@ -89,15 +119,25 @@ function TableCellEx({
 interface DataGridProps {
   columns: ColumnDef<JSONObject, string>[];
   data: JSONObject[];
+  selectedRows: string[];
+  onRowSelectChange: (row: string, selected: boolean) => void;
+  loading: string[];
 }
 
 const TableCellExMemo = memo(TableCellEx);
 
-export function DataGrid({ columns, data }: DataGridProps) {
+export function DataGrid({
+  columns,
+  data,
+  selectedRows,
+  onRowSelectChange,
+  loading,
+}: DataGridProps) {
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.__id__ as string,
   });
   const [expandCellOpen, setExpandCellOpen] = useState(false);
   const expandCellTextRef = useRef("");
@@ -137,14 +177,29 @@ export function DataGrid({ columns, data }: DataGridProps) {
               key={row.id}
               data-state={row.getIsSelected() && "selected"}
             >
-              {row.getVisibleCells().map((cell) => (
-                <TableCellExMemo
-                  cell={cell}
-                  key={cell.id}
-                  setExpandCellOpen={setExpandCellOpen}
-                  expandCellTextRef={expandCellTextRef}
-                />
-              ))}
+              {loading.findIndex((v) => v === row.id) > -1 && (
+                <TableCell
+                  colSpan={columns.length}
+                  className="border-l border-b last:border-r border-sky-900 max-w-lg whitespace-pre-wrap relative z-0"
+                >
+                  <Skeleton className="h-16" />
+                </TableCell>
+              )}
+              {loading.findIndex((v) => v === row.id) < 0 &&
+                row
+                  .getVisibleCells()
+                  .map((cell) => (
+                    <TableCellExMemo
+                      cell={cell}
+                      key={cell.id}
+                      setExpandCellOpen={setExpandCellOpen}
+                      expandCellTextRef={expandCellTextRef}
+                      selected={
+                        selectedRows.findIndex((v) => v === cell.row.id) > -1
+                      }
+                      onRowSelectChange={onRowSelectChange}
+                    />
+                  ))}
             </TableRow>
           ))}
         </TableBody>

@@ -130,6 +130,27 @@ func (hs *HTTPServer) Autofill(ctx *gin.Context) {
 	hs.gen(ctx, request)
 }
 
+func (hs *HTTPServer) Regenerate(ctx *gin.Context) {
+	var request table.GenerateRowsRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	request.Autofill.Enable = true
+
+	// add all columns as context columns
+	table, err := hs.TableService.GetTableDetail(ctx, request.Table)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	for _, col := range table.Columns {
+		request.Autofill.ContextColumns = append(request.Autofill.ContextColumns, col.ID)
+	}
+	hs.gen(ctx, request)
+}
+
 func (hs *HTTPServer) Rows(ctx *gin.Context) {
 	rows, err := hs.TableService.Rows(ctx.Request.Context(), ctx.Param("table"))
 	if err != nil {
@@ -142,6 +163,7 @@ func (hs *HTTPServer) Rows(ctx *gin.Context) {
 		for i, col := range rows.Columns {
 			r[col.Nanoid] = row.Cells[i].Value
 		}
+		r["__id__"] = row.Nanoid
 		data = append(data, r)
 	}
 	ctx.JSON(200, gin.H{"data": data, "total": len(data)})
@@ -283,4 +305,5 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/providers", hs.CreateProvider)
 	hs.apiv1.DELETE("/providers/:id", hs.DeleteProvider)
 	hs.apiv1.PATCH("/providers/:id", hs.UpdateProvider)
+	hs.apiv1.POST("/generate/tables/:table/regenerate", hs.Regenerate)
 }

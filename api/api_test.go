@@ -204,9 +204,9 @@ func TestAPI_Rows(t *testing.T) {
 					{Nanoid: "2", Name: "c2"},
 				},
 				Rows: []*ent.TableRow{
-					{Cells: []*schema.CellValue{{Value: "a1"}, {Value: "b1"}}},
-					{Cells: []*schema.CellValue{{Value: "a2"}, {Value: "b2"}}},
-					{Cells: []*schema.CellValue{{Value: "a3"}, {Value: "b3"}}},
+					{Nanoid: "r1", Cells: []*schema.CellValue{{Value: "a1"}, {Value: "b1"}}},
+					{Nanoid: "r2", Cells: []*schema.CellValue{{Value: "a2"}, {Value: "b2"}}},
+					{Nanoid: "r3", Cells: []*schema.CellValue{{Value: "a3"}, {Value: "b3"}}},
 				},
 			}, nil
 		},
@@ -218,9 +218,9 @@ func TestAPI_Rows(t *testing.T) {
 	require.NoError(t, err)
 	resp := server.Send(req)
 	expectedRows := []map[string]any{
-		{"1": "a1", "2": "b1"},
-		{"1": "a2", "2": "b2"},
-		{"1": "a3", "2": "b3"},
+		{"__id__": "r1", "1": "a1", "2": "b1"},
+		{"__id__": "r2", "1": "a2", "2": "b2"},
+		{"__id__": "r3", "1": "a3", "2": "b3"},
 	}
 	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows, "total": 3})
 }

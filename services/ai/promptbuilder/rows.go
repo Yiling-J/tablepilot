@@ -29,6 +29,12 @@ func (rb *RowsBuilder) AddDescription(v string) {
 	xml.SetText(v)
 }
 
+func (rb *RowsBuilder) AddUserPrompt(prompt string) {
+	rb.AddText("Ensure the generated data strictly follows the specifications defined by the user below.")
+	xml := rb.NewXML("User Requirement")
+	xml.SetText(prompt)
+}
+
 func (rb *RowsBuilder) AddExistings(rows []map[string]any) error {
 	if len(rows) == 0 {
 		return nil
@@ -37,8 +43,8 @@ func (rb *RowsBuilder) AddExistings(rows []map[string]any) error {
 	rx := rb.NewXML("Rows")
 	for _, row := range rows {
 		r := rx.CreateElement("Row")
-		r.CreateAttr("id", cast.ToString(row["id"]))
-		delete(row, "id")
+		r.CreateAttr("__id__", cast.ToString(row["__id__"]))
+		delete(row, "__id__")
 		b, err := json.Marshal(row)
 		if err != nil {
 			return err

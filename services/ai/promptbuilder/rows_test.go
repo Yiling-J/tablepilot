@@ -66,7 +66,7 @@ func TestPromptBuilder_RowsBuilderExists(t *testing.T) {
 		"abc", 123, []string{"go"}, map[string]any{"name": "bar"},
 	})
 	require.NoError(t, err)
-	err = builder.AddExistings([]map[string]any{{"id": 0, "n2": "foo"}, {"id": 1, "n2": "foofoo"}})
+	err = builder.AddExistings([]map[string]any{{"__id__": 0, "n2": "foo"}, {"__id__": 1, "n2": "foofoo"}})
 	require.NoError(t, err)
 	prompt, err := builder.Prompt()
 	require.NoError(t, err)
@@ -92,8 +92,8 @@ Consider the following existing values for column n1, collected from previous ro
 </Values>
 Below is the rows data, each row contains existing columns data, and help me fill missing columns for each row. In the return rows array, provide id field and missing column data.
 <Rows>
-  <Row id="0">{&quot;n2&quot;:&quot;foo&quot;}</Row>
-  <Row id="1">{&quot;n2&quot;:&quot;foofoo&quot;}</Row>
+  <Row __id__="0">{&quot;n2&quot;:&quot;foo&quot;}</Row>
+  <Row __id__="1">{&quot;n2&quot;:&quot;foofoo&quot;}</Row>
 </Rows>
 `
 	require.Equal(t, expected, prompt)
@@ -114,7 +114,7 @@ func TestPromptBuilder_RowsBuilderAutofill(t *testing.T) {
 		"abc", 123, []string{"go"}, map[string]any{"name": "bar"},
 	})
 	require.NoError(t, err)
-	err = builder.AddExistings([]map[string]any{{"id": "i1", "n2": "foo"}, {"id": "i2", "n2": "foofoo"}})
+	err = builder.AddExistings([]map[string]any{{"__id__": "i1", "n2": "foo"}, {"__id__": "i2", "n2": "foofoo"}})
 	require.NoError(t, err)
 	prompt, err := builder.Prompt()
 	require.NoError(t, err)
@@ -140,8 +140,8 @@ Consider the following existing values for column n1, collected from previous ro
 </Values>
 Below is the rows data, each row contains existing columns data, and help me fill missing columns for each row. In the return rows array, provide id field and missing column data.
 <Rows>
-  <Row id="i1">{&quot;n2&quot;:&quot;foo&quot;}</Row>
-  <Row id="i2">{&quot;n2&quot;:&quot;foofoo&quot;}</Row>
+  <Row __id__="i1">{&quot;n2&quot;:&quot;foo&quot;}</Row>
+  <Row __id__="i2">{&quot;n2&quot;:&quot;foofoo&quot;}</Row>
 </Rows>
 `
 	require.Equal(t, expected, prompt)

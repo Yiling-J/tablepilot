@@ -167,6 +167,8 @@ export function Table({ id }: TableProps) {
     count: 50,
     temperature: 0.6,
   } as GenerateRequest);
+  const [regenerateRows, setRegenerateRows] = useState([] as string[]);
+  const [loadingRows, setLoadingRows] = useState([] as string[]);
   const abortControllerRef = useRef(new AbortController());
   const columnsRef = useRef([] as ColumnDef<JSONObject, string>[]);
   const modeRef = useRef<"generate" | "autofill">("generate");
@@ -639,7 +641,38 @@ export function Table({ id }: TableProps) {
       )}
       <div className="scrollbar-thin grow overflow-auto pl-3">
         {table.columns.length > 0 && (
-          <DataGrid columns={columnsRef.current} data={rows} />
+          <DataGrid
+            columns={columnsRef.current}
+            data={rows}
+            selectedRows={regenerateRows}
+            loading={loadingRows}
+            onRowSelectChange={(row, v) => {
+              const current = regenerateRows.length;
+              if (v) {
+                setRegenerateRows([...regenerateRows, row]);
+              } else {
+                setRegenerateRows(regenerateRows.filter((v) => v !== row));
+              }
+              if (current === 0 && v) {
+                setButton({
+                  text: "Regenerate",
+                  enabled: true,
+                  clickState: "start",
+                  icon: "play_circle",
+                  color: "bg-green-600",
+                });
+              }
+              if (current === 1 && !v) {
+                setButton({
+                  text: "Start",
+                  enabled: true,
+                  clickState: "start",
+                  icon: "play_circle",
+                  color: "bg-green-600",
+                });
+              }
+            }}
+          />
         )}
       </div>
 

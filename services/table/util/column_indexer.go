@@ -90,6 +90,18 @@ func (ci *ColumnIndexer) RowMapToSlice(row map[string]*schema.CellValue) ([]*sch
 	return data, nil
 }
 
+func (ci *ColumnIndexer) SliceToRowMap(row []*schema.CellValue) (map[string]*schema.CellValue, error) {
+	data := map[string]*schema.CellValue{}
+	for i, cell := range row {
+		col, err := ci.GetColumnByIndex(i)
+		if err != nil {
+			return nil, err
+		}
+		data[col.Nanoid] = cell
+	}
+	return data, nil
+}
+
 // ToDisplayRow return a map of [columnName]cellValue
 func (ci *ColumnIndexer) ToDisplayRow(row map[string]*schema.CellValue) (map[string]any, error) {
 	data := map[string]any{}

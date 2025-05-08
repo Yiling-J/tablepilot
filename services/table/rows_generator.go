@@ -161,6 +161,9 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 func (g *AIRowsGenerator) newBatch(ctx context.Context, batch int) error {
 	g.builder = promptbuilder.NewRowsBuilder(batch)
 	g.builder.AddDescription(g.table.Description)
+	if len(g.autofill.Prompt) > 0 {
+		g.builder.AddUserPrompt(g.autofill.Prompt)
+	}
 	g.rows = g.rows[:0]
 	g.images = make(map[string]string)
 	return g.prepareContextRows(ctx)
@@ -267,9 +270,17 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 
 func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 	if g.autofill.Enable {
-		rows, err := g.table.QueryRows().Order(
-			ent.Asc(tablerow.FieldID),
-		).Limit(batch).Offset(g.offset).All(ctx)
+		var rows []*ent.TableRow
+		var err error
+		if len(g.autofill.Rows) > 0 {
+			rows, err = g.table.QueryRows().Where(tablerow.NanoidIn(g.autofill.Rows...)).Order(
+				ent.Asc(tablerow.FieldID),
+			).Limit(batch).Offset(g.offset).All(ctx)
+		} else {
+			rows, err = g.table.QueryRows().Order(
+				ent.Asc(tablerow.FieldID),
+			).Limit(batch).Offset(g.offset).All(ctx)
+		}
 		if err != nil {
 			return err
 		}
@@ -310,7 +321,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 					row[col.Nanoid] = dbrow.Cells[i]
 				}
 			}
-			row["id"] = &schema.CellValue{Value: dbrow.Nanoid}
+			row["__id__"] = &schema.CellValue{Value: dbrow.Nanoid}
 			g.rows = append(g.rows, row)
 		}
 	} else {
@@ -347,7 +358,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 				}
 			}
 			if len(row) > 0 {
-				row["id"] = &schema.CellValue{Value: n}
+				row["__id__"] = &schema.CellValue{Value: n}
 				g.rows = append(g.rows, row)
 			}
 		}
@@ -359,11 +370,11 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 	om := orderedmap.New[string, *jsonschema.Schema]()
 	if g.autofill.Enable {
 		// row nanoid
-		om.Set("id", &jsonschema.Schema{Type: "string"})
+		om.Set("__id__", &jsonschema.Schema{Type: "string"})
 	} else {
-		om.Set("id", &jsonschema.Schema{Type: "integer"})
+		om.Set("__id__", &jsonschema.Schema{Type: "integer"})
 	}
-	required := []string{"id"}
+	required := []string{"__id__"}
 	for _, col := range g.missingColumns {
 		s := &jsonschema.Schema{
 			Type: col.Type.String(),
@@ -549,7 +560,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	for _, row := range g.rows {
 		cr := map[string]any{}
 		for k, v := range row {
-			if g.autofill.Enable && k != "id" {
+			if g.autofill.Enable && k != "__id__" {
 				if _, ok := contextColumnIDs[k]; !ok {
 					continue
 				}
@@ -588,7 +599,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 	if len(g.rows) > 0 {
 		for i, row := range g.rows {
 			if len(rows) > i {
-				if cast.ToString(rows[i]["id"]) != cast.ToString(row["id"].Value) {
+				if cast.ToString(rows[i]["__id__"]) != cast.ToString(row["__id__"].Value) {
 					return nil, errors.New("generated row id mismatch")
 				}
 				for k, v := range rows[i] {
@@ -598,7 +609,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 			// on create rows, id is an internal columns to hint LLM to return correct count/order
 			// on autofill rows, id is the database nanoid field, so must keep it so we can update database based on this id
 			if !g.autofill.Enable {
-				delete(row, "id")
+				delete(row, "__id__")
 			}
 			generated = append(generated, row)
 		}
@@ -608,7 +619,7 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 			for k, v := range row {
 				n[k] = &schema.CellValue{Value: v}
 			}
-			delete(row, "id")
+			delete(row, "__id__")
 			generated = append(generated, n)
 		}
 	}
@@ -640,7 +651,7 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 	for i, row := range rows {
 		cr := map[string]any{}
 		for k, v := range row {
-			if g.autofill.Enable && k != "id" {
+			if g.autofill.Enable && k != "__id__" {
 				if _, ok := contextColumnIDs[k]; !ok {
 					continue
 				}
@@ -652,14 +663,14 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 			}
 		}
 		var rowid string
-		if v, ok := row["id"]; !ok {
+		if v, ok := row["__id__"]; !ok {
 			rowid = cast.ToString(i)
-			row["id"] = &schema.CellValue{Value: i}
+			row["__id__"] = &schema.CellValue{Value: i}
 		} else {
 			rowid = cast.ToString(v.Value)
 		}
 		idMap[rowid] = i
-		cr["id"] = rowid
+		cr["__id__"] = rowid
 		chatRows = append(chatRows, cr)
 	}
 	g.builder.AddTableColumns(g.table.Edges.Columns, g.autofill.Enable)
@@ -755,7 +766,7 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 					return nil, err
 				}
 				creates = append(creates, g.db.TableRow.Create().SetNanoid(
-					cast.ToString(row["id"].Value),
+					cast.ToString(row["__id__"].Value),
 				).SetCells(v).SetTablemeta(g.table))
 			}
 			err = g.db.TableRow.CreateBulk(creates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
@@ -773,9 +784,16 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 				}
 				creates = append(creates, g.db.TableRow.Create().SetCells(v).SetTablemeta(g.table))
 			}
-			err = g.db.TableRow.CreateBulk(creates...).Exec(ctx)
+			dbrows, err := g.db.TableRow.CreateBulk(creates...).Save(ctx)
 			if err != nil {
 				return nil, err
+			}
+			for _, dbrow := range dbrows {
+				row, err := indexer.SliceToRowMap(dbrow.Cells)
+				if err != nil {
+					return nil, err
+				}
+				row["__id__"] = &schema.CellValue{Value: dbrow.Nanoid}
 			}
 		}
 	}
