@@ -735,6 +735,126 @@ func TestRowsGenerator_AutofillPartial(t *testing.T) {
 	})
 }
 
+func TestRowsGenerator_AutofillSelectedRowsWithPrompt(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	col1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col3, err := db.TableColumn.Create().
+		SetName("c3").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col4, err := db.TableColumn.Create().
+		SetName("c4").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	dbrows, err := db.TableRow.CreateBulk([]*ent.TableRowCreate{
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v10"}, {Value: "v20"}, {Value: "v30"}, {Value: "v40"},
+		}),
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v11"}, {Value: "v21"}, {Value: "v31"}, {Value: "v41"},
+		}),
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v12"}, {Value: "v22"}, {Value: "v32"}, {Value: "v42"},
+		}),
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v13"}, {Value: "v23"}, {Value: "v33"}, {Value: "v43"},
+		}),
+	}...).Save(ctx)
+	require.NoError(t, err)
+	counter := 0
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			idx := 1
+			if counter == 1 {
+				idx = 3
+			}
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("bar")
+			builder.AddUserPrompt("gogogo")
+			builder.AddTableColumns([]*ent.TableColumn{col1, col2, col3, col4}, true)
+			builder.AddMissingColumns([]*ent.TableColumn{col1}, true)
+
+			rows := []map[string]any{
+				{
+					"__id__": dbrows[idx].Nanoid, col1.Nanoid: dbrows[idx].Cells[0].Value, col2.Nanoid: dbrows[idx].Cells[1].Value,
+					col3.Nanoid: dbrows[idx].Cells[2].Value, col4.Nanoid: dbrows[idx].Cells[3].Value,
+				},
+			}
+			err = builder.AddExistings(rows)
+			require.NoError(t, err)
+			p, err := builder.Prompt()
+			require.NoError(t, err)
+			require.Equal(t, p, request.Messages[0].Content[0].Data)
+
+			data := []map[string]any{
+				{"__id__": dbrows[idx].Nanoid, col1.Nanoid: "foobar"},
+			}
+			counter += 1
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 2,
+		Batch: 1,
+		Autofill: AutofillRequest{
+			Enable:         true,
+			Columns:        []string{"c1"},
+			ContextColumns: []string{"c1", "c2", "c3", "c4"},
+			Rows:           []string{dbrows[1].Nanoid, dbrows[3].Nanoid},
+			Prompt:         "gogogo",
+		},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	for {
+		v, err := generator.Next(ctx)
+		require.NoError(t, err)
+		if len(v) == 0 {
+			break
+		}
+	}
+	require.Equal(t, 2, counter)
+	rows, err := tb.QueryRows().Order(ent.Asc("id")).All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(rows))
+	for i, row := range rows {
+		if i == 1 || i == 3 {
+			require.Equal(t, row.Cells, []*schema.CellValue{
+				{Value: "foobar"}, {Value: dbrows[i].Cells[1].Value}, {Value: dbrows[i].Cells[2].Value}, {Value: dbrows[i].Cells[3].Value},
+			})
+		} else {
+			require.Equal(t, row.Cells, []*schema.CellValue{
+				{Value: dbrows[i].Cells[0].Value}, {Value: dbrows[i].Cells[1].Value}, {Value: dbrows[i].Cells[2].Value}, {Value: dbrows[i].Cells[3].Value},
+			})
+		}
+	}
+}
+
 func createPNG(filePath string) error {
 	img := image.NewRGBA(image.Rect(0, 0, 5, 5))
 	black := color.RGBA{0, 0, 0, 255}
