@@ -45,7 +45,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 	cli := &CLI{}
 
 	cmd := root
-	cmd.PersistentFlags().StringVarP(&configPath, "config", "", "config.toml", "path to the config file")
+	cmd.PersistentFlags().StringVar(&configPath, "config", "config.toml", "path to the config file")
 
 	var verbose bool
 	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output (default: false)")
@@ -224,5 +224,33 @@ func BuildCLI(root *cobra.Command) *CLI {
 		"specify the model used by builder. If not provided, the default model will be used",
 	)
 	cmd.AddCommand(builder)
+
+	regenerate := &cobra.Command{
+		Use:   "regenerate <table id or name>",
+		Short: "Regenerate selected rows",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handler.Regenerate(cmd, args)
+		},
+	}
+	regenerate.Flags().StringP("prompt", "p", "", "prompt text send to LLM")
+	regenerate.Flags().IntP("batch", "b", 10, "number of rows to autofill in a batch")
+	regenerate.Flags().StringArrayP("rows", "r", []string{}, "row id to regenerate")
+	err = regenerate.MarkFlagRequired("rows")
+	if err != nil {
+		panic(err)
+	}
+	regenerate.Flags().Float64P("temperature", "t", 0.6, "The sampling temperature. Higher values will make the output more random.")
+	regenerate.Flags().StringP(
+		"model", "m", "",
+		"specify the model used to generate rows. If not provided, the default model will be used",
+	)
+	regenerate.Flags().StringArrayP("columns", "c", []string{}, "columns to be autofilled, existing value wil be ignore and force regenerate")
+	err = regenerate.MarkFlagRequired("columns")
+	if err != nil {
+		panic(err)
+	}
+	cmd.AddCommand(regenerate)
+
 	return cli
 }
