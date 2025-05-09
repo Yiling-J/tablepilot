@@ -49,7 +49,7 @@ func TestRowsGenerator_PrepareRows(t *testing.T) {
 	}
 	err = generator.prepareRows(context.TODO(), 1)
 	require.NoError(t, err)
-	require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "foo"}, "id": {Value: 0}}, generator.rows[0])
+	require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "foo"}, "__id__": {Value: 0}}, generator.rows[0])
 }
 
 func TestRowsGenerator_PrepareRowsSharedSource(t *testing.T) {
@@ -77,7 +77,7 @@ func TestRowsGenerator_PrepareRowsSharedSource(t *testing.T) {
 
 	err = generator.prepareRows(context.TODO(), 1)
 	require.NoError(t, err)
-	require.Equal(t, map[string]*schema.CellValue{col.Nanoid: {Value: "o1"}, "id": {Value: 0}}, generator.rows[0])
+	require.Equal(t, map[string]*schema.CellValue{col.Nanoid: {Value: "o1"}, "__id__": {Value: 0}}, generator.rows[0])
 }
 
 func TestRowsGenerator_PrepareContextRows(t *testing.T) {
@@ -163,7 +163,7 @@ func TestRowsGenerator_Chat(t *testing.T) {
 	}
 	_, err := generator.chat(ctx)
 	require.NoError(t, err)
-	expectedSchema := `{"properties":{"data":{"items":{"properties":{"id":{"type":"integer"},"n1":{"items":{"type":"string"},"type":"array"},"n2":{"type":"string"}},"additionalProperties":false,"type":"object","required":["id","n1","n2"]},"type":"array"}},"additionalProperties":false,"type":"object"}`
+	expectedSchema := `{"properties":{"data":{"items":{"properties":{"__id__":{"type":"integer"},"n1":{"items":{"type":"string"},"type":"array"},"n2":{"type":"string"}},"additionalProperties":false,"type":"object","required":["__id__","n1","n2"]},"type":"array"}},"additionalProperties":false,"type":"object"}`
 	bs, err := schema.MarshalJSON()
 	require.NoError(t, err)
 	require.Equal(t, expectedSchema, string(bs))
@@ -198,8 +198,8 @@ func TestRowsGenerator_Next(t *testing.T) {
 					data := []map[string]any{}
 					for i := 0; i < tc.chatBatch; i++ {
 						data = append(data, map[string]any{
-							"name": "go",
-							"id":   i,
+							"name":   "go",
+							"__id__": i,
 						})
 					}
 					b, err := json.Marshal(map[string]any{"data": data})
@@ -237,6 +237,10 @@ func TestRowsGenerator_Next(t *testing.T) {
 					break
 				}
 				l = append(l, len(v))
+				for _, row := range v {
+					_, ok := row["__id__"]
+					require.True(t, ok)
+				}
 			}
 			left := 10
 			for i, v := range l {
@@ -383,7 +387,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 				ctx context.Context, request *client.ChatRequest,
 			) (*client.ChatResponse, error) {
 				promptContent = request.Messages[0].Content[0].Data
-				data := []map[string]any{{"id": 0, col.Nanoid: "d"}, {"id": 1, col.Nanoid: "e"}}
+				data := []map[string]any{{"__id__": 0, col.Nanoid: "d"}, {"__id__": 1, col.Nanoid: "e"}}
 				b, err := json.Marshal(map[string]any{"data": data})
 				require.NoError(t, err)
 				return &client.ChatResponse{
@@ -405,8 +409,8 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		builder.AddTableColumns([]*ent.TableColumn{col, col2}, false)
 		builder.AddMissingColumns([]*ent.TableColumn{col}, true)
 		err = builder.AddExistings([]map[string]any{
-			{col2.Nanoid: "a", "id": 0},
-			{col2.Nanoid: "b", "id": 1},
+			{col2.Nanoid: "a", "__id__": 0},
+			{col2.Nanoid: "b", "__id__": 1},
 		})
 		require.NoError(t, err)
 		p, err := builder.Prompt()
@@ -468,8 +472,8 @@ func TestRowsGenerator_Autofill(t *testing.T) {
 							id = dbrows[i+offset].Nanoid
 						}
 						data = append(data, map[string]any{
-							"name": "go",
-							"id":   id,
+							"name":   "go",
+							"__id__": id,
 						})
 					}
 					offset += 2
@@ -532,7 +536,7 @@ func TestRowsGenerator_Autofill(t *testing.T) {
 				if i+tc.Offset >= 5 {
 					break
 				}
-				row := map[string]any{"id": dbrows[i+tc.Offset].Nanoid}
+				row := map[string]any{"__id__": dbrows[i+tc.Offset].Nanoid}
 				if len(tc.ContextColumns) == 0 && !slices.Contains(tc.Columns, "c2") {
 					tc.ContextColumns = []string{"c2"}
 				}
@@ -608,7 +612,7 @@ func TestRowsGenerator_AutofillNext(t *testing.T) {
 						}
 						data = append(data, map[string]any{
 							col2.Nanoid: "go_" + id,
-							"id":        id,
+							"__id__":    id,
 						})
 					}
 					offset += tc.chatBatch
@@ -638,6 +642,10 @@ func TestRowsGenerator_AutofillNext(t *testing.T) {
 					break
 				}
 				l = append(l, len(v))
+				for _, row := range v {
+					_, ok := row["__id__"]
+					require.True(t, ok)
+				}
 			}
 			left := 10
 			for i, v := range l {
@@ -699,7 +707,7 @@ func TestRowsGenerator_AutofillPartial(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			data := []map[string]any{
-				{"id": dbrows[0].Nanoid, col2.Nanoid: "foobar"},
+				{"__id__": dbrows[0].Nanoid, col2.Nanoid: "foobar"},
 			}
 			b, err := json.Marshal(map[string]any{"data": data})
 			require.NoError(t, err)
@@ -733,6 +741,126 @@ func TestRowsGenerator_AutofillPartial(t *testing.T) {
 	require.Equal(t, rows[0].Cells, []*schema.CellValue{
 		{Value: "v10"}, {Value: "foobar"}, {Value: "v30"}, {Value: "v40"},
 	})
+}
+
+func TestRowsGenerator_AutofillSelectedRowsWithPrompt(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	col1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col3, err := db.TableColumn.Create().
+		SetName("c3").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col4, err := db.TableColumn.Create().
+		SetName("c4").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	dbrows, err := db.TableRow.CreateBulk([]*ent.TableRowCreate{
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v10"}, {Value: "v20"}, {Value: "v30"}, {Value: "v40"},
+		}),
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v11"}, {Value: "v21"}, {Value: "v31"}, {Value: "v41"},
+		}),
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v12"}, {Value: "v22"}, {Value: "v32"}, {Value: "v42"},
+		}),
+		db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+			{Value: "v13"}, {Value: "v23"}, {Value: "v33"}, {Value: "v43"},
+		}),
+	}...).Save(ctx)
+	require.NoError(t, err)
+	counter := 0
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(
+			ctx context.Context, request *client.ChatRequest,
+		) (*client.ChatResponse, error) {
+			idx := 1
+			if counter == 1 {
+				idx = 3
+			}
+			builder := promptbuilder.NewRowsBuilder(1)
+			builder.AddDescription("bar")
+			builder.AddUserPrompt("gogogo")
+			builder.AddTableColumns([]*ent.TableColumn{col1, col2, col3, col4}, true)
+			builder.AddMissingColumns([]*ent.TableColumn{col1}, true)
+
+			rows := []map[string]any{
+				{
+					"__id__": dbrows[idx].Nanoid, col1.Nanoid: dbrows[idx].Cells[0].Value, col2.Nanoid: dbrows[idx].Cells[1].Value,
+					col3.Nanoid: dbrows[idx].Cells[2].Value, col4.Nanoid: dbrows[idx].Cells[3].Value,
+				},
+			}
+			err = builder.AddExistings(rows)
+			require.NoError(t, err)
+			p, err := builder.Prompt()
+			require.NoError(t, err)
+			require.Equal(t, p, request.Messages[0].Content[0].Data)
+
+			data := []map[string]any{
+				{"__id__": dbrows[idx].Nanoid, col1.Nanoid: "foobar"},
+			}
+			counter += 1
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 2,
+		Batch: 1,
+		Autofill: AutofillRequest{
+			Enable:         true,
+			Columns:        []string{"c1"},
+			ContextColumns: []string{"c1", "c2", "c3", "c4"},
+			Rows:           []string{dbrows[1].Nanoid, dbrows[3].Nanoid},
+			Prompt:         "gogogo",
+		},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	for {
+		v, err := generator.Next(ctx)
+		require.NoError(t, err)
+		if len(v) == 0 {
+			break
+		}
+	}
+	require.Equal(t, 2, counter)
+	rows, err := tb.QueryRows().Order(ent.Asc("id")).All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(rows))
+	for i, row := range rows {
+		if i == 1 || i == 3 {
+			require.Equal(t, row.Cells, []*schema.CellValue{
+				{Value: "foobar"}, {Value: dbrows[i].Cells[1].Value}, {Value: dbrows[i].Cells[2].Value}, {Value: dbrows[i].Cells[3].Value},
+			})
+		} else {
+			require.Equal(t, row.Cells, []*schema.CellValue{
+				{Value: dbrows[i].Cells[0].Value}, {Value: dbrows[i].Cells[1].Value}, {Value: dbrows[i].Cells[2].Value}, {Value: dbrows[i].Cells[3].Value},
+			})
+		}
+	}
 }
 
 func createPNG(filePath string) error {
@@ -782,7 +910,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{"i1.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i2.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i3.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC"}, generator.images)
 		for i, f := range files {
-			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "id": {Value: i}}, generator.rows[i])
+			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "__id__": {Value: i}}, generator.rows[i])
 		}
 	})
 
@@ -813,7 +941,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{"https://images.com/i1.png": "https://images.com/i1.png", "https://images.com/i2.png": "https://images.com/i2.png", "https://images.com/i3.png": "https://images.com/i3.png"}, generator.images)
 		for i, f := range files {
-			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "id": {Value: i}}, generator.rows[i])
+			require.Equal(t, map[string]*schema.CellValue{"c1": {Value: f}, "__id__": {Value: i}}, generator.rows[i])
 		}
 	})
 
@@ -846,8 +974,8 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 			"89fc4c78a70dc188887832116393e225": "data:image/jpeg;base64,abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcbacbabbshcfudsfuibcugcguidkgkgfdsgfuigfuiehkadjagfdgfsdkfdksksdfgjksdgfkgfksdfksdgfwieufhgsfkdjfbskhfuwehfwesofhweiofhhfjksdfkjsgfjksfbwhefwohfshfwoifhiowhfsklfhlshfwiehfiowshfiowshfgwiehfiwhfowihgwioihnchfwifhv",
 			"d7f4f6b429c06ba9339ceabf1dfc9d95": "data:image/jpeg;base64,abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcbacbabbshcfersfuibcugcguidkgkgfdsgfuigfuiehkadjagfdgfsdkfdksksdfgjksdgfkgfksdfksdgfwieufhgsfkdjfbskhfuwehfwesofhweiofhhfjksdfkjsgfjksfbwhefwohfshfwoifhiowhfsklfhlshfwiehfiowshfiowshfgwiehfiwhfowihgwioihnchfwifhv",
 		}, generator.images)
-		require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "89fc4c78a70dc188887832116393e225"}, "id": {Value: 0}}, generator.rows[0])
-		require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "d7f4f6b429c06ba9339ceabf1dfc9d95"}, "id": {Value: 1}}, generator.rows[1])
+		require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "89fc4c78a70dc188887832116393e225"}, "__id__": {Value: 0}}, generator.rows[0])
+		require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "d7f4f6b429c06ba9339ceabf1dfc9d95"}, "__id__": {Value: 1}}, generator.rows[1])
 	})
 
 	t.Run("autofill", func(t *testing.T) {
@@ -910,7 +1038,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		require.Equal(t, map[string]string{"i1.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i2.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC", "i3.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC"}, generator.images)
 		for i, f := range files {
 			require.Equal(t, map[string]*schema.CellValue{
-				tb.Edges.Columns[0].Nanoid: {Value: "v"}, tb.Edges.Columns[1].Nanoid: {Value: f}, "id": {Value: rows[i].Nanoid},
+				tb.Edges.Columns[0].Nanoid: {Value: "v"}, tb.Edges.Columns[1].Nanoid: {Value: f}, "__id__": {Value: rows[i].Nanoid},
 			}, generator.rows[i])
 		}
 	})
@@ -973,7 +1101,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		require.Equal(t, map[string]string{"https://images.com/i1.png": "https://images.com/i1.png", "https://images.com/i2.png": "https://images.com/i2.png", "https://images.com/i3.png": "https://images.com/i3.png"}, generator.images)
 		for i, f := range files {
 			require.Equal(t, map[string]*schema.CellValue{
-				tb.Edges.Columns[0].Nanoid: {Value: "v"}, tb.Edges.Columns[1].Nanoid: {Value: f}, "id": {Value: rows[i].Nanoid},
+				tb.Edges.Columns[0].Nanoid: {Value: "v"}, tb.Edges.Columns[1].Nanoid: {Value: f}, "__id__": {Value: rows[i].Nanoid},
 			}, generator.rows[i])
 		}
 	})
@@ -1056,7 +1184,7 @@ func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			data := []map[string]any{
-				{"id": 0, c1.Nanoid: "foobar"},
+				{"__id__": 0, c1.Nanoid: "foobar"},
 			}
 			b, err := json.Marshal(map[string]any{"data": data})
 			require.NoError(t, err)
@@ -1070,7 +1198,7 @@ func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
 			builder.AddTableColumns([]*ent.TableColumn{c1, c2}, false)
 			builder.AddMissingColumns([]*ent.TableColumn{c2}, false)
 			err = builder.AddExistings([]map[string]any{
-				{c1.Nanoid: "foobar", "id": 0},
+				{c1.Nanoid: "foobar", "__id__": 0},
 			})
 			require.NoError(t, err)
 			p, err := builder.ImageGenPrompt()
@@ -1104,7 +1232,7 @@ func TestRowsGenerator_GenerateImageWithText(t *testing.T) {
 	require.Equal(t, &schema.CellValue{
 		Value: "foobar",
 	}, v[0][c1.Nanoid])
-	require.Equal(t, &schema.CellValue{Value: float64(0)}, v[0]["id"])
+	require.Equal(t, &schema.CellValue{Value: "UkLWZg"}, v[0]["__id__"])
 }
 
 func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
@@ -1138,7 +1266,7 @@ func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			data := []map[string]any{
-				{"id": row.Nanoid, c1.Nanoid: "foobar"},
+				{"__id__": row.Nanoid, c1.Nanoid: "foobar"},
 			}
 			b, err := json.Marshal(map[string]any{"data": data})
 			require.NoError(t, err)
@@ -1152,7 +1280,7 @@ func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
 			builder.AddTableColumns([]*ent.TableColumn{c1, c2, c3}, true)
 			builder.AddMissingColumns([]*ent.TableColumn{c2}, false)
 			err = builder.AddExistings([]map[string]any{
-				{c1.Nanoid: "foobar", c3.Nanoid: "bar", "id": row.Nanoid},
+				{c1.Nanoid: "foobar", c3.Nanoid: "bar", "__id__": row.Nanoid},
 			})
 			require.NoError(t, err)
 			p, err := builder.ImageGenPrompt()
@@ -1191,7 +1319,7 @@ func TestRowsGenerator_AutofillImageWithText(t *testing.T) {
 	require.Equal(t, &schema.CellValue{
 		Value: "foobar",
 	}, v[0][c1.Nanoid])
-	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["id"])
+	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["__id__"])
 }
 
 func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
@@ -1219,7 +1347,7 @@ func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
 			ctx context.Context, request *client.ChatRequest,
 		) (*client.ChatResponse, error) {
 			data := []map[string]any{
-				{"id": row.Nanoid, c1.Nanoid: "foobar"},
+				{"__id__": row.Nanoid, c1.Nanoid: "foobar"},
 			}
 			b, err := json.Marshal(map[string]any{"data": data})
 			require.NoError(t, err)
@@ -1233,7 +1361,7 @@ func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
 			builder.AddTableColumns([]*ent.TableColumn{c1, c2}, true)
 			builder.AddMissingColumns([]*ent.TableColumn{c2}, false)
 			err = builder.AddExistings([]map[string]any{
-				{c1.Nanoid: "bar", "id": row.Nanoid},
+				{c1.Nanoid: "bar", "__id__": row.Nanoid},
 			})
 			require.NoError(t, err)
 			p, err := builder.ImageGenPrompt()
@@ -1272,7 +1400,7 @@ func TestRowsGenerator_AutofillImageOnly(t *testing.T) {
 	require.Equal(t, &schema.CellValue{
 		Value: "bar",
 	}, v[0][c1.Nanoid])
-	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["id"])
+	require.Equal(t, &schema.CellValue{Value: row.Nanoid}, v[0]["__id__"])
 }
 
 func TestRowsGenerator_PrepareContextRowsWithImage(t *testing.T) {
@@ -1325,7 +1453,7 @@ func TestRowsGenerator_PrepareContextRowsWithImage(t *testing.T) {
 				}},
 			}, request.Messages)
 			data := []map[string]any{
-				{"id": "0", col2.Nanoid: "baz"},
+				{"__id__": "0", col2.Nanoid: "baz"},
 			}
 			b, err := json.Marshal(map[string]any{"data": data})
 			require.NoError(t, err)
@@ -1348,7 +1476,7 @@ func TestRowsGenerator_PrepareContextRowsWithImage(t *testing.T) {
 			builder.AddTableColumns([]*ent.TableColumn{col1, col2}, false)
 			builder.AddMissingColumns([]*ent.TableColumn{col1}, false)
 			err = builder.AddExistings([]map[string]any{
-				{col2.Nanoid: "baz", "id": "0"},
+				{col2.Nanoid: "baz", "__id__": "0"},
 			})
 			require.NoError(t, err)
 			p, err := builder.ImageGenPrompt()

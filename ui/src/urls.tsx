@@ -47,3 +47,7 @@ export function providersUrl() {
 export function providerUrl(id: string) {
   return `${address}/api/v1/providers/${id}`;
 }
+
+export function regenerateUrl(id: string) {
+  return `${address}/api/v1/regenerate/tables/${id}`;
+}

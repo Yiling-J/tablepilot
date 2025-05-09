@@ -1,6 +1,6 @@
 Name,Ingredients,Cooking Time,Cuisine,Difficulty Level
-Spaghetti Carbonara,"[""Spaghetti"",""Eggs"",""Pancetta"",""Pecorino Romano cheese"",""Black pepper""]",30,Italian,2
-Chicken Stir-Fry,"[""Chicken breast"",""Broccoli"",""Carrots"",""Soy sauce"",""Ginger"",""Garlic""]",45,Asian,3
-Beef Stew,"[""Beef chuck"",""Potatoes"",""Carrots"",""Onions"",""Beef broth"",""Tomato paste"",""Bay leaf""]",60,American,4
-Lasagna,"[""lasagna noodles"",""ground beef"",""ricotta cheese"",""mozzarella cheese"",""tomato sauce""]",45,Italian,3
-Tacos,"[""tortillas"",""ground beef"",""lettuce"",""tomato"",""cheese"",""salsa""]",30,Mexican,2
+Spicy Thai Noodles,"[""noodles"",""chicken"",""peppers"",""onions"",""soy sauce"",""chili flakes""]",25,Thai,3
+Classic Margherita Pizza,"[""pizza dough"",""tomato sauce"",""mozzarella cheese"",""basil"",""olive oil""]",30,Italian,2
+Simple Chicken Stir-Fry,"[""chicken breast"",""broccoli"",""carrots"",""soy sauce"",""ginger"",""garlic""]",20,Chinese,2
+Pasta with Tomato and Basil,"[""Pasta"",""Tomato Sauce"",""Basil"",""Mozzarella""]",30,Italian,2
+Chicken Tikka Masala,"[""Chicken"",""Yogurt"",""Ginger"",""Garlic"",""Spices""]",45,Indian,3

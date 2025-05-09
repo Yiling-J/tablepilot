@@ -95,6 +95,22 @@
 	- `-o, --offset int`
 	  Start offset for autofilling rows. (default 0)
 
+- **regenerate**
+  Regenerate specified rows/columns for a table. For each row in `rows`, the provided `--columns` will be regenerated.
+  ```console
+  tablepilot regenerate recipes -b=5 --columns=ingredients --columns=tags --rows=5CQZnC --rows=rsClYt
+  ```
+    - <model/batch/temperature generate command flgs>
+
+	- `--columns string`
+	  Specifies the columns to autofill; existing values will be ignored and regenerated. This flag can be set multiple times to specify multiple columns (see example).
+
+	- `--rows string`
+	  Specifies the rows(ID) to be regenerated. This flag can be set multiple times to specify multiple rows (see example).
+
+	- `-o, --offset int`
+	  Start offset for autofilling rows. (default 0)
+
 - **import**
   Import a CSV file into a table.
   ```console

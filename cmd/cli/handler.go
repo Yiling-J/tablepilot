@@ -18,6 +18,7 @@ import (
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 	"github.com/gammazero/toposort"
 
+	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 )
 
@@ -84,8 +85,11 @@ func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 	}
 	indexer := util.NewColumnIndexer(rows.Columns)
 	tp := h.getPrinter()
-	tp.AddHeader(indexer.ColumnNames())
+	headers := []string{"[ID]"}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
 	for _, row := range rows.Rows {
+		tp.AddField(row.Nanoid)
 		for _, cell := range row.Cells {
 			tp.AddField(cellString(cell.Value))
 		}
@@ -236,7 +240,12 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 	}
 	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
 	tp := h.getPrinter()
-	tp.AddHeader(indexer.ColumnNames())
+	headers := []string{}
+	if saveTo == "" {
+		headers = append(headers, "[ID]")
+	}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
 	var csvWriter *csv.Writer
 	if saveTo != "" {
 		file, err := os.Create(saveTo)
@@ -263,6 +272,9 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 			break
 		}
 		for _, row := range batch {
+			if saveTo == "" {
+				tp.AddField(cast.ToString(row["__id__"].Value))
+			}
 			sr := []string{}
 			v, err := indexer.RowMapToSlice(row)
 			if err != nil {
@@ -385,7 +397,12 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 
 	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
 	tp := h.getPrinter()
-	tp.AddHeader(indexer.ColumnNames())
+	headers := []string{}
+	if saveTo == "" {
+		headers = append(headers, "[ID]")
+	}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
 	var csvWriter *csv.Writer
 	if saveTo != "" {
 		file, err := os.Create(saveTo)
@@ -412,6 +429,9 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 			break
 		}
 		for _, row := range batch {
+			if saveTo == "" {
+				tp.AddField(cast.ToString(row["__id__"].Value))
+			}
 			sr := []string{}
 			v, err := indexer.RowMapToSlice(row)
 			if err != nil {
@@ -677,5 +697,84 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		tableNames = append(tableNames, tb.Name)
 	}
 	fmt.Println(strings.Join(tableNames, " -> "))
+	return nil
+}
+
+func (h *Handler) Regenerate(cmd *cobra.Command, args []string) error {
+	batch, err := cmd.Flags().GetInt("batch")
+	if err != nil {
+		return err
+	}
+	rows, err := cmd.Flags().GetStringArray("rows")
+	if err != nil {
+		return err
+	}
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
+	columns, err := cmd.Flags().GetStringArray("columns")
+	if err != nil {
+		return err
+	}
+	prompt, err := cmd.Flags().GetString("prompt")
+	if err != nil {
+		return err
+	}
+
+	generator, err := h.backend.TableService.Genetate(
+		cmd.Context(), table.GenerateRowsRequest{
+			Table:       args[0],
+			Count:       len(rows),
+			Batch:       batch,
+			Temperature: temperature,
+			Model:       model,
+			Autofill: table.AutofillRequest{
+				Enable:  true,
+				Columns: columns,
+				Rows:    rows,
+				Prompt:  prompt,
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
+	tp := h.getPrinter()
+	headers := []string{"[ID]"}
+	headers = append(headers, indexer.ColumnNames()...)
+	tp.AddHeader(headers)
+	for {
+		batch, err := generator.Next(cmd.Context())
+		if err != nil {
+			return err
+		}
+		if len(batch) == 0 {
+			break
+		}
+		for _, row := range batch {
+			tp.AddField(cast.ToString(row["__id__"].Value))
+			v, err := indexer.RowMapToSlice(row)
+			if err != nil {
+				return err
+			}
+			for _, cell := range v {
+				sv := cellString(cell.Value)
+				tp.AddField(sv)
+			}
+			tp.EndRow()
+		}
+		err = tp.Render()
+		if err != nil {
+			return err
+		}
+	}
+	h.backend.Logger.Infow("regenerate done")
 	return nil
 }

@@ -1,6 +1,18 @@
 Name,Ingredients,Cooking Time,Cuisine,Difficulty Level,Instructions,Rating
-Tomato Basil Pasta,"[""Pasta"",""Tomatoes"",""Garlic"",""Basil"",""Olive Oil"",""Parmesan Cheese""]",30,Italian,2,"1. Cook pasta according to package directions. 2. In a pan, sauté garlic in olive oil. 3. Add tomatoes and basil, simmer for 15 minutes. 4. Toss pasta with sauce. 5. Serve with Parmesan cheese.",4.5
-Chicken Tikka Masala,"[""Chicken"",""Yogurt"",""Onions"",""Ginger-Garlic Paste"",""Tomato Puree"",""Spices""]",45,Indian,3,"1. Marinate chicken in yogurt and spices. 2. In a pot, sauté onions and ginger-garlic paste. 3. Add marinated chicken and cook until browned. 4. Add tomato puree and simmer for 20 minutes. 5. Serve with rice or naan.",4.2
-Beef Tacos,"[""Ground Beef"",""Taco Seasoning"",""Lettuce"",""Cheese"",""Salsa"",""Sour Cream"",""Taco Shells""]",25,Mexican,1,"1. Brown ground beef in a pan. 2. Add taco seasoning and water, simmer for 10 minutes. 3. Assemble tacos with beef, lettuce, cheese, and salsa. 4. Serve with sour cream.",4
-Spaghetti Bolognese,"[""Spaghetti"",""Ground beef"",""Tomato sauce"",""Onion"",""Garlic"",""Parmesan cheese""]",45,Italian,2,1. Sauté onion and garlic. 2. Brown ground beef. 3. Add tomato sauce and simmer. 4. Cook spaghetti. 5. Serve sauce over spaghetti and top with Parmesan cheese.,4.2
-Chicken Fajitas,"[""Chicken breast"",""Bell peppers"",""Onion"",""Fajita seasoning"",""Tortillas"",""Salsa"",""Sour cream""]",30,Mexican,2,1. Slice chicken and vegetables. 2. Season chicken and vegetables with fajita seasoning. 3. Sauté chicken and vegetables until cooked. 4. Warm tortillas. 5. Serve chicken and vegetables in tortillas with salsa and sour cream.,4.5
+Sweet and Sour Chicken,"[""1 lb boneless, skinless chicken breasts, cut into cubes"",""1 red bell pepper, chopped"",""1 green bell pepper, chopped"",""1 onion, chopped"",""1 (15 ounce) can pineapple chunks, drained"",""1/2 cup soy sauce"",""1/4 cup brown sugar"",""2 tablespoons cornstarch"",""1 tablespoon rice vinegar"",""1 teaspoon ginger, ground"",""1/2 teaspoon garlic powder""]",40,Chinese,3,"1. In a large bowl, combine chicken, bell peppers, onion, and pineapple.
+2. In a separate bowl, whisk together soy sauce, brown sugar, cornstarch, rice vinegar, ginger, and garlic powder.
+3. Pour sauce over chicken and vegetables, and stir to coat.
+4. Bake in a preheated oven at 375 degrees F (190 degrees C) for 30-40 minutes, or until chicken is cooked through and sauce has thickened.",4.5
+Classic Pancakes,"[""1 cup all-purpose flour"",""1 teaspoon baking powder"",""1/2 teaspoon salt"",""1 tablespoon sugar"",""1 egg"",""1 cup milk"",""2 tablespoons vegetable oil""]",20,American,2,"1. In a large bowl, whisk together flour, baking powder, salt, and sugar.
+2. In a separate bowl, whisk together egg, milk, and vegetable oil.
+3. Pour wet ingredients into dry ingredients and stir until just combined.
+4. Heat a lightly oiled griddle or frying pan over medium heat.
+5. Pour 1/4 cup of batter onto the griddle for each pancake.
+6. Cook for 2-3 minutes per side, or until golden brown.",4.2
+Hearty Beef Stew,"[""1 lb beef stew meat, cut into 1-inch cubes"",""1 tablespoon olive oil"",""1 onion, chopped"",""2 carrots, peeled and chopped"",""2 celery stalks, chopped"",""4 cups beef broth"",""1 teaspoon thyme, dried"",""1/2 teaspoon rosemary, dried"",""1 bay leaf"",""1 lb potatoes, peeled and cubed"",""1 cup frozen peas""]",150,Irish,4,"1. Season beef with salt and pepper. Heat olive oil in a large pot or Dutch oven over medium-high heat. Brown beef in batches, then set aside.
+2. Add onion, carrots, and celery to the pot and cook until softened, about 5 minutes. Stir in thyme and rosemary.
+3. Return beef to the pot. Pour in beef broth and add bay leaf. Bring to a boil, then reduce heat and simmer for 1 1/2 - 2 hours, or until beef is tender.
+4. Add potatoes and cook for 30 minutes, or until potatoes are tender. Stir in frozen peas during the last 5 minutes of cooking.
+5. Remove bay leaf before serving.",4.8
+Spicy Chicken Curry,"[""Chicken"",""Onion"",""Tomatoes"",""Ginger"",""Garlic"",""Spices""]",45,Indian,3,"1. Marinate chicken. 2. Sauté onions, ginger, garlic. 3. Add tomatoes and spices. 4. Cook chicken in the sauce. 5. Simmer until done.",4.5
+Vegetarian Pasta Primavera,"[""Pasta"",""Broccoli"",""Carrots"",""Peas"",""Asparagus"",""Cream Sauce"",""Parmesan Cheese""]",30,Italian,2,1. Cook pasta. 2. Steam vegetables. 3. Mix pasta and vegetables with cream sauce. 4. Sprinkle with Parmesan cheese. 5. Serve hot.,4.2

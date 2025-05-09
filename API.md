@@ -118,6 +118,32 @@ POST /autofill/tables/{table_id or table_name}
 ```
 
 ---
+### Regenerate Rows
+#### Endpoint
+```
+POST /regenerate/tables/{table_id or table_name}
+```
+#### Request Body
+```json
+{
+  "batch": 2,
+  "temperature": 0.56,
+  "model": "aiai"
+  "autofill": {"columns": ["ingredients"], "rows": ["rsClYt", "8cR0I7"], "prompt": "foo bar"}
+}
+```
+
+#### Response
+```json
+{
+  "data": [
+    {"recipe_name": "0", "ingredient": "t0"},
+    {"recipe_name": "1", "ingredient": "t1"}
+  ]
+}
+```
+
+---
 ### Stream Row Generation
 #### Endpoint
 ```

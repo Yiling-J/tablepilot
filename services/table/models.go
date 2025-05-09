@@ -42,6 +42,10 @@ type AutofillRequest struct {
 	Offset         int      `json:"offset"`
 	Columns        []string `json:"columns"`
 	ContextColumns []string `json:"context_columns"`
+
+	// fields below are used in regenerate API
+	Rows   []string `json:"rows"`
+	Prompt string   `json:"prompt"`
 }
 
 type GenerateRowsRequest struct {
@@ -60,6 +64,16 @@ type GenerateRowsRequest struct {
 	sharedSources map[string]json.RawMessage
 	// used in file list source and csv source, the root fs for files
 	sourceDataDir string
+}
+
+type ReGenerateRowsRequest struct {
+	Rows        []string `json:"rows"`
+	Table       string   `json:"table"`
+	Temperature float64  `json:"temperature"`
+	Model       string   `json:"model"`
+	ImageModel  string   `json:"image_model"`
+	Columns     []string `json:"columns"`
+	Prompt      string   `json:"prompt"`
 }
 
 type ColumnSchema struct {
