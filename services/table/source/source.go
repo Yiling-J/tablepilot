@@ -63,7 +63,7 @@ func (i *Indexer) nextIndex() int {
 			if len(i.picked) == i.total {
 				i.picked = map[int]bool{}
 			}
-			for j := 0; j < i.total; j++ {
+			for j := range i.total {
 				if _, ok := i.picked[j]; !ok {
 					options = append(options, j)
 				}

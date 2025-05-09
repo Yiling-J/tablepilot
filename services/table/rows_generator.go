@@ -201,7 +201,7 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 	for _, col := range g.contextColumns {
 		if col.ContextLength > 0 {
 			values := []any{}
-			for i := 0; i < col.ContextLength; i++ {
+			for i := range col.ContextLength {
 				if i >= len(contextRows) {
 					break
 				}
@@ -325,7 +325,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 			g.rows = append(g.rows, row)
 		}
 	} else {
-		for n := 0; n < batch; n++ {
+		for n := range batch {
 			row := map[string]*schema.CellValue{}
 			for _, col := range g.table.Edges.Columns {
 				idx, ok := g.indexerMap[col.Nanoid]
@@ -627,10 +627,6 @@ func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string
 }
 
 func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]*schema.CellValue) ([]map[string]*schema.CellValue, error) {
-	err := g.newBatch(ctx, len(rows))
-	if err != nil {
-		return nil, err
-	}
 	chatRows := []map[string]any{}
 	// used in autofill mode only
 	contextColumnIDs := map[string]bool{}
@@ -647,6 +643,7 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 			contextColumnIDs[col.Nanoid] = true
 		}
 	}
+
 	idMap := map[string]int{}
 	for i, row := range rows {
 		cr := map[string]any{}
@@ -675,7 +672,7 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 	}
 	g.builder.AddTableColumns(g.table.Edges.Columns, g.autofill.Enable)
 	g.builder.AddMissingColumns(g.missingImageColumns, false)
-	err = g.builder.AddExistings(chatRows)
+	err := g.builder.AddExistings(chatRows)
 	if err != nil {
 		return nil, err
 	}
@@ -748,6 +745,18 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 			}
 			rows = g.rows
 		}
+		// reset batch first
+		g.builder = promptbuilder.NewRowsBuilder(len(rows))
+		g.builder.AddDescription(g.table.Description)
+		if len(g.autofill.Prompt) > 0 {
+			g.builder.AddUserPrompt(g.autofill.Prompt)
+		}
+		g.rows = g.rows[:0]
+		err = g.prepareContextRows(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		rows, err = g.generateImages(ctx, rows)
 		if err != nil {
 			return nil, err

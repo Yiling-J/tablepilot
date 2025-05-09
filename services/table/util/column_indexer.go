@@ -75,7 +75,7 @@ func (ci *ColumnIndexer) GetColumnIndexByNanoid(id string) (int, error) {
 
 func (ci *ColumnIndexer) RowMapToSlice(row map[string]*schema.CellValue) ([]*schema.CellValue, error) {
 	data := []*schema.CellValue{}
-	for i := 0; i < len(ci.columns); i++ {
+	for i := range len(ci.columns) {
 		col, err := ci.GetColumnByIndex(i)
 		if err != nil {
 			return nil, err

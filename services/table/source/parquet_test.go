@@ -89,7 +89,7 @@ func TestParquetSource_Range(t *testing.T) {
 	})
 	require.NoError(t, err)
 	expected := []map[string]any{}
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		expected = append(expected, map[string]any{"Id": cast.ToString(i), "Name": cast.ToString(i)})
 	}
 	require.Equal(t, expected, rows)
@@ -139,7 +139,7 @@ func TestParquetSource_HuggingFaceRange(t *testing.T) {
 	})
 	require.NoError(t, err)
 	expected := []map[string]any{}
-	for i := 0; i < 20; i++ {
+	for i := range 20 {
 		expected = append(expected, map[string]any{"Id": cast.ToString(i), "Name": "n" + cast.ToString(i)})
 	}
 	require.Equal(t, expected, rows)

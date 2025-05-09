@@ -16,7 +16,7 @@ func TestSource_Indexer(t *testing.T) {
 		Random: false,
 	})
 	nums := []int{}
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		nums = append(nums, indexer.nextIndex())
 	}
 	require.Equal(t, []int{0, 1, 2, 3, 4, 0, 1, 2, 3, 4}, nums)
@@ -27,7 +27,7 @@ func TestSource_Indexer(t *testing.T) {
 	})
 	numsCounter := map[int]int{}
 	nums = []int{}
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		j := indexer.nextIndex()
 		nums = append(nums, j)
 		numsCounter[j] += 1
@@ -58,7 +58,7 @@ func TestSource_Indexer(t *testing.T) {
 		Random: true,
 	})
 	nums = []int{}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		nums = append(nums, indexer.nextIndex())
 		if (i+1)%5 == 0 {
 			require.NotEqual(t, []int{0, 1, 2, 3, 4}, nums)
@@ -72,7 +72,7 @@ func TestSource_Indexer(t *testing.T) {
 		Repeat: 2,
 	})
 	nums = []int{}
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		nums = append(nums, indexer.nextIndex())
 	}
 	require.Equal(t, []int{0, 0, 1, 1, 2, 2, 3, 3, 4, 4}, nums)

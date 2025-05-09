@@ -171,7 +171,7 @@ func TestAIService_ChatModelLimiter(t *testing.T) {
 	srv.defaultModel = "default"
 
 	now := time.Now()
-	for i := 0; i < 25; i++ {
+	for range 25 {
 		_, err = srv.Chat(context.TODO(), &client.ChatRequest{
 			Messages:        []*client.Message{client.UserMessage("foo")},
 			Temperature:     0.35,
@@ -187,7 +187,7 @@ func TestAIService_ChatModelLimiter(t *testing.T) {
 	require.True(t, delta < 20)
 
 	now = time.Now()
-	for i := 0; i < 25; i++ {
+	for range 25 {
 		_, err = srv.Chat(context.TODO(), &client.ChatRequest{
 			Messages:        []*client.Message{client.UserMessage("foo")},
 			Temperature:     0.35,

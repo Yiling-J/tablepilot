@@ -128,7 +128,7 @@ func (p *ParquetGoReader) loadFiles(ctx context.Context) ([]*pfile, error) {
 	files := make([]*pfile, len(p.files))
 	for c := range slices.Chunk(p.files, fileReadConcurrency) {
 		g, _ := errgroup.WithContext(ctx)
-		for i := 0; i < len(c); i++ {
+		for i := range c {
 			index := base + i
 			g.Go(func() error {
 				pf, err := p.parquetFile(p.files[index])

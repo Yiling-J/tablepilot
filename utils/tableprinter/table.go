@@ -198,14 +198,14 @@ func (t *ttyTablePrinter) calculateColumnWidths(delimSize int) []int {
 
 	availWidth := func() int {
 		setWidths := 0
-		for col := 0; col < numCols; col++ {
+		for col := range numCols {
 			setWidths += colWidths[col]
 		}
 		return t.maxWidth - delimSize*(numCols-1) - setWidths
 	}
 	numFixedCols := func() int {
 		fixedCols := 0
-		for col := 0; col < numCols; col++ {
+		for col := range numCols {
 			if colWidths[col] > 0 {
 				fixedCols++
 			}
@@ -217,7 +217,7 @@ func (t *ttyTablePrinter) calculateColumnWidths(delimSize int) []int {
 	if w := availWidth(); w > 0 {
 		if numFlexColumns := numCols - numFixedCols(); numFlexColumns > 0 {
 			perColumn := w / numFlexColumns
-			for col := 0; col < numCols; col++ {
+			for col := range numCols {
 				if max := maxColWidths[col]; max < perColumn {
 					colWidths[col] = max
 				}
@@ -228,7 +228,7 @@ func (t *ttyTablePrinter) calculateColumnWidths(delimSize int) []int {
 	// truncate long columns to the remaining available width
 	if numFlexColumns := numCols - numFixedCols(); numFlexColumns > 0 {
 		perColumn := availWidth() / numFlexColumns
-		for col := 0; col < numCols; col++ {
+		for col := range numCols {
 			if colWidths[col] == 0 {
 				if max := maxColWidths[col]; max < perColumn {
 					colWidths[col] = max
@@ -241,7 +241,7 @@ func (t *ttyTablePrinter) calculateColumnWidths(delimSize int) []int {
 
 	// add the remainder to truncated columns
 	if w := availWidth(); w > 0 {
-		for col := 0; col < numCols; col++ {
+		for col := range numCols {
 			d := maxColWidths[col] - colWidths[col]
 			toAdd := w
 			if d < toAdd {

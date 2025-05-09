@@ -23,6 +23,7 @@ linters:
     - unconvert
     - unused
     - whitespace
+    - intrange
   settings:
     exhaustive:
       default-signifies-exhaustive: true

@@ -32,7 +32,7 @@ func TestGoReader_All(t *testing.T) {
 	}
 
 	paths := []string{}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		paths = append(paths, fmt.Sprintf("test_data/%d.parquet", i))
 	}
 
