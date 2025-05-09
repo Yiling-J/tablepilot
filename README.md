@@ -4,9 +4,9 @@
 
 # Tablepilot
 
-Tablepilot is a powerful CLI/API/WebUI/App tool that lets you create tables using natural language and effortlessly generate or autofill content with AI. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
+Tablepilot is a simple yet powerful AI-native platform that lets you create tables using natural language and effortlessly generate or autofill data with AI, available via CLI, WebUI and App. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, predefined list, AI generated list, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
 
-As a CLI tool, Tablepilot uses a declarative schema format. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. WebUI/Desktop App is also available. See the demo below:
+Tablepilot uses a declarative schema format to create tables. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. WebUI/Desktop App is also available. See the demo below:
 
 ![Demo](./demo.gif)
 
