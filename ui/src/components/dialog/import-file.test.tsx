@@ -9,7 +9,7 @@ import { JSONObject } from "@/json";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
-import { ImportCSVDialog } from "./import-csv";
+import { ImportFileDialog } from "./import-file";
 
 describe("ImportFile", () => {
   beforeEach(() => {
@@ -76,7 +76,7 @@ describe("ImportFile", () => {
       nextRun = true;
     };
     render(
-      <ImportCSVDialog isOpen={true} setIsOpen={vi.fn()} onNext={onNext} />,
+      <ImportFileDialog isOpen={true} setIsOpen={vi.fn()} onNext={onNext} />,
     );
     const csvContent =
       "name,job\nAlice,Engineer\nBob,Designer\nCharlie,Manager";
@@ -103,7 +103,7 @@ describe("ImportFile", () => {
       return "foobar";
     });
     render(
-      <ImportCSVDialog isOpen={true} setIsOpen={vi.fn()} onNext={onNext} />,
+      <ImportFileDialog isOpen={true} setIsOpen={vi.fn()} onNext={onNext} />,
     );
     const fileContent = "foobar";
     const blob = new Blob([fileContent], { type: "image/png" });

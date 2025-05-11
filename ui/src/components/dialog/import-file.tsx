@@ -18,17 +18,17 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModelSelector } from "../model-selector.tsx";
 
-interface ImportCSVDialogProps {
+interface ImportFileDialogProps {
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
   onNext: (form: TableCreateRequest, rows: JSONObject[]) => void;
 }
 
-export function ImportCSVDialog({
+export function ImportFileDialog({
   isOpen,
   setIsOpen,
   onNext,
-}: ImportCSVDialogProps) {
+}: ImportFileDialogProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
