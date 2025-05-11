@@ -178,7 +178,7 @@ export function ImportCSVDialog({
         {isImage && (
           <div className="grid gap-2 px-5">
             <Label htmlFor="prompt" className="flex items-center gap-1">
-              Prompt{" "}
+              Prompt
               <span className="text-xs text-muted-foreground">(optional)</span>
             </Label>
             <Textarea
