@@ -9,6 +9,7 @@ import { JSONObject } from "@/json";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
+import { Mock } from "vitest";
 import { ImportFileDialog } from "./import-file";
 
 describe("ImportFile", () => {
@@ -90,7 +91,8 @@ describe("ImportFile", () => {
 
   it("should import image file", async () => {
     vi.mock("react-router-dom");
-    vi.mocked(useNavigate).mockReturnValue(vi.fn());
+    const nv = vi.mocked(useNavigate);
+    nv.mockReturnValue(vi.fn());
     let nextRun = false;
     const onNext = () => {
       nextRun = true;
@@ -121,5 +123,9 @@ describe("ImportFile", () => {
     await userEvent.click(screen.getByText("Next"));
     expect(nextRun).toBe(false);
     expect(mockedImportImage).toBeCalled();
+    expect(nv).toBeCalled();
+    expect((nv.mock.results[0].value as Mock).mock.calls[0][0]).toBe(
+      "/tables/foobar",
+    );
   });
 });
