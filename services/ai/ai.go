@@ -125,7 +125,7 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	if request.Model == "" {
 		request.Model = ai.defaultModel
 	}
-	client, err := ai.getChatClientByModel(ctx, request.Model)
+	aiClient, err := ai.getChatClientByModel(ctx, request.Model)
 	if err != nil {
 		return nil, err
 	}
@@ -138,9 +138,16 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 
 	ai.logger.Debugln("send chat request", "model", request.Model, "temperature", request.Temperature)
 	for _, message := range request.Messages {
-		ai.logger.Debugf("[%s]message: \n%s", message.Role, message.Content)
+		ai.logger.Debugf("[%s]message\n", message.Role)
+		for _, c := range message.Content {
+			data := c.Data
+			if c.Type == client.ContentTypeImage {
+				data = "{image data}"
+			}
+			ai.logger.Debugf("[%s]message part: \n%s", c.Type, data)
+		}
 	}
-	resp, err := client.Chat(ctx, request)
+	resp, err := aiClient.Chat(ctx, request)
 	if err != nil {
 		return nil, err
 	}

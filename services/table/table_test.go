@@ -3,6 +3,7 @@ package table
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -704,6 +705,75 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTableService_ImportImage(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+
+	srv, err := NewTableService(&config.Config{}, db, &ai.AiServiceMock{
+		ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			builder := promptbuilder.NewNewImageToTableBuilder("foobar")
+			prompt, err := builder.Prompt()
+			require.NoError(t, err)
+			require.Equal(t, request.Messages[0].Content[0].Data, prompt)
+			require.Equal(t, 0.1, request.Temperature)
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, int64(6000), request.MaxOutputTokens)
+			generated := ImageExtractionOutput{
+				TableName: "table_test",
+				Columns: []ImageExtractionColumn{
+					{Name: "col1", Description: "d1", Type: "string"},
+					{Name: "col2", Description: "d2", Type: "integer"},
+				},
+				Rows: [][]string{
+					{"a", "1"},
+					{"b", "2"},
+				},
+			}
+			b, err := json.Marshal(generated)
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	pb, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC")
+	require.NoError(t, err)
+	id, err := srv.ImportImage(ctx, ImageImportRequest{
+		Data:   pb,
+		Prompt: "foobar",
+		Model:  "m1",
+	})
+	require.NoError(t, err)
+
+	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).WithRows(func(trq *ent.TableRowQuery) {
+		trq.Order(ent.Asc(tablerow.FieldID))
+	}).Where(tablemeta.Name("table_test")).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, id, table.Nanoid)
+	columnNames := []string{}
+	columnTypes := []string{}
+	for _, col := range table.Edges.Columns {
+		require.Equal(t, tablecolumn.TypeString, col.Type)
+		columnNames = append(columnNames, col.Name)
+		columnTypes = append(columnTypes, col.Type.String())
+	}
+	require.Equal(t, []string{"col1", "col2"}, columnNames)
+	require.Equal(t, []string{"string", "string"}, columnTypes)
+	rows := [][]any{}
+	for _, row := range table.Edges.Rows {
+		r := []any{}
+		for _, cell := range row.Cells {
+			r = append(r, cell.Value)
+		}
+		rows = append(rows, r)
+	}
+	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
 }
 
 func TestTableService_ListTables(t *testing.T) {

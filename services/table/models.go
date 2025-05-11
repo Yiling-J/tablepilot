@@ -125,3 +125,21 @@ type ModelParams struct {
 	Temperature float64 `json:"temperature"`
 	Model       string  `json:"model"`
 }
+
+type ImageImportRequest struct {
+	Data   []byte
+	Prompt string
+	Model  string
+}
+
+type ImageExtractionColumn struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type" jsonschema:"enum=string,enum=number,enum=integer,enum=boolean,enum=array"`
+}
+
+type ImageExtractionOutput struct {
+	TableName string                  `json:"table_name"`
+	Columns   []ImageExtractionColumn `json:"columns"`
+	Rows      [][]string              `json:"rows"`
+}

@@ -238,6 +238,15 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 	return nil
 }
 
+func imageURLFromData(data []byte) (string, error) {
+	ct := http.DetectContentType(data)
+	b64 := base64.StdEncoding.EncodeToString(data)
+	if !strings.HasPrefix(ct, "image/") {
+		return "", errors.New("not an image")
+	}
+	return fmt.Sprintf("data:%s;base64,%s", ct, b64), nil
+}
+
 func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, error) {
 	_, err := url.ParseRequestURI(raw)
 	if err == nil {
@@ -260,12 +269,7 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 	if err != nil {
 		return "", err
 	}
-	ct := http.DetectContentType(data)
-	b64 := base64.StdEncoding.EncodeToString(data)
-	if !strings.HasPrefix(ct, "image/") {
-		return "", errors.New("not an image")
-	}
-	return fmt.Sprintf("data:%s;base64,%s", ct, b64), nil
+	return imageURLFromData(data)
 }
 
 func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {

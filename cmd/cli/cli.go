@@ -203,12 +203,17 @@ func BuildCLI(root *cobra.Command) *CLI {
 
 	importCmd := &cobra.Command{
 		Use:   "import <file>",
-		Short: "Import csv file as table",
+		Short: "Import csv or image file as table",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return handler.Import(cmd, args)
 		},
 	}
 	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing. Defaults to file name if not set")
+	importCmd.Flags().StringP("prompt", "p", "", "optional prompt text send to LLM")
+	importCmd.Flags().StringP(
+		"model", "m", "",
+		"specify the model used to extract data from image. If not provided, the default model will be used",
+	)
 	cmd.AddCommand(importCmd)
 
 	builder := &cobra.Command{
