@@ -1,11 +1,9 @@
 import {
     Column,
     GenerateRequest,
-    ModelList,
     TableInfo,
     autofill,
     generate,
-    getModels,
     getRows,
     getTable,
     getTableSchema,
@@ -23,17 +21,9 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AutofillDialog } from "./dialog/autofill-start.tsx";
 import { CellTextDialog } from "./dialog/cell-text.tsx";
-import { ProvidersListDialog } from "./dialog/providers.tsx";
 import { DataGrid } from "./grid/data-grid";
 import { Button } from "./ui/button";
 
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GearIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { asString, download, generateCsv, mkConfig } from "export-to-csv";
@@ -42,10 +32,9 @@ import { TablepilotHeader } from "./header.tsx";
 
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
-import * as SelectPrimitive from "@radix-ui/react-select";
 import { info } from "@tauri-apps/plugin-log";
-import { BookTypeIcon, Check, ImageIcon } from "lucide-react";
 import { RegenerateDialog } from "./dialog/regenerate.tsx";
+import { ModelSelector } from "./model-selector.tsx";
 
 export function TablePage() {
   const { id } = useParams();
@@ -145,16 +134,12 @@ function ColumnHeader({
 export function Table({ id }: TableProps) {
   const [rows, setRows] = useState(Array<JSONObject>);
   const [table, setTable] = useState<TableInfo | undefined>(undefined);
-  const [models, setModels] = useState<ModelList | undefined>(undefined);
   const [isLoading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [expandCellOpen, setExpandCellOpen] = useState(false);
   const [autofillOpen, setAutofillOpen] = useState(false);
-  const [providerListOpen, setProviderListOpen] = useState(false);
   const [model, setModel] = useState("");
   const [imageModel, setImageModel] = useState("");
-  const [modelSelectOpen, setModelSelectOpen] = useState(false);
-  const [imageModelSelectOpen, setImageModelSelectOpen] = useState(false);
   const [button, setButton] = useState<TableButton>({
     text: "Start",
     enabled: true,
@@ -258,18 +243,6 @@ export function Table({ id }: TableProps) {
         vm.push(row);
       }
       await refreshTables();
-
-      const models = await getModels();
-      let currentModel = models.default_model;
-      if (table.model) {
-        currentModel = table.model;
-      }
-      setModel(currentModel);
-      genRequestRef.current.model = currentModel;
-      const currentImageModel = models.default_image_model;
-      setImageModel(currentImageModel);
-      genRequestRef.current.image_model = currentImageModel;
-      setModels(models);
       setRows(vm);
       setLoading(false);
     } catch (error) {
@@ -492,14 +465,6 @@ export function Table({ id }: TableProps) {
           });
         }}
       />
-      <ProvidersListDialog
-        isOpen={providerListOpen}
-        setIsOpen={async (v) => {
-          const models = await getModels();
-          setModels(models);
-          setProviderListOpen(v);
-        }}
-      />
       <RegenerateDialog
         open={regenerateDialogOpen}
         onOpenChange={setRegenerateDialogOpen}
@@ -548,12 +513,7 @@ export function Table({ id }: TableProps) {
             onClick={() => {
               clickButton(button.clickState);
             }}
-            disabled={
-              !button.enabled ||
-              models === undefined ||
-              models?.models === null ||
-              models.models.length === 0
-            }
+            disabled={!button.enabled || (model === "" && imageModel === "")}
           >
             <div className="flex pr-2 justify-center">
               <span className="cursor-pointer material-symbols-rounded">
@@ -563,148 +523,20 @@ export function Table({ id }: TableProps) {
             {button.text}
           </Button>
 
-          {(models === undefined ||
-            models?.models === null ||
-            models.models.length === 0) && (
-            <div className="flex ml-4 border rounded-sm">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setProviderListOpen(true);
-                }}
-              >
-                Add Models
-              </Button>
-            </div>
-          )}
-
-          {models && models.models && models.models.length > 0 && (
-            <div
-              className={cn(
-                "flex ml-4 rounded-sm items-center",
-                imageColumnExists ? "" : "border",
-              )}
-            >
-              {imageColumnExists && <BookTypeIcon className="mr-2" />}
-              <Select
-                value={model}
-                disabled={generating}
-                onValueChange={async (v) => {
-                  setModel(v);
-                }}
-                open={modelSelectOpen}
-                onOpenChange={setModelSelectOpen}
-              >
-                <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {models?.models.map((model) => (
-                      <SelectPrimitive.Item
-                        value={model.name}
-                        key={model.name}
-                        className={cn(
-                          "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                          "",
-                        )}
-                      >
-                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                          <SelectPrimitive.ItemIndicator>
-                            <Check className="h-4 w-4" />
-                          </SelectPrimitive.ItemIndicator>
-                        </span>
-
-                        <div>
-                          <SelectPrimitive.ItemText>
-                            <p>{model.name}</p>
-                          </SelectPrimitive.ItemText>
-                        </div>
-                      </SelectPrimitive.Item>
-                    ))}
-                  </SelectGroup>
-                  <Separator className="my-1" />
-
-                  <div>
-                    <div
-                      className="flex pt-2 pl-2 pb-2 text-sm items-center cursor-pointer"
-                      onClick={() => {
-                        setModelSelectOpen(false);
-                        setProviderListOpen(true);
-                      }}
-                    >
-                      <GearIcon className="mr-1" />
-                      <p>Model Settings</p>
-                    </div>
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {imageColumnExists &&
-            models &&
-            models.models &&
-            models.models.length > 0 && (
-              <div className="flex ml-4 rounded-sm items-center">
-                <ImageIcon className="mr-2" />
-                <Select
-                  value={imageModel}
-                  disabled={generating}
-                  onValueChange={async (v) => {
-                    setImageModel(v);
-                  }}
-                  open={imageModelSelectOpen}
-                  onOpenChange={setImageModelSelectOpen}
-                >
-                  <SelectTrigger className="w-[200px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
-                    <SelectValue placeholder="Select image gen model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {models?.models
-                        .filter((m) => m.image)
-                        .map((model) => (
-                          <SelectPrimitive.Item
-                            value={model.name}
-                            key={model.name}
-                            className={cn(
-                              "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                              "",
-                            )}
-                          >
-                            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                              <SelectPrimitive.ItemIndicator>
-                                <Check className="h-4 w-4" />
-                              </SelectPrimitive.ItemIndicator>
-                            </span>
-
-                            <div>
-                              <SelectPrimitive.ItemText>
-                                <p>{model.name}</p>
-                              </SelectPrimitive.ItemText>
-                            </div>
-                          </SelectPrimitive.Item>
-                        ))}
-                    </SelectGroup>
-                    <Separator className="my-1" />
-
-                    <div>
-                      <div
-                        className="flex pt-2 pl-2 pb-2 text-sm items-center cursor-pointer"
-                        onClick={() => {
-                          setModelSelectOpen(false);
-                          setProviderListOpen(true);
-                        }}
-                      >
-                        <GearIcon className="mr-1" />
-                        <p>Model Settings</p>
-                      </div>
-                    </div>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div>
+            <ModelSelector
+              hasImageColumn={imageColumnExists}
+              generating={generating}
+              selectModel={(v) => {
+                setModel(v);
+                genRequestRef.current.model = v;
+              }}
+              selectImageModel={(v) => {
+                setImageModel(v);
+                genRequestRef.current.image_model = v;
+              }}
+            />
+          </div>
         </div>
 
         {generating && (

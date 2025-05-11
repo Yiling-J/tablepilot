@@ -589,7 +589,7 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 	if err != nil {
 		return "", err
 	}
-	tablemeta, err := tx.TableMeta.Create().SetName(generated.TableName).Save(ctx)
+	tablemeta, err := tx.TableMeta.Create().SetName(generated.TableName).SetDescription(generated.TableDescription).Save(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, err)
 	}

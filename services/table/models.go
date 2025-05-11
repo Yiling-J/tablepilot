@@ -139,7 +139,8 @@ type ImageExtractionColumn struct {
 }
 
 type ImageExtractionOutput struct {
-	TableName string                  `json:"table_name"`
-	Columns   []ImageExtractionColumn `json:"columns"`
-	Rows      [][]string              `json:"rows"`
+	TableName        string                  `json:"table_name"`
+	TableDescription string                  `json:"table_description"`
+	Columns          []ImageExtractionColumn `json:"columns"`
+	Rows             [][]string              `json:"rows"`
 }

@@ -721,7 +721,8 @@ func TestTableService_ImportImage(t *testing.T) {
 			require.Equal(t, "m1", request.Model)
 			require.Equal(t, int64(6000), request.MaxOutputTokens)
 			generated := ImageExtractionOutput{
-				TableName: "table_test",
+				TableName:        "table_test",
+				TableDescription: "abc",
 				Columns: []ImageExtractionColumn{
 					{Name: "col1", Description: "d1", Type: "string"},
 					{Name: "col2", Description: "d2", Type: "integer"},
@@ -756,6 +757,7 @@ func TestTableService_ImportImage(t *testing.T) {
 	}).Where(tablemeta.Name("table_test")).Only(ctx)
 	require.NoError(t, err)
 	require.Equal(t, id, table.Nanoid)
+	require.Equal(t, "abc", table.Description)
 	columnNames := []string{}
 	columnTypes := []string{}
 	for _, col := range table.Edges.Columns {

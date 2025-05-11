@@ -2,10 +2,13 @@ import { TableCreateRequest } from "@/actions";
 import { JSONObject } from "@/json";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useNavigate } from "react-router-dom";
 import { ImportCSVDialog } from "./import-csv";
 
 describe("ImportCSV", () => {
   it("should parse the csv file", async () => {
+    vi.mock("react-router-dom");
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
     let nextRun = false;
     const onNext = (form: TableCreateRequest, rows: JSONObject[]) => {
       expect(form).toMatchObject({

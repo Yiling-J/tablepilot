@@ -1,4 +1,4 @@
-import { Source, TableCreateRequest } from "@/actions";
+import { Source, TableCreateRequest, importImage } from "@/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -8,11 +8,15 @@ import {
     DialogOverlay,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { JSONArray, JSONObject } from "@/json";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { Plus } from "lucide-react";
 import Papa from "papaparse";
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ModelSelector } from "../model-selector.tsx";
 
 interface ImportCSVDialogProps {
   isOpen: boolean;
@@ -29,6 +33,10 @@ export function ImportCSVDialog({
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImage, setIsImage] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState("");
+  const [model, setModel] = useState("");
+  const navigate = useNavigate();
 
   const handleClick = () => {
     fileInputRef.current?.click();
@@ -39,7 +47,25 @@ export function ImportCSVDialog({
       if (!file) {
         return;
       }
+      if (isImage) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          setLoading(true);
+          const id = await importImage({
+            prompt: prompt,
+            model: model,
+            data: (reader.result as string)
+              .replace("data:", "")
+              .replace(/^.+,/, ""),
+          });
+          setLoading(false);
+          navigate(`/tables/${id}`);
+        };
+        return;
+      }
       const input = await file.text();
+
       const parsed = Papa.parse(input, { skipEmptyLines: true });
       const records = parsed.data;
       if (records.length === 0) {
@@ -75,6 +101,11 @@ export function ImportCSVDialog({
       };
       onNext(form, rows);
     } finally {
+      setFile(null);
+      setFileName("");
+      setIsImage(false);
+      setPrompt("");
+      setModel("");
       setLoading(false);
     }
   };
@@ -91,6 +122,18 @@ export function ImportCSVDialog({
         <DialogDescription className="hidden"></DialogDescription>
 
         <div className="w-full max-w-4xl mx-auto p-4">
+          {isImage && (
+            <div className="pb-3">
+              <ModelSelector
+                hasImageColumn={false}
+                generating={false}
+                selectModel={(model) => {
+                  setModel(model);
+                }}
+                selectImageModel={(_) => {}}
+              />
+            </div>
+          )}
           <Card
             className="border-dashed border-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
             onClick={handleClick}
@@ -101,7 +144,7 @@ export function ImportCSVDialog({
                 data-testid="import-file-selector"
                 ref={fileInputRef}
                 className="hidden"
-                accept=".csv"
+                accept=".csv, .png, .jpg, .jpeg"
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
@@ -110,6 +153,13 @@ export function ImportCSVDialog({
                   if (file) {
                     setFile(file);
                     setFileName(file.name);
+                    if (
+                      ["image/png", "image/jpeg", "image/jpg"].includes(
+                        file.type,
+                      )
+                    ) {
+                      setIsImage(true);
+                    }
                   }
                 }}
               />
@@ -117,7 +167,7 @@ export function ImportCSVDialog({
                 <Plus className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm text-muted-foreground mb-1">
-                {fileName ? fileName : "Click to select a CSV file"}
+                {fileName ? fileName : "Click to select a CSV or image file"}
               </p>
               <p className="text-xs text-muted-foreground">
                 {fileName ? "Click to change file" : ""}
@@ -125,6 +175,22 @@ export function ImportCSVDialog({
             </CardContent>
           </Card>
         </div>
+        {isImage && (
+          <div className="grid gap-2 px-5">
+            <Label htmlFor="prompt" className="flex items-center gap-1">
+              Prompt{" "}
+              <span className="text-xs text-muted-foreground">(optional)</span>
+            </Label>
+            <Textarea
+              id="prompt"
+              placeholder="Provide specific instructions to guide the AI in extracting the right table from your image."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="resize-none"
+              rows={3}
+            />
+          </div>
+        )}
         <div className="flex justify-end">
           <Button
             variant="outline"
@@ -134,7 +200,10 @@ export function ImportCSVDialog({
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmitCSV} disabled={loading}>
+          <Button
+            onClick={handleSubmitCSV}
+            disabled={!file || loading || (isImage && model === "")}
+          >
             {loading ? <ReloadIcon className="animate-spin" /> : "Next"}
           </Button>
         </div>

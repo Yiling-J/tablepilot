@@ -113,6 +113,8 @@ describe("Tables", () => {
   });
   it("should open file selector when click import", async () => {
     await userEvent.click(screen.getByText("Import"));
-    expect(screen.getByText("Click to select a CSV file")).toBeInTheDocument();
+    expect(
+      screen.getByText("Click to select a CSV or image file"),
+    ).toBeInTheDocument();
   });
 });
