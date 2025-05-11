@@ -151,7 +151,7 @@ jobs:
         env:
           GOARCH: ${{ matrix.go }}        
         run: |
-          go build -o "build/tablepilot-${{matrix.rust}}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}"
+          go build -o "build/tablepilot-${{matrix.rust}}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}" -tags noui
           ls build
 
       - name: install dependencies (ubuntu only)
