@@ -108,19 +108,28 @@
 	- `--rows string`
 	  Specifies the rows(ID) to be regenerated. This flag can be set multiple times to specify multiple rows (see example).
 
-	- `-o, --offset int`
-	  Start offset for autofilling rows. (default 0)
+	- `-p, --prompt string`
+	  prompt text send to LLM.
+
+	- `-t, --temperature float`
+	  The sampling temperature. Higher values will make the output more random. (default 0.6)
 
 - **import**
-  Import a CSV file into a table.
+  Import a CSV or image file into a table. Supported image file formats are PNG and JPEG. When importing image, a new table will always been created.
   ```console
   tablepilot import users.csv
   ```
 
-  	- `-t, --table string`
-	 Imports into an existing table or creates a new one if missing. Defaults to the file name if not set.
+  	- `-t, --table string` [CSV only]
+	 imports into an existing table or creates a new one if missing. Defaults to the file name if not set.
 	 - If the table exists, Tablepilot matches columns by name and tries to convert data types automatically, if a column exists in table but not in csv file, the default empty value of the column type will be used. Errors occur if conversion fails.
 	 - If the table doesn't exist, all columns are treated as strings.
+
+	- `-m, --model string` [Image only]
+	  specify the model used to generate rows. If not provided, the default model will be used.
+
+	- `-p, --prompt string` [Image only]
+	  prompt text send to LLM, optional.
 
   **Important**: When importing into an existing table, if the table contains a pick-type column and the imported value for this column is not empty, Tablepilot will scan the entire source (all CSV/Parquet files, the entire database table, or loop through the Hugging Face Rows API) to find a matching value. This process may take a significant amount of time if your source is large.
 
