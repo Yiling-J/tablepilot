@@ -5,6 +5,10 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -306,7 +310,7 @@ func (h *Handler) Generate(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) Import(cmd *cobra.Command, args []string) error {
-	table, err := cmd.Flags().GetString("table")
+	tb, err := cmd.Flags().GetString("table")
 	if err != nil {
 		return err
 	}
@@ -316,15 +320,53 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer func() { _ = reader.Close() }()
-	if table == "" {
-		table = filepath.Base(tableFile)
-		table = strings.TrimSuffix(table, filepath.Ext(table))
+	if tb == "" {
+		tb = filepath.Base(tableFile)
+		tb = strings.TrimSuffix(tb, filepath.Ext(tb))
 	}
-	id, err := h.backend.TableService.Import(cmd.Context(), table, reader)
-	if err != nil {
-		return err
+
+	_, _, err = image.DecodeConfig(reader)
+
+	_, seekErr := reader.Seek(0, io.SeekStart)
+	if seekErr != nil {
+		return fmt.Errorf("failed to seek file %s to beginning: %w", tableFile, seekErr)
 	}
-	h.backend.Logger.Infow("table imported", "id", id)
+
+	var id string
+	var importErr error
+
+	if err == nil {
+		h.backend.Logger.Debugw("file detected as image, using ImportImage", "file", tableFile)
+		model, err := cmd.Flags().GetString("model")
+		if err != nil {
+			return err
+		}
+		prompt, err := cmd.Flags().GetString("prompt")
+		if err != nil {
+			return err
+		}
+		d, err := io.ReadAll(reader)
+		if err != nil {
+			return fmt.Errorf("failed to read image %s: %w", tableFile, err)
+		}
+		id, importErr = h.backend.TableService.ImportImage(cmd.Context(), table.ImageImportRequest{
+			Data:   d,
+			Model:  model,
+			Prompt: prompt,
+		})
+		if importErr != nil {
+			return fmt.Errorf("failed to import image %s: %w", tableFile, importErr)
+		}
+		h.backend.Logger.Infow("image imported successfully", "id", id, "sourceFile", tableFile)
+	} else {
+		h.backend.Logger.Debugw("file not detected as image or error decoding image config, using default Import",
+			"file", tableFile, "decode_error", err.Error())
+		id, importErr = h.backend.TableService.Import(cmd.Context(), tb, reader)
+		if importErr != nil {
+			return fmt.Errorf("failed to import file %s as table %s: %w", tableFile, tb, importErr)
+		}
+		h.backend.Logger.Infow("table imported successfully", "id", id, "table", tb, "sourceFile", tableFile)
+	}
 	return nil
 }
 

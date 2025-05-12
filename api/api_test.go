@@ -12,6 +12,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 )
@@ -611,4 +612,29 @@ func TestAPI_Regenerate(t *testing.T) {
 	}
 
 	resp.ResponseEq(t, 200, map[string]any{"data": expectedRows})
+}
+
+func TestAPI_ImageImport(t *testing.T) {
+	req := table.ImageImportRequest{
+		Data:   []byte("data"),
+		Prompt: "pm",
+		Model:  "mm",
+	}
+
+	tableMock := &table.TableServiceMock{
+		ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+			require.Equal(t, req, request)
+			return "foobar", nil
+		},
+	}
+
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.TableService = tableMock
+	})
+	r, err := server.NewPostRequest("/api/v1/image_import/tables", req)
+	require.NoError(t, err)
+	resp := server.Send(r)
+	resp.ResponseEq(
+		t, 200, gin.H{"id": "foobar"},
+	)
 }

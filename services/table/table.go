@@ -53,6 +53,7 @@ type TableService interface {
 	Truncate(ctx context.Context, table string) (int, error)
 	Delete(ctx context.Context, table string) (int, error)
 	Import(ctx context.Context, table string, reader io.Reader) (string, error)
+	ImportImage(ctx context.Context, request ImageImportRequest) (string, error)
 	CreateRows(ctx context.Context, table string, rows []map[string]any) error
 	SharedSources(ctx context.Context) []*SharedSource
 	GetTableSchema(ctx context.Context, table string) (*TableGenRequest, error)
@@ -541,6 +542,89 @@ func (t *TableServiceImpl) Delete(ctx context.Context, table string) (int, error
 		tablemeta.Nanoid(table),
 		tablemeta.Name(table),
 	)).Exec(ctx)
+}
+
+func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportRequest) (string, error) {
+	builder := promptbuilder.NewNewImageToTableBuilder(request.Prompt)
+	tables, err := t.db.TableMeta.Query().All(ctx)
+	if err != nil {
+		return "", err
+	}
+	tableNames := []string{}
+	for _, t := range tables {
+		tableNames = append(tableNames, t.Name)
+	}
+	builder.AddExistingTableNames(tableNames)
+	prompt, err := builder.Prompt()
+	if err != nil {
+		return "", err
+	}
+	encoded, err := imageURLFromData(request.Data)
+	if err != nil {
+		return "", err
+	}
+	input := client.UserMessageWithSingleImage(prompt, encoded)
+	reflector := jsonschema.Reflector{
+		AllowAdditionalProperties: false,
+		DoNotReference:            true,
+	}
+	var v ImageExtractionOutput
+	genSchema := reflector.Reflect(v)
+	resp, err := t.ai.Chat(ctx, &client.ChatRequest{
+		Temperature:     0.1,
+		MaxOutputTokens: GENERATE_DATA_MAX_TOKENS,
+		Messages:        []*client.Message{input},
+		Model:           request.Model,
+		Schema:          genSchema,
+	})
+	if err != nil {
+		return "", err
+	}
+	var generated ImageExtractionOutput
+	err = json.Unmarshal([]byte(resp.Content), &generated)
+	if err != nil {
+		return "", err
+	}
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return "", err
+	}
+	tablemeta, err := tx.TableMeta.Create().SetName(generated.TableName).SetDescription(generated.TableDescription).Save(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+	columnCreates := []*ent.TableColumnCreate{}
+	for _, col := range generated.Columns {
+		columnCreates = append(
+			columnCreates, tx.TableColumn.Create().SetName(col.Name).SetType(tablecolumn.TypeString).SetDescription(col.Description).
+				SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tablemeta),
+		)
+	}
+	err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+	schemaRows := [][]*schema.CellValue{}
+	for _, row := range generated.Rows {
+		if len(row) != len(generated.Columns) {
+			return "", ent.Rollback(tx, errors.New("inconsistent row data"))
+		}
+		cells := []*schema.CellValue{}
+		for _, cell := range row {
+			cells = append(cells, &schema.CellValue{Value: cell})
+		}
+		schemaRows = append(schemaRows, cells)
+	}
+
+	rowCreates := []*ent.TableRowCreate{}
+	for _, row := range schemaRows {
+		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(row).SetTablemeta(tablemeta))
+	}
+	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, err)
+	}
+	return tablemeta.Nanoid, tx.Commit()
 }
 
 func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.Reader) (string, error) {

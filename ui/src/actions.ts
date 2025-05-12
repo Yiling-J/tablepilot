@@ -3,6 +3,7 @@ import { JSONObject } from "./json";
 import {
     autofillUrl,
     generateUrl,
+    importImageUrl,
     modelsUrl,
     providerUrl,
     providersUrl,
@@ -427,4 +428,24 @@ export async function updateProvider(
     throw new Error("Failed to fetch data");
   }
   return res.json();
+}
+
+export interface ImportImageRequest {
+  data: string;
+  prompt: string;
+  model: string;
+}
+
+export async function importImage(req: ImportImageRequest): Promise<string> {
+  const res = await fetch(importImageUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json().then((v) => v.id);
 }

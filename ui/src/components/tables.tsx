@@ -4,7 +4,7 @@ import {
     deleteTable,
     getTables,
 } from "@/actions";
-import { ImportCSVDialog } from "@/components/dialog/import-csv";
+import { ImportFileDialog } from "@/components/dialog/import-file";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -42,7 +42,7 @@ export function TableListPage() {
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
-      <ImportCSVDialog
+      <ImportFileDialog
         isOpen={importCSVOpen}
         setIsOpen={setImportCSVOpen}
         onNext={(form: TableCreateRequest, rows: JSONObject[]) => {
@@ -62,7 +62,7 @@ export function TableListPage() {
             Refresh
           </Button>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading
             ? Array.from({ length: 4 }).map((_, index) => (
                 <Card key={index} className="w-80">
@@ -126,7 +126,7 @@ export function TableListPage() {
                 <span>Import</span>
               </div>
               <p className="text-xs pt-2 text-gray-500">
-                supported formats: csv
+                formats: csv, png, jpg, jpeg
               </p>
             </div>
           </Card>

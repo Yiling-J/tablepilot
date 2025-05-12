@@ -241,7 +241,7 @@ func (hs *HTTPServer) GetTableSchema(ctx *gin.Context) {
 }
 
 func (hs *HTTPServer) GetProviders(ctx *gin.Context) {
-	providers, err := hs.ProviderService.ListProviders(ctx)
+	providers, err := hs.ProviderService.ListProviders(ctx.Request.Context())
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
@@ -250,7 +250,7 @@ func (hs *HTTPServer) GetProviders(ctx *gin.Context) {
 }
 
 func (hs *HTTPServer) DeleteProvider(ctx *gin.Context) {
-	err := hs.ProviderService.DeleteProvider(ctx, cast.ToInt(ctx.Param("id")))
+	err := hs.ProviderService.DeleteProvider(ctx.Request.Context(), cast.ToInt(ctx.Param("id")))
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
@@ -265,7 +265,7 @@ func (hs *HTTPServer) CreateProvider(ctx *gin.Context) {
 		errorResponse(ctx, 400, err)
 		return
 	}
-	err = hs.ProviderService.CreateProvider(ctx, provider)
+	err = hs.ProviderService.CreateProvider(ctx.Request.Context(), provider)
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
@@ -280,12 +280,27 @@ func (hs *HTTPServer) UpdateProvider(ctx *gin.Context) {
 		errorResponse(ctx, 400, err)
 		return
 	}
-	err = hs.ProviderService.UpdateProvider(ctx, cast.ToInt(ctx.Param("id")), provider)
+	err = hs.ProviderService.UpdateProvider(ctx.Request.Context(), cast.ToInt(ctx.Param("id")), provider)
 	if err != nil {
 		errorResponse(ctx, 500, err)
 		return
 	}
 	ctx.JSON(200, "")
+}
+
+func (hs *HTTPServer) ImportImage(ctx *gin.Context) {
+	var req table.ImageImportRequest
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	id, err := hs.TableService.ImportImage(ctx.Request.Context(), req)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, gin.H{"id": id})
 }
 
 func (hs *HTTPServer) addRouters() {
@@ -307,4 +322,5 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.DELETE("/providers/:id", hs.DeleteProvider)
 	hs.apiv1.PATCH("/providers/:id", hs.UpdateProvider)
 	hs.apiv1.POST("/regenerate/tables/:table", hs.Regenerate)
+	hs.apiv1.POST("/image_import/tables", hs.ImportImage)
 }

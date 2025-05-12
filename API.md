@@ -271,3 +271,23 @@ GET /models
   "models": ["gemini-2","4o","vllm-llama3"]
 }
 ```
+
+---
+### Import Image
+#### Endpoint
+```
+POST /image_import/tables
+```
+#### Request Body
+```json
+{
+  "data": <base64 encoded image data>,
+  "model": "aiai",
+  "prompt": "create a table if 4 columns, ...."
+}
+```
+
+#### Response
+```json
+{"id": "cx5zty"}
+```

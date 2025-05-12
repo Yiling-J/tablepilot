@@ -51,3 +51,7 @@ export function providerUrl(id: string) {
 export function regenerateUrl(id: string) {
   return `${address}/api/v1/regenerate/tables/${id}`;
 }
+
+export function importImageUrl() {
+  return `${address}/api/v1/image_import/tables`;
+}

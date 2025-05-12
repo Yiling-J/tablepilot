@@ -48,6 +48,9 @@ var _ TableService = &TableServiceMock{}
 //			ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
 //				panic("mock out the Import method")
 //			},
+//			ImportImageFunc: func(ctx context.Context, request ImageImportRequest) (string, error) {
+//				panic("mock out the ImportImage method")
+//			},
 //			ListTablesFunc: func(ctx context.Context) (*ListTablesResponse, error) {
 //				panic("mock out the ListTables method")
 //			},
@@ -105,6 +108,9 @@ type TableServiceMock struct {
 
 	// ImportFunc mocks the Import method.
 	ImportFunc func(ctx context.Context, table string, reader io.Reader) (string, error)
+
+	// ImportImageFunc mocks the ImportImage method.
+	ImportImageFunc func(ctx context.Context, request ImageImportRequest) (string, error)
 
 	// ListTablesFunc mocks the ListTables method.
 	ListTablesFunc func(ctx context.Context) (*ListTablesResponse, error)
@@ -209,6 +215,13 @@ type TableServiceMock struct {
 			// Reader is the reader argument value.
 			Reader io.Reader
 		}
+		// ImportImage holds details about calls to the ImportImage method.
+		ImportImage []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Request is the request argument value.
+			Request ImageImportRequest
+		}
 		// ListTables holds details about calls to the ListTables method.
 		ListTables []struct {
 			// Ctx is the ctx argument value.
@@ -283,6 +296,7 @@ type TableServiceMock struct {
 	lockGetTableDetail        sync.RWMutex
 	lockGetTableSchema        sync.RWMutex
 	lockImport                sync.RWMutex
+	lockImportImage           sync.RWMutex
 	lockListTables            sync.RWMutex
 	lockPolishBuilderTable    sync.RWMutex
 	lockPolishBuilderTables   sync.RWMutex
@@ -642,6 +656,42 @@ func (mock *TableServiceMock) ImportCalls() []struct {
 	mock.lockImport.RLock()
 	calls = mock.calls.Import
 	mock.lockImport.RUnlock()
+	return calls
+}
+
+// ImportImage calls ImportImageFunc.
+func (mock *TableServiceMock) ImportImage(ctx context.Context, request ImageImportRequest) (string, error) {
+	if mock.ImportImageFunc == nil {
+		panic("TableServiceMock.ImportImageFunc: method is nil but TableService.ImportImage was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Request ImageImportRequest
+	}{
+		Ctx:     ctx,
+		Request: request,
+	}
+	mock.lockImportImage.Lock()
+	mock.calls.ImportImage = append(mock.calls.ImportImage, callInfo)
+	mock.lockImportImage.Unlock()
+	return mock.ImportImageFunc(ctx, request)
+}
+
+// ImportImageCalls gets all the calls that were made to ImportImage.
+// Check the length with:
+//
+//	len(mockedTableService.ImportImageCalls())
+func (mock *TableServiceMock) ImportImageCalls() []struct {
+	Ctx     context.Context
+	Request ImageImportRequest
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Request ImageImportRequest
+	}
+	mock.lockImportImage.RLock()
+	calls = mock.calls.ImportImage
+	mock.lockImportImage.RUnlock()
 	return calls
 }
 

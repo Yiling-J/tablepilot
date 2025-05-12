@@ -6,6 +6,9 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"os"
 	"strings"
@@ -437,6 +440,47 @@ func TestHandler_Import(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestHandler_ImportImage(t *testing.T) {
+	defer func() { _ = os.Remove("foo.png") }()
+	img := image.NewRGBA(image.Rect(0, 0, 5, 5))
+	black := color.RGBA{0, 0, 0, 255}
+	for y := range 5 {
+		for x := range 5 {
+			img.Set(x, y, black)
+		}
+	}
+
+	file, err := os.Create("foo.png")
+	require.NoError(t, err)
+	defer file.Close()
+	err = png.Encode(file, img)
+	require.NoError(t, err)
+
+	tableMock := &table.TableServiceMock{
+		ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+			require.Equal(t, "foobar", request.Prompt)
+			require.Equal(t, "m1", request.Model)
+			return "t1", nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, tableMock, nil,
+		),
+	)
+	cmd := &cobra.Command{}
+	cmd.Flags().String("table", "", "")
+	cmd.Flags().String("prompt", "", "")
+	cmd.Flags().String("model", "", "")
+	err = cmd.Flags().Set("prompt", "foobar")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("model", "m1")
+	require.NoError(t, err)
+	err = handler.Import(cmd, []string{"foo.png"})
+	require.NoError(t, err)
 }
 
 func TestHandler_Truncate(t *testing.T) {

@@ -17,8 +17,8 @@ install:
 snapshots:
 	cd tests/cli && go run snapshot.go
 tauri-dev:
-	go build -o "build/tablepilot-$(shell go run host/host.go)"
+	go build -o "build/tablepilot-$(shell go run host/host.go)" -tags noui
 	cd ui && pnpm tauri dev
 tauri-build:
-	go build -o "build/tablepilot-$(shell go run host/host.go)"
+	go build -o "build/tablepilot-$(shell go run host/host.go)" -tags noui
 	cd ui && pnpm tauri build

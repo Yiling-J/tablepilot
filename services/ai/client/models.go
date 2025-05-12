@@ -65,6 +65,20 @@ func UserMessageWithImages(content string, images map[string]string) *Message {
 	return m
 }
 
+func UserMessageWithSingleImage(content string, image string) *Message {
+	m := &Message{
+		Role: "user",
+		Content: []Content{
+			{Type: ContentTypeText, Data: content},
+		},
+	}
+	m.Content = append(m.Content, Content{
+		Type: ContentTypeImage,
+		Data: image,
+	})
+	return m
+}
+
 func AssistantMessage(content string) *Message {
 	return &Message{
 		Role: "assistant",
