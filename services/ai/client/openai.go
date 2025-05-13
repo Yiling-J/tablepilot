@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -147,10 +146,10 @@ func (c *OpenAIClient) Chat(ctx context.Context, request *ChatRequest) (*ChatRes
 	}
 	chatCompletion, err := c.completionService.New(ctx, chatParams)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("client.OpenAIClient.Chat: completion service error: %w", err)
 	}
 	if len(chatCompletion.Choices) < 1 {
-		return nil, errors.New("chat choices empty")
+		return nil, fmt.Errorf("client.OpenAIClient.Chat: chat choices empty")
 	}
 	content := chatCompletion.Choices[0].Message.Content
 	if array {
@@ -197,10 +196,10 @@ func (c *OpenAIClient) FunctionCall(ctx context.Context, request *ChatRequest) (
 	}
 	chatCompletion, err := c.completionService.New(ctx, chatParams)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("client.OpenAIClient.FunctionCall: completion service error: %w", err)
 	}
 	if len(chatCompletion.Choices) < 1 {
-		return nil, errors.New("chat choices empty")
+		return nil, fmt.Errorf("client.OpenAIClient.FunctionCall: chat choices empty")
 	}
 
 	calls := []FunctionCall{}
@@ -208,7 +207,7 @@ func (c *OpenAIClient) FunctionCall(ctx context.Context, request *ChatRequest) (
 		var m map[string]any
 		err = json.Unmarshal([]byte(tc.Function.Arguments), &m)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("client.OpenAIClient.FunctionCall: unmarshaling function arguments: %w", err)
 		}
 		calls = append(calls, FunctionCall{
 			Name:      tc.Function.Name,
@@ -223,5 +222,5 @@ func (c *OpenAIClient) FunctionCall(ctx context.Context, request *ChatRequest) (
 }
 
 func (c *OpenAIClient) ImageGen(ctx context.Context, request *ChatRequest) (*ImageGenResponse, error) {
-	return nil, errors.New("not implemented")
+	return nil, fmt.Errorf("client.OpenAIClient.ImageGen: not implemented")
 }

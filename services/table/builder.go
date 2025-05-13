@@ -3,6 +3,7 @@ package table
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
@@ -19,7 +20,7 @@ func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt str
 	pm := promptbuilder.NewTablesBuilder(prompt)
 	message, err := pm.Prompt()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.GenerateBuilderTables: building prompt: %w", err)
 	}
 	resp, err := t.ai.Chat(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
@@ -29,11 +30,11 @@ func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt str
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.GenerateBuilderTables: AI chat request: %w", err)
 	}
 	tables, err := util.TryDecodeJsonArray[BuilderTable](resp.Content)
 	if err != nil && len(tables) == 0 {
-		return nil, err
+		return nil, fmt.Errorf("table.GenerateBuilderTables: decoding response: %w", err)
 	}
 	return tables, nil
 }
@@ -41,12 +42,12 @@ func (t *TableServiceImpl) GenerateBuilderTables(ctx context.Context, prompt str
 func (t *TableServiceImpl) PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string, params ModelParams) ([]BuilderTable, error) {
 	tr, err := json.Marshal(map[string]any{"data": tables})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTables: marshaling tables: %w", err)
 	}
 	pm := promptbuilder.NewTablesPolishBuilder(string(tr), prompt)
 	message, err := pm.Prompt()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTables: building prompt: %w", err)
 	}
 	resp, err := t.ai.Chat(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(message)},
@@ -56,11 +57,11 @@ func (t *TableServiceImpl) PolishBuilderTables(ctx context.Context, tables []Bui
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTables: AI chat request: %w", err)
 	}
 	tables, err = util.TryDecodeJsonArray[BuilderTable](resp.Content)
 	if err != nil && len(tables) == 0 {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTables: decoding response: %w", err)
 	}
 	return tables, nil
 }
@@ -188,7 +189,7 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 	pm := promptbuilder.NewTableGenBuilder(name, description, depends, tbs)
 	message, err := pm.Prompt()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.BuildTable: building prompt: %w", err)
 	}
 	imageGen := false
 	models := t.ai.ListModels(ctx)
@@ -203,7 +204,7 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.BuildTable: AI function call: %w", err)
 	}
 	builder := &tableBuilder{
 		table: &TableGenRequest{
@@ -214,7 +215,7 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 	for _, fc := range resp.FunctionCalls {
 		err := builder.run(ctx, fc.Name, fc.Arguments)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.BuildTable: running function %s: %w", fc.Name, err)
 		}
 	}
 	return builder.table, nil
@@ -223,11 +224,11 @@ func (t *TableServiceImpl) BuildTable(ctx context.Context, name, description str
 func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error) {
 	cb, err := json.Marshal(table.Columns)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTable: marshaling columns: %w", err)
 	}
 	sb, err := json.Marshal(table.Sources)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTable: marshaling sources: %w", err)
 	}
 	tbs := []promptbuilder.TableInfoSimple{}
 	for _, tb := range exists {
@@ -247,7 +248,7 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	pm := promptbuilder.NewTablePolishBuilder(prompt, table.Name, table.Description, string(sb), string(cb), tbs)
 	message, err := pm.Prompt()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTable: building prompt: %w", err)
 	}
 	imageGen := false
 	models := t.ai.ListModels(ctx)
@@ -262,7 +263,7 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 		MaxOutputTokens: 6000,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.PolishBuilderTable: AI function call: %w", err)
 	}
 	builder := &tableBuilder{
 		table: table,
@@ -270,7 +271,7 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	for _, fc := range resp.FunctionCalls {
 		err := builder.run(ctx, fc.Name, fc.Arguments)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.PolishBuilderTable: running function %s: %w", fc.Name, err)
 		}
 	}
 	return builder.table, nil

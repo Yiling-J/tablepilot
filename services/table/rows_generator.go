@@ -101,7 +101,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		tablemeta.Name(params.Table),
 	)).First(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.NewRowsGenerator: querying table metadata: %w", err)
 	}
 	// add shared sources
 	if meta.Sources == nil {
@@ -140,11 +140,11 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		}
 		if c.FillMode == tablecolumn.FillModePick {
 			if len(c.Source) == 0 {
-				return nil, errors.New("invalid source")
+				return nil, fmt.Errorf("table.NewRowsGenerator: invalid source for column %s", c.Name)
 			}
 			idx, err := generator.columnSourceIndexer(ctx, meta.Sources[c.Source], c)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("table.NewRowsGenerator: creating source indexer for column %s: %w", c.Name, err)
 			}
 			generator.indexerMap[c.Nanoid] = idx
 			continue
@@ -186,7 +186,7 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 				ent.Desc(tablerow.FieldID),
 			).Limit(remain).All(ctx)
 			if err != nil {
-				return err
+				return fmt.Errorf("table.AIRowsGenerator.prepareContextRows: querying rows: %w", err)
 			}
 			for _, row := range rows {
 				m := map[string]*schema.CellValue{}
@@ -217,7 +217,7 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 						if _, ok := g.images[vk]; !ok {
 							url, err := g.imageURL(ctx, v)
 							if err != nil {
-								return err
+								return fmt.Errorf("table.AIRowsGenerator.prepareContextRows: getting image URL: %w", err)
 							}
 							g.images[vk] = url
 						}
@@ -231,7 +231,7 @@ func (g *AIRowsGenerator) prepareContextRows(ctx context.Context) error {
 			}
 			err := g.builder.AddColumnContextData(col.Nanoid, values)
 			if err != nil {
-				return err
+				return fmt.Errorf("table.AIRowsGenerator.prepareContextRows: adding column context data: %w", err)
 			}
 		}
 	}
@@ -242,7 +242,7 @@ func imageURLFromData(data []byte) (string, error) {
 	ct := http.DetectContentType(data)
 	b64 := base64.StdEncoding.EncodeToString(data)
 	if !strings.HasPrefix(ct, "image/") {
-		return "", errors.New("not an image")
+		return "", fmt.Errorf("table.imageURLFromData: not an image")
 	}
 	return fmt.Sprintf("data:%s;base64,%s", ct, b64), nil
 }
@@ -259,17 +259,21 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 	// try load image file
 	root, err := os.OpenRoot(g.sourceDataDir)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: opening source data directory: %w", err)
 	}
 	f, err := root.Open(raw)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: opening file %s: %w", raw, err)
 	}
 	data, err := io.ReadAll(f)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: reading file %s: %w", raw, err)
 	}
-	return imageURLFromData(data)
+	url, err := imageURLFromData(data)
+	if err != nil {
+		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: converting file to data URL: %w", err)
+	}
+	return url, nil
 }
 
 func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
@@ -286,7 +290,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 			).Limit(batch).Offset(g.offset).All(ctx)
 		}
 		if err != nil {
-			return err
+			return fmt.Errorf("table.AIRowsGenerator.prepareRows: querying rows: %w", err)
 		}
 		g.offset += len(rows)
 		contextColumns := map[string]bool{}
@@ -316,7 +320,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 						}
 						url, err := g.imageURL(ctx, v)
 						if err != nil {
-							return err
+							return fmt.Errorf("table.AIRowsGenerator.prepareRows: getting image URL for autofill: %w", err)
 						}
 						g.images[vk] = url
 					}
@@ -336,7 +340,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 				if ok {
 					v, err := idx.Next(ctx)
 					if err != nil {
-						return err
+						return fmt.Errorf("table.AIRowsGenerator.prepareRows: getting next value from indexer: %w", err)
 					}
 					row[col.Nanoid] = v
 				}
@@ -354,7 +358,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 					if _, ok := g.images[vk]; !ok {
 						url, err := g.imageURL(ctx, v)
 						if err != nil {
-							return err
+							return fmt.Errorf("table.AIRowsGenerator.prepareRows: getting image URL: %w", err)
 						}
 						g.images[vk] = url
 					}
@@ -678,34 +682,34 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 	g.builder.AddMissingColumns(g.missingImageColumns, false)
 	err := g.builder.AddExistings(chatRows)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: adding existing rows: %w", err)
 	}
 
 	resp, err := g.imageGen(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: generating images: %w", err)
 	}
 	for id, data := range resp.Images {
 		tmp := strings.Split(id, "-")
 		row, column := tmp[0], tmp[1]
 		imagesDir := filepath.Join(g.sourceDataDir, "tablepilot_images", g.table.Nanoid)
 		if err := os.MkdirAll(imagesDir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create directory %q: %w", imagesDir, err)
+			return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: creating directory %q: %w", imagesDir, err)
 		}
 		if index, ok := idMap[row]; ok {
 			root, err := os.OpenRoot(g.sourceDataDir)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: opening source data directory: %w", err)
 			}
 			fp := fmt.Sprintf("tablepilot_images/%s/%s-%d.png", g.table.Nanoid, id, time.Now().Unix())
 			f, err := root.Create(fp)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: creating file %s: %w", fp, err)
 			}
 			defer func() { _ = f.Close() }()
 			_, err = f.Write(data)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: writing image data: %w", err)
 			}
 			row := rows[index]
 			row[column] = &schema.CellValue{Value: fp}

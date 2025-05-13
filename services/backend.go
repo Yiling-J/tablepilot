@@ -1,6 +1,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/infra/db"
@@ -39,7 +41,11 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 	container := dig.New()
 
 	err := container.Provide(func() (*config.Config, error) {
-		return config.NewConfig(cmd.Flag("config").Value.String())
+		cfg, err := config.NewConfig(cmd.Flag("config").Value.String())
+		if err != nil {
+			return nil, fmt.Errorf("services.CreateBackend: creating config: %w", err)
+		}
+		return cfg, nil
 	})
 	if err != nil {
 		panic(err)
@@ -59,7 +65,7 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 		}
 		l, err := cfg.Build()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("services.CreateBackend: building logger: %w", err)
 		}
 		return l.Sugar(), nil
 	})

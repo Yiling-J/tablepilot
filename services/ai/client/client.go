@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/services/provider"
@@ -38,11 +38,11 @@ func NewClient(p provider.Provider, logger *zap.SugaredLogger) (ChatClient, erro
 			Key:  p.Key,
 		}, logger)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("client.NewClient: creating Gemini client: %w", err)
 		}
 		logger.Debug("gemini client created")
 		return genai, nil
 	default:
-		return nil, errors.New("unknown config type")
+		return nil, fmt.Errorf("client.NewClient: unknown config type: %s", p.Type)
 	}
 }

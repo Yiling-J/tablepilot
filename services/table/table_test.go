@@ -926,8 +926,8 @@ func TestTableService_CreateTableAPIRequest(t *testing.T) {
 		source string
 		error  string
 	}{
-		{`{"name":"so","type":"list","file":"go.txt"}`, "file field for list source is only allowed in CLI"},
-		{`{"name":"so","type":"csv","paths":["z.csv"]}`, "paths field for csv source is only allowed in CLI"},
+		{`{"name":"so","type":"list","file":"go.txt"}`, "table.Create: file field for list source is only allowed in CLI"},
+		{`{"name":"so","type":"csv","paths":["z.csv"]}`, "table.Create: paths field for csv source is only allowed in CLI"},
 	} {
 		t.Run(tc.source, func(t *testing.T) {
 			db := db.NewTestDB()
@@ -1285,7 +1285,7 @@ func TestTableService_Validate(t *testing.T) {
 	}{
 		{
 			req: &TableGenRequest{},
-			err: "columns should not be empty",
+			err: "table.Validate: columns should not be empty",
 		},
 		{
 			req: &TableGenRequest{
@@ -1293,7 +1293,7 @@ func TestTableService_Validate(t *testing.T) {
 					{Source: "s1"},
 				},
 			},
-			err: "source s1 not found",
+			err: "table.Validate: source s1 not found",
 		},
 	}
 

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -84,24 +83,24 @@ func NewTableService(config *config.Config, db *ent.Client, ai ai.AiService, log
 		if name != "" {
 			bs, err := json.Marshal(s)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("table.NewTableService: marshaling source: %w", err)
 			}
 			so, err := source.ValidateSource(context.Background(), json.RawMessage(bs), db)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("table.NewTableService: validating source: %w", err)
 			}
 			ss := &SharedSource{Name: name}
 			switch st := so.(type) {
 			case *source.CsvSource:
 				columns, err := st.GetColumns(context.Background(), ts.logger, config.Common.SourceDataDir)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("table.NewTableService: getting columns from CSV source: %w", err)
 				}
 				ss.Columns = columns
 			case *source.ParquetSource:
 				columns, err := st.GetColumns(context.Background(), ts.logger, config.Common.SourceDataDir)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("table.NewTableService: getting columns from Parquet source: %w", err)
 				}
 				ss.Columns = columns
 			}
@@ -122,33 +121,33 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 	t.logger.Debugw("creating table", "name", req.Name)
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return "", fmt.Errorf("starting a transaction: %w", err)
+		return "", fmt.Errorf("table.Create: starting a transaction: %w", err)
 	}
 	if req.Name == "" {
-		return "", ent.Rollback(tx, errors.New("table name is empty"))
+		return "", ent.Rollback(tx, fmt.Errorf("table.Create: table name is empty"))
 	}
 	sources := map[string]json.RawMessage{}
 	if len(req.Sources) > 0 {
 		for _, raw := range req.Sources {
 			vs, err := source.ValidateSource(ctx, raw, tx.Client())
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Create: validating source: %w", err))
 			}
 			if req.APIRequest() {
 				switch st := vs.(type) {
 				case *source.CsvSource:
 					if len(st.Paths) > 0 {
-						return "", errors.New("paths field for csv source is only allowed in CLI")
+						return "", ent.Rollback(tx, fmt.Errorf("table.Create: paths field for csv source is only allowed in CLI"))
 					}
 				case *source.ListSource:
 					if st.File != "" {
-						return "", errors.New("file field for list source is only allowed in CLI")
+						return "", ent.Rollback(tx, fmt.Errorf("table.Create: file field for list source is only allowed in CLI"))
 					}
 				}
 			}
 			bs, err := json.Marshal(vs)
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Create: marshaling source: %w", err))
 			}
 			sources[gjson.GetBytes(raw, "name").String()] = bs
 		}
@@ -158,11 +157,11 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 			if _, ok := sources[so.Name]; !ok {
 				vs, err := source.ValidateSource(ctx, so.Data, tx.Client())
 				if err != nil {
-					return "", ent.Rollback(tx, err)
+					return "", ent.Rollback(tx, fmt.Errorf("table.Create: validating shared source: %w", err))
 				}
 				bs, err := json.Marshal(vs)
 				if err != nil {
-					return "", ent.Rollback(tx, err)
+					return "", ent.Rollback(tx, fmt.Errorf("table.Create: marshaling shared source: %w", err))
 				}
 				sources[so.Name] = bs
 			}
@@ -171,13 +170,13 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 
 	table, err := tx.TableMeta.Create().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).SetSources(sources).Save(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Create: saving table metadata: %w", err))
 	}
 
 	// validate linked column column/context_columns exists
 	err = validateLinkedColumnInfo(ctx, tx, req.Columns, sources)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Create: validating linked column info: %w", err))
 	}
 
 	extra := 0
@@ -202,7 +201,7 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 		columnsGenBuilder.AddExistingColumns(bc)
 		prompt, err := columnsGenBuilder.Prompt()
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("table.Create: building columns prompt: %w", err)
 		}
 		resp, err := t.ai.Chat(ctx, &client.ChatRequest{
 			Messages: []*client.Message{
@@ -214,12 +213,12 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 			Schema:          reflector.Reflect([]TableGenColumnSchema{}),
 		})
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("table.Create: generating columns with AI: %w", err)
 		}
 		t.logger.Debug("extra columns generated")
 		extraColumns, err := util.TryDecodeJsonArray[TableGenColumn](resp.Content)
 		if err != nil && len(extraColumns) == 0 {
-			return "", err
+			return "", fmt.Errorf("table.Create: decoding generated columns: %w", err)
 		}
 		if len(extraColumns) > extra {
 			extraColumns = extraColumns[:extra]
@@ -249,7 +248,7 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 					SetRepeat(col.Repeat).SetLinkedColumn(col.LinkedColumn).
 					SetLinkedContextColumns(col.LinkedContextColumns)
 			} else {
-				return "", ent.Rollback(tx, fmt.Errorf("source %s not dound", col.Source))
+				return "", ent.Rollback(tx, fmt.Errorf("table.Create: source %s not found", col.Source))
 			}
 		}
 		columnCreates = append(columnCreates, cc)
@@ -261,7 +260,7 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 
 	err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Create: creating columns: %w", err))
 	}
 
 	t.logger.Debug("finish creating table")
@@ -272,10 +271,10 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 	t.logger.Debugw("updating table", "table", table)
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return "", fmt.Errorf("starting a transaction: %w", err)
+		return "", fmt.Errorf("table.Update: starting a transaction: %w", err)
 	}
 	if req.Name == "" {
-		return "", ent.Rollback(tx, errors.New("table name is empty"))
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: table name is empty"))
 	}
 	if table == "" {
 		table = req.Name
@@ -285,23 +284,23 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 		for _, raw := range req.Sources {
 			vs, err := source.ValidateSource(ctx, raw, tx.Client())
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Update: validating source: %w", err))
 			}
 			if req.APIRequest() {
 				switch st := vs.(type) {
 				case *source.CsvSource:
 					if len(st.Paths) > 0 {
-						return "", errors.New("paths field for csv source is only allowed in CLI")
+						return "", ent.Rollback(tx, fmt.Errorf("table.Update: paths field for csv source is only allowed in CLI"))
 					}
 				case *source.ListSource:
 					if st.File != "" {
-						return "", errors.New("file field for list source is only allowed in CLI")
+						return "", ent.Rollback(tx, fmt.Errorf("table.Update: file field for list source is only allowed in CLI"))
 					}
 				}
 			}
 			bs, err := json.Marshal(vs)
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Update: marshaling source: %w", err))
 			}
 			sources[gjson.GetBytes(raw, "name").String()] = bs
 		}
@@ -311,11 +310,11 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 			if _, ok := sources[so.Name]; !ok {
 				vs, err := source.ValidateSource(ctx, so.Data, tx.Client())
 				if err != nil {
-					return "", ent.Rollback(tx, err)
+					return "", ent.Rollback(tx, fmt.Errorf("table.Update: validating shared source: %w", err))
 				}
 				bs, err := json.Marshal(vs)
 				if err != nil {
-					return "", ent.Rollback(tx, err)
+					return "", ent.Rollback(tx, fmt.Errorf("table.Update: marshaling shared source: %w", err))
 				}
 				sources[so.Name] = bs
 			}
@@ -327,18 +326,18 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 		tablemeta.Name(table),
 	)).WithColumns().Only(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: querying table metadata: %w", err))
 	}
 
 	err = dbtable.Update().SetName(req.Name).SetDescription(req.Description).SetModel(req.Model).SetSources(sources).Exec(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: updating table metadata: %w", err))
 	}
 
 	// validate linked column column/context_columns exists
 	err = validateLinkedColumnInfo(ctx, tx, req.Columns, sources)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: validating linked column info: %w", err))
 	}
 
 	reqColumns := map[string]TableGenColumn{}
@@ -354,7 +353,7 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 			removed[i] = true
 			err = tx.TableColumn.DeleteOneID(col.ID).Exec(ctx)
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Update: deleting column: %w", err))
 			}
 		} else {
 			upserts = append(upserts, v)
@@ -374,7 +373,7 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 		upserts = append(upserts, col)
 		zv, err := util.ZeroValue(tablecolumn.Type(col.Type))
 		if err != nil {
-			return "", ent.Rollback(tx, err)
+			return "", ent.Rollback(tx, fmt.Errorf("table.Update: getting zero value for column type: %w", err))
 		}
 		zeros = append(zeros, zv)
 	}
@@ -399,7 +398,7 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 					SetRepeat(col.Repeat).SetLinkedColumn(col.LinkedColumn).
 					SetLinkedContextColumns(col.LinkedContextColumns)
 			} else {
-				return "", ent.Rollback(tx, fmt.Errorf("source %s not dound", col.Source))
+				return "", ent.Rollback(tx, fmt.Errorf("table.Update: source %s not found", col.Source))
 			}
 		}
 		columnCreates = append(columnCreates, cc)
@@ -411,13 +410,13 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 
 	err = tx.TableColumn.CreateBulk(columnCreates...).OnConflictColumns(tablecolumn.FieldNanoid).UpdateNewValues().Exec(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: upserting columns: %w", err))
 	}
 
 	// update rows if exists
 	rows, err := dbtable.QueryRows().All(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: querying rows: %w", err))
 	}
 	updates := []*ent.TableRowCreate{}
 	for _, row := range rows {
@@ -435,7 +434,7 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 	if len(updates) > 0 {
 		err = tx.TableRow.CreateBulk(updates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
 		if err != nil {
-			return "", ent.Rollback(tx, err)
+			return "", ent.Rollback(tx, fmt.Errorf("table.Update: updating rows: %w", err))
 		}
 	}
 
@@ -448,7 +447,7 @@ func (t *TableServiceImpl) ListTables(ctx context.Context) (*ListTablesResponse,
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Order(ent.Desc(tablemeta.FieldID)).All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.ListTables: querying tables: %w", err)
 	}
 	resp := &ListTablesResponse{Total: len(tables)}
 	for _, table := range tables {
@@ -481,7 +480,7 @@ func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*T
 		tablemeta.Name(table),
 	)).First(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.GetTableDetail: querying table: %w", err)
 	}
 	columns := []TableColumnInfo{}
 	for _, column := range meta.Edges.Columns {
@@ -508,7 +507,11 @@ func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequ
 		params.sharedSources[so.Name] = so.Data
 	}
 	params.sourceDataDir = t.config.Common.SourceDataDir
-	return NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
+	generator, err := NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
+	if err != nil {
+		return nil, fmt.Errorf("table.Genetate: creating rows generator: %w", err)
+	}
+	return generator, nil
 }
 
 func (t *TableServiceImpl) Rows(ctx context.Context, table string) (*Rows, error) {
@@ -521,7 +524,7 @@ func (t *TableServiceImpl) Rows(ctx context.Context, table string) (*Rows, error
 		tablemeta.Name(table),
 	)).First(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.Rows: querying table: %w", err)
 	}
 	return &Rows{Columns: meta.Edges.Columns, Rows: meta.Edges.Rows}, nil
 }
@@ -532,23 +535,31 @@ func (t *TableServiceImpl) Truncate(ctx context.Context, table string) (int, err
 		tablemeta.Name(table),
 	)).First(ctx)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("table.Truncate: querying table: %w", err)
 	}
-	return t.db.TableRow.Delete().Where(tablerow.HasTablemetaWith(tablemeta.Nanoid(meta.Nanoid))).Exec(ctx)
+	count, err := t.db.TableRow.Delete().Where(tablerow.HasTablemetaWith(tablemeta.Nanoid(meta.Nanoid))).Exec(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("table.Truncate: deleting rows: %w", err)
+	}
+	return count, nil
 }
 
 func (t *TableServiceImpl) Delete(ctx context.Context, table string) (int, error) {
-	return t.db.TableMeta.Delete().Where(tablemeta.Or(
+	count, err := t.db.TableMeta.Delete().Where(tablemeta.Or(
 		tablemeta.Nanoid(table),
 		tablemeta.Name(table),
 	)).Exec(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("table.Delete: deleting table: %w", err)
+	}
+	return count, nil
 }
 
 func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportRequest) (string, error) {
 	builder := promptbuilder.NewNewImageToTableBuilder(request.Prompt)
 	tables, err := t.db.TableMeta.Query().All(ctx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.ImportImage: querying tables: %w", err)
 	}
 	tableNames := []string{}
 	for _, t := range tables {
@@ -557,11 +568,11 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 	builder.AddExistingTableNames(tableNames)
 	prompt, err := builder.Prompt()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.ImportImage: building prompt: %w", err)
 	}
 	encoded, err := imageURLFromData(request.Data)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.ImportImage: encoding image: %w", err)
 	}
 	input := client.UserMessageWithSingleImage(prompt, encoded)
 	reflector := jsonschema.Reflector{
@@ -578,20 +589,20 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 		Schema:          genSchema,
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.ImportImage: AI chat request: %w", err)
 	}
 	var generated ImageExtractionOutput
 	err = json.Unmarshal([]byte(resp.Content), &generated)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.ImportImage: unmarshaling AI response: %w", err)
 	}
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("table.ImportImage: starting transaction: %w", err)
 	}
 	tablemeta, err := tx.TableMeta.Create().SetName(generated.TableName).SetDescription(generated.TableDescription).Save(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating table metadata: %w", err))
 	}
 	columnCreates := []*ent.TableColumnCreate{}
 	for _, col := range generated.Columns {
@@ -602,12 +613,12 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 	}
 	err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating columns: %w", err))
 	}
 	schemaRows := [][]*schema.CellValue{}
 	for _, row := range generated.Rows {
 		if len(row) != len(generated.Columns) {
-			return "", ent.Rollback(tx, errors.New("inconsistent row data"))
+			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: inconsistent row data"))
 		}
 		cells := []*schema.CellValue{}
 		for _, cell := range row {
@@ -622,7 +633,7 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 	}
 	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating rows: %w", err))
 	}
 	return tablemeta.Nanoid, tx.Commit()
 }
@@ -630,7 +641,7 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.Reader) (string, error) {
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return "", fmt.Errorf("starting a transaction: %w", err)
+		return "", fmt.Errorf("table.Import: starting a transaction: %w", err)
 	}
 	exists, err := tx.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
@@ -638,7 +649,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		tablemeta.Name(table),
 	).All(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Import: querying existing table: %w", err))
 	}
 	// if table already exists, import data to matched columns for the table
 	var tablemeta *ent.TableMeta
@@ -658,7 +669,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 			break
 		}
 		if err != nil {
-			return "", ent.Rollback(tx, err)
+			return "", ent.Rollback(tx, fmt.Errorf("table.Import: reading CSV: %w", err))
 		}
 		if counter == 0 {
 			columns = record
@@ -681,13 +692,13 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 				if j, ok := cm[col.Name]; ok {
 					v, err := util.ConvertStringToType(row[j], col.Type)
 					if err != nil {
-						return "", ent.Rollback(tx, err)
+						return "", ent.Rollback(tx, fmt.Errorf("table.Import: converting string to type: %w", err))
 					}
 					newRow = append(newRow, v)
 				} else {
 					v, err := util.ConvertStringToType("", col.Type)
 					if err != nil {
-						return "", ent.Rollback(tx, err)
+						return "", ent.Rollback(tx, fmt.Errorf("table.Import: converting empty string to type: %w", err))
 					}
 					newRow = append(newRow, v)
 				}
@@ -704,7 +715,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		}
 		tablemeta, err = tx.TableMeta.Create().SetName(table).Save(ctx)
 		if err != nil {
-			return "", ent.Rollback(tx, err)
+			return "", ent.Rollback(tx, fmt.Errorf("table.Import: creating table metadata: %w", err))
 		}
 		columnCreates := []*ent.TableColumnCreate{}
 		for _, col := range columns {
@@ -715,7 +726,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		}
 		tableColumns, err = tx.TableColumn.CreateBulk(columnCreates...).Save(ctx)
 		if err != nil {
-			return "", ent.Rollback(tx, err)
+			return "", ent.Rollback(tx, fmt.Errorf("table.Import: creating columns: %w", err))
 		}
 	}
 
@@ -733,11 +744,11 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		}
 		rs, ok := tablemeta.Sources[col.Source]
 		if !ok {
-			return "", ent.Rollback(tx, errors.New("source not found"))
+			return "", ent.Rollback(tx, fmt.Errorf("table.Import: source not found"))
 		}
 		so, err := t.parseLinkedSource(ctx, tx.Client(), rs)
 		if err != nil {
-			return "", ent.Rollback(tx, err)
+			return "", ent.Rollback(tx, fmt.Errorf("table.Import: parsing linked source: %w", err))
 		}
 
 		// assign context value to cell if column fill type is pick
@@ -765,7 +776,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 				return true
 			})
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Import: ranging over CSV source: %w", err))
 			}
 		case *source.ParquetSource:
 			err = ts.Range(ctx, func(row map[string]any) bool {
@@ -778,7 +789,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 				return true
 			})
 			if err != nil {
-				return "", ent.Rollback(tx, err)
+				return "", ent.Rollback(tx, fmt.Errorf("table.Import: ranging over Parquet source: %w", err))
 			}
 		}
 	}
@@ -789,7 +800,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 	}
 	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.Import: creating rows: %w", err))
 	}
 	return tablemeta.Nanoid, tx.Commit()
 }
@@ -797,7 +808,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []map[string]any) error {
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return fmt.Errorf("starting a transaction: %w", err)
+		return fmt.Errorf("table.CreateRows: starting a transaction: %w", err)
 	}
 	tablemeta, err := tx.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
@@ -807,7 +818,7 @@ func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []
 			tablemeta.Name(table)),
 	).First(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return ent.Rollback(tx, fmt.Errorf("table.CreateRows: querying table metadata: %w", err))
 	}
 	importRows := [][]any{}
 	for _, row := range rows {
@@ -820,7 +831,7 @@ func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []
 			} else {
 				v, err = util.ConvertStringToType("", col.Type)
 				if err != nil {
-					return ent.Rollback(tx, err)
+					return ent.Rollback(tx, fmt.Errorf("table.CreateRows: converting empty string to type: %w", err))
 				}
 				newRow = append(newRow, v)
 			}
@@ -838,7 +849,7 @@ func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []
 	}
 	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return ent.Rollback(tx, fmt.Errorf("table.CreateRows: creating rows: %w", err))
 	}
 	return tx.Commit()
 }
@@ -856,45 +867,45 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 		var ls source.ListSource
 		err := json.Unmarshal(raw, &ls)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: unmarshaling list source: %w", err)
 		}
 		err = ls.Init(ctx, sourceDataDir)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: initializing list source: %w", err)
 		}
 		so = &ls
 	case "linked":
 		var ls source.LinkedSource
 		err := json.Unmarshal(raw, &ls)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: unmarshaling linked source: %w", err)
 		}
 		err = ls.Init(ctx, db)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: initializing linked source: %w", err)
 		}
 		so = &ls
 	case "csv":
 		var ls source.CsvSource
 		err := json.Unmarshal(raw, &ls)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: unmarshaling CSV source: %w", err)
 		}
 		err = ls.Init(ctx, t.logger, sourceDataDir)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: initializing CSV source: %w", err)
 		}
 		so = &ls
 	case "parquet":
 		var ls source.ParquetSource
 		err := json.Unmarshal(raw, &ls)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: unmarshaling Parquet source: %w", err)
 		}
 		var client huggingface.Client
 		if ls.Huggingface != nil {
 			if ls.Huggingface.Dataset == "" {
-				return nil, errors.New("dataset is empty")
+				return nil, fmt.Errorf("table.parseLinkedSource: dataset is empty")
 			}
 			if ls.Huggingface.Config == "" {
 				ls.Huggingface.Config = "default"
@@ -909,11 +920,11 @@ func (t *TableServiceImpl) parseLinkedSource(ctx context.Context, db *ent.Client
 		}
 		err = ls.Init(ctx, client, t.logger, sourceDataDir)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.parseLinkedSource: initializing Parquet source: %w", err)
 		}
 		so = &ls
 	default:
-		return nil, fmt.Errorf("unknown source type %s", sourceType)
+		return nil, fmt.Errorf("table.parseLinkedSource: unknown source type %s", sourceType)
 	}
 	return so, nil
 }
@@ -926,7 +937,7 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 		tablemeta.Name(table),
 	)).First(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("table.GetTableSchema: querying table metadata: %w", err)
 	}
 	schema := &TableGenRequest{
 		Name:        meta.Name,
@@ -937,12 +948,12 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 		var m map[string]any
 		err = json.Unmarshal(s, &m)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.GetTableSchema: unmarshaling source: %w", err)
 		}
 		m["name"] = name
 		b, err := json.Marshal(m)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("table.GetTableSchema: marshaling source: %w", err)
 		}
 		sources = append(sources, b)
 	}
@@ -975,20 +986,20 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 
 func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) error {
 	if len(req.Columns) == 0 {
-		return errors.New("columns should not be empty")
+		return fmt.Errorf("table.Validate: columns should not be empty")
 	}
 	sources := map[string]bool{}
 	for _, raw := range req.Sources {
 		_, err := source.ValidateSource(ctx, raw, t.db)
 		if err != nil {
-			return err
+			return fmt.Errorf("table.Validate: validating source: %w", err)
 		}
 		sources[gjson.GetBytes(raw, "name").String()] = true
 	}
 	for _, col := range req.Columns {
 		if col.Source != "" {
 			if _, ok := sources[col.Source]; !ok {
-				return fmt.Errorf("source %s not found", col.Source)
+				return fmt.Errorf("table.Validate: source %s not found", col.Source)
 			}
 		}
 	}

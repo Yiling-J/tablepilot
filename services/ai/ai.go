@@ -110,11 +110,11 @@ func NewAiService(cfg *config.Config, providerService provider.ProviderService, 
 	ctx := context.Background()
 	err := srv.providerService.BuildProviders(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.NewAiService: building providers: %w", err)
 	}
 	providers, err := srv.providerService.ListProviders(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.NewAiService: listing providers: %w", err)
 	}
 	srv.syncProviders(ctx, providers)
 	srv.providerService.WithSyncCallback(srv.syncProviders)
@@ -127,7 +127,7 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	}
 	aiClient, err := ai.getChatClientByModel(ctx, request.Model)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.Chat: getting chat client: %w", err)
 	}
 
 	request.Model = ai.models[request.Model].model
@@ -149,7 +149,7 @@ func (ai *AiServiceImpl) Chat(ctx context.Context, request *client.ChatRequest) 
 	}
 	resp, err := aiClient.Chat(ctx, request)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.Chat: chat request: %w", err)
 	}
 	ai.logger.Debugln("chat response reveived", "total_tokens", resp.Tokens)
 	ai.logger.Debugln("content:", resp.Content)
@@ -162,7 +162,7 @@ func (ai *AiServiceImpl) FunctionCall(ctx context.Context, request *client.ChatR
 	}
 	client, err := ai.getChatClientByModel(ctx, request.Model)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.FunctionCall: getting chat client: %w", err)
 	}
 
 	request.Model = ai.models[request.Model].model
@@ -177,7 +177,7 @@ func (ai *AiServiceImpl) FunctionCall(ctx context.Context, request *client.ChatR
 	}
 	resp, err := client.FunctionCall(ctx, request)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.FunctionCall: function call request: %w", err)
 	}
 	ai.logger.Debugln("function call response reveived", "total_tokens", resp.Tokens, "text_message", resp.Text)
 	ai.logger.Debugln("content:", resp.FunctionCalls)
@@ -190,7 +190,7 @@ func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatReque
 	}
 	aiClient, err := ai.getChatClientByModel(ctx, request.ImageModel)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.ImageGen: getting chat client: %w", err)
 	}
 
 	request.ImageModel = ai.models[request.ImageModel].model
@@ -212,7 +212,7 @@ func (ai *AiServiceImpl) ImageGen(ctx context.Context, request *client.ChatReque
 	}
 	resp, err := aiClient.ImageGen(ctx, request)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ai.ImageGen: image generation request: %w", err)
 	}
 	ai.logger.Debugln("image generate response reveived", "total_tokens", resp.Tokens)
 	return resp, nil
@@ -224,13 +224,13 @@ func (ai *AiServiceImpl) getChatClientByModel(ctx context.Context, model string)
 			if m.limiter != nil {
 				err := m.limiter.Wait(ctx)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("ai.getChatClientByModel: rate limit wait: %w", err)
 				}
 			}
 			return ai.clients[m.client], nil
 		}
 	}
-	return nil, fmt.Errorf("client not found for %s", model)
+	return nil, fmt.Errorf("ai.getChatClientByModel: client not found for %s", model)
 }
 
 func (ai *AiServiceImpl) ListModels(ctx context.Context) *ModelList {

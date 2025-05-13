@@ -2,7 +2,7 @@ package provider
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/Yiling-J/tablepilot/config"
@@ -55,16 +55,16 @@ func (p *ProviderServiceImpl) CreateProvider(ctx context.Context, provider Provi
 	}()
 	tx, err := p.db.Tx(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return fmt.Errorf("provider.CreateProvider: starting transaction: %w", err)
 	}
 	pv, err := tx.Provider.Create().SetName(provider.Name).SetBaseURL(provider.BaseURL).SetKey(provider.Key).SetType(db_provider.Type(provider.Type)).Save(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return ent.Rollback(tx, fmt.Errorf("provider.CreateProvider: creating provider: %w", err))
 	}
 	for _, m := range provider.Models {
 		err = tx.Model.Create().SetModel(m.Model).SetAlias(m.Alias).SetProvider(pv).SetMaxTokens(int(m.MaxTokens)).SetRpm(m.Rpm).SetImage(m.Image).Exec(ctx)
 		if err != nil {
-			return ent.Rollback(tx, err)
+			return ent.Rollback(tx, fmt.Errorf("provider.CreateProvider: creating model: %w", err))
 		}
 	}
 	return tx.Commit()
@@ -86,24 +86,24 @@ func (p *ProviderServiceImpl) UpdateProvider(ctx context.Context, id int, provid
 	}()
 	tx, err := p.db.Tx(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return fmt.Errorf("provider.UpdateProvider: starting transaction: %w", err)
 	}
 	pv, err := tx.Provider.Query().Where(db_provider.ID(id)).Only(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return ent.Rollback(tx, fmt.Errorf("provider.UpdateProvider: querying provider: %w", err))
 	}
 	err = pv.Update().SetBaseURL(provider.BaseURL).SetKey(provider.Key).SetType(db_provider.Type(provider.Type)).Exec(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return ent.Rollback(tx, fmt.Errorf("provider.UpdateProvider: updating provider: %w", err))
 	}
 	_, err = tx.Model.Delete().Where(model.HasProviderWith(db_provider.ID(pv.ID))).Exec(ctx)
 	if err != nil {
-		return ent.Rollback(tx, err)
+		return ent.Rollback(tx, fmt.Errorf("provider.UpdateProvider: deleting old models: %w", err))
 	}
 	for _, m := range provider.Models {
 		err = tx.Model.Create().SetModel(m.Model).SetImage(m.Image).SetAlias(m.Alias).SetMaxTokens(int(m.MaxTokens)).SetRpm(m.Rpm).SetProvider(pv).Exec(ctx)
 		if err != nil {
-			return ent.Rollback(tx, err)
+			return ent.Rollback(tx, fmt.Errorf("provider.UpdateProvider: creating model: %w", err))
 		}
 	}
 	return tx.Commit()
@@ -123,7 +123,11 @@ func (p *ProviderServiceImpl) DeleteProvider(ctx context.Context, id int) error 
 		}
 		p.mu.Unlock()
 	}()
-	return p.db.Provider.DeleteOneID(id).Exec(ctx)
+	err := p.db.Provider.DeleteOneID(id).Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("provider.DeleteProvider: deleting provider: %w", err)
+	}
+	return nil
 }
 
 func (p *ProviderServiceImpl) ListProviders(ctx context.Context) ([]Provider, error) {
@@ -137,7 +141,7 @@ func (p *ProviderServiceImpl) BuildProviders(ctx context.Context) error {
 	defer p.mu.Unlock()
 	ps, err := p.genProviders(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("provider.BuildProviders: generating providers: %w", err)
 	}
 	p.providers = ps
 	return nil
@@ -167,7 +171,7 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 			})
 			pm[v.Name] = i
 		default:
-			return nil, errors.New("unknown config type")
+			return nil, fmt.Errorf("provider.genProviders: unknown config type")
 		}
 	}
 	for _, m := range p.cfg.Models {
@@ -191,7 +195,7 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 			mq.Order(ent.Asc(model.FieldModel))
 		}).All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("provider.genProviders: querying providers: %w", err)
 	}
 	for _, p := range dbProviders {
 		pv := Provider{
