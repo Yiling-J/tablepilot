@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"testing"
 
@@ -225,6 +226,77 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 				require.NoError(t, err)
 			}
 			tc.assert(db, genreq, r)
+		})
+	}
+}
+
+func TestWorkflowRunner_Import(t *testing.T) {
+	testCases := []struct {
+		name    string
+		step    schema.WorkflowStep
+		message string
+		tp      string
+	}{
+		{
+			name: "import csv", step: schema.WorkflowStep{
+				Type:    schema.WorkflowStepTypeImport,
+				Payload: json.RawMessage(`{"table": "foo","file":"test.csv","prompt":"bar"}`),
+			},
+			message: "CSV imported: z",
+			tp:      "csv",
+		},
+		{
+			name: "import image", step: schema.WorkflowStep{
+				Type:    schema.WorkflowStepTypeImport,
+				Payload: json.RawMessage(`{"table": "foo","file":"test.png","prompt":"bar"}`),
+			},
+			message: "Image imported: z",
+			tp:      "img",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := db.NewTestDB()
+			tm := &table.TableServiceMock{
+				ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
+					require.Equal(t, "foo", table)
+					d, err := io.ReadAll(reader)
+					require.NoError(t, err)
+					require.Equal(t, "csv", string(d))
+					return "z", nil
+				},
+				ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+					require.Equal(t, "bar", request.Prompt)
+					require.Equal(t, "", request.Model)
+					require.Equal(t, []byte("png"), request.Data)
+					return "z", nil
+				},
+			}
+			wf := NewWorkflowService(db, tm)
+			id, err := wf.Create(t.Context(), &Workflow{
+				Name:      "wf1",
+				Variables: []schema.WorkflowVariable{},
+				Steps:     []schema.WorkflowStep{tc.step},
+			})
+			require.NoError(t, err)
+			runner, err := wf.Start(t.Context(), id, map[string]any{
+				"test.csv": []byte("csv"),
+				"test.png": []byte("png"),
+			})
+			require.NoError(t, err)
+			r, err := runner.Next(t.Context())
+			require.NoError(t, err)
+			switch tc.tp {
+			case "csv":
+				require.Equal(t, 1, len(tm.ImportCalls()))
+			case "img":
+				require.Equal(t, 1, len(tm.ImportImageCalls()))
+			default:
+				require.FailNow(t, "unknown import type")
+			}
+			require.Equal(t, WorkflowActionShowMessage, r.Action)
+			require.Equal(t, tc.message, r.Message)
 		})
 	}
 }
