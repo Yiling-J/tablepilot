@@ -825,6 +825,14 @@ func (h *Handler) Regenerate(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
 	// collect variables interactively
 	wf, err := h.backend.WorkflowService.Get(cmd.Context(), args[0])
 	if err != nil {
@@ -873,7 +881,7 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 			vars[v.Name] = iv
 		}
 	}
-	runner, err := h.backend.WorkflowService.Start(cmd.Context(), args[0], vars)
+	runner, err := h.backend.WorkflowService.Start(cmd.Context(), args[0], vars, model, temperature)
 	if err != nil {
 		return err
 	}

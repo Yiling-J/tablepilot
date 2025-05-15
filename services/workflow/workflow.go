@@ -22,7 +22,7 @@ type WorkflowService interface {
 	Get(ctx context.Context, wf string) (*ent.Workflow, error)
 	Delete(ctx context.Context, wf string) error
 	Create(ctx context.Context, wf *Workflow) (string, error)
-	Start(ctx context.Context, workflow string, vars map[string]any) (*Runner, error)
+	Start(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (*Runner, error)
 }
 
 type WorkflowServiceImpl struct {
@@ -60,7 +60,7 @@ func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string,
 	return dbwf.Nanoid, nil
 }
 
-func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any) (*Runner, error) {
+func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any, model string, temperature float64) (*Runner, error) {
 	wf, err := w.db.Workflow.Query().Where(workflow.Nanoid(id)).Only(ctx)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,10 @@ func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[str
 	vars["date"] = now.Format("20060102")
 	vars["time"] = now.Format("150405")
 	vars["datetime"] = now.Format("20060102150405")
-	return &Runner{workflow: wf, context: vars, db: w.db, tableService: w.table}, nil
+	return &Runner{
+		workflow: wf, context: vars, db: w.db,
+		tableService: w.table, model: model, temperature: temperature,
+	}, nil
 }
 
 type Runner struct {
@@ -78,6 +81,8 @@ type Runner struct {
 	tableService table.TableService
 	context      map[string]any
 	db           *ent.Client
+	model        string
+	temperature  float64
 }
 
 type WorkflowAction string
@@ -152,6 +157,7 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, err
 		}
 		req.Name = SanitizeString(req.Name)
+		req.Model = r.model
 		tables, err := r.db.TableMeta.Query().Where(
 			tablemeta.Name(req.Name),
 		).All(ctx)
@@ -210,6 +216,7 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			id, err := r.tableService.ImportImage(ctx, table.ImageImportRequest{
 				Data:   cb,
 				Prompt: req.Prompt,
+				Model:  r.model,
 			})
 			if err != nil {
 				return nil, err
@@ -225,6 +232,8 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, err
 		}
+		req.Model = r.model
+		req.Temperature = r.temperature
 		generator, err := r.tableService.Genetate(ctx, req)
 		if err != nil {
 			return nil, err
@@ -238,6 +247,8 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, err
 		}
+		req.Model = r.model
+		req.Temperature = r.temperature
 		generator, err := r.tableService.Genetate(ctx, req)
 		if err != nil {
 			return nil, err

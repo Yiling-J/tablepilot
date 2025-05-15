@@ -78,7 +78,7 @@ func TestWorkflow_Start(t *testing.T) {
 	require.NoError(t, err)
 
 	vars := map[string]any{"foo": "bar"}
-	runner, err := wf.Start(t.Context(), id, vars)
+	runner, err := wf.Start(t.Context(), id, vars, "", 0.5)
 	require.NoError(t, err)
 	require.True(t, len(cast.ToString(vars["date"])) > 0)
 	require.True(t, len(cast.ToString(vars["time"])) > 0)
@@ -205,6 +205,8 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 			wf := NewWorkflowService(db, &table.TableServiceMock{
 				CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
 					genreq = req
+					require.Equal(t, "m1", req.Model)
+
 					return "tb", nil
 				},
 			})
@@ -217,7 +219,7 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 				Steps:     []schema.WorkflowStep{tc.step},
 			})
 			require.NoError(t, err)
-			runner, err := wf.Start(t.Context(), id, map[string]any{})
+			runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())
 			if tc.err {
@@ -268,7 +270,7 @@ func TestWorkflowRunner_Import(t *testing.T) {
 				},
 				ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
 					require.Equal(t, "bar", request.Prompt)
-					require.Equal(t, "", request.Model)
+					require.Equal(t, "m1", request.Model)
 					require.Equal(t, []byte("png"), request.Data)
 					return "z", nil
 				},
@@ -283,7 +285,7 @@ func TestWorkflowRunner_Import(t *testing.T) {
 			runner, err := wf.Start(t.Context(), id, map[string]any{
 				"test.csv": []byte("csv"),
 				"test.png": []byte("png"),
-			})
+			}, "m1", 0.5)
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())
 			require.NoError(t, err)
@@ -299,4 +301,37 @@ func TestWorkflowRunner_Import(t *testing.T) {
 			require.Equal(t, tc.message, r.Message)
 		})
 	}
+}
+
+func TestWorkflowRunner_Generate(t *testing.T) {
+	db := db.NewTestDB()
+	tm := &table.TableServiceMock{
+		GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
+			require.Equal(t, "m1", params.Model)
+			require.Equal(t, 0.5, params.Temperature)
+			require.Equal(t, "foo", params.Table)
+			require.Equal(t, 5, params.Count)
+			require.Equal(t, 2, params.Batch)
+			return nil, nil
+		},
+	}
+	wf := NewWorkflowService(db, tm)
+	id, err := wf.Create(t.Context(), &Workflow{
+		Name:      "wf1",
+		Variables: []schema.WorkflowVariable{},
+		Steps: []schema.WorkflowStep{{
+			Type:    schema.WorkflowStepTypeGenerate,
+			Payload: json.RawMessage(`{"table": "foo","count":5,"batch":2}`),
+		}},
+	})
+	require.NoError(t, err)
+	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	require.NoError(t, err)
+	r, err := runner.Next(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tm.GenetateCalls()))
+	require.Equal(t, &WorkflowStepResult{
+		Action:  WorkflowActionGenerate,
+		Message: "Start generating rows for table foo...",
+	}, r)
 }

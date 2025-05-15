@@ -261,6 +261,20 @@ func BuildCLI(root *cobra.Command) *CLI {
 		Use:   "workflow",
 		Short: "workflow subcommands",
 	}
+
+	runWorkflowCommand := &cobra.Command{
+		Use:   "run <workflow>",
+		Short: "Run workflow of given id or name",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handler.RunWorkflow(cmd, args)
+		},
+	}
+	runWorkflowCommand.Flags().Float64P("temperature", "t", 0.6, "The sampling temperature. Higher values will make the output more random.")
+	runWorkflowCommand.Flags().StringP(
+		"model", "m", "",
+		"specify the model used to generate rows. If not provided, the default model will be used",
+	)
 	workflowCommand.AddCommand(
 		&cobra.Command{
 			Use:   "create <file>",
@@ -270,14 +284,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 				return handler.CreateWorkflow(cmd, args)
 			},
 		},
-		&cobra.Command{
-			Use:   "run <workflow>",
-			Short: "Run workflow of given id or name",
-			Args:  cobra.MinimumNArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return handler.RunWorkflow(cmd, args)
-			},
-		},
+		runWorkflowCommand,
 		&cobra.Command{
 			Use:   "delete <workflow>",
 			Short: "Delete workflow of given id or name",
