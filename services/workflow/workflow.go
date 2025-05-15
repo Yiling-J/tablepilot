@@ -144,7 +144,6 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 				return nil, err
 			}
 			cb = buffer.Bytes()
-
 		} else {
 			cb = []byte(step.Payload)
 		}

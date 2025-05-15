@@ -185,7 +185,6 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 				require.NoError(t, err)
 				_, err = f.WriteString(`{"name": "foo"}`)
 				require.NoError(t, err)
-
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
 				defer os.Remove("wf.json")
