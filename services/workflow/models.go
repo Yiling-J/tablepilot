@@ -12,16 +12,15 @@ type Workflow struct {
 }
 
 type StepContext struct {
-	Table  string
-	Column string
+	Table  string `json:"table"`
+	Column string `json:"column"`
 }
 
-type WorkflowContext struct {
-	Steps    []StepContext
-	Date     string
-	Time     string
-	Datetime string
-	Vars     map[string]any
+func (s StepContext) AsMap() map[string]string {
+	return map[string]string{
+		"table":  s.Table,
+		"column": s.Column,
+	}
 }
 
 type WorkflowDeleteTableParams struct {

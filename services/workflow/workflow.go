@@ -66,9 +66,9 @@ func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[str
 		return nil, err
 	}
 	now := time.Now().UTC()
-	vars["Date"] = now.Format("20060102")
-	vars["Time"] = now.Format("150405")
-	vars["Datetime"] = now.Format("20060102150405")
+	vars["date"] = now.Format("20060102")
+	vars["time"] = now.Format("150405")
+	vars["datetime"] = now.Format("20060102150405")
 	return &Runner{workflow: wf, context: vars, db: w.db, tableService: w.table}, nil
 }
 
@@ -103,7 +103,7 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 	defer func() { r.index += 1 }()
 	step := r.workflow.Steps[r.index]
 	stepContext := StepContext{}
-	defer func() { r.context[fmt.Sprintf("Step%d", r.index)] = stepContext }()
+	defer func() { r.context[fmt.Sprintf("step%d", r.index+1)] = stepContext.AsMap() }()
 
 	b, err := json.Marshal(step)
 	if err != nil {
@@ -128,20 +128,29 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 	switch step.Type {
 	case schema.WorkflowStepTypeCreateTable:
 		var req table.TableGenRequest
+		var cb []byte
 		if step.SchemaFile != "" {
-			f, err := os.ReadFile(step.SchemaFile)
+			cb, err = os.ReadFile(step.SchemaFile)
 			if err != nil {
 				return nil, err
 			}
-			err = json.Unmarshal(f, &req)
+			tmpl, err := template.New("wf").Parse(string(cb))
 			if err != nil {
 				return nil, err
 			}
+			var buffer bytes.Buffer
+			err = tmpl.Execute(&buffer, r.context)
+			if err != nil {
+				return nil, err
+			}
+			cb = buffer.Bytes()
+
 		} else {
-			err := json.Unmarshal(step.Payload, &req)
-			if err != nil {
-				return nil, err
-			}
+			cb = []byte(step.Payload)
+		}
+		err = json.Unmarshal(cb, &req)
+		if err != nil {
+			return nil, err
 		}
 		req.Name = SanitizeString(req.Name)
 		tables, err := r.db.TableMeta.Query().Where(

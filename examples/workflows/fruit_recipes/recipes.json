@@ -1,0 +1,37 @@
+{
+  "name": "fruit_recipes_{{.fruit}}_{{.datetime}}",
+  "description": "table of recipes, all recipes **must include {{.fruit}}** in ingredients",
+  "columns": [
+    {
+      "name": "Name",
+      "description": "recipe name",
+      "type": "string",
+      "fill_mode": "ai",
+      "context_length": 5
+    },
+    {
+      "name": "Ingredients",
+      "description": "list of ingredients, must include {{.fruit}}",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Cooking Time",
+      "description": "time required to cook the recipe (minutes)",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Instructions",
+      "description": "list of steps for this recipe, try as detailed as possible for beginners",
+      "type": "array",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Difficulty Level",
+      "description": "difficulty level of the recipe (1-5)",
+      "type": "integer",
+      "fill_mode": "ai"
+    }
+  ]
+}

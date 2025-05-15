@@ -953,19 +953,10 @@ func (h *Handler) CreateWorkflow(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) DeleteWorkflow(cmd *cobra.Command, args []string) error {
-	var req workflow.Workflow
-	f, err := os.ReadFile(args[0])
+	err := h.backend.WorkflowService.Delete(cmd.Context(), args[0])
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(f, &req)
-	if err != nil {
-		return err
-	}
-	id, err := h.backend.WorkflowService.Create(cmd.Context(), &req)
-	if err != nil {
-		return err
-	}
-	h.backend.Logger.Infow("workflow created", "id", id)
+	h.backend.Logger.Infow("workflow deleted", "workflow", args[0])
 	return nil
 }
