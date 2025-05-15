@@ -11,7 +11,7 @@ import (
 // clearScreen clears the terminal screen.
 // This uses ANSI escape codes, which work on most modern terminals.
 func clearScreen() {
-	fmt.Print("\033[H\033[2J")
+	fmt.Print("\033[H\033[J")
 }
 
 func SelectFromSlice(prompt string, options []string, defaultValue string) (string, error) {
