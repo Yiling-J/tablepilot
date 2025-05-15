@@ -60,6 +60,9 @@ func NanoIDHook() ent.Hook {
 			case *ent.TableRow:
 				vt.Nanoid = nanoid
 				updater = vt.Update().SetNanoid(nanoid)
+			case *ent.Workflow:
+				vt.Nanoid = nanoid
+				updater = vt.Update().SetNanoid(nanoid)
 			default:
 				return v, err
 			}

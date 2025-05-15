@@ -257,5 +257,38 @@ func BuildCLI(root *cobra.Command) *CLI {
 	}
 	cmd.AddCommand(regenerate)
 
+	workflowCommand := &cobra.Command{
+		Use:   "workflow",
+		Short: "workflow subcommands",
+	}
+	workflowCommand.AddCommand(
+		&cobra.Command{
+			Use:   "create <file>",
+			Short: "Create workflow from schema JSON files",
+			Args:  cobra.MinimumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.CreateWorkflow(cmd, args)
+			},
+		},
+		&cobra.Command{
+			Use:   "run <workflow>",
+			Short: "Run workflow of given id or name",
+			Args:  cobra.MinimumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.RunWorkflow(cmd, args)
+			},
+		},
+		&cobra.Command{
+			Use:   "delete <workflow>",
+			Short: "Delete workflow of given id or name",
+			Args:  cobra.MinimumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.DeleteWorkflow(cmd, args)
+			},
+		},
+	)
+
+	cmd.AddCommand(workflowCommand)
+
 	return cli
 }

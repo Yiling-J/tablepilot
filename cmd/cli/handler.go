@@ -9,16 +9,19 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 	"github.com/gammazero/toposort"
 
@@ -818,5 +821,151 @@ func (h *Handler) Regenerate(cmd *cobra.Command, args []string) error {
 		}
 	}
 	h.backend.Logger.Infow("regenerate done")
+	return nil
+}
+
+func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
+	// collect variables interactively
+	wf, err := h.backend.WorkflowService.Get(cmd.Context(), args[0])
+	if err != nil {
+		return err
+	}
+	vars := map[string]any{}
+	if len(wf.Variables) > 0 {
+		for _, v := range wf.Variables {
+			var input string
+			reader := bufio.NewReader(cmd.InOrStdin())
+			fmt.Println("Please input variable value (leave empty to use the default one), press Enter to finish.")
+			fmt.Printf("Variable Name: %s, Variable Type: %s, Default Value: %s\n", v.Name, v.Type, v.DefaultValue)
+			if len(v.Options) > 0 {
+				ops := []string{}
+				for _, v := range v.Options {
+					ops = append(ops, cast.ToString(v))
+				}
+				input, err = SelectFromSlice("Please select a value for variable", ops, cast.ToString(v.DefaultValue))
+				if err != nil {
+					return fmt.Errorf("failed to read user selected input: %w", err)
+				}
+			} else {
+				fmt.Println("Please input variable value (leave empty to use default one), press Enter to finish.")
+				fmt.Printf("Variable Name: %s, Variable Type: %s, Default Value: %s\n", v.Name, v.Type, v.DefaultValue)
+				fmt.Print("> ")
+				input, err = readLine(reader)
+				if err != nil {
+					return fmt.Errorf("failed to read prompt: %w", err)
+				}
+				input = strings.TrimSpace(input)
+			}
+			var iv any = input
+			switch v.Type {
+			case schema.WorkflowVariableTypeInteger:
+				iv, err = cast.ToIntE(input)
+				if err != nil {
+					return fmt.Errorf("failed to convert input value to integer: %w", err)
+				}
+			case schema.WorkflowVariableTypeNumber:
+				iv, err = cast.ToFloat64E(input)
+				if err != nil {
+					return fmt.Errorf("failed to convert input value to number: %w", err)
+				}
+			case schema.WorkflowVariableTypeString:
+			}
+			vars[v.Name] = iv
+		}
+	}
+	runner, err := h.backend.WorkflowService.Start(cmd.Context(), args[0], vars)
+	if err != nil {
+		return err
+	}
+	for {
+		result, err := runner.Next(cmd.Context())
+		if err != nil {
+			return err
+		}
+		if result == nil {
+			break
+		}
+		switch result.Action {
+		case workflow.WorkflowActionShowMessage:
+			fmt.Println(result.Message)
+		case workflow.WorkflowActionExport:
+			//nolint:gosec
+			err := os.WriteFile(result.ExportPath, []byte(result.ExportData), 0644)
+			if err != nil {
+				log.Fatalf("failed to write file: %v", err)
+			}
+			fmt.Println(result.Message)
+		case workflow.WorkflowActionGenerate:
+			fmt.Println(result.Message)
+			generator := result.Generator
+			indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
+			tp := h.getPrinter()
+			headers := []string{"[ID]"}
+			headers = append(headers, indexer.ColumnNames()...)
+			tp.AddHeader(headers)
+			for {
+				batch, err := generator.Next(cmd.Context())
+				if err != nil {
+					return err
+				}
+				if len(batch) == 0 {
+					break
+				}
+				for _, row := range batch {
+					tp.AddField(cast.ToString(row["__id__"].Value))
+					v, err := indexer.RowMapToSlice(row)
+					if err != nil {
+						return err
+					}
+					for _, cell := range v {
+						sv := cellString(cell.Value)
+						tp.AddField(sv)
+					}
+					tp.EndRow()
+				}
+				err = tp.Render()
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	h.backend.Logger.Infow("workflow complete")
+	return nil
+}
+
+func (h *Handler) CreateWorkflow(cmd *cobra.Command, args []string) error {
+	var req workflow.Workflow
+	f, err := os.ReadFile(args[0])
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(f, &req)
+	if err != nil {
+		return err
+	}
+	id, err := h.backend.WorkflowService.Create(cmd.Context(), &req)
+	if err != nil {
+		return err
+	}
+	h.backend.Logger.Infow("workflow created", "id", id)
+	return nil
+}
+
+func (h *Handler) DeleteWorkflow(cmd *cobra.Command, args []string) error {
+	var req workflow.Workflow
+	f, err := os.ReadFile(args[0])
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(f, &req)
+	if err != nil {
+		return err
+	}
+	id, err := h.backend.WorkflowService.Create(cmd.Context(), &req)
+	if err != nil {
+		return err
+	}
+	h.backend.Logger.Infow("workflow created", "id", id)
 	return nil
 }

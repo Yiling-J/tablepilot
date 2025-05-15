@@ -11,6 +11,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/ent/tablerow"
+	"github.com/Yiling-J/tablepilot/ent/workflow"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -158,4 +159,23 @@ func init() {
 	tablerow.DefaultUpdatedAt = tablerowDescUpdatedAt.Default.(func() time.Time)
 	// tablerow.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	tablerow.UpdateDefaultUpdatedAt = tablerowDescUpdatedAt.UpdateDefault.(func() time.Time)
+	workflowMixin := schema.Workflow{}.Mixin()
+	workflowMixinFields0 := workflowMixin[0].Fields()
+	_ = workflowMixinFields0
+	workflowFields := schema.Workflow{}.Fields()
+	_ = workflowFields
+	// workflowDescCreatedAt is the schema descriptor for created_at field.
+	workflowDescCreatedAt := workflowMixinFields0[0].Descriptor()
+	// workflow.DefaultCreatedAt holds the default value on creation for the created_at field.
+	workflow.DefaultCreatedAt = workflowDescCreatedAt.Default.(func() time.Time)
+	// workflowDescUpdatedAt is the schema descriptor for updated_at field.
+	workflowDescUpdatedAt := workflowMixinFields0[1].Descriptor()
+	// workflow.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	workflow.DefaultUpdatedAt = workflowDescUpdatedAt.Default.(func() time.Time)
+	// workflow.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	workflow.UpdateDefaultUpdatedAt = workflowDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// workflowDescName is the schema descriptor for name field.
+	workflowDescName := workflowFields[0].Descriptor()
+	// workflow.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	workflow.NameValidator = workflowDescName.Validators[0].(func(string) error)
 }

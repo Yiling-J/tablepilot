@@ -9,6 +9,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/spf13/cobra"
 	"go.uber.org/dig"
 	"go.uber.org/zap"
@@ -21,11 +22,12 @@ type Backend struct {
 	AIService       ai.AiService
 	TableService    table.TableService
 	ProviderService provider.ProviderService
+	WorkflowService workflow.WorkflowService
 }
 
 func NewBackend(
 	config *config.Config, db *ent.Client,
-	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService, providerService provider.ProviderService,
+	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService, providerService provider.ProviderService, workflowService workflow.WorkflowService,
 ) *Backend {
 	return &Backend{
 		Config:          config,
@@ -34,6 +36,7 @@ func NewBackend(
 		AIService:       aiService,
 		TableService:    tableService,
 		ProviderService: providerService,
+		WorkflowService: workflowService,
 	}
 }
 
@@ -89,6 +92,11 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 	}
 
 	err = container.Provide(table.NewTableService, dig.As(new((table.TableService))))
+	if err != nil {
+		panic(err)
+	}
+
+	err = container.Provide(workflow.NewWorkflowService, dig.As(new((workflow.WorkflowService))))
 	if err != nil {
 		panic(err)
 	}

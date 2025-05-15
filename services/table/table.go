@@ -1,6 +1,7 @@
 package table
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"encoding/csv"
@@ -60,6 +61,9 @@ type TableService interface {
 	PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string, params ModelParams) ([]BuilderTable, error)
 	BuildTable(ctx context.Context, name, description string, depends []string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error)
 	PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error)
+	CSV(ctx context.Context, table string) ([]byte, error)
+	CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error)
+	DeleteColumn(ctx context.Context, table string, column string) (string, error)
 }
 
 type TableServiceImpl struct {
@@ -527,6 +531,49 @@ func (t *TableServiceImpl) Rows(ctx context.Context, table string) (*Rows, error
 		return nil, fmt.Errorf("table.Rows: querying table: %w", err)
 	}
 	return &Rows{Columns: meta.Edges.Columns, Rows: meta.Edges.Rows}, nil
+}
+
+func cellString(v any) string {
+	vs, err := cast.ToStringE(v)
+	if err != nil {
+		vb, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Sprintf("%+v", v)
+		}
+		return string(vb)
+	}
+	return vs
+}
+
+func (t *TableServiceImpl) CSV(ctx context.Context, table string) ([]byte, error) {
+	rows, err := t.Rows(ctx, table)
+	if err != nil {
+		return nil, fmt.Errorf("table.CSV: querying rows: %w", err)
+	}
+
+	var buf []byte
+	csvwriter := csv.NewWriter(bytes.NewBuffer(buf))
+	columns := []string{}
+	for _, col := range rows.Columns {
+		columns = append(columns, col.Name)
+	}
+	err = csvwriter.Write(columns)
+	if err != nil {
+		return nil, fmt.Errorf("table.CSV: write headers to csv: %w", err)
+	}
+	data := [][]string{}
+	for _, row := range rows.Rows {
+		r := []string{}
+		for _, v := range row.Cells {
+			r = append(r, cellString(v.Value))
+		}
+		data = append(data, r)
+	}
+	err = csvwriter.WriteAll(data)
+	if err != nil {
+		return nil, fmt.Errorf("table.CSV: write data to csv: %w", err)
+	}
+	return buf, nil
 }
 
 func (t *TableServiceImpl) Truncate(ctx context.Context, table string) (int, error) {
@@ -1004,4 +1051,147 @@ func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) e
 		}
 	}
 	return nil
+}
+
+func (t *TableServiceImpl) CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error) {
+	t.logger.Debugw("creating column", "column", column.Name)
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.CreateColumn: starting a transaction: %w", err)
+	}
+	tb, err := tx.TableMeta.Query().Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).Only(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.CreateColumn: get table: %w", err)
+	}
+	sources := tb.Sources
+	if len(t.sharedSources) > 0 {
+		for _, so := range t.sharedSources {
+			if _, ok := sources[so.Name]; !ok {
+				vs, err := source.ValidateSource(ctx, so.Data, tx.Client())
+				if err != nil {
+					return "", ent.Rollback(tx, fmt.Errorf("table.Create: validating shared source: %w", err))
+				}
+				bs, err := json.Marshal(vs)
+				if err != nil {
+					return "", ent.Rollback(tx, fmt.Errorf("table.Create: marshaling shared source: %w", err))
+				}
+				sources[so.Name] = bs
+			}
+		}
+	}
+
+	// validate linked column column/context_columns exists
+	err = validateLinkedColumnInfo(ctx, tx, []TableGenColumn{column}, sources)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: validating linked column info: %w", err))
+	}
+
+	cc := tx.TableColumn.Create().
+		SetTablemeta(tb).
+		SetFillMode(tablecolumn.FillMode(column.FillMode)).
+		SetName(column.Name).
+		SetDescription(column.Description).
+		SetType(tablecolumn.Type(column.Type)).
+		SetContextLength(column.ContextLength)
+
+	if column.Source != "" && column.FillMode == "pick" {
+		if _, ok := sources[column.Source]; ok {
+			cc.SetSource(column.Source).SetRandom(column.Random).
+				SetReplacement(column.Replacement).
+				SetRepeat(column.Repeat).SetLinkedColumn(column.LinkedColumn).
+				SetLinkedContextColumns(column.LinkedContextColumns)
+		} else {
+			return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: source %s not found", column.Source))
+		}
+	}
+	t.logger.Debugw(
+		"creating column", "name", column.Name, "description", column.Description,
+		"fill_mode", column.FillMode, "type", column.Type, "source", column.Source,
+	)
+
+	err = cc.Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: creating column: %w", err))
+	}
+
+	// update rows if exists
+	rows, err := tb.QueryRows().All(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: querying rows: %w", err))
+	}
+	updates := []*ent.TableRowCreate{}
+	zv, err := util.ZeroValue(tablecolumn.Type(column.Type))
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: getting zero value for column type: %w", err))
+	}
+	for _, row := range rows {
+		row.Cells = append(row.Cells, &schema.CellValue{Value: zv})
+		updates = append(updates, tx.TableRow.Create().SetTablemeta(tb).SetCells(row.Cells).SetNanoid(row.Nanoid))
+	}
+	if len(updates) > 0 {
+		err = tx.TableRow.CreateBulk(updates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.Update: updating rows: %w", err))
+		}
+	}
+
+	t.logger.Debug("finish creating column")
+	return tb.Nanoid, tx.Commit()
+}
+
+func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, column string) (string, error) {
+	t.logger.Debugw("deleting column", "column", column)
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.CreateColumn: starting a transaction: %w", err)
+	}
+	tb, err := tx.TableMeta.Query().Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Only(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.DeleteColumn: get table: %w", err)
+	}
+	removeIndex := 0
+	removeId := 0
+	for i, col := range tb.Edges.Columns {
+		if col.Nanoid == column || col.Name == column {
+			removeIndex = i
+			removeId = i
+			break
+		}
+	}
+	if removeId == 0 {
+		return "", nil
+	}
+	_, err = t.db.TableColumn.Delete().Where(tablecolumn.ID(removeId)).Exec(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.DeleteColumn: delete column: %w", err)
+	}
+	rows, err := tb.QueryRows().All(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: querying rows: %w", err))
+	}
+	updates := []*ent.TableRowCreate{}
+	for _, row := range rows {
+		cells := []*schema.CellValue{}
+		for i, cell := range row.Cells {
+			if i != removeIndex {
+				cells = append(cells, cell)
+			}
+		}
+		updates = append(updates, tx.TableRow.Create().SetTablemeta(tb).SetCells(cells).SetNanoid(row.Nanoid))
+	}
+	if len(updates) > 0 {
+		err = tx.TableRow.CreateBulk(updates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: updating rows: %w", err))
+		}
+	}
+	return "", nil
 }

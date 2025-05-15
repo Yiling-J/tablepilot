@@ -1,0 +1,299 @@
+package workflow
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"text/template"
+	"time"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
+	"github.com/Yiling-J/tablepilot/ent/workflow"
+	"github.com/Yiling-J/tablepilot/services/table"
+)
+
+type WorkflowService interface {
+	Get(ctx context.Context, wf string) (*ent.Workflow, error)
+	Delete(ctx context.Context, wf string) error
+	Create(ctx context.Context, wf *Workflow) (string, error)
+	Start(ctx context.Context, workflow string, vars map[string]any) (*Runner, error)
+}
+
+type WorkflowServiceImpl struct {
+	db    *ent.Client
+	table table.TableService
+}
+
+func NewWorkflowService(db *ent.Client, table table.TableService) *WorkflowServiceImpl {
+	return &WorkflowServiceImpl{
+		db:    db,
+		table: table,
+	}
+}
+
+func (w *WorkflowServiceImpl) Get(ctx context.Context, wf string) (*ent.Workflow, error) {
+	return w.db.Workflow.Query().Where(workflow.Or(workflow.Name(wf), workflow.Nanoid(wf))).Only(ctx)
+}
+
+func (w *WorkflowServiceImpl) Delete(ctx context.Context, wf string) error {
+	_, err := w.db.Workflow.Delete().Where(workflow.Or(workflow.Name(wf), workflow.Nanoid(wf))).Exec(ctx)
+	return err
+}
+
+func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string, error) {
+	if len(wf.Name) == 0 {
+		return "", errors.New("name must not be empty")
+	}
+	if len(wf.Steps) == 0 {
+		return "", errors.New("steps must not be empty")
+	}
+	dbwf, err := w.db.Workflow.Create().SetName(wf.Name).SetVariables(wf.Variables).SetSteps(wf.Steps).Save(ctx)
+	if err != nil {
+		return "", err
+	}
+	return dbwf.Nanoid, nil
+}
+
+func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any) (*Runner, error) {
+	wf, err := w.db.Workflow.Query().Where(workflow.Nanoid(id)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC()
+	vars["Date"] = now.Format("20060102")
+	vars["Time"] = now.Format("150405")
+	vars["Datetime"] = now.Format("20060102150405")
+	return &Runner{workflow: wf, context: vars, db: w.db, tableService: w.table}, nil
+}
+
+type Runner struct {
+	workflow     *ent.Workflow
+	index        int
+	tableService table.TableService
+	context      map[string]any
+	db           *ent.Client
+}
+
+type WorkflowAction string
+
+const (
+	WorkflowActionShowMessage WorkflowAction = "ShowMessage"
+	WorkflowActionGenerate    WorkflowAction = "Genetate"
+	WorkflowActionExport      WorkflowAction = "Export"
+)
+
+type WorkflowStepResult struct {
+	Action     WorkflowAction
+	Message    string
+	ExportData string
+	ExportPath string
+	Generator  table.RowsGenerator
+}
+
+func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
+	if r.index >= len(r.workflow.Steps) {
+		return nil, nil
+	}
+	defer func() { r.index += 1 }()
+	step := r.workflow.Steps[r.index]
+	stepContext := StepContext{}
+	defer func() { r.context[fmt.Sprintf("Step%d", r.index)] = stepContext }()
+
+	b, err := json.Marshal(step)
+	if err != nil {
+		return nil, err
+	}
+	tmpl, err := template.New("wf").Parse(string(b))
+	if err != nil {
+		return nil, err
+	}
+	var buffer bytes.Buffer
+	err = tmpl.Execute(&buffer, r.context)
+	if err != nil {
+		return nil, err
+	}
+	b = buffer.Bytes()
+	fmt.Println(string(b))
+	err = json.Unmarshal(b, &step)
+	if err != nil {
+		return nil, err
+	}
+
+	switch step.Type {
+	case schema.WorkflowStepTypeCreateTable:
+		var req table.TableGenRequest
+		if step.SchemaFile != "" {
+			f, err := os.ReadFile(step.SchemaFile)
+			if err != nil {
+				return nil, err
+			}
+			err = json.Unmarshal(f, &req)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			err := json.Unmarshal(step.Payload, &req)
+			if err != nil {
+				return nil, err
+			}
+		}
+		req.Name = SanitizeString(req.Name)
+		tables, err := r.db.TableMeta.Query().Where(
+			tablemeta.Name(req.Name),
+		).All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if len(tables) > 0 {
+			switch step.OnExists {
+			case schema.OnExistsRecreate:
+				_, err = r.db.TableMeta.Delete().Where(tablemeta.ID(tables[0].ID)).Exec(ctx)
+				if err != nil {
+					return nil, err
+				}
+			case schema.OnExistsStop:
+				return nil, fmt.Errorf("table %s already exists", req.Name)
+			case schema.OnExistsSkip:
+				return &WorkflowStepResult{Message: fmt.Sprintf("Table %s already exists, skip creating.", req.Name)}, nil
+			}
+		}
+		id, err := r.tableService.Create(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+		stepContext.Table = id
+		return &WorkflowStepResult{Message: fmt.Sprintf("Table created: id %s, name %s", id, req.Name), Action: WorkflowActionShowMessage}, nil
+	case schema.WorkflowStepTypeImport:
+		var req WorkflowImportFileParams
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		content, ok := r.context[req.File]
+		if !ok {
+			return nil, fmt.Errorf("file %s not found", req.File)
+		}
+		cb, ok := content.([]byte)
+		if !ok {
+			return nil, errors.New("invalid file content")
+		}
+		switch filepath.Ext(req.File) {
+		case ".csv":
+			bf := bytes.NewBuffer(cb)
+			id, err := r.tableService.Import(ctx, req.Table, bf)
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowStepResult{
+				Message: fmt.Sprintf("CSV imported: %s", id),
+				Action:  WorkflowActionShowMessage,
+			}, nil
+		case ".png", ".jpg", ".jpeg":
+			id, err := r.tableService.ImportImage(ctx, table.ImageImportRequest{
+				Data:   cb,
+				Prompt: req.Prompt,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowStepResult{
+				Message: fmt.Sprintf("Image imported: %s", id),
+				Action:  WorkflowActionShowMessage,
+			}, nil
+		}
+	case schema.WorkflowStepTypeGenerate:
+		var req table.GenerateRowsRequest
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		generator, err := r.tableService.Genetate(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return &WorkflowStepResult{
+			Message:   fmt.Sprintf("Start generating rows for table %s...", req.Table),
+			Generator: generator, Action: WorkflowActionGenerate}, nil
+	case schema.WorkflowStepTypeAutofill:
+		var req table.GenerateRowsRequest
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		generator, err := r.tableService.Genetate(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return &WorkflowStepResult{
+			Message:   fmt.Sprintf("Start autofilling rows for table %s...", req.Table),
+			Generator: generator}, nil
+	case schema.WorkflowStepTypeDeleteTable:
+		var req WorkflowDeleteTableParams
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		_, err = r.tableService.Delete(ctx, req.Table)
+		if err != nil {
+			return nil, err
+		}
+		return &WorkflowStepResult{
+			Message: fmt.Sprintf("Table %s deleted", req.Table),
+			Action:  WorkflowActionShowMessage,
+		}, nil
+	case schema.WorkflowStepTypeExportTable:
+		var req WorkflowExportTableParams
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		data, err := r.tableService.CSV(ctx, req.Table)
+		if err != nil {
+			return nil, err
+		}
+		return &WorkflowStepResult{
+			Message:    fmt.Sprintf("Table %s exported", req.Table),
+			ExportData: string(data),
+			ExportPath: req.Path,
+			Action:     WorkflowActionExport,
+		}, nil
+
+	case schema.WorkflowStepTypeCreateColumn:
+		var req WorkflowCreateColumnParams
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		req.Column.FillMode = "ai"
+		id, err := r.tableService.CreateColumn(ctx, req.Table, req.Column)
+		if err != nil {
+			return nil, err
+		}
+		stepContext.Column = id
+		return &WorkflowStepResult{
+			Message: fmt.Sprintf("Column %s created", req.Column.Name),
+			Action:  WorkflowActionShowMessage,
+		}, nil
+	case schema.WorkflowStepTypeDeleteColumn:
+		var req WorkflowDeleteColumnParams
+		err := json.Unmarshal(step.Payload, &req)
+		if err != nil {
+			return nil, err
+		}
+		_, err = r.tableService.DeleteColumn(ctx, req.Table, req.Column)
+		if err != nil {
+			return nil, err
+		}
+		return &WorkflowStepResult{
+			Message: fmt.Sprintf("Column %s deleted", req.Column),
+			Action:  WorkflowActionShowMessage,
+		}, nil
+	}
+	return nil, nil
+}
