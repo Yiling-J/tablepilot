@@ -13,6 +13,10 @@ func isAsciiDigit(r rune) bool {
 	return r >= '0' && r <= '9'
 }
 
+func isSpaceDashDot(r rune) bool {
+	return r == ' ' || r == '-' || r == '.'
+}
+
 func SanitizeString(input string) string {
 	if len(input) == 0 {
 		return ""
@@ -35,6 +39,8 @@ func SanitizeString(input string) string {
 		} else {
 			if isAsciiLetter(r) || isAsciiDigit(r) || r == '_' {
 				sb.WriteRune(r)
+			} else if isSpaceDashDot(r) {
+				sb.WriteString("_")
 			} else {
 				// Not an ASCII letter, ASCII digit, or underscore.
 				// Prepend "x" to its codepoint.

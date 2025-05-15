@@ -169,7 +169,11 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			case schema.OnExistsStop:
 				return nil, fmt.Errorf("table %s already exists", req.Name)
 			case schema.OnExistsSkip:
-				return &WorkflowStepResult{Message: fmt.Sprintf("Table %s already exists, skip creating.", req.Name)}, nil
+				return &WorkflowStepResult{
+					Action:  WorkflowActionShowMessage,
+					Message: fmt.Sprintf("Table %s already exists, skip creating.", req.Name)}, nil
+			default:
+				return nil, fmt.Errorf("table %s already exists", req.Name)
 			}
 		}
 		id, err := r.tableService.Create(ctx, &req)
