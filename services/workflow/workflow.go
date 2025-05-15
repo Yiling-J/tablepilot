@@ -254,6 +254,7 @@ func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, err
 		}
 		return &WorkflowStepResult{
+			Action:    WorkflowActionGenerate,
 			Message:   fmt.Sprintf("Start autofilling rows for table %s...", req.Table),
 			Generator: generator}, nil
 	case schema.WorkflowStepTypeDeleteTable:

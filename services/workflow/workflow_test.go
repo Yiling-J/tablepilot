@@ -335,3 +335,156 @@ func TestWorkflowRunner_Generate(t *testing.T) {
 		Message: "Start generating rows for table foo...",
 	}, r)
 }
+
+func TestWorkflowRunner_Autofill(t *testing.T) {
+	db := db.NewTestDB()
+	tm := &table.TableServiceMock{
+		GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
+			require.Equal(t, "m1", params.Model)
+			require.Equal(t, 0.5, params.Temperature)
+			require.Equal(t, "foo", params.Table)
+			require.Equal(t, 5, params.Count)
+			require.Equal(t, 2, params.Batch)
+			return nil, nil
+		},
+	}
+	wf := NewWorkflowService(db, tm)
+	id, err := wf.Create(t.Context(), &Workflow{
+		Name:      "wf1",
+		Variables: []schema.WorkflowVariable{},
+		Steps: []schema.WorkflowStep{{
+			Type:    schema.WorkflowStepTypeAutofill,
+			Payload: json.RawMessage(`{"table": "foo","count":5,"batch":2}`),
+		}},
+	})
+	require.NoError(t, err)
+	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	require.NoError(t, err)
+	r, err := runner.Next(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tm.GenetateCalls()))
+	require.Equal(t, &WorkflowStepResult{
+		Action:  WorkflowActionGenerate,
+		Message: "Start autofilling rows for table foo...",
+	}, r)
+}
+
+func TestWorkflowRunner_DeleteTable(t *testing.T) {
+	db := db.NewTestDB()
+	tm := &table.TableServiceMock{
+		DeleteFunc: func(ctx context.Context, table string) (int, error) {
+			require.Equal(t, "foo", table)
+			return 1, nil
+		},
+	}
+	wf := NewWorkflowService(db, tm)
+	id, err := wf.Create(t.Context(), &Workflow{
+		Name:      "wf1",
+		Variables: []schema.WorkflowVariable{},
+		Steps: []schema.WorkflowStep{{
+			Type:    schema.WorkflowStepTypeDeleteTable,
+			Payload: json.RawMessage(`{"table": "foo"}`),
+		}},
+	})
+	require.NoError(t, err)
+	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	require.NoError(t, err)
+	r, err := runner.Next(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tm.DeleteCalls()))
+	require.Equal(t, &WorkflowStepResult{
+		Action:  WorkflowActionShowMessage,
+		Message: "Table foo deleted",
+	}, r)
+}
+
+func TestWorkflowRunner_ExportTable(t *testing.T) {
+	db := db.NewTestDB()
+	tm := &table.TableServiceMock{
+		CSVFunc: func(ctx context.Context, table string) ([]byte, error) {
+			require.Equal(t, "foo", table)
+			return []byte("csv"), nil
+		},
+	}
+	wf := NewWorkflowService(db, tm)
+	id, err := wf.Create(t.Context(), &Workflow{
+		Name:      "wf1",
+		Variables: []schema.WorkflowVariable{},
+		Steps: []schema.WorkflowStep{{
+			Type:    schema.WorkflowStepTypeExportTable,
+			Payload: json.RawMessage(`{"table": "foo","path":"tmp.csv"}`),
+		}},
+	})
+	require.NoError(t, err)
+	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	require.NoError(t, err)
+	r, err := runner.Next(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tm.CSVCalls()))
+	require.Equal(t, &WorkflowStepResult{
+		Action:     WorkflowActionExport,
+		Message:    "Table foo exported",
+		ExportData: "csv",
+		ExportPath: "tmp.csv",
+	}, r)
+}
+
+func TestWorkflowRunner_CreateColumn(t *testing.T) {
+	db := db.NewTestDB()
+	tm := &table.TableServiceMock{
+		CreateColumnFunc: func(ctx context.Context, table string, col table.TableGenColumn) (string, error) {
+			require.Equal(t, "foo", table)
+			require.Equal(t, "col", col.Name)
+			return "", nil
+		},
+	}
+	wf := NewWorkflowService(db, tm)
+	id, err := wf.Create(t.Context(), &Workflow{
+		Name:      "wf1",
+		Variables: []schema.WorkflowVariable{},
+		Steps: []schema.WorkflowStep{{
+			Type:    schema.WorkflowStepTypeCreateColumn,
+			Payload: json.RawMessage(`{"table": "foo","column":{"name":"col"}}`),
+		}},
+	})
+	require.NoError(t, err)
+	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	require.NoError(t, err)
+	r, err := runner.Next(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tm.CreateColumnCalls()))
+	require.Equal(t, &WorkflowStepResult{
+		Action:  WorkflowActionShowMessage,
+		Message: "Column col created",
+	}, r)
+}
+
+func TestWorkflowRunner_DeleteColumn(t *testing.T) {
+	db := db.NewTestDB()
+	tm := &table.TableServiceMock{
+		DeleteColumnFunc: func(ctx context.Context, table, column string) (string, error) {
+			require.Equal(t, "foo", table)
+			require.Equal(t, "col", column)
+			return "", nil
+		},
+	}
+	wf := NewWorkflowService(db, tm)
+	id, err := wf.Create(t.Context(), &Workflow{
+		Name:      "wf1",
+		Variables: []schema.WorkflowVariable{},
+		Steps: []schema.WorkflowStep{{
+			Type:    schema.WorkflowStepTypeDeleteColumn,
+			Payload: json.RawMessage(`{"table": "foo","column":"col"}`),
+		}},
+	})
+	require.NoError(t, err)
+	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	require.NoError(t, err)
+	r, err := runner.Next(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, len(tm.DeleteColumnCalls()))
+	require.Equal(t, &WorkflowStepResult{
+		Action:  WorkflowActionShowMessage,
+		Message: "Column col deleted",
+	}, r)
+}
