@@ -23,6 +23,7 @@ type WorkflowService interface {
 	Delete(ctx context.Context, wf string) error
 	Create(ctx context.Context, wf *Workflow) (string, error)
 	Start(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (*Runner, error)
+	List(ctx context.Context) ([]*ent.Workflow, error)
 }
 
 type WorkflowServiceImpl struct {
@@ -39,6 +40,10 @@ func NewWorkflowService(db *ent.Client, table table.TableService) *WorkflowServi
 
 func (w *WorkflowServiceImpl) Get(ctx context.Context, wf string) (*ent.Workflow, error) {
 	return w.db.Workflow.Query().Where(workflow.Or(workflow.Name(wf), workflow.Nanoid(wf))).Only(ctx)
+}
+
+func (w *WorkflowServiceImpl) List(ctx context.Context) ([]*ent.Workflow, error) {
+	return w.db.Workflow.Query().Order(ent.Asc(workflow.FieldID)).All(ctx)
 }
 
 func (w *WorkflowServiceImpl) Delete(ctx context.Context, wf string) error {

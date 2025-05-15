@@ -968,3 +968,18 @@ func (h *Handler) DeleteWorkflow(cmd *cobra.Command, args []string) error {
 	h.backend.Logger.Infow("workflow deleted", "workflow", args[0])
 	return nil
 }
+
+func (h *Handler) ListWorkflows(cmd *cobra.Command, args []string) error {
+	wfs, err := h.backend.WorkflowService.List(cmd.Context())
+	if err != nil {
+		return err
+	}
+	tp := h.getPrinter()
+	tp.AddHeader([]string{"ID", "Name"})
+	for _, w := range wfs {
+		tp.AddField(w.Nanoid)
+		tp.AddField(w.Name)
+		tp.EndRow()
+	}
+	return tp.Render()
+}

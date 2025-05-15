@@ -45,6 +45,20 @@ func TestWorkflow_Get(t *testing.T) {
 	require.Equal(t, w.ID, wg.ID)
 }
 
+func TestWorkflow_List(t *testing.T) {
+	db := db.NewTestDB()
+	wf := NewWorkflowService(db, &table.TableServiceMock{})
+	err := db.Workflow.Create().SetName("wf1").SetVariables([]schema.WorkflowVariable{}).SetSteps([]schema.WorkflowStep{}).Exec(t.Context())
+	require.NoError(t, err)
+	err = db.Workflow.Create().SetName("wf2").SetVariables([]schema.WorkflowVariable{}).SetSteps([]schema.WorkflowStep{}).Exec(t.Context())
+	require.NoError(t, err)
+	wfs, err := wf.List(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 2, len(wfs))
+	require.Equal(t, "wf1", wfs[0].Name)
+	require.Equal(t, "wf2", wfs[1].Name)
+}
+
 func TestWorkflow_Delete(t *testing.T) {
 	db := db.NewTestDB()
 	wf := NewWorkflowService(db, &table.TableServiceMock{})

@@ -277,6 +277,13 @@ func BuildCLI(root *cobra.Command) *CLI {
 	)
 	workflowCommand.AddCommand(
 		&cobra.Command{
+			Use:   "list",
+			Short: "List workflows",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.ListWorkflows(cmd, args)
+			},
+		},
+		&cobra.Command{
 			Use:   "create <file>",
 			Short: "Create workflow from schema JSON files",
 			Args:  cobra.MinimumNArgs(1),
