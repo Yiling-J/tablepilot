@@ -23,6 +23,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 	"github.com/Yiling-J/tablepilot/services/table/source"
 	"github.com/parquet-go/parquet-go"
+	"github.com/spf13/cast"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -1054,9 +1055,6 @@ func TestTableService_ImportLinked(t *testing.T) {
 	rows := [][]*schema.CellValue{}
 	for _, row := range table.Edges.Rows {
 		rows = append(rows, row.Cells)
-		for _, cell := range row.Cells {
-			fmt.Println(cell.Value, cell.ContextValue)
-		}
 	}
 	require.Equal(t, [][]*schema.CellValue{
 		{&schema.CellValue{Value: "a", ContextValue: map[string]any{"c1": "a", "c2": "v1"}}, &schema.CellValue{Value: "aa", ContextValue: map[string]any{
@@ -1306,4 +1304,124 @@ func TestTableService_Validate(t *testing.T) {
 		err := srv.Validate(ctx, tc.req)
 		require.Equal(t, tc.err, err.Error())
 	}
+}
+
+func TestTableService_CSV(t *testing.T) {
+	db := db.NewTestDB()
+	userTable, err := db.TableMeta.Create().SetName("user").Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(t.Context())
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.CreateRows(t.Context(), "user", []map[string]any{
+		{"name": "aa", "age": 1},
+		{"name": "bb", "age": 2},
+	})
+	require.NoError(t, err)
+	data, err := srv.CSV(t.Context(), "user")
+	require.NoError(t, err)
+	require.Equal(t, "name,age\naa,1\nbb,2\n", string(data))
+}
+
+func TestTableService_CreateColumn(t *testing.T) {
+	db := db.NewTestDB()
+	userTable, err := db.TableMeta.Create().SetName("user").Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(t.Context())
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.CreateRows(t.Context(), "user", []map[string]any{
+		{"name": "aa", "age": 1},
+		{"name": "bb", "age": 2},
+	})
+	require.NoError(t, err)
+	_, err = srv.CreateColumn(t.Context(), "user", TableGenColumn{
+		Name:        "job",
+		Description: "user job",
+		Type:        "string",
+		FillMode:    "ai",
+	})
+	require.NoError(t, err)
+
+	columns, err := userTable.QueryColumns().All(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 3, len(columns))
+	found := false
+	for _, col := range columns {
+		if col.Name == "job" {
+			require.Equal(t, "user job", col.Description)
+			require.Equal(t, tablecolumn.TypeString, col.Type)
+			require.Equal(t, tablecolumn.FillModeAi, col.FillMode)
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+	rows, err := userTable.QueryRows().All(t.Context())
+	require.NoError(t, err)
+	for _, row := range rows {
+		cells := row.Cells
+		require.Equal(t, "", cells[2].Value)
+	}
+}
+func TestTableService_DeleteColumn(t *testing.T) {
+	db := db.NewTestDB()
+	userTable, err := db.TableMeta.Create().SetName("user").Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("job").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(t.Context())
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.CreateRows(t.Context(), "user", []map[string]any{
+		{"name": "aa", "age": 1, "job": "a"},
+		{"name": "bb", "age": 2, "job": "b"},
+	})
+	require.NoError(t, err)
+
+	_, err = srv.DeleteColumn(t.Context(), "user", "age")
+	require.NoError(t, err)
+
+	columns, err := userTable.QueryColumns().All(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 2, len(columns))
+	require.Equal(t, "name", columns[0].Name)
+	require.Equal(t, "job", columns[1].Name)
+	rows, err := userTable.QueryRows().All(t.Context())
+	require.NoError(t, err)
+	ns := []string{}
+	js := []string{}
+	for _, row := range rows {
+		cells := row.Cells
+		require.Equal(t, 2, len(cells))
+		ns = append(ns, cast.ToString(cells[0].Value))
+		js = append(js, cast.ToString(cells[1].Value))
+	}
+	require.ElementsMatch(t, []string{"aa", "bb"}, ns)
+	require.ElementsMatch(t, []string{"a", "b"}, js)
 }

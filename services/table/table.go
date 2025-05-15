@@ -551,8 +551,8 @@ func (t *TableServiceImpl) CSV(ctx context.Context, table string) ([]byte, error
 		return nil, fmt.Errorf("table.CSV: querying rows: %w", err)
 	}
 
-	var buf []byte
-	csvwriter := csv.NewWriter(bytes.NewBuffer(buf))
+	buffer := bytes.NewBuffer([]byte{})
+	csvwriter := csv.NewWriter(buffer)
 	columns := []string{}
 	for _, col := range rows.Columns {
 		columns = append(columns, col.Name)
@@ -573,7 +573,7 @@ func (t *TableServiceImpl) CSV(ctx context.Context, table string) ([]byte, error
 	if err != nil {
 		return nil, fmt.Errorf("table.CSV: write data to csv: %w", err)
 	}
-	return buf, nil
+	return buffer.Bytes(), nil
 }
 
 func (t *TableServiceImpl) Truncate(ctx context.Context, table string) (int, error) {
@@ -1146,7 +1146,7 @@ func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, colum
 	t.logger.Debugw("deleting column", "column", column)
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return "", fmt.Errorf("table.CreateColumn: starting a transaction: %w", err)
+		return "", fmt.Errorf("table.DeleteColumn: starting a transaction: %w", err)
 	}
 	tb, err := tx.TableMeta.Query().Where(tablemeta.Or(
 		tablemeta.Nanoid(table),
@@ -1155,23 +1155,23 @@ func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, colum
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Only(ctx)
 	if err != nil {
-		return "", fmt.Errorf("table.DeleteColumn: get table: %w", err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: get table: %w", err))
 	}
 	removeIndex := 0
 	removeId := 0
 	for i, col := range tb.Edges.Columns {
 		if col.Nanoid == column || col.Name == column {
 			removeIndex = i
-			removeId = i
+			removeId = col.ID
 			break
 		}
 	}
 	if removeId == 0 {
 		return "", nil
 	}
-	_, err = t.db.TableColumn.Delete().Where(tablecolumn.ID(removeId)).Exec(ctx)
+	_, err = tx.TableColumn.Delete().Where(tablecolumn.ID(removeId)).Exec(ctx)
 	if err != nil {
-		return "", fmt.Errorf("table.DeleteColumn: delete column: %w", err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: delete column: %w", err))
 	}
 	rows, err := tb.QueryRows().All(ctx)
 	if err != nil {
@@ -1193,5 +1193,5 @@ func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, colum
 			return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: updating rows: %w", err))
 		}
 	}
-	return "", nil
+	return "", tx.Commit()
 }
