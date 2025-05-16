@@ -134,7 +134,6 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		return nil, err
 	}
 	b = buffer.Bytes()
-	fmt.Println(string(b))
 	err = json.Unmarshal(b, &step)
 	if err != nil {
 		return nil, err
