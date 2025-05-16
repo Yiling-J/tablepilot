@@ -97,7 +97,9 @@ func TestWorkflow_Start(t *testing.T) {
 	require.True(t, len(cast.ToString(vars["date"])) > 0)
 	require.True(t, len(cast.ToString(vars["time"])) > 0)
 	require.True(t, len(cast.ToString(vars["datetime"])) > 0)
-	require.Equal(t, vars, runner.context)
+	r, ok := runner.(*RunnerImpl)
+	require.True(t, ok)
+	require.Equal(t, vars, r.context)
 }
 
 func TestWorkflowRunner_CreateTable(t *testing.T) {

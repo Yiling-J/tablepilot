@@ -23,7 +23,6 @@ import (
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
-	"github.com/micmonay/keybd_event"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -979,8 +978,6 @@ func TestHandler_Regenerate(t *testing.T) {
 
 func TestHandler_WorkflowRun(t *testing.T) {
 	defer func() { _ = os.Remove("tmpw.csv") }()
-	kb, err := keybd_event.NewKeyBonding()
-	require.NoError(t, err)
 	count := -1
 	cc := 0
 	mockRowGen := &table.RowsGeneratorMock{
@@ -1051,19 +1048,19 @@ func TestHandler_WorkflowRun(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
+	handler.promptUserSelect = func(prompt string, options []string, defaultValue string) (string, error) {
+		require.Equal(t, "Please select a value for variable foo", prompt)
+		require.Equal(t, []string{"aa", "bb"}, options)
+		require.Equal(t, "bb", defaultValue)
+		return options[0], nil
+	}
 	cmd := &cobra.Command{}
 	cmd.Flags().Float64P("temperature", "", 0.6, "")
 	cmd.Flags().StringP("model", "", "", "")
-	err = cmd.Flags().Set("temperature", "0.56")
+	err := cmd.Flags().Set("temperature", "0.56")
 	require.NoError(t, err)
 	err = cmd.Flags().Set("model", "aiai")
 	require.NoError(t, err)
-	go func() {
-		time.Sleep(2 * time.Second)
-		kb.SetKeys(keybd_event.VK_UP, keybd_event.VK_ENTER)
-		err = kb.Launching()
-		require.NoError(t, err)
-	}()
 	err = handler.RunWorkflow(cmd, []string{"foo"})
 	require.NoError(t, err)
 	require.Equal(t, 4, len(runnerMock.NextCalls()))

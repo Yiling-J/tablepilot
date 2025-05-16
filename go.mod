@@ -19,7 +19,6 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/lib/pq v1.10.9
-	github.com/micmonay/keybd_event v1.1.2
 	github.com/muesli/reflow v0.3.0
 	github.com/openai/openai-go v0.1.0-beta.10
 	github.com/parquet-go/parquet-go v0.25.0

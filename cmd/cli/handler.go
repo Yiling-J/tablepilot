@@ -30,14 +30,16 @@ import (
 )
 
 type Handler struct {
-	backend    *services.Backend
-	getPrinter func() tableprinter.TablePrinter
+	backend          *services.Backend
+	getPrinter       func() tableprinter.TablePrinter
+	promptUserSelect func(prompt string, options []string, defaultValue string) (string, error)
 }
 
 func NewHandler(backend *services.Backend) *Handler {
 	return &Handler{
-		backend:    backend,
-		getPrinter: newPrinter,
+		backend:          backend,
+		getPrinter:       newPrinter,
+		promptUserSelect: SelectFromSlice,
 	}
 }
 
@@ -843,14 +845,12 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 		for _, v := range wf.Variables {
 			var input string
 			reader := bufio.NewReader(cmd.InOrStdin())
-			fmt.Println("Please input variable value (leave empty to use the default one), press Enter to finish.")
-			fmt.Printf("Variable Name: %s, Variable Type: %s, Default Value: %s\n", v.Name, v.Type, v.DefaultValue)
 			if len(v.Options) > 0 {
 				ops := []string{}
 				for _, v := range v.Options {
 					ops = append(ops, cast.ToString(v))
 				}
-				input, err = SelectFromSlice("Please select a value for variable", ops, cast.ToString(v.DefaultValue))
+				input, err = h.promptUserSelect(fmt.Sprintf("Please select a value for variable %s", v.Name), ops, cast.ToString(v.DefaultValue))
 				if err != nil {
 					return fmt.Errorf("failed to read user selected input: %w", err)
 				}
