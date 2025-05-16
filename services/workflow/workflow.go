@@ -40,16 +40,27 @@ func NewWorkflowService(db *ent.Client, table table.TableService) *WorkflowServi
 }
 
 func (w *WorkflowServiceImpl) Get(ctx context.Context, wf string) (*ent.Workflow, error) {
-	return w.db.Workflow.Query().Where(workflow.Or(workflow.Name(wf), workflow.Nanoid(wf))).Only(ctx)
+	workflow, err := w.db.Workflow.Query().Where(workflow.Or(workflow.Name(wf), workflow.Nanoid(wf))).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("workflow.Get: querying workflow: %w", err)
+	}
+	return workflow, nil
 }
 
 func (w *WorkflowServiceImpl) List(ctx context.Context) ([]*ent.Workflow, error) {
-	return w.db.Workflow.Query().Order(ent.Asc(workflow.FieldID)).All(ctx)
+	workflows, err := w.db.Workflow.Query().Order(ent.Asc(workflow.FieldID)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("workflow.List: listing workflows: %w", err)
+	}
+	return workflows, nil
 }
 
 func (w *WorkflowServiceImpl) Delete(ctx context.Context, wf string) error {
 	_, err := w.db.Workflow.Delete().Where(workflow.Or(workflow.Name(wf), workflow.Nanoid(wf))).Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("workflow.Delete: deleting workflow: %w", err)
+	}
+	return nil
 }
 
 func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string, error) {
@@ -61,7 +72,7 @@ func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string,
 	}
 	dbwf, err := w.db.Workflow.Create().SetName(wf.Name).SetVariables(wf.Variables).SetSteps(wf.Steps).Save(ctx)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("workflow.Create: saving workflow: %w", err)
 	}
 	return dbwf.Nanoid, nil
 }
@@ -69,7 +80,7 @@ func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string,
 func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any, model string, temperature float64) (Runner, error) {
 	wf, err := w.db.Workflow.Query().Where(workflow.Nanoid(id)).Only(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("workflow.Start: querying workflow: %w", err)
 	}
 	now := time.Now().UTC()
 	vars["date"] = now.Format("20060102")
@@ -122,21 +133,21 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 
 	b, err := json.Marshal(step)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("workflow.Next: marshaling step: %w", err)
 	}
 	tmpl, err := template.New("wf").Parse(string(b))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("workflow.Next: parsing template: %w", err)
 	}
 	var buffer bytes.Buffer
 	err = tmpl.Execute(&buffer, r.context)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("workflow.Next: executing template: %w", err)
 	}
 	b = buffer.Bytes()
 	err = json.Unmarshal(b, &step)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("workflow.Next: unmarshaling step: %w", err)
 	}
 
 	switch step.Type {
@@ -146,16 +157,16 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if step.SchemaFile != "" {
 			cb, err = os.ReadFile(step.SchemaFile)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("workflow.Next: reading schema file: %w", err)
 			}
 			tmpl, err := template.New("wf").Parse(string(cb))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("workflow.Next: parsing schema template: %w", err)
 			}
 			var buffer bytes.Buffer
 			err = tmpl.Execute(&buffer, r.context)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("workflow.Next: executing schema template: %w", err)
 			}
 			cb = buffer.Bytes()
 		} else {
@@ -163,7 +174,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		}
 		err = json.Unmarshal(cb, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling table request: %w", err)
 		}
 		req.Name = SanitizeString(req.Name)
 		req.Model = r.model
@@ -171,14 +182,14 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			tablemeta.Name(req.Name),
 		).All(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: querying tables: %w", err)
 		}
 		if len(tables) > 0 {
 			switch step.OnExists {
 			case schema.OnExistsRecreate:
 				_, err = r.db.TableMeta.Delete().Where(tablemeta.ID(tables[0].ID)).Exec(ctx)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("workflow.Next: deleting existing table: %w", err)
 				}
 			case schema.OnExistsStop:
 				return nil, fmt.Errorf("table %s already exists", req.Name)
@@ -192,7 +203,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		}
 		id, err := r.tableService.Create(ctx, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: creating table: %w", err)
 		}
 		stepContext.Table = id
 		return &WorkflowStepResult{Message: fmt.Sprintf("Table created: id %s, name %s", id, req.Name), Action: WorkflowActionShowMessage}, nil
@@ -200,11 +211,11 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		var req WorkflowImportFileParams
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling import file params: %w", err)
 		}
 		content, ok := r.context[req.File]
 		if !ok {
-			return nil, fmt.Errorf("file %s not found", req.File)
+			return nil, fmt.Errorf("workflow.Next: file %s not found", req.File)
 		}
 		cb, ok := content.([]byte)
 		if !ok {
@@ -215,7 +226,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			bf := bytes.NewBuffer(cb)
 			id, err := r.tableService.Import(ctx, req.Table, bf)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("workflow.Next: importing CSV: %w", err)
 			}
 			return &WorkflowStepResult{
 				Message: fmt.Sprintf("CSV imported: %s", id),
@@ -228,7 +239,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 				Model:  r.model,
 			})
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("workflow.Next: importing image: %w", err)
 			}
 			return &WorkflowStepResult{
 				Message: fmt.Sprintf("Image imported: %s", id),
@@ -239,13 +250,13 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		var req table.GenerateRowsRequest
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling generate rows request: %w", err)
 		}
 		req.Model = r.model
 		req.Temperature = r.temperature
 		generator, err := r.tableService.Genetate(ctx, req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: generating rows: %w", err)
 		}
 		return &WorkflowStepResult{
 			Message:   fmt.Sprintf("Start generating rows for table %s...", req.Table),
@@ -254,13 +265,13 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		var req table.GenerateRowsRequest
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling autofill request: %w", err)
 		}
 		req.Model = r.model
 		req.Temperature = r.temperature
 		generator, err := r.tableService.Genetate(ctx, req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: autofilling rows: %w", err)
 		}
 		return &WorkflowStepResult{
 			Action:    WorkflowActionGenerate,
@@ -270,11 +281,11 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		var req WorkflowDeleteTableParams
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling delete table params: %w", err)
 		}
 		_, err = r.tableService.Delete(ctx, req.Table)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: deleting table: %w", err)
 		}
 		return &WorkflowStepResult{
 			Message: fmt.Sprintf("Table %s deleted", req.Table),
@@ -284,11 +295,11 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		var req WorkflowExportTableParams
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling export table params: %w", err)
 		}
 		data, err := r.tableService.CSV(ctx, req.Table)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: exporting table to CSV: %w", err)
 		}
 		return &WorkflowStepResult{
 			Message:    fmt.Sprintf("Table %s exported", req.Table),
@@ -296,17 +307,16 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			ExportPath: req.Path,
 			Action:     WorkflowActionExport,
 		}, nil
-
 	case schema.WorkflowStepTypeCreateColumn:
 		var req WorkflowCreateColumnParams
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling create column params: %w", err)
 		}
 		req.Column.FillMode = "ai"
 		id, err := r.tableService.CreateColumn(ctx, req.Table, req.Column)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: creating column: %w", err)
 		}
 		stepContext.Column = id
 		return &WorkflowStepResult{
@@ -317,11 +327,11 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		var req WorkflowDeleteColumnParams
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: unmarshaling delete column params: %w", err)
 		}
 		_, err = r.tableService.DeleteColumn(ctx, req.Table, req.Column)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("workflow.Next: deleting column: %w", err)
 		}
 		return &WorkflowStepResult{
 			Message: fmt.Sprintf("Column %s deleted", req.Column),
