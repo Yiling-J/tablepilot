@@ -27,7 +27,7 @@ jobs:
         with:
           go-version: stable
       - name: Test
-        run: make test
+        run: sudo make test
 
   vite:
     name: vite
