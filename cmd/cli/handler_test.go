@@ -1087,7 +1087,6 @@ func TestHandler_WorkflowCreate(t *testing.T) {
 				Steps:     []schema.WorkflowStep{{Type: schema.WorkflowStepTypeAutofill}},
 			}, wf)
 			return "id", nil
-
 		},
 	}
 	handler := NewHandler(
