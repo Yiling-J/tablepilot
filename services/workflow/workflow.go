@@ -18,11 +18,12 @@ import (
 	"github.com/Yiling-J/tablepilot/services/table"
 )
 
+//go:generate moq -rm -out workflow_moq.go . WorkflowService Runner
 type WorkflowService interface {
 	Get(ctx context.Context, wf string) (*ent.Workflow, error)
 	Delete(ctx context.Context, wf string) error
 	Create(ctx context.Context, wf *Workflow) (string, error)
-	Start(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (*Runner, error)
+	Start(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (Runner, error)
 	List(ctx context.Context) ([]*ent.Workflow, error)
 }
 
@@ -65,7 +66,7 @@ func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string,
 	return dbwf.Nanoid, nil
 }
 
-func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any, model string, temperature float64) (*Runner, error) {
+func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any, model string, temperature float64) (Runner, error) {
 	wf, err := w.db.Workflow.Query().Where(workflow.Nanoid(id)).Only(ctx)
 	if err != nil {
 		return nil, err
@@ -74,13 +75,17 @@ func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[str
 	vars["date"] = now.Format("20060102")
 	vars["time"] = now.Format("150405")
 	vars["datetime"] = now.Format("20060102150405")
-	return &Runner{
+	return &RunnerImpl{
 		workflow: wf, context: vars, db: w.db,
 		tableService: w.table, model: model, temperature: temperature,
 	}, nil
 }
 
-type Runner struct {
+type Runner interface {
+	Next(ctx context.Context) (*WorkflowStepResult, error)
+}
+
+type RunnerImpl struct {
 	workflow     *ent.Workflow
 	index        int
 	tableService table.TableService
@@ -106,7 +111,7 @@ type WorkflowStepResult struct {
 	Generator  table.RowsGenerator
 }
 
-func (r *Runner) Next(ctx context.Context) (*WorkflowStepResult, error) {
+func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 	if r.index >= len(r.workflow.Steps) {
 		return nil, nil
 	}

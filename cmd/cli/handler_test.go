@@ -21,7 +21,9 @@ import (
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
+	"github.com/micmonay/keybd_event"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
@@ -964,6 +966,110 @@ func TestHandler_Regenerate(t *testing.T) {
 	err = handler.Regenerate(cmd, []string{"foo"})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(printer.AddHeaderCalls()))
+	require.Equal(t, []string{"[ID]", "c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, 6, len(printer.AddFieldCalls()))
+	fields := []string{}
+	for _, call := range printer.AddFieldCalls() {
+		fields = append(fields, call.S)
+	}
+	require.Equal(t, []string{"id", "0", "t0", "id", "1", "t1"}, fields)
+	require.Equal(t, 2, len(printer.EndRowCalls()))
+	require.Equal(t, 2, len(printer.RenderCalls()))
+}
+
+func TestHandler_WorkflowRun(t *testing.T) {
+	defer func() { _ = os.Remove("tmpw.csv") }()
+	kb, err := keybd_event.NewKeyBonding()
+	require.NoError(t, err)
+	count := -1
+	cc := 0
+	mockRowGen := &table.RowsGeneratorMock{
+		NextFunc: func(ctx context.Context) ([]map[string]*schema.CellValue, error) {
+			defer func() { cc += 1 }()
+			if cc < 2 {
+				return []map[string]*schema.CellValue{
+					{
+						"__id__": &schema.CellValue{Value: "id"},
+						"1":      &schema.CellValue{Value: cast.ToString(cc)},
+						"2":      &schema.CellValue{Value: "t" + cast.ToString(cc)},
+					},
+				}, nil
+			}
+			return []map[string]*schema.CellValue{}, nil
+		},
+		TableFunc: func() *ent.TableMeta {
+			return &ent.TableMeta{
+				Name: "foo",
+				Edges: ent.TableMetaEdges{
+					Columns: []*ent.TableColumn{
+						{Nanoid: "1", Name: "c1"},
+						{Nanoid: "2", Name: "c2"},
+					},
+				},
+			}
+		},
+	}
+	runnerMock := &workflow.RunnerMock{
+		NextFunc: func(ctx context.Context) (*workflow.WorkflowStepResult, error) {
+			results := []*workflow.WorkflowStepResult{
+				{Action: workflow.WorkflowActionShowMessage, Message: "foobar"},
+				{Action: workflow.WorkflowActionExport, ExportPath: "tmpw.csv", ExportData: "go"},
+				{Action: workflow.WorkflowActionGenerate, Generator: mockRowGen},
+				nil,
+			}
+			count += 1
+			return results[count], nil
+		},
+	}
+	workflowMock := &workflow.WorkflowServiceMock{
+		GetFunc: func(ctx context.Context, wf string) (*ent.Workflow, error) {
+			require.Equal(t, "foo", wf)
+			return &ent.Workflow{
+				Variables: []schema.WorkflowVariable{
+					{Name: "foo", Type: schema.WorkflowVariableTypeString, Options: []any{"aa", "bb"}, DefaultValue: "bb"},
+				},
+			}, nil
+		},
+		StartFunc: func(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (workflow.Runner, error) {
+			require.Equal(t, "foo", workflow)
+			require.Equal(t, map[string]any{"foo": "aa"}, vars)
+			require.Equal(t, "aiai", model)
+			require.Equal(t, 0.56, temperature)
+			return runnerMock, nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, nil, nil, workflowMock,
+		),
+	)
+	printer := &tableprinter.TablePrinterMock{
+		AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
+		AddFieldFunc:  func(s string, fieldOptions ...tableprinter.FieldOption) {},
+		EndRowFunc:    func() {},
+		RenderFunc:    func() error { return nil },
+	}
+	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
+	cmd := &cobra.Command{}
+	cmd.Flags().Float64P("temperature", "", 0.6, "")
+	cmd.Flags().StringP("model", "", "", "")
+	err = cmd.Flags().Set("temperature", "0.56")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("model", "aiai")
+	require.NoError(t, err)
+	go func() {
+		time.Sleep(2 * time.Second)
+		kb.SetKeys(keybd_event.VK_UP, keybd_event.VK_ENTER)
+		err = kb.Launching()
+		require.NoError(t, err)
+	}()
+	err = handler.RunWorkflow(cmd, []string{"foo"})
+	require.NoError(t, err)
+	require.Equal(t, 4, len(runnerMock.NextCalls()))
+	b, err := os.ReadFile("tmpw.csv")
+	require.NoError(t, err)
+	require.Equal(t, "go", string(b))
 	require.Equal(t, []string{"[ID]", "c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
 	require.Equal(t, 6, len(printer.AddFieldCalls()))
 	fields := []string{}
