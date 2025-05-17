@@ -6,9 +6,17 @@ import (
 )
 
 type Workflow struct {
-	Name      string                    `json:"name"`
-	Variables []schema.WorkflowVariable `json:"variables"`
-	Steps     []schema.WorkflowStep     `json:"steps"`
+	ID          string                    `json:"id"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	Variables   []schema.WorkflowVariable `json:"variables"`
+	Steps       []schema.WorkflowStep     `json:"steps"`
+}
+
+type WorkflowSimple struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type StepContext struct {
@@ -46,4 +54,11 @@ type WorkflowImportFileParams struct {
 	Table  string `json:"table"`
 	File   string `json:"file"`
 	Prompt string `json:"prompt"`
+}
+
+type StartWorklfowRequest struct {
+	Variables   map[string]any `json:"variables"`
+	Model       string         `json:"model"`
+	ImageModel  string         `json:"image_model"`
+	Temperature float64        `json:"temperature"`
 }

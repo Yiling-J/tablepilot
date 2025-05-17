@@ -86,7 +86,7 @@ export function TablepilotHeader({
 
   return (
     <div>
-      <header className="sticky top-0 flex items-center gap-4 border-b bg-background px-4 md:px-6 justify-between py-2">
+      <header className="sticky top-0 font-bold flex items-center gap-4 border-b bg-background px-4 md:px-6 justify-between py-2">
         <div className="flex items-center text-xl tracking-wider">
           {collapsed && (
             <ChevronRightIcon

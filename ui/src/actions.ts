@@ -3,17 +3,20 @@ import { JSONObject } from "./json";
 import {
     autofillUrl,
     generateUrl,
+    getWorkflowUrl,
     importImageUrl,
     modelsUrl,
     providerUrl,
     providersUrl,
     regenerateUrl,
     rowsUrl,
+    runWorkflowUrl,
     schemaUrl,
     sourcesUrl,
     tableUrl,
     tablesUrl,
     truncateUrl,
+    workflowsUrl,
 } from "./urls";
 
 export interface TableInfo {
@@ -448,4 +451,96 @@ export async function importImage(req: ImportImageRequest): Promise<string> {
     throw new Error("Failed to fetch data");
   }
   return res.json().then((v) => v.id);
+}
+
+export interface WorkflowInfo {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface GetWorkflowsResponse {
+  workflows: WorkflowInfo[];
+  total: number;
+}
+
+export async function getWorkflows(): Promise<GetWorkflowsResponse> {
+  const res = await fetch(workflowsUrl(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to fetch data");
+  }
+  return res.json();
+}
+
+export interface WorkflowVariable {
+  name: string;
+  type: string;
+  default_value: string | number;
+  options: (string | number)[];
+}
+
+export interface WorkflowStep {
+  type: string;
+  schema_file: string;
+  on_exists: string;
+  payload: JSONObject;
+  status: string;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  variables: WorkflowVariable[];
+  steps: WorkflowStep[];
+}
+
+export async function getWorkflow(id: string): Promise<Workflow> {
+  const res = await fetch(getWorkflowUrl(id), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch workflow");
+  }
+
+  return res.json();
+}
+
+export async function runWorkflow(
+  workflow: string,
+  signal: AbortSignal,
+  callback: (data: string) => void,
+  temperature: number,
+  model: string,
+  imageModel: string,
+  variables: JSONObject,
+) {
+  await fetchEventSource(runWorkflowUrl(workflow), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      temperature,
+      model,
+      image_model: imageModel,
+      variables,
+    }),
+    signal: signal,
+    openWhenHidden: true,
+    onclose() {
+      callback("[DONE]");
+    },
+    onmessage(ev) {
+      callback(ev.data);
+    },
+  });
+  callback("[DONE]");
 }

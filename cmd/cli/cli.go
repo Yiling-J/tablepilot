@@ -275,6 +275,10 @@ func BuildCLI(root *cobra.Command) *CLI {
 		"model", "m", "",
 		"specify the model used to generate rows. If not provided, the default model will be used",
 	)
+	runWorkflowCommand.Flags().StringP(
+		"image_model", "i", "",
+		"specify the image model used to generate rows. If not provided, the default model will be used",
+	)
 	workflowCommand.AddCommand(
 		&cobra.Command{
 			Use:   "list",

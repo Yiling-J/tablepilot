@@ -1,9 +1,14 @@
 package api
 
 import (
+	"log"
+	"os"
+
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/google/uuid"
 	"github.com/spf13/cast"
 
@@ -303,6 +308,160 @@ func (hs *HTTPServer) ImportImage(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"id": id})
 }
 
+func (hs *HTTPServer) ListWorkflows(ctx *gin.Context) {
+	wfs, err := hs.WorkflowService.List(ctx.Request.Context())
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	r := []workflow.WorkflowSimple{}
+	for _, w := range wfs {
+		r = append(r, workflow.WorkflowSimple{
+			ID:          w.Nanoid,
+			Name:        w.Name,
+			Description: w.Description,
+		})
+	}
+	ctx.JSON(200, gin.H{"total": len(r), "workflows": r})
+}
+
+func (hs *HTTPServer) GetWorkflow(ctx *gin.Context) {
+	wf, err := hs.WorkflowService.Get(ctx.Request.Context(), ctx.Param("id"))
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, workflow.Workflow{
+		ID:          wf.Nanoid,
+		Name:        wf.Name,
+		Description: wf.Description,
+		Variables:   wf.Variables,
+		Steps:       wf.Steps,
+	})
+}
+
+func (hs *HTTPServer) RunWorkflow(ctx *gin.Context) {
+	var request workflow.StartWorklfowRequest
+	err := ctx.ShouldBindJSON(&request)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	// file will be encoded as data url, decode them first
+	wf, err := hs.WorkflowService.Get(ctx.Request.Context(), ctx.Param("workflow"))
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	for _, va := range wf.Variables {
+		if va.Type == schema.WorkflowVariableTypeFile {
+			if v, ok := request.Variables[va.Name]; ok {
+				content, err := DecodeDataURL(cast.ToString(v))
+				if err != nil {
+					errorResponse(ctx, 500, err)
+					return
+				}
+				request.Variables[va.Name] = content
+			}
+		}
+	}
+	sseHeaders(ctx)
+	runner, err := hs.WorkflowService.Start(ctx, ctx.Param("workflow"), request)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	for {
+		result, err := runner.Next(ctx.Request.Context())
+		if err != nil {
+			ctx.SSEvent("message", map[string]any{
+				"type": "ERROR",
+				"data": err.Error(),
+			})
+			ctx.Writer.Flush()
+			errorResponse(ctx, 500, err)
+			return
+		}
+		if result == nil {
+			break
+		}
+		switch result.Action {
+		case workflow.WorkflowActionShowMessage:
+			ctx.SSEvent("message", map[string]any{
+				"type": "MESSAGE",
+				"data": result.Message,
+			})
+			ctx.Writer.Flush()
+		case workflow.WorkflowActionExport:
+			//nolint:gosec
+			err := os.WriteFile(result.ExportPath, []byte(result.ExportData), 0644)
+			if err != nil {
+				log.Fatalf("failed to write file: %v", err)
+			}
+			ctx.SSEvent("message", map[string]any{
+				"type": "MESSAGE",
+				"data": result.Message,
+			})
+			ctx.Writer.Flush()
+		case workflow.WorkflowActionGenerate:
+			ctx.SSEvent("message", map[string]any{
+				"type": "MESSAGE",
+				"data": result.Message,
+			})
+			ctx.Writer.Flush()
+			generator := result.Generator
+			indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
+			for i := 0; ; i++ {
+				hs.Logger.Debugw("start generating rows", "batch", i)
+				rows, err := generator.Next(ctx.Request.Context())
+				if err != nil {
+					ctx.SSEvent("message", map[string]any{
+						"type": "ERROR",
+						"data": err.Error(),
+					})
+					ctx.Writer.Flush()
+					errorResponse(ctx, 500, err)
+					return
+				}
+				if len(rows) == 0 {
+					break
+				}
+				data := []map[string]util.CellValueTyped{}
+				for _, row := range rows {
+					dr, err := indexer.ToAPIRowWIthType(row)
+					if err != nil {
+						ctx.SSEvent("message", map[string]any{
+							"type": "ERROR",
+							"data": err.Error(),
+						})
+						ctx.Writer.Flush()
+						errorResponse(ctx, 500, err)
+						return
+					}
+
+					data = append(data, dr)
+				}
+				ctx.SSEvent("message", map[string]any{
+					"type": "ROWS",
+					"data": data,
+				})
+				ctx.Writer.Flush()
+			}
+		}
+		ctx.SSEvent("message", map[string]any{
+			"type": "STEP_DONE",
+		})
+		ctx.Writer.Flush()
+	}
+	ctx.SSEvent("message", map[string]any{
+		"type": "WORKFLOW_DONE",
+	})
+	ctx.Writer.Flush()
+	ctx.SSEvent("message", "[DONE]")
+	ctx.Writer.Flush()
+	ctx.JSON(200, "")
+}
+
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
@@ -323,4 +482,9 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.PATCH("/providers/:id", hs.UpdateProvider)
 	hs.apiv1.POST("/regenerate/tables/:table", hs.Regenerate)
 	hs.apiv1.POST("/image_import/tables", hs.ImportImage)
+
+	// workflows
+	hs.apiv1.GET("/workflows", hs.ListWorkflows)
+	hs.apiv1.GET("/workflows/:id", hs.GetWorkflow)
+	hs.apiv1.POST("/workflows/:workflow/run", hs.RunWorkflow)
 }

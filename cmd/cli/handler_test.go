@@ -1027,11 +1027,12 @@ func TestHandler_WorkflowRun(t *testing.T) {
 				},
 			}, nil
 		},
-		StartFunc: func(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (workflow.Runner, error) {
+		StartFunc: func(ctx context.Context, workflow string, req workflow.StartWorklfowRequest) (workflow.Runner, error) {
 			require.Equal(t, "foo", workflow)
-			require.Equal(t, map[string]any{"foo": "aa"}, vars)
-			require.Equal(t, "aiai", model)
-			require.Equal(t, 0.56, temperature)
+			require.Equal(t, map[string]any{"foo": "aa"}, req.Variables)
+			require.Equal(t, "aiai", req.Model)
+			require.Equal(t, "aiia", req.ImageModel)
+			require.Equal(t, 0.56, req.Temperature)
 			return runnerMock, nil
 		},
 	}
@@ -1057,9 +1058,12 @@ func TestHandler_WorkflowRun(t *testing.T) {
 	cmd := &cobra.Command{}
 	cmd.Flags().Float64P("temperature", "", 0.6, "")
 	cmd.Flags().StringP("model", "", "", "")
+	cmd.Flags().StringP("image_model", "", "", "")
 	err := cmd.Flags().Set("temperature", "0.56")
 	require.NoError(t, err)
 	err = cmd.Flags().Set("model", "aiai")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("image_model", "aiia")
 	require.NoError(t, err)
 	err = handler.RunWorkflow(cmd, []string{"foo"})
 	require.NoError(t, err)

@@ -138,6 +138,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
 		{Name: "nanoid", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true},
 		{Name: "variables", Type: field.TypeJSON},
 		{Name: "steps", Type: field.TypeJSON},
 	}

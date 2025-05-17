@@ -23,7 +23,7 @@ type WorkflowService interface {
 	Get(ctx context.Context, wf string) (*ent.Workflow, error)
 	Delete(ctx context.Context, wf string) error
 	Create(ctx context.Context, wf *Workflow) (string, error)
-	Start(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (Runner, error)
+	Start(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error)
 	List(ctx context.Context) ([]*ent.Workflow, error)
 }
 
@@ -70,25 +70,31 @@ func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string,
 	if len(wf.Steps) == 0 {
 		return "", errors.New("steps must not be empty")
 	}
-	dbwf, err := w.db.Workflow.Create().SetName(wf.Name).SetVariables(wf.Variables).SetSteps(wf.Steps).Save(ctx)
+	dbwf, err := w.db.Workflow.Create().SetName(wf.Name).SetDescription(wf.Description).SetVariables(wf.Variables).SetSteps(wf.Steps).Save(ctx)
 	if err != nil {
 		return "", fmt.Errorf("workflow.Create: saving workflow: %w", err)
 	}
 	return dbwf.Nanoid, nil
 }
 
-func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, vars map[string]any, model string, temperature float64) (Runner, error) {
+func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error) {
 	wf, err := w.db.Workflow.Query().Where(workflow.Nanoid(id)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("workflow.Start: querying workflow: %w", err)
 	}
 	now := time.Now().UTC()
-	vars["date"] = now.Format("20060102")
-	vars["time"] = now.Format("150405")
-	vars["datetime"] = now.Format("20060102150405")
+	if _, ok := request.Variables["date"]; !ok {
+		request.Variables["date"] = now.Format("20060102")
+	}
+	if _, ok := request.Variables["time"]; !ok {
+		request.Variables["time"] = now.Format("150405")
+	}
+	if _, ok := request.Variables["datetime"]; !ok {
+		request.Variables["datetime"] = now.Format("20060102150405")
+	}
 	return &RunnerImpl{
-		workflow: wf, context: vars, db: w.db,
-		tableService: w.table, model: model, temperature: temperature,
+		workflow: wf, context: request.Variables, db: w.db, imageModel: request.ImageModel,
+		tableService: w.table, model: request.Model, temperature: request.Temperature,
 	}, nil
 }
 
@@ -103,6 +109,7 @@ type RunnerImpl struct {
 	context      map[string]any
 	db           *ent.Client
 	model        string
+	imageModel   string
 	temperature  float64
 }
 
@@ -253,6 +260,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling generate rows request: %w", err)
 		}
 		req.Model = r.model
+		req.ImageModel = r.imageModel
 		req.Temperature = r.temperature
 		generator, err := r.tableService.Genetate(ctx, req)
 		if err != nil {
@@ -268,6 +276,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling autofill request: %w", err)
 		}
 		req.Model = r.model
+		req.ImageModel = r.imageModel
 		req.Temperature = r.temperature
 		generator, err := r.tableService.Genetate(ctx, req)
 		if err != nil {

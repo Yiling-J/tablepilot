@@ -77,6 +77,26 @@ func (wu *WorkflowUpdate) SetNillableName(s *string) *WorkflowUpdate {
 	return wu
 }
 
+// SetDescription sets the "description" field.
+func (wu *WorkflowUpdate) SetDescription(s string) *WorkflowUpdate {
+	wu.mutation.SetDescription(s)
+	return wu
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (wu *WorkflowUpdate) SetNillableDescription(s *string) *WorkflowUpdate {
+	if s != nil {
+		wu.SetDescription(*s)
+	}
+	return wu
+}
+
+// ClearDescription clears the value of the "description" field.
+func (wu *WorkflowUpdate) ClearDescription() *WorkflowUpdate {
+	wu.mutation.ClearDescription()
+	return wu
+}
+
 // SetVariables sets the "variables" field.
 func (wu *WorkflowUpdate) SetVariables(sv []schema.WorkflowVariable) *WorkflowUpdate {
 	wu.mutation.SetVariables(sv)
@@ -188,6 +208,12 @@ func (wu *WorkflowUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := wu.mutation.Name(); ok {
 		_spec.SetField(workflow.FieldName, field.TypeString, value)
 	}
+	if value, ok := wu.mutation.Description(); ok {
+		_spec.SetField(workflow.FieldDescription, field.TypeString, value)
+	}
+	if wu.mutation.DescriptionCleared() {
+		_spec.ClearField(workflow.FieldDescription, field.TypeString)
+	}
 	if value, ok := wu.mutation.Variables(); ok {
 		_spec.SetField(workflow.FieldVariables, field.TypeJSON, value)
 	}
@@ -269,6 +295,26 @@ func (wuo *WorkflowUpdateOne) SetNillableName(s *string) *WorkflowUpdateOne {
 	if s != nil {
 		wuo.SetName(*s)
 	}
+	return wuo
+}
+
+// SetDescription sets the "description" field.
+func (wuo *WorkflowUpdateOne) SetDescription(s string) *WorkflowUpdateOne {
+	wuo.mutation.SetDescription(s)
+	return wuo
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (wuo *WorkflowUpdateOne) SetNillableDescription(s *string) *WorkflowUpdateOne {
+	if s != nil {
+		wuo.SetDescription(*s)
+	}
+	return wuo
+}
+
+// ClearDescription clears the value of the "description" field.
+func (wuo *WorkflowUpdateOne) ClearDescription() *WorkflowUpdateOne {
+	wuo.mutation.ClearDescription()
 	return wuo
 }
 
@@ -412,6 +458,12 @@ func (wuo *WorkflowUpdateOne) sqlSave(ctx context.Context) (_node *Workflow, err
 	}
 	if value, ok := wuo.mutation.Name(); ok {
 		_spec.SetField(workflow.FieldName, field.TypeString, value)
+	}
+	if value, ok := wuo.mutation.Description(); ok {
+		_spec.SetField(workflow.FieldDescription, field.TypeString, value)
+	}
+	if wuo.mutation.DescriptionCleared() {
+		_spec.ClearField(workflow.FieldDescription, field.TypeString)
 	}
 	if value, ok := wuo.mutation.Variables(); ok {
 		_spec.SetField(workflow.FieldVariables, field.TypeJSON, value)

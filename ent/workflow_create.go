@@ -71,6 +71,20 @@ func (wc *WorkflowCreate) SetName(s string) *WorkflowCreate {
 	return wc
 }
 
+// SetDescription sets the "description" field.
+func (wc *WorkflowCreate) SetDescription(s string) *WorkflowCreate {
+	wc.mutation.SetDescription(s)
+	return wc
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (wc *WorkflowCreate) SetNillableDescription(s *string) *WorkflowCreate {
+	if s != nil {
+		wc.SetDescription(*s)
+	}
+	return wc
+}
+
 // SetVariables sets the "variables" field.
 func (wc *WorkflowCreate) SetVariables(sv []schema.WorkflowVariable) *WorkflowCreate {
 	wc.mutation.SetVariables(sv)
@@ -187,6 +201,10 @@ func (wc *WorkflowCreate) createSpec() (*Workflow, *sqlgraph.CreateSpec) {
 		_spec.SetField(workflow.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
+	if value, ok := wc.mutation.Description(); ok {
+		_spec.SetField(workflow.FieldDescription, field.TypeString, value)
+		_node.Description = value
+	}
 	if value, ok := wc.mutation.Variables(); ok {
 		_spec.SetField(workflow.FieldVariables, field.TypeJSON, value)
 		_node.Variables = value
@@ -292,6 +310,24 @@ func (u *WorkflowUpsert) SetName(v string) *WorkflowUpsert {
 // UpdateName sets the "name" field to the value that was provided on create.
 func (u *WorkflowUpsert) UpdateName() *WorkflowUpsert {
 	u.SetExcluded(workflow.FieldName)
+	return u
+}
+
+// SetDescription sets the "description" field.
+func (u *WorkflowUpsert) SetDescription(v string) *WorkflowUpsert {
+	u.Set(workflow.FieldDescription, v)
+	return u
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *WorkflowUpsert) UpdateDescription() *WorkflowUpsert {
+	u.SetExcluded(workflow.FieldDescription)
+	return u
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *WorkflowUpsert) ClearDescription() *WorkflowUpsert {
+	u.SetNull(workflow.FieldDescription)
 	return u
 }
 
@@ -417,6 +453,27 @@ func (u *WorkflowUpsertOne) SetName(v string) *WorkflowUpsertOne {
 func (u *WorkflowUpsertOne) UpdateName() *WorkflowUpsertOne {
 	return u.Update(func(s *WorkflowUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *WorkflowUpsertOne) SetDescription(v string) *WorkflowUpsertOne {
+	return u.Update(func(s *WorkflowUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *WorkflowUpsertOne) UpdateDescription() *WorkflowUpsertOne {
+	return u.Update(func(s *WorkflowUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *WorkflowUpsertOne) ClearDescription() *WorkflowUpsertOne {
+	return u.Update(func(s *WorkflowUpsert) {
+		s.ClearDescription()
 	})
 }
 
@@ -712,6 +769,27 @@ func (u *WorkflowUpsertBulk) SetName(v string) *WorkflowUpsertBulk {
 func (u *WorkflowUpsertBulk) UpdateName() *WorkflowUpsertBulk {
 	return u.Update(func(s *WorkflowUpsert) {
 		s.UpdateName()
+	})
+}
+
+// SetDescription sets the "description" field.
+func (u *WorkflowUpsertBulk) SetDescription(v string) *WorkflowUpsertBulk {
+	return u.Update(func(s *WorkflowUpsert) {
+		s.SetDescription(v)
+	})
+}
+
+// UpdateDescription sets the "description" field to the value that was provided on create.
+func (u *WorkflowUpsertBulk) UpdateDescription() *WorkflowUpsertBulk {
+	return u.Update(func(s *WorkflowUpsert) {
+		s.UpdateDescription()
+	})
+}
+
+// ClearDescription clears the value of the "description" field.
+func (u *WorkflowUpsertBulk) ClearDescription() *WorkflowUpsertBulk {
+	return u.Update(func(s *WorkflowUpsert) {
+		s.ClearDescription()
 	})
 }
 

@@ -27,6 +27,8 @@ type Workflow struct {
 	Nanoid string `json:"nanoid,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Description holds the value of the "description" field.
+	Description string `json:"description,omitempty"`
 	// Variables holds the value of the "variables" field.
 	Variables []schema.WorkflowVariable `json:"variables,omitempty"`
 	// Steps holds the value of the "steps" field.
@@ -43,7 +45,7 @@ func (*Workflow) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case workflow.FieldID:
 			values[i] = new(sql.NullInt64)
-		case workflow.FieldNanoid, workflow.FieldName:
+		case workflow.FieldNanoid, workflow.FieldName, workflow.FieldDescription:
 			values[i] = new(sql.NullString)
 		case workflow.FieldCreatedAt, workflow.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -91,6 +93,12 @@ func (w *Workflow) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				w.Name = value.String
+			}
+		case workflow.FieldDescription:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field description", values[i])
+			} else if value.Valid {
+				w.Description = value.String
 			}
 		case workflow.FieldVariables:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -155,6 +163,9 @@ func (w *Workflow) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(w.Name)
+	builder.WriteString(", ")
+	builder.WriteString("description=")
+	builder.WriteString(w.Description)
 	builder.WriteString(", ")
 	builder.WriteString("variables=")
 	builder.WriteString(fmt.Sprintf("%v", w.Variables))

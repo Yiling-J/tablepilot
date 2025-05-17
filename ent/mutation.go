@@ -4645,6 +4645,7 @@ type WorkflowMutation struct {
 	updated_at      *time.Time
 	nanoid          *string
 	name            *string
+	description     *string
 	variables       *[]schema.WorkflowVariable
 	appendvariables []schema.WorkflowVariable
 	steps           *[]schema.WorkflowStep
@@ -4936,6 +4937,55 @@ func (m *WorkflowMutation) ResetName() {
 	m.name = nil
 }
 
+// SetDescription sets the "description" field.
+func (m *WorkflowMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *WorkflowMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the Workflow entity.
+// If the Workflow object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkflowMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ClearDescription clears the value of the "description" field.
+func (m *WorkflowMutation) ClearDescription() {
+	m.description = nil
+	m.clearedFields[workflow.FieldDescription] = struct{}{}
+}
+
+// DescriptionCleared returns if the "description" field was cleared in this mutation.
+func (m *WorkflowMutation) DescriptionCleared() bool {
+	_, ok := m.clearedFields[workflow.FieldDescription]
+	return ok
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *WorkflowMutation) ResetDescription() {
+	m.description = nil
+	delete(m.clearedFields, workflow.FieldDescription)
+}
+
 // SetVariables sets the "variables" field.
 func (m *WorkflowMutation) SetVariables(sv []schema.WorkflowVariable) {
 	m.variables = &sv
@@ -5072,7 +5122,7 @@ func (m *WorkflowMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkflowMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, workflow.FieldCreatedAt)
 	}
@@ -5084,6 +5134,9 @@ func (m *WorkflowMutation) Fields() []string {
 	}
 	if m.name != nil {
 		fields = append(fields, workflow.FieldName)
+	}
+	if m.description != nil {
+		fields = append(fields, workflow.FieldDescription)
 	}
 	if m.variables != nil {
 		fields = append(fields, workflow.FieldVariables)
@@ -5107,6 +5160,8 @@ func (m *WorkflowMutation) Field(name string) (ent.Value, bool) {
 		return m.Nanoid()
 	case workflow.FieldName:
 		return m.Name()
+	case workflow.FieldDescription:
+		return m.Description()
 	case workflow.FieldVariables:
 		return m.Variables()
 	case workflow.FieldSteps:
@@ -5128,6 +5183,8 @@ func (m *WorkflowMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldNanoid(ctx)
 	case workflow.FieldName:
 		return m.OldName(ctx)
+	case workflow.FieldDescription:
+		return m.OldDescription(ctx)
 	case workflow.FieldVariables:
 		return m.OldVariables(ctx)
 	case workflow.FieldSteps:
@@ -5168,6 +5225,13 @@ func (m *WorkflowMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
+		return nil
+	case workflow.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
 		return nil
 	case workflow.FieldVariables:
 		v, ok := value.([]schema.WorkflowVariable)
@@ -5222,6 +5286,9 @@ func (m *WorkflowMutation) ClearedFields() []string {
 	if m.FieldCleared(workflow.FieldNanoid) {
 		fields = append(fields, workflow.FieldNanoid)
 	}
+	if m.FieldCleared(workflow.FieldDescription) {
+		fields = append(fields, workflow.FieldDescription)
+	}
 	return fields
 }
 
@@ -5245,6 +5312,9 @@ func (m *WorkflowMutation) ClearField(name string) error {
 	case workflow.FieldNanoid:
 		m.ClearNanoid()
 		return nil
+	case workflow.FieldDescription:
+		m.ClearDescription()
+		return nil
 	}
 	return fmt.Errorf("unknown Workflow nullable field %s", name)
 }
@@ -5264,6 +5334,9 @@ func (m *WorkflowMutation) ResetField(name string) error {
 		return nil
 	case workflow.FieldName:
 		m.ResetName()
+		return nil
+	case workflow.FieldDescription:
+		m.ResetDescription()
 		return nil
 	case workflow.FieldVariables:
 		m.ResetVariables()

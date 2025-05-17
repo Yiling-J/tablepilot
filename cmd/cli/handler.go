@@ -835,6 +835,10 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	imageModel, err := cmd.Flags().GetString("image_model")
+	if err != nil {
+		return err
+	}
 	// collect variables interactively
 	wf, err := h.backend.WorkflowService.Get(cmd.Context(), args[0])
 	if err != nil {
@@ -877,11 +881,22 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 					return fmt.Errorf("failed to convert input value to number: %w", err)
 				}
 			case schema.WorkflowVariableTypeString:
+			case schema.WorkflowVariableTypeFile:
+				b, err := os.ReadFile(cast.ToString(iv))
+				if err != nil {
+					return fmt.Errorf("failed to read file: %w", err)
+				}
+				iv = b
 			}
 			vars[v.Name] = iv
 		}
 	}
-	runner, err := h.backend.WorkflowService.Start(cmd.Context(), args[0], vars, model, temperature)
+	runner, err := h.backend.WorkflowService.Start(cmd.Context(), args[0], workflow.StartWorklfowRequest{
+		Model:       model,
+		ImageModel:  imageModel,
+		Temperature: temperature,
+		Variables:   vars,
+	})
 	if err != nil {
 		return err
 	}

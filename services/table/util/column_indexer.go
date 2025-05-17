@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 )
 
 // Item represents a single map entry with custom XML marshaling.
 type Item struct {
 	XMLName xml.Name
-	Value   map[string]interface{}
+	Value   map[string]any
 }
 
 // MarshalXML customizes the XML marshaling for the Item type.
@@ -52,7 +54,7 @@ func NewColumnIndexer(columns []*ent.TableColumn) *ColumnIndexer {
 
 func (ci *ColumnIndexer) GetColumnByIndex(index int) (*ent.TableColumn, error) {
 	if index >= len(ci.columns) {
-		return nil, errors.New("invalid index")
+		return nil, errors.New("GetColumnByIndex: invalid index")
 	}
 	return ci.columns[index], nil
 }
@@ -60,7 +62,7 @@ func (ci *ColumnIndexer) GetColumnByIndex(index int) (*ent.TableColumn, error) {
 func (ci *ColumnIndexer) GetColumnByNanoid(id string) (*ent.TableColumn, error) {
 	col, ok := ci.idMap[id]
 	if !ok {
-		return nil, errors.New("invalid id")
+		return nil, errors.New("GetColumnByNanoid: invalid id")
 	}
 	return col, nil
 }
@@ -68,7 +70,7 @@ func (ci *ColumnIndexer) GetColumnByNanoid(id string) (*ent.TableColumn, error) 
 func (ci *ColumnIndexer) GetColumnIndexByNanoid(id string) (int, error) {
 	index, ok := ci.orderMap[id]
 	if !ok {
-		return 0, errors.New("invalid id")
+		return 0, errors.New("GetColumnIndexByNanoid: invalid id")
 	}
 	return index, nil
 }
@@ -120,6 +122,31 @@ func (ci *ColumnIndexer) ToAPIRow(row map[string]*schema.CellValue) (map[string]
 	data := map[string]any{}
 	for k, v := range row {
 		data[k] = v.Value
+	}
+	return data, nil
+}
+
+type CellValueTyped struct {
+	Value any              `json:"value"`
+	Type  tablecolumn.Type `json:"type"`
+}
+
+// APIRow return a map of [columnName]CellValueTyped, used in worklfow terminal only
+func (ci *ColumnIndexer) ToAPIRowWIthType(row map[string]*schema.CellValue) (map[string]CellValueTyped, error) {
+	data := map[string]CellValueTyped{}
+	for k, v := range row {
+		// worklfow terminal doesn't require id field, so safe to ignore here
+		if k == "__id__" {
+			continue
+		}
+		col, err := ci.GetColumnByNanoid(k)
+		if err != nil {
+			return nil, fmt.Errorf("ToAPIRowWIthType: %w", err)
+		}
+		data[col.Name] = CellValueTyped{
+			Type:  col.Type,
+			Value: v.Value,
+		}
 	}
 	return data, nil
 }

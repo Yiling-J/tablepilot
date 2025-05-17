@@ -98,24 +98,26 @@ export function Sidebar({ className }: SidebarProps) {
         }}
         onMouseLeave={() => setHoverTable("")}
       >
-        <div className="flex flex-row justify-between w-full pr-7 items-center">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <GridIcon />
-            </Button>
-            <p className="ml-2">{t.name}</p>
+        <div className="flex flex-row justify-between w-full items-center">
+          <div className="flex flex-row items-center w-[200px]">
+            <div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <GridIcon />
+              </Button>
+            </div>
+            <p className="ml-2 truncate">{t.name}</p>
           </div>
 
           <div
             className={cn(
-              "flex items-center",
+              "flex items-center mr-2",
               t.id == hoverTable ? "" : "invisible",
             )}
           >

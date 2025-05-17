@@ -15,6 +15,7 @@ const (
 	WorkflowVariableTypeString  WorkflowVariableType = "string"
 	WorkflowVariableTypeNumber  WorkflowVariableType = "number"
 	WorkflowVariableTypeInteger WorkflowVariableType = "integer"
+	WorkflowVariableTypeFile    WorkflowVariableType = "file"
 )
 
 const (
@@ -64,6 +65,7 @@ func (Workflow) Mixin() []ent.Mixin {
 func (Workflow) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty().Unique(),
+		field.String("description").Optional(),
 		field.JSON("variables", []WorkflowVariable{}),
 		field.JSON("steps", []WorkflowStep{}),
 	}

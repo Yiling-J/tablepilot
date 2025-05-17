@@ -31,7 +31,7 @@ var _ WorkflowService = &WorkflowServiceMock{}
 //			ListFunc: func(ctx context.Context) ([]*ent.Workflow, error) {
 //				panic("mock out the List method")
 //			},
-//			StartFunc: func(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (Runner, error) {
+//			StartFunc: func(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error) {
 //				panic("mock out the Start method")
 //			},
 //		}
@@ -54,7 +54,7 @@ type WorkflowServiceMock struct {
 	ListFunc func(ctx context.Context) ([]*ent.Workflow, error)
 
 	// StartFunc mocks the Start method.
-	StartFunc func(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (Runner, error)
+	StartFunc func(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -88,14 +88,10 @@ type WorkflowServiceMock struct {
 		Start []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Workflow is the workflow argument value.
-			Workflow string
-			// Vars is the vars argument value.
-			Vars map[string]any
-			// Model is the model argument value.
-			Model string
-			// Temperature is the temperature argument value.
-			Temperature float64
+			// ID is the id argument value.
+			ID string
+			// Request is the request argument value.
+			Request StartWorklfowRequest
 		}
 	}
 	lockCreate sync.RWMutex
@@ -246,27 +242,23 @@ func (mock *WorkflowServiceMock) ListCalls() []struct {
 }
 
 // Start calls StartFunc.
-func (mock *WorkflowServiceMock) Start(ctx context.Context, workflow string, vars map[string]any, model string, temperature float64) (Runner, error) {
+func (mock *WorkflowServiceMock) Start(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error) {
 	if mock.StartFunc == nil {
 		panic("WorkflowServiceMock.StartFunc: method is nil but WorkflowService.Start was just called")
 	}
 	callInfo := struct {
-		Ctx         context.Context
-		Workflow    string
-		Vars        map[string]any
-		Model       string
-		Temperature float64
+		Ctx     context.Context
+		ID      string
+		Request StartWorklfowRequest
 	}{
-		Ctx:         ctx,
-		Workflow:    workflow,
-		Vars:        vars,
-		Model:       model,
-		Temperature: temperature,
+		Ctx:     ctx,
+		ID:      id,
+		Request: request,
 	}
 	mock.lockStart.Lock()
 	mock.calls.Start = append(mock.calls.Start, callInfo)
 	mock.lockStart.Unlock()
-	return mock.StartFunc(ctx, workflow, vars, model, temperature)
+	return mock.StartFunc(ctx, id, request)
 }
 
 // StartCalls gets all the calls that were made to Start.
@@ -274,18 +266,14 @@ func (mock *WorkflowServiceMock) Start(ctx context.Context, workflow string, var
 //
 //	len(mockedWorkflowService.StartCalls())
 func (mock *WorkflowServiceMock) StartCalls() []struct {
-	Ctx         context.Context
-	Workflow    string
-	Vars        map[string]any
-	Model       string
-	Temperature float64
+	Ctx     context.Context
+	ID      string
+	Request StartWorklfowRequest
 } {
 	var calls []struct {
-		Ctx         context.Context
-		Workflow    string
-		Vars        map[string]any
-		Model       string
-		Temperature float64
+		Ctx     context.Context
+		ID      string
+		Request StartWorklfowRequest
 	}
 	mock.lockStart.RLock()
 	calls = mock.calls.Start

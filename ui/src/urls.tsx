@@ -55,3 +55,15 @@ export function regenerateUrl(id: string) {
 export function importImageUrl() {
   return `${address}/api/v1/image_import/tables`;
 }
+
+export function workflowsUrl() {
+  return `${address}/api/v1/workflows`;
+}
+
+export function getWorkflowUrl(id: string): string {
+  return `${address}/api/v1/workflows/${id}`;
+}
+
+export function runWorkflowUrl(id: string) {
+  return `${address}/api/v1/workflows/${id}/run`;
+}

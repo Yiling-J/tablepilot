@@ -92,7 +92,11 @@ func TestWorkflow_Start(t *testing.T) {
 	require.NoError(t, err)
 
 	vars := map[string]any{"foo": "bar"}
-	runner, err := wf.Start(t.Context(), id, vars, "", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   vars,
+		Model:       "",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	require.True(t, len(cast.ToString(vars["date"])) > 0)
 	require.True(t, len(cast.ToString(vars["time"])) > 0)
@@ -235,7 +239,11 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 				Steps:     []schema.WorkflowStep{tc.step},
 			})
 			require.NoError(t, err)
-			runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+			runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+				Variables:   map[string]any{},
+				Model:       "m1",
+				Temperature: 0.5,
+			})
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())
 			if tc.err {
@@ -298,10 +306,11 @@ func TestWorkflowRunner_Import(t *testing.T) {
 				Steps:     []schema.WorkflowStep{tc.step},
 			})
 			require.NoError(t, err)
-			runner, err := wf.Start(t.Context(), id, map[string]any{
-				"test.csv": []byte("csv"),
-				"test.png": []byte("png"),
-			}, "m1", 0.5)
+			runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+				Variables: map[string]any{
+					"test.csv": []byte("csv"),
+					"test.png": []byte("png"),
+				}, Model: "m1", Temperature: 0.5})
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())
 			require.NoError(t, err)
@@ -324,6 +333,7 @@ func TestWorkflowRunner_Generate(t *testing.T) {
 	tm := &table.TableServiceMock{
 		GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
 			require.Equal(t, "m1", params.Model)
+			require.Equal(t, "m2", params.ImageModel)
 			require.Equal(t, 0.5, params.Temperature)
 			require.Equal(t, "foo", params.Table)
 			require.Equal(t, 5, params.Count)
@@ -341,7 +351,12 @@ func TestWorkflowRunner_Generate(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   map[string]any{},
+		Model:       "m1",
+		ImageModel:  "m2",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	r, err := runner.Next(t.Context())
 	require.NoError(t, err)
@@ -357,6 +372,7 @@ func TestWorkflowRunner_Autofill(t *testing.T) {
 	tm := &table.TableServiceMock{
 		GenetateFunc: func(ctx context.Context, params table.GenerateRowsRequest) (table.RowsGenerator, error) {
 			require.Equal(t, "m1", params.Model)
+			require.Equal(t, "m2", params.ImageModel)
 			require.Equal(t, 0.5, params.Temperature)
 			require.Equal(t, "foo", params.Table)
 			require.Equal(t, 5, params.Count)
@@ -374,7 +390,12 @@ func TestWorkflowRunner_Autofill(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   map[string]any{},
+		Model:       "m1",
+		ImageModel:  "m2",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	r, err := runner.Next(t.Context())
 	require.NoError(t, err)
@@ -403,7 +424,11 @@ func TestWorkflowRunner_DeleteTable(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   map[string]any{},
+		Model:       "m1",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	r, err := runner.Next(t.Context())
 	require.NoError(t, err)
@@ -432,7 +457,11 @@ func TestWorkflowRunner_ExportTable(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   map[string]any{},
+		Model:       "m1",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	r, err := runner.Next(t.Context())
 	require.NoError(t, err)
@@ -464,7 +493,11 @@ func TestWorkflowRunner_CreateColumn(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   map[string]any{},
+		Model:       "m1",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	r, err := runner.Next(t.Context())
 	require.NoError(t, err)
@@ -494,7 +527,11 @@ func TestWorkflowRunner_DeleteColumn(t *testing.T) {
 		}},
 	})
 	require.NoError(t, err)
-	runner, err := wf.Start(t.Context(), id, map[string]any{}, "m1", 0.5)
+	runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
+		Variables:   map[string]any{},
+		Model:       "m1",
+		Temperature: 0.5,
+	})
 	require.NoError(t, err)
 	r, err := runner.Next(t.Context())
 	require.NoError(t, err)
