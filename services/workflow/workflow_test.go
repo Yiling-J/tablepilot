@@ -19,15 +19,17 @@ func TestWorkflow_Create(t *testing.T) {
 	db := db.NewTestDB()
 	wf := NewWorkflowService(db, &table.TableServiceMock{})
 	ww := &Workflow{
-		Name:      "wf1",
-		Variables: []schema.WorkflowVariable{{Name: "v1", Type: schema.WorkflowVariableTypeString, DefaultValue: "foo"}},
-		Steps:     []schema.WorkflowStep{{Type: schema.WorkflowStepTypeCreateColumn, Payload: json.RawMessage(`{"a":"b"}`)}},
+		Name:        "wf1",
+		Description: "d1",
+		Variables:   []schema.WorkflowVariable{{Name: "v1", Type: schema.WorkflowVariableTypeString, DefaultValue: "foo"}},
+		Steps:       []schema.WorkflowStep{{Type: schema.WorkflowStepTypeCreateColumn, Payload: json.RawMessage(`{"a":"b"}`)}},
 	}
 	id, err := wf.Create(t.Context(), ww)
 	require.NoError(t, err)
 	wg, err := wf.Get(t.Context(), "wf1")
 	require.NoError(t, err)
 	require.Equal(t, id, wg.Nanoid)
+	require.Equal(t, ww.Description, wg.Description)
 	require.Equal(t, ww.Variables, wg.Variables)
 	require.Equal(t, ww.Steps, wg.Steps)
 }

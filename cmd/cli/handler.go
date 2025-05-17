@@ -990,10 +990,11 @@ func (h *Handler) ListWorkflows(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	tp := h.getPrinter()
-	tp.AddHeader([]string{"ID", "Name"})
+	tp.AddHeader([]string{"ID", "Name", "Description"})
 	for _, w := range wfs {
 		tp.AddField(w.Nanoid)
 		tp.AddField(w.Name)
+		tp.AddField(w.Description)
 		tp.EndRow()
 	}
 	return tp.Render()

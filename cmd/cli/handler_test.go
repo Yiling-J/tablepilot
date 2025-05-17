@@ -1086,9 +1086,10 @@ func TestHandler_WorkflowCreate(t *testing.T) {
 	workflowMock := &workflow.WorkflowServiceMock{
 		CreateFunc: func(ctx context.Context, wf *workflow.Workflow) (string, error) {
 			require.Equal(t, &workflow.Workflow{
-				Name:      "wf",
-				Variables: []schema.WorkflowVariable{{Name: "var1"}},
-				Steps:     []schema.WorkflowStep{{Type: schema.WorkflowStepTypeAutofill}},
+				Name:        "wf",
+				Description: "d1",
+				Variables:   []schema.WorkflowVariable{{Name: "var1"}},
+				Steps:       []schema.WorkflowStep{{Type: schema.WorkflowStepTypeAutofill}},
 			}, wf)
 			return "id", nil
 		},
@@ -1104,7 +1105,7 @@ func TestHandler_WorkflowCreate(t *testing.T) {
 	require.NoError(t, err)
 	defer os.Remove(testFile)
 	_, err = file.WriteString(
-		`{"name":"wf","variables":[{"name":"var1"}],"steps":[{"type":"Autofill"}]}`,
+		`{"name":"wf","description":"d1","variables":[{"name":"var1"}],"steps":[{"type":"Autofill"}]}`,
 	)
 	require.NoError(t, err)
 	cmd := &cobra.Command{}
@@ -1136,8 +1137,8 @@ func TestHandler_WorkflowList(t *testing.T) {
 	workflowMock := &workflow.WorkflowServiceMock{
 		ListFunc: func(ctx context.Context) ([]*ent.Workflow, error) {
 			return []*ent.Workflow{
-				{Nanoid: "1", Name: "t1"},
-				{Nanoid: "2", Name: "t2"},
+				{Nanoid: "1", Name: "t1", Description: "d1"},
+				{Nanoid: "2", Name: "t2", Description: "d2"},
 			}, nil
 		},
 	}
@@ -1158,13 +1159,13 @@ func TestHandler_WorkflowList(t *testing.T) {
 	err := handler.ListWorkflows(cmd, []string{})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(printer.AddHeaderCalls()))
-	require.Equal(t, []string{"ID", "Name"}, printer.AddHeaderCalls()[0].Strings)
-	require.Equal(t, 4, len(printer.AddFieldCalls()))
+	require.Equal(t, []string{"ID", "Name", "Description"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, 6, len(printer.AddFieldCalls()))
 	fields := []string{}
 	for _, call := range printer.AddFieldCalls() {
 		fields = append(fields, call.S)
 	}
-	require.Equal(t, []string{"1", "t1", "2", "t2"}, fields)
+	require.Equal(t, []string{"1", "t1", "d1", "2", "t2", "d2"}, fields)
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }
