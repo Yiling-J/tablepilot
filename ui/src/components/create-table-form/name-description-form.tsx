@@ -9,21 +9,23 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ContextVariable, MentionInput } from "../ui/var-input";
 
 interface NameDescriptionFormProps {
   formData: TableCreateRequest;
   updateFormData: (data: Partial<TableCreateRequest>) => void;
+  variables?: ContextVariable[];
 }
 
 export function NameDescriptionForm({
   formData,
   updateFormData,
+  variables,
 }: NameDescriptionFormProps) {
   const [jsonInput, setJsonInput] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -146,22 +148,24 @@ export function NameDescriptionForm({
 
       <div className="space-y-2">
         <Label htmlFor="name">Table Name</Label>
-        <Input
+        <MentionInput
           id="name"
           placeholder="Only letters, numbers, and underscores, and start with a letter"
           value={name}
           onChange={(e) => handleNameChange({ name: e.target.value })}
+          variables={variables}
         />
         {error && <p className="text-red-500 text-sm">{error}</p>}
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Textarea
+        <MentionInput
           id="description"
           placeholder="Enter table description"
           value={formData.description}
+          textarea={true}
           onChange={(e) => updateFormData({ description: e.target.value })}
-          rows={3}
+          variables={variables}
         />
       </div>
     </div>

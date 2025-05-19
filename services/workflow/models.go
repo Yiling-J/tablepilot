@@ -62,3 +62,9 @@ type StartWorklfowRequest struct {
 	ImageModel  string         `json:"image_model"`
 	Temperature float64        `json:"temperature"`
 }
+
+type WorkflowCreateTablePayload struct {
+	SchemaFile string                       `json:"schema_file"`
+	OnExists   schema.WorkflowTableOnExists `json:"on_exists"`
+	Request    table.TableGenRequest        `json:"request"`
+}

@@ -43,10 +43,10 @@ type WorkflowVariable struct {
 }
 
 type WorkflowStep struct {
-	Type       WorkflowStepType      `json:"type"`
-	SchemaFile string                `json:"schema_file"`
-	OnExists   WorkflowTableOnExists `json:"on_exists"`
-	Payload    json.RawMessage       `json:"payload"`
+	Type WorkflowStepType `json:"type"`
+	// SchemaFile string                `json:"schema_file"`
+	// OnExists   WorkflowTableOnExists `json:"on_exists"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 // Workflow holds the schema definition for the Workflow entity.

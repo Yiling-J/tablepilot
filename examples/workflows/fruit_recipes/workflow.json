@@ -11,8 +11,10 @@
   "steps": [
     {
       "type": "CreateTable",
-      "on_exists": "Recreate",
-      "schema_file": "examples/workflows/fruit_recipes/recipes.json"
+      "payload": {
+        "on_exists": "Recreate",
+        "schema_file": "examples/workflows/fruit_recipes/recipes.json"
+      }
     },
     {
       "type": "CreateColumn",

@@ -119,7 +119,7 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 		{
 			name: "create table", step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"name": "foo"}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo"}}`),
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
 				require.Equal(t, "foo", req.Name)
@@ -132,7 +132,7 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 		{
 			name: "create table invalid name", step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"name": "foo bar"}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo bar"}}`),
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
 				require.Equal(t, "foo_bar", req.Name)
@@ -146,7 +146,7 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 			name: "create table exists stop (default)",
 			step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"name": "foo","description": "bar"}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo","description": "bar"}}`),
 			},
 			err: true,
 			prepare: func(db *ent.Client) {
@@ -160,9 +160,8 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 		{
 			name: "create table exists recreate",
 			step: schema.WorkflowStep{
-				Type:     schema.WorkflowStepTypeCreateTable,
-				Payload:  json.RawMessage(`{"name": "foo","description":"xyz"}`),
-				OnExists: schema.OnExistsRecreate,
+				Type:    schema.WorkflowStepTypeCreateTable,
+				Payload: json.RawMessage(`{"request":{"name": "foo","description":"xyz"},"on_exists":"Recreate"}`),
 			},
 			prepare: func(db *ent.Client) {
 				err := db.TableMeta.Create().SetName("foo").Exec(t.Context())
@@ -180,9 +179,8 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 		{
 			name: "create table exists skip",
 			step: schema.WorkflowStep{
-				Type:     schema.WorkflowStepTypeCreateTable,
-				Payload:  json.RawMessage(`{"name": "foo","description":"xyz"}`),
-				OnExists: schema.OnExistsSkip,
+				Type:    schema.WorkflowStepTypeCreateTable,
+				Payload: json.RawMessage(`{"request":{"name": "foo","description":"xyz"},"on_exists":"Skip"}`),
 			},
 			prepare: func(db *ent.Client) {
 				err := db.TableMeta.Create().SetName("foo").Exec(t.Context())
@@ -198,8 +196,8 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 		},
 		{
 			name: "create table from schema file", step: schema.WorkflowStep{
-				Type:       schema.WorkflowStepTypeCreateTable,
-				SchemaFile: "wf.json",
+				Type:    schema.WorkflowStepTypeCreateTable,
+				Payload: json.RawMessage(`{"request": {},"schema_file":"wf.json"}`),
 			},
 			prepare: func(db *ent.Client) {
 				f, err := os.Create("wf.json")

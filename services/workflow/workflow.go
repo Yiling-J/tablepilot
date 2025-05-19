@@ -159,10 +159,13 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 
 	switch step.Type {
 	case schema.WorkflowStepTypeCreateTable:
-		var req table.TableGenRequest
-		var cb []byte
-		if step.SchemaFile != "" {
-			cb, err = os.ReadFile(step.SchemaFile)
+		var payload WorkflowCreateTablePayload
+		err = json.Unmarshal(step.Payload, &payload)
+		if err != nil {
+			return nil, fmt.Errorf("workflow.Next: unmarshaling table request: %w", err)
+		}
+		if payload.SchemaFile != "" {
+			cb, err := os.ReadFile(payload.SchemaFile)
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: reading schema file: %w", err)
 			}
@@ -175,14 +178,12 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: executing schema template: %w", err)
 			}
-			cb = buffer.Bytes()
-		} else {
-			cb = []byte(step.Payload)
+			err = json.Unmarshal(cb, &payload.Request)
+			if err != nil {
+				return nil, fmt.Errorf("workflow.Next: unmarshaling table request: %w", err)
+			}
 		}
-		err = json.Unmarshal(cb, &req)
-		if err != nil {
-			return nil, fmt.Errorf("workflow.Next: unmarshaling table request: %w", err)
-		}
+		req := payload.Request
 		req.Name = SanitizeString(req.Name)
 		req.Model = r.model
 		tables, err := r.db.TableMeta.Query().Where(
@@ -192,7 +193,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, fmt.Errorf("workflow.Next: querying tables: %w", err)
 		}
 		if len(tables) > 0 {
-			switch step.OnExists {
+			switch payload.OnExists {
 			case schema.OnExistsRecreate:
 				_, err = r.db.TableMeta.Delete().Where(tablemeta.ID(tables[0].ID)).Exec(ctx)
 				if err != nil {

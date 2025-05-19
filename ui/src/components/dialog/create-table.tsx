@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { JSONObject } from "@/json";
+import { ContextVariable } from "../ui/var-input";
 
 interface CreateTableDialogProps {
   table?: string;
@@ -16,6 +17,7 @@ interface CreateTableDialogProps {
   form?: TableCreateRequest;
   rows?: JSONObject[];
   submitCallback?: () => Promise<void>;
+  variables?: ContextVariable[];
 }
 
 export function CreateTableDialog({
@@ -26,6 +28,7 @@ export function CreateTableDialog({
   form,
   rows,
   submitCallback,
+  variables,
 }: CreateTableDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -46,6 +49,7 @@ export function CreateTableDialog({
             rows={rows}
             table={table}
             submitCallback={submitCallback}
+            variables={variables}
           />
         </div>
       </DialogContent>

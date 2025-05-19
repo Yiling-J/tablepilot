@@ -1,0 +1,750 @@
+import {
+    ChevronDown,
+    ChevronUp,
+    Pencil,
+    Plus,
+    PlusCircle,
+    Trash2,
+    X,
+} from "lucide-react";
+
+import { useEffect, useState } from "react";
+
+import {
+    CreateColumnStepPayload,
+    CreateTableStepPayload,
+    TypedWorkflowStep,
+    UserInputStepPayload,
+    Workflow,
+    WorkflowStepType,
+    WorkflowVariable,
+    WorkflowVariableType,
+} from "@/actions";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+} from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { ContextVariable, MentionInput } from "@/components/ui/var-input";
+import { CreateTableDialog } from "../create-table";
+
+export default function WorkflowBuilderDialog({
+  workflow,
+  open,
+  onOpenChange,
+}: {
+  workflow?: Workflow;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  // Workflow state
+  const [workflowName, setWorkflowName] = useState<string>("New Workflow");
+  const [isEditingName, setIsEditingName] = useState<boolean>(false);
+  const [steps, setSteps] = useState<TypedWorkflowStep[]>([]);
+  const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(
+    null,
+  );
+  const [stepVariables, setStepVariables] = useState<ContextVariable[][]>([]);
+  const [createTableDialogOpen, setCreateTableDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (workflow) {
+      const wsteps: TypedWorkflowStep[] = [
+        {
+          type: "UserInput",
+          payload: {
+            variables: workflow.variables,
+          },
+        },
+        ...workflow.steps,
+      ];
+      setSteps(wsteps);
+    }
+  }, []);
+
+  // Initialize workflow with UserInput step
+  useEffect(() => {
+    if (steps.length === 0) {
+      setSteps([
+        {
+          type: "UserInput",
+          payload: { variables: [] } as UserInputStepPayload,
+        },
+      ]);
+      setSelectedStepIndex(0);
+    }
+  }, [steps.length]);
+
+  // workflow validation and variables reset
+  useEffect(() => {
+    const vars: ContextVariable[][] = [
+      [
+        { path: "date", display: "date" },
+        { path: "time", display: "time" },
+        { path: "datetime", display: "datetime" },
+      ],
+    ];
+    steps.forEach((step, index) => {
+      const nv: ContextVariable[] = [...vars[index]];
+      switch (step.type) {
+        case "UserInput":
+          nv.push(
+            ...(step.payload as UserInputStepPayload).variables.map((v) => {
+              return {
+                display: v.name,
+                path: v.name,
+              } as ContextVariable;
+            }),
+          );
+          break;
+        case "CreateTable":
+          nv.push({
+            display: `CreateTable[${(step.payload as CreateTableStepPayload).schema.name}].table`,
+            path: `step${index}.table`,
+          });
+          break;
+        case "CreateColumn":
+          nv.push({
+            display: `CreateColumn[${(step.payload as CreateColumnStepPayload).name}].column`,
+            path: `step${index}.column`,
+          });
+          break;
+      }
+      vars.push(nv);
+    });
+    setStepVariables(vars);
+  }, [steps]);
+
+  // Helper to create a new action
+  const createNewStep = (type: WorkflowStepType): TypedWorkflowStep => {
+    switch (type) {
+      case "UserInput":
+        return { type, payload: { variables: [] } };
+      case "CreateTable":
+        return { type, payload: { schema: {} } };
+      case "DeleteTable":
+        return { type, payload: { table: "" } };
+      case "CreateColumn":
+        return {
+          type,
+          payload: {
+            table: "",
+            name: "",
+            type: "string",
+          },
+        };
+      case "DeleteColumn":
+        return { type, payload: { table: "", column: "" } };
+      case "Import":
+        return { type, payload: { file: "" } };
+      default:
+        throw new Error("unknown step type");
+    }
+  };
+
+  const addStep = (type: WorkflowStepType) => {
+    // Prevent adding another UserInput step
+    if (type === "UserInput") return;
+
+    const newStep = createNewStep(type);
+    setSteps([...steps, newStep]);
+    setSelectedStepIndex(steps.length);
+  };
+
+  // Remove an action from the workflow
+  const removeAction = (index: number) => {
+    // Prevent removing the UserInput step
+    if (index === 0 && steps[0].type === "UserInput") return;
+
+    const newWorkflow = [...steps];
+    newWorkflow.splice(index, 1);
+    setSteps(newWorkflow);
+
+    if (selectedStepIndex === index) {
+      setSelectedStepIndex(null);
+    } else if (selectedStepIndex !== null && selectedStepIndex > index) {
+      setSelectedStepIndex(selectedStepIndex - 1);
+    }
+  };
+
+  // Move action up in the workflow
+  const moveActionUp = (index: number) => {
+    // Prevent moving the UserInput step or moving steps above it
+    if (index <= 1) return;
+
+    const newWorkflow = [...steps];
+    const temp = newWorkflow[index];
+    newWorkflow[index] = newWorkflow[index - 1];
+    newWorkflow[index - 1] = temp;
+    setSteps(newWorkflow);
+
+    if (selectedStepIndex === index) {
+      setSelectedStepIndex(index - 1);
+    } else if (selectedStepIndex === index - 1) {
+      setSelectedStepIndex(index);
+    }
+  };
+
+  const moveActionDown = (index: number) => {
+    if (index === steps.length - 1) return;
+
+    const newWorkflow = [...steps];
+    const temp = newWorkflow[index];
+    newWorkflow[index] = newWorkflow[index + 1];
+    newWorkflow[index + 1] = temp;
+    setSteps(newWorkflow);
+
+    if (selectedStepIndex === index) {
+      setSelectedStepIndex(index + 1);
+    } else if (selectedStepIndex === index + 1) {
+      setSelectedStepIndex(index);
+    }
+  };
+
+  const updateStep = (updatedStep: TypedWorkflowStep) => {
+    if (selectedStepIndex === null) return;
+
+    const newWorkflow = [...steps];
+    newWorkflow[selectedStepIndex] = updatedStep;
+    setSteps(newWorkflow);
+  };
+
+  const addVariable = () => {
+    if (selectedStepIndex !== 0 || steps[0].type !== "UserInput") return;
+
+    const p = steps[0].payload as UserInputStepPayload;
+    const newVariable: WorkflowVariable = {
+      name: "",
+      type: "string",
+      default_value: "",
+      options: [],
+    };
+    p.variables.push(newVariable);
+
+    const updatedStep: TypedWorkflowStep = {
+      type: "UserInput",
+      payload: p,
+    };
+    updateStep(updatedStep);
+  };
+
+  const updateVariable = (
+    variableIndex: number,
+    updatedVariable: WorkflowVariable,
+  ) => {
+    if (selectedStepIndex !== 0 || steps[0].type !== "UserInput") return;
+
+    const p = steps[0].payload as UserInputStepPayload;
+    p.variables[variableIndex] = updatedVariable;
+
+    const updatedStep: TypedWorkflowStep = {
+      type: "UserInput",
+      payload: p,
+    };
+    updateStep(updatedStep);
+  };
+
+  // Remove a variable from the UserInput step
+  const removeVariable = (variableIndex: number) => {
+    if (selectedStepIndex !== 0 || steps[0].type !== "UserInput") return;
+
+    const p = steps[0].payload as UserInputStepPayload;
+    p.variables.splice(variableIndex, 1);
+
+    const updatedStep: TypedWorkflowStep = {
+      type: "UserInput",
+      payload: p,
+    };
+
+    updateStep(updatedStep);
+  };
+
+  // Save the workflow
+  const saveWorkflow = () => {
+    const wf = {
+      variables: [] as WorkflowVariable[],
+      steps: [] as TypedWorkflowStep[],
+      name: workflowName,
+    } as Workflow;
+    steps.forEach((s) => {
+      switch (s.type) {
+        case "UserInput":
+          wf.variables = (s.payload as UserInputStepPayload).variables;
+          break;
+        default:
+          wf.steps.push(s);
+      }
+    });
+    onOpenChange(false);
+  };
+
+  // Get the selected action
+  const selectedStep =
+    selectedStepIndex !== null ? steps[selectedStepIndex] : null;
+
+  // Handle workflow name input blur
+  const handleNameBlur = () => {
+    setIsEditingName(false);
+    // If name is empty, reset to default
+    if (!workflowName.trim()) {
+      setWorkflowName("New Workflow");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            {isEditingName ? (
+              <Input
+                value={workflowName}
+                onChange={(e) => setWorkflowName(e.target.value)}
+                onBlur={handleNameBlur}
+                autoFocus
+                className="text-xl font-semibold h-9 focus-visible:ring-offset-0"
+                placeholder="Enter workflow name"
+              />
+            ) : (
+              <div
+                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() => setIsEditingName(true)}
+              >
+                <h2 className="text-xl font-semibold">{workflowName}</h2>
+                <Pencil className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                  Click to edit
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogDescription>
+            Create a workflow by adding actions and configuring their
+            properties.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-1 gap-4 overflow-hidden">
+          {/* Left Column - Workflow Steps */}
+          <div className="w-2/5 border rounded-md flex flex-col">
+            <div className="p-4 border-b bg-muted/40 flex justify-between items-center">
+              <h3 className="font-medium">Workflow Steps</h3>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-1" /> Add Action
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => addStep("CreateTable")}>
+                    Create Table
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("DeleteTable")}>
+                    Delete Table
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("CreateColumn")}>
+                    Create Column
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("DeleteColumn")}>
+                    Delete Column
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("Import")}>
+                    Import Data
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <ScrollArea className="flex-1">
+              <div className="p-2">
+                {steps.length === 0 ? (
+                  <div className="text-center p-8 text-muted-foreground">
+                    Loading workflow...
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {steps.map((step, index) => (
+                      <div
+                        key={index}
+                        className={`p-3 border rounded-md flex items-center justify-between cursor-pointer hover:bg-muted/50 ${
+                          selectedStepIndex === index
+                            ? "border-primary bg-primary/5"
+                            : ""
+                        } ${step.type === "UserInput" ? "bg-muted/20" : ""}`}
+                        onClick={() => setSelectedStepIndex(index)}
+                      >
+                        <div className="flex-1 flex items-center h-[40px]">
+                          <div>
+                            <div className="font-medium">{step.type}</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          {/* Only show move up/down buttons for non-UserInput steps */}
+                          {step.type !== "UserInput" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveActionUp(index);
+                                }}
+                                disabled={index <= 1} // Disable if it's the first non-UserInput step
+                              >
+                                <ChevronUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveActionDown(index);
+                                }}
+                                disabled={index === steps.length - 1}
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeAction(index);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Right Column - Action Properties */}
+          <div className="w-3/5 border rounded-md flex flex-col">
+            <ScrollArea className="flex-1">
+              <div className="p-4">
+                {selectedStep ? (
+                  <div className="space-y-4">
+                    {/* Common properties for all actions */}
+                    <div className="space-y-2">
+                      <Label>Action Type</Label>
+                      <div className="flex items-center gap-2 p-2 bg-muted/30 border rounded-md">
+                        <span className="font-medium">{selectedStep.type}</span>
+                      </div>
+                    </div>
+
+                    {/* UserInput properties */}
+                    {selectedStep.type === "UserInput" && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <Label>Variables</Label>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={addVariable}
+                            className="flex items-center gap-1"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5" /> Add Variable
+                          </Button>
+                        </div>
+
+                        {selectedStep.payload.variables.length === 0 ? (
+                          <div className="text-center p-4 border rounded-md text-muted-foreground">
+                            No variables defined. Click "Add Variable" to create
+                            one.
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {selectedStep.payload.variables.map(
+                              (variable, idx) => (
+                                <div
+                                  key={idx}
+                                  className="p-3 border rounded-md space-y-3"
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <h4 className="font-medium">
+                                      Variable {idx + 1}
+                                    </h4>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => removeVariable(idx)}
+                                    >
+                                      <X className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`var-name-${idx}`}>
+                                      Name
+                                    </Label>
+                                    <Input
+                                      id={`var-name-${idx}`}
+                                      value={variable.name}
+                                      onChange={(e) =>
+                                        updateVariable(idx, {
+                                          ...variable,
+                                          name: e.target.value,
+                                        })
+                                      }
+                                      placeholder="e.g. tableName"
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`var-type-${idx}`}>
+                                      Type
+                                    </Label>
+                                    <Select
+                                      value={variable.type}
+                                      onValueChange={(
+                                        value: WorkflowVariableType,
+                                      ) =>
+                                        updateVariable(idx, {
+                                          ...variable,
+                                          type: value,
+                                        })
+                                      }
+                                    >
+                                      <SelectTrigger id={`var-type-${idx}`}>
+                                        <SelectValue placeholder="Select type" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="string">
+                                          String
+                                        </SelectItem>
+                                        <SelectItem value="integer">
+                                          Integer
+                                        </SelectItem>
+                                        <SelectItem value="number">
+                                          Number
+                                        </SelectItem>
+                                        <SelectItem value="file">
+                                          File
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`var-default-${idx}`}>
+                                      Default Value
+                                    </Label>
+                                    <MentionInput
+                                      id={`var-default-${idx}`}
+                                      value={variable.default_value}
+                                      onChange={(v) =>
+                                        updateVariable(idx, {
+                                          ...variable,
+                                          default_value: v.target.value,
+                                        })
+                                      }
+                                      placeholder={
+                                        variable.type === "string"
+                                          ? 'e.g. "users"'
+                                          : variable.type === "number"
+                                            ? "e.g. 3.14"
+                                            : variable.type === "integer"
+                                              ? "e.g. 20"
+                                              : 'e.g. {"key": "value"}'
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* CreateTable properties */}
+                    {selectedStep.type === "CreateTable" && (
+                      <div>
+                        <CreateTableDialog
+                          variables={stepVariables[selectedStepIndex!]}
+                          isOpen={createTableDialogOpen}
+                          setIsOpen={() => {}}
+                          close={() => {}}
+                        />
+                        <Button
+                          onClick={() => {
+                            setCreateTableDialogOpen(true);
+                          }}
+                        >
+                          Open Table Editor
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* DeleteTable properties */}
+                    {selectedStep.type === "DeleteTable" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="tableName">Table Name</Label>
+                        <MentionInput
+                          variables={stepVariables[selectedStepIndex!]}
+                          id="tableName"
+                          value={selectedStep.payload.table}
+                          onChange={(e) =>
+                            updateStep({
+                              type: selectedStep.type,
+                              payload: {
+                                ...selectedStep.payload,
+                                table: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    )}
+
+                    {selectedStep.type === "CreateColumn" && (
+                      <div key={selectedStepIndex}>
+                        <div className="space-y-2">
+                          <Label htmlFor="tableName">Table Name</Label>
+                          <MentionInput
+                            variables={stepVariables[selectedStepIndex!]}
+                            id="tableName"
+                            value={selectedStep.payload.table}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  table: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="columnName">Column Name</Label>
+                          <MentionInput
+                            id="columnName"
+                            variables={stepVariables[selectedStepIndex!]}
+                            value={selectedStep.payload.name}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  name: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dataType">Data Type</Label>
+                          <Select
+                            value={selectedStep.payload.type}
+                            onValueChange={(value) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  type: value,
+                                },
+                              })
+                            }
+                          >
+                            <SelectTrigger id="dataType">
+                              <SelectValue placeholder="Select data type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="string">String</SelectItem>
+                              <SelectItem value="integer">Integer</SelectItem>
+                              <SelectItem value="number">Number</SelectItem>
+                              <SelectItem value="file">File</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* DeleteColumn properties */}
+                    {selectedStep.type === "DeleteColumn" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="tableName">Table Name</Label>
+                          <Input
+                            id="tableName"
+                            value={selectedStep.payload.table}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  table: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="columnName">Column Name</Label>
+                          <Input
+                            id="columnName"
+                            value={selectedStep.payload.column}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  column: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* ImportData properties */}
+                    {selectedStep.type === "Import" && <div></div>}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-muted-foreground">
+                    Select an action from the workflow to edit its properties.
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={saveWorkflow}>Save Workflow</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -29,21 +29,23 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ContextVariable, MentionInput } from "../ui/var-input";
 import { LinkedColumnSettings } from "./linked-column-settings";
 
 interface ColumnsFormProps {
   formData: TableCreateRequest;
   updateFormData: (data: Partial<TableCreateRequest>) => void;
   disabled: boolean;
+  variables?: ContextVariable[];
 }
 
 export function ColumnsForm({
   formData,
   updateFormData,
   disabled,
+  variables,
 }: ColumnsFormProps) {
   const [columnName, setColumnName] = useState("");
   const [columnDescription, setColumnDescription] = useState("");
@@ -227,19 +229,22 @@ export function ColumnsForm({
             <div className="grid gap-4 py-4 px-2 max-h-[65vh] overflow-auto scrollbar-thin">
               <div className="grid gap-2">
                 <Label htmlFor="columnName">Column Name</Label>
-                <Input
+                <MentionInput
                   id="columnName"
                   placeholder="e.g., Name, Ingredients"
                   value={columnName}
+                  variables={variables}
                   onChange={(e) => setColumnName(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="columnDescription">Description</Label>
-                <Textarea
+                <MentionInput
                   id="columnDescription"
                   placeholder="e.g., recipe name, list of ingredients"
                   value={columnDescription}
+                  variables={variables}
+                  textarea={true}
                   onChange={(e) => setColumnDescription(e.target.value)}
                   rows={2}
                 />

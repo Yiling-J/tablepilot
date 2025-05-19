@@ -26,6 +26,7 @@ import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
+import WorkflowBuilderDialog from "./dialog/workflow/builder.tsx";
 import WorkflowExecutionDialog from "./dialog/workflow/workflow.tsx";
 import { TablepilotHeader } from "./header.tsx";
 
@@ -189,6 +190,7 @@ function WorkflowList() {
   const [loading, setLoading] = useState(true);
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
   const [runWorkflowOpen, setRunWorkflowOpen] = useState(false);
+  const [WorkflowBuilderOpen, setRunWorkflowBuilderOpen] = useState(false);
 
   const refreshWorkflows = async () => {
     setLoading(true);
@@ -207,6 +209,10 @@ function WorkflowList() {
         workflow={workflow}
         open={runWorkflowOpen}
         onOpenChange={setRunWorkflowOpen}
+      />
+      <WorkflowBuilderDialog
+        open={WorkflowBuilderOpen}
+        onOpenChange={() => {}}
       />
       {loading
         ? Array.from({ length: 4 }).map((_, index) => (
@@ -262,7 +268,9 @@ function WorkflowList() {
       <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
         <div
           className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1"
-          onClick={() => {}}
+          onClick={() => {
+            setRunWorkflowBuilderOpen(true);
+          }}
         >
           <PlusIcon className="w-5 h-5 mr-2 mb-2" />
           <span>Add New Workflow</span>

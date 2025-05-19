@@ -21,6 +21,7 @@ import { ReloadIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { ContextVariable } from "../ui/var-input";
 import { ColumnsForm } from "./columns-form";
 import { JsonPreview } from "./json-preview";
 import { NameDescriptionForm } from "./name-description-form";
@@ -39,6 +40,7 @@ interface CreateTableFormProps {
   form?: TableCreateRequest;
   rows?: JSONObject[];
   submitCallback?: () => Promise<void>;
+  variables?: ContextVariable[];
 }
 
 export default function CreateTableForm({
@@ -47,6 +49,7 @@ export default function CreateTableForm({
   form,
   rows,
   submitCallback,
+  variables,
 }: CreateTableFormProps) {
   const [formData, setFormData] = useState<TableCreateRequest>(
     form ?? initialFormData,
@@ -140,18 +143,21 @@ export default function CreateTableForm({
               </TabsList>
               <TabsContent value="step1">
                 <NameDescriptionForm
+                  variables={variables}
                   formData={formData}
                   updateFormData={updateFormData}
                 />
               </TabsContent>
               <TabsContent value="step2">
                 <SourcesForm
+                  variables={variables}
                   formData={formData}
                   updateFormData={updateFormData}
                 />
               </TabsContent>
               <TabsContent value="step3">
                 <ColumnsForm
+                  variables={variables}
                   formData={formData}
                   updateFormData={updateFormData}
                   disabled={!isStep1Valid || loading}

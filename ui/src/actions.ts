@@ -477,27 +477,85 @@ export async function getWorkflows(): Promise<GetWorkflowsResponse> {
   return res.json();
 }
 
+export type WorkflowVariableType = "string" | "number" | "integer" | "file";
+
+export type WorkflowStepType =
+  | "UserInput"
+  | "CreateTable"
+  | "Import"
+  | "CreateColumn"
+  | "DeleteColumn"
+  | "Generate"
+  | "Autofill"
+  | "ExportTable"
+  | "DeleteTable";
+
 export interface WorkflowVariable {
   name: string;
-  type: string;
+  type: WorkflowVariableType;
   default_value: string | number;
   options: (string | number)[];
 }
 
-export interface WorkflowStep {
-  type: string;
-  schema_file: string;
-  on_exists: string;
-  payload: JSONObject;
-  status: string;
+export interface UserInputStepPayload {
+  variables: WorkflowVariable[];
 }
+
+export interface CreateTableStepPayload {
+  schema: JSONObject;
+}
+
+export interface DeleteTableStepPayload {
+  table: string;
+}
+
+export interface CreateColumnStepPayload {
+  table: string;
+  name: string;
+  type: string;
+}
+
+export interface DeleteColumnStepPayload {
+  table: string;
+  column: string;
+}
+
+export interface ImportDataStepPayload {
+  file: string;
+}
+
+export interface GenerateStepPayload {
+  table: string;
+  batch: number;
+  count: number;
+}
+
+interface WorkflowStepPayloadMap {
+  UserInput: UserInputStepPayload;
+  CreateTable: CreateTableStepPayload;
+  Import: ImportDataStepPayload;
+  CreateColumn: CreateColumnStepPayload;
+  DeleteColumn: DeleteColumnStepPayload;
+  Generate: GenerateStepPayload;
+  DeleteTable: DeleteTableStepPayload;
+}
+
+export type TypedWorkflowStep = {
+  [K in WorkflowStepType]: {
+    type: K;
+    payload: K extends keyof WorkflowStepPayloadMap
+      ? WorkflowStepPayloadMap[K]
+      : never; // `never` for unmapped means they shouldn't exist or are an error
+    status?: string;
+  };
+}[WorkflowStepType]; // This gets a union of all possible objects.
 
 export interface Workflow {
   id: string;
   name: string;
   description: string;
   variables: WorkflowVariable[];
-  steps: WorkflowStep[];
+  steps: TypedWorkflowStep[];
 }
 
 export async function getWorkflow(id: string): Promise<Workflow> {
