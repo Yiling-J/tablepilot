@@ -502,7 +502,8 @@ export interface UserInputStepPayload {
 }
 
 export interface CreateTableStepPayload {
-  schema: JSONObject;
+  schema: TableCreateRequest;
+  on_exists: string;
 }
 
 export interface DeleteTableStepPayload {
@@ -512,6 +513,7 @@ export interface DeleteTableStepPayload {
 export interface CreateColumnStepPayload {
   table: string;
   name: string;
+  description: string;
   type: string;
 }
 
@@ -530,6 +532,10 @@ export interface GenerateStepPayload {
   count: number;
 }
 
+export interface ExportStepPayload {
+  table: string;
+}
+
 interface WorkflowStepPayloadMap {
   UserInput: UserInputStepPayload;
   CreateTable: CreateTableStepPayload;
@@ -537,7 +543,9 @@ interface WorkflowStepPayloadMap {
   CreateColumn: CreateColumnStepPayload;
   DeleteColumn: DeleteColumnStepPayload;
   Generate: GenerateStepPayload;
+  Autofill: GenerateStepPayload;
   DeleteTable: DeleteTableStepPayload;
+  ExportTable: ExportStepPayload;
 }
 
 export type TypedWorkflowStep = {

@@ -5,9 +5,9 @@ import { MentionInput, type ContextVariable } from "./var-input";
 
 describe("MentionInput", () => {
   const mockVariables: ContextVariable[] = [
-    { display: "User Name", path: "user.name" },
-    { display: "User Age", path: "user.age" },
-    { display: "User Email", path: "user.email" },
+    { display: "User Name", path: "user.name", type: "string" },
+    { display: "User Age", path: "user.age", type: "string" },
+    { display: "User Email", path: "user.email", type: "string" },
   ];
 
   it("should render basic input without variables", () => {

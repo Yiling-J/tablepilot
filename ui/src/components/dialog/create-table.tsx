@@ -18,6 +18,7 @@ interface CreateTableDialogProps {
   rows?: JSONObject[];
   submitCallback?: () => Promise<void>;
   variables?: ContextVariable[];
+  onSave?: (form: TableCreateRequest) => void;
 }
 
 export function CreateTableDialog({
@@ -29,6 +30,7 @@ export function CreateTableDialog({
   rows,
   submitCallback,
   variables,
+  onSave,
 }: CreateTableDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -50,6 +52,7 @@ export function CreateTableDialog({
             table={table}
             submitCallback={submitCallback}
             variables={variables}
+            onSave={onSave}
           />
         </div>
       </DialogContent>

@@ -32,7 +32,7 @@ export function NameDescriptionForm({
   const [parseError, setParseError] = useState<string | null>(null);
   const { toast } = useToast();
   const [error, setError] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(formData.name);
 
   const validateName = (name: string) => {
     if (!name) {
@@ -49,7 +49,6 @@ export function NameDescriptionForm({
   };
 
   useEffect(() => {
-    setName(formData.name);
     validateName(formData.name);
   }, []);
 

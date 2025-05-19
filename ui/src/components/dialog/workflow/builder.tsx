@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import {
     CreateColumnStepPayload,
     CreateTableStepPayload,
+    ImportDataStepPayload,
     TypedWorkflowStep,
     UserInputStepPayload,
     Workflow,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NumberInput } from "@/components/ui/number-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
@@ -79,7 +81,7 @@ export default function WorkflowBuilderDialog({
       ];
       setSteps(wsteps);
     }
-  }, []);
+  }, [workflow]);
 
   // Initialize workflow with UserInput step
   useEffect(() => {
@@ -98,9 +100,9 @@ export default function WorkflowBuilderDialog({
   useEffect(() => {
     const vars: ContextVariable[][] = [
       [
-        { path: "date", display: "date" },
-        { path: "time", display: "time" },
-        { path: "datetime", display: "datetime" },
+        { path: "date", display: "date", type: "string" },
+        { path: "time", display: "time", type: "string" },
+        { path: "datetime", display: "datetime", type: "string" },
       ],
     ];
     steps.forEach((step, index) => {
@@ -112,20 +114,30 @@ export default function WorkflowBuilderDialog({
               return {
                 display: v.name,
                 path: v.name,
+                type: v.type,
               } as ContextVariable;
             }),
           );
           break;
         case "CreateTable":
           nv.push({
-            display: `CreateTable[${(step.payload as CreateTableStepPayload).schema.name}].table`,
+            display: `CreateTable[${(step.payload as CreateTableStepPayload).schema?.name ?? ""}].table`,
             path: `step${index}.table`,
+            type: "string",
           });
           break;
         case "CreateColumn":
           nv.push({
             display: `CreateColumn[${(step.payload as CreateColumnStepPayload).name}].column`,
             path: `step${index}.column`,
+            type: "string",
+          });
+          break;
+        case "Import":
+          nv.push({
+            display: `Import[${(step.payload as ImportDataStepPayload).file}].table`,
+            path: `step${index}.table`,
+            type: "string",
           });
           break;
       }
@@ -140,7 +152,18 @@ export default function WorkflowBuilderDialog({
       case "UserInput":
         return { type, payload: { variables: [] } };
       case "CreateTable":
-        return { type, payload: { schema: {} } };
+        return {
+          type,
+          payload: {
+            on_exists: "Stop",
+            schema: {
+              name: "",
+              description: "",
+              sources: [],
+              columns: [],
+            },
+          },
+        };
       case "DeleteTable":
         return { type, payload: { table: "" } };
       case "CreateColumn":
@@ -149,6 +172,7 @@ export default function WorkflowBuilderDialog({
           payload: {
             table: "",
             name: "",
+            description: "",
             type: "string",
           },
         };
@@ -330,7 +354,7 @@ export default function WorkflowBuilderDialog({
                 onClick={() => setIsEditingName(true)}
               >
                 <h2 className="text-xl font-semibold">{workflowName}</h2>
-                <Pencil className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Pencil className="h-4 w-4" />
                 <div className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                   Click to edit
                 </div>
@@ -586,19 +610,102 @@ export default function WorkflowBuilderDialog({
                     {/* CreateTable properties */}
                     {selectedStep.type === "CreateTable" && (
                       <div>
+                        <div className="flex flex-row mb-5 items-center">
+                          <div className="w-24">
+                            <Label htmlFor="onExists">On Exists</Label>
+                          </div>
+                          <Select
+                            value={selectedStep.payload.on_exists}
+                            onValueChange={(value) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  on_exists: value,
+                                },
+                              })
+                            }
+                          >
+                            <SelectTrigger id="onExists">
+                              <SelectValue placeholder="What to do if table exists" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Stop">
+                                Stop workflow
+                              </SelectItem>
+                              <SelectItem value="Recreate">
+                                Recreate the table
+                              </SelectItem>
+                              <SelectItem value="Skip">
+                                Do nothing and continue
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <CreateTableDialog
                           variables={stepVariables[selectedStepIndex!]}
                           isOpen={createTableDialogOpen}
-                          setIsOpen={() => {}}
+                          setIsOpen={setCreateTableDialogOpen}
                           close={() => {}}
-                        />
-                        <Button
-                          onClick={() => {
-                            setCreateTableDialogOpen(true);
+                          form={selectedStep.payload.schema}
+                          onSave={(v) => {
+                            updateStep({
+                              type: selectedStep.type,
+                              payload: {
+                                ...selectedStep.payload,
+                                schema: v,
+                              },
+                            });
+                            setCreateTableDialogOpen(false);
                           }}
+                        />
+                        <div
+                          className="border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => setCreateTableDialogOpen(true)}
                         >
-                          Open Table Editor
-                        </Button>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-medium">Table Configuration</h3>
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                Name:
+                              </span>
+                              <span>
+                                {selectedStep.payload.schema.name ||
+                                  "Unnamed Table"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                Description:
+                              </span>
+                              <span>
+                                {selectedStep.payload.schema.description ||
+                                  "No description"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                Columns:
+                              </span>
+                              <span>
+                                {selectedStep.payload.schema.columns.length}{" "}
+                                columns
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-muted-foreground">
+                                Sources:
+                              </span>
+                              <span>
+                                {selectedStep.payload.schema.sources.length}{" "}
+                                sources
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -623,6 +730,7 @@ export default function WorkflowBuilderDialog({
                       </div>
                     )}
 
+                    {/* CreateColumn properties */}
                     {selectedStep.type === "CreateColumn" && (
                       <div key={selectedStepIndex}>
                         <div className="space-y-2">
@@ -660,6 +768,25 @@ export default function WorkflowBuilderDialog({
                           />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="columnDescription">
+                            Column Description
+                          </Label>
+                          <MentionInput
+                            id="columnDescription"
+                            variables={stepVariables[selectedStepIndex!]}
+                            value={selectedStep.payload.description}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  description: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="dataType">Data Type</Label>
                           <Select
                             value={selectedStep.payload.type}
@@ -680,7 +807,7 @@ export default function WorkflowBuilderDialog({
                               <SelectItem value="string">String</SelectItem>
                               <SelectItem value="integer">Integer</SelectItem>
                               <SelectItem value="number">Number</SelectItem>
-                              <SelectItem value="file">File</SelectItem>
+                              <SelectItem value="image">Image</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -692,9 +819,10 @@ export default function WorkflowBuilderDialog({
                       <>
                         <div className="space-y-2">
                           <Label htmlFor="tableName">Table Name</Label>
-                          <Input
+                          <MentionInput
                             id="tableName"
                             value={selectedStep.payload.table}
+                            variables={stepVariables[selectedStepIndex!]}
                             onChange={(e) =>
                               updateStep({
                                 type: selectedStep.type,
@@ -708,8 +836,9 @@ export default function WorkflowBuilderDialog({
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="columnName">Column Name</Label>
-                          <Input
+                          <MentionInput
                             id="columnName"
+                            variables={stepVariables[selectedStepIndex!]}
                             value={selectedStep.payload.column}
                             onChange={(e) =>
                               updateStep({
@@ -725,8 +854,170 @@ export default function WorkflowBuilderDialog({
                       </>
                     )}
 
+                    {/* Generate properties */}
+                    {selectedStep.type === "Generate" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="tableName">Table Name</Label>
+                          <MentionInput
+                            id="tableName"
+                            value={selectedStep.payload.table}
+                            variables={stepVariables[selectedStepIndex!]}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  table: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="generateCount">Count</Label>
+                          <NumberInput
+                            id="GenerateCount"
+                            value={selectedStep.payload.count}
+                            onValueChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  count: e ?? 10,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="generateBatch">Batch</Label>
+                          <NumberInput
+                            id="GenerateBatch"
+                            value={selectedStep.payload.batch}
+                            onValueChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  batch: e ?? 2,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Autofill properties */}
+                    {selectedStep.type === "Autofill" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="tableName">Table Name</Label>
+                          <MentionInput
+                            id="tableName"
+                            value={selectedStep.payload.table}
+                            variables={stepVariables[selectedStepIndex!]}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  table: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="generateCount">Count</Label>
+                          <NumberInput
+                            id="GenerateCount"
+                            value={selectedStep.payload.count}
+                            onValueChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  count: e ?? 10,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="generateBatch">Batch</Label>
+                          <NumberInput
+                            id="GenerateBatch"
+                            value={selectedStep.payload.count}
+                            onValueChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  batch: e ?? 2,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </>
+                    )}
+
                     {/* ImportData properties */}
-                    {selectedStep.type === "Import" && <div></div>}
+                    {selectedStep.type === "Import" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="importFile">File Variable</Label>
+                        <Select
+                          value={selectedStep.payload.file}
+                          onValueChange={(value) =>
+                            updateStep({
+                              type: selectedStep.type,
+                              payload: {
+                                ...selectedStep.payload,
+                                file: value,
+                              },
+                            })
+                          }
+                        >
+                          <SelectTrigger id="importFile">
+                            <SelectValue placeholder="Select file variable" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stepVariables[0]
+                              .filter((v) => v.type === "file")
+                              .map((v, idx) => (
+                                <SelectItem key={idx} value={v.path}>
+                                  {v.display}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Export properties */}
+                    {selectedStep.type === "ExportTable" && (
+                      <div>
+                        <div className="space-y-2">
+                          <Label htmlFor="tableName">Table Name</Label>
+                          <MentionInput
+                            id="tableName"
+                            value={selectedStep.payload.table}
+                            variables={stepVariables[selectedStepIndex!]}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  table: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center p-8 text-muted-foreground">

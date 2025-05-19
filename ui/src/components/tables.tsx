@@ -211,8 +211,9 @@ function WorkflowList() {
         onOpenChange={setRunWorkflowOpen}
       />
       <WorkflowBuilderDialog
+        workflow={workflow}
         open={WorkflowBuilderOpen}
-        onOpenChange={() => {}}
+        onOpenChange={setRunWorkflowBuilderOpen}
       />
       {loading
         ? Array.from({ length: 4 }).map((_, index) => (
@@ -245,7 +246,16 @@ function WorkflowList() {
               </div>
 
               <div className="flex justify-between">
-                <Button variant="outline" size="icon" onClick={async () => {}}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const w = await getWorkflow(wf.id);
+                    setWorkflow(w);
+                    setRunWorkflowBuilderOpen(true);
+                  }}
+                >
                   <SettingsIcon />
                 </Button>
                 <Button

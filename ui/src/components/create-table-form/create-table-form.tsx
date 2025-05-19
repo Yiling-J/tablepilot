@@ -41,6 +41,7 @@ interface CreateTableFormProps {
   rows?: JSONObject[];
   submitCallback?: () => Promise<void>;
   variables?: ContextVariable[];
+  onSave?: (form: TableCreateRequest) => void;
 }
 
 export default function CreateTableForm({
@@ -50,6 +51,7 @@ export default function CreateTableForm({
   rows,
   submitCallback,
   variables,
+  onSave,
 }: CreateTableFormProps) {
   const [formData, setFormData] = useState<TableCreateRequest>(
     form ?? initialFormData,
@@ -79,6 +81,13 @@ export default function CreateTableForm({
     setLoading(true);
     let info;
     try {
+      if (onSave !== undefined) {
+        onSave(formData);
+        if (submitCallback) {
+          await submitCallback();
+        }
+        return;
+      }
       if (table !== undefined) {
         info = await updateTable(table, formData);
       } else {

@@ -7,6 +7,7 @@ import { Textarea, TextareaProps } from "./textarea";
 export type ContextVariable = {
   display: string;
   path: string;
+  type: string;
 };
 
 type MentionInputProps = (InputProps & TextareaProps) & {
@@ -299,8 +300,7 @@ export function MentionInput({
             // Regular span
             result += node.textContent || "";
           }
-        }
-        if (node.nodeName === "BR") {
+        } else if (node.nodeName === "BR") {
           result += "\n";
         } else if (node.nodeName === "DIV") {
           if (i > 0) result += "\n"; // Add newline before div except for first div
@@ -326,7 +326,6 @@ export function MentionInput({
         result += node.textContent || "";
       }
     }
-    console.log("===formatted", result);
 
     return result;
   };
