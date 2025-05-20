@@ -1016,6 +1016,7 @@ export default function WorkflowBuilderDialog({
                           <Label htmlFor="generateBatch">Columns</Label>
                           <MentionInput
                             id="AutofillColumns"
+                            placeholder="Columns need to be autofilled, one per line. Use @ to reference columns from previous steps. Columns will be autofilled automatically."
                             value={selectedStep.payload.columns.join("\n")}
                             variables={stepVariables[selectedStepIndex!]}
                             rows={3}
@@ -1025,7 +1026,9 @@ export default function WorkflowBuilderDialog({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  columns: e.target.value.split("\n"),
+                                  columns: e.target.value
+                                    .split("\n")
+                                    .map((v) => v.trim()),
                                 },
                               })
                             }

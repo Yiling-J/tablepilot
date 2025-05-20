@@ -308,8 +308,8 @@ func TestWorkflowRunner_Import(t *testing.T) {
 			require.NoError(t, err)
 			runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
 				Variables: map[string]any{
-					"test.csv": []byte("csv"),
-					"test.png": []byte("png"),
+					"test.csv": FileInfo{Name: "test.csv", Data: []byte("csv")},
+					"test.png": FileInfo{Name: "test.png", Data: []byte("png")},
 				}, Model: "m1", Temperature: 0.5})
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())
@@ -480,6 +480,7 @@ func TestWorkflowRunner_CreateColumn(t *testing.T) {
 		CreateColumnFunc: func(ctx context.Context, table string, col table.TableGenColumn) (string, error) {
 			require.Equal(t, "foo", table)
 			require.Equal(t, "col", col.Name)
+			require.Equal(t, "ds", col.Description)
 			return "", nil
 		},
 	}
@@ -489,7 +490,7 @@ func TestWorkflowRunner_CreateColumn(t *testing.T) {
 		Variables: []schema.WorkflowVariable{},
 		Steps: []schema.WorkflowStep{{
 			Type:    schema.WorkflowStepTypeCreateColumn,
-			Payload: json.RawMessage(`{"table": "foo","column":{"name":"col"}}`),
+			Payload: json.RawMessage(`{"table": "foo","name":"col","description": "ds"}`),
 		}},
 	})
 	require.NoError(t, err)

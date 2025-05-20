@@ -754,3 +754,120 @@ data:[DONE]
 		resp.response.Body.String(),
 	)
 }
+
+func TestAPI_CreateWorkflow(t *testing.T) {
+	wf := &workflow.Workflow{
+		Name:        "w1",
+		Description: "www",
+	}
+	workflowMock := &workflow.WorkflowServiceMock{
+		CreateFunc: func(ctx context.Context, wff *workflow.Workflow) (string, error) {
+			require.Equal(t, wf, wff)
+			return "di", nil
+		},
+	}
+
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.WorkflowService = workflowMock
+	})
+	r, err := server.NewPostRequest("/api/v1/workflows", wf)
+	require.NoError(t, err)
+	resp := server.Send(r)
+	require.Equal(t, 1, len(workflowMock.CreateCalls()))
+	resp.ResponseEq(
+		t, 200, gin.H{"id": "di"},
+	)
+}
+
+func TestAPI_UpdateWorkflow(t *testing.T) {
+	wf := &workflow.Workflow{
+		Name:        "w1",
+		Description: "www",
+	}
+	workflowMock := &workflow.WorkflowServiceMock{
+		UpdateFunc: func(ctx context.Context, id string, wff *workflow.Workflow) (string, error) {
+			require.Equal(t, "abc", id)
+			require.Equal(t, wf, wff)
+			return "di", nil
+		},
+	}
+
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.WorkflowService = workflowMock
+	})
+	r, err := server.NewPatchRequest("/api/v1/workflows/abc", wf)
+	require.NoError(t, err)
+	resp := server.Send(r)
+	require.Equal(t, 1, len(workflowMock.UpdateCalls()))
+	resp.ResponseEq(
+		t, 200, gin.H{"id": "di"},
+	)
+}
+
+func TestAPI_DeleteWorkflow(t *testing.T) {
+	workflowMock := &workflow.WorkflowServiceMock{
+		DeleteFunc: func(ctx context.Context, wf string) error {
+			require.Equal(t, "abc", wf)
+			return nil
+		},
+	}
+
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.WorkflowService = workflowMock
+	})
+	r, err := server.NewDeleteRequest("/api/v1/workflows/abc")
+	require.NoError(t, err)
+	resp := server.Send(r)
+	require.Equal(t, 1, len(workflowMock.DeleteCalls()))
+	resp.ResponseEq(
+		t, 200, "",
+	)
+}
+
+func TestAPI_RunWorkflowFileVar(t *testing.T) {
+	mockRunner := &workflow.RunnerMock{
+		NextFunc: func(ctx context.Context) (*workflow.WorkflowStepResult, error) {
+			return nil, nil
+		},
+	}
+	mockWorkflow := &workflow.WorkflowServiceMock{
+		StartFunc: func(ctx context.Context, id string, request workflow.StartWorklfowRequest) (workflow.Runner, error) {
+			require.Equal(t, request, workflow.StartWorklfowRequest{
+				Variables: map[string]any{
+					"image": workflow.FileInfo{
+						Name: "go.csv",
+						Data: []byte("Hello, World!"),
+					},
+				},
+				Model:       "aiai",
+				ImageModel:  "aiia",
+				Temperature: 0.56,
+			})
+			return mockRunner, nil
+		},
+		GetFunc: func(ctx context.Context, wf string) (*ent.Workflow, error) {
+			require.Equal(t, "foo", wf)
+			return &ent.Workflow{
+				Variables: []schema.WorkflowVariable{
+					{Name: "image", Type: schema.WorkflowVariableTypeFile},
+				},
+			}, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.WorkflowService = mockWorkflow
+	})
+	req, err := server.NewPostRequest("/api/v1/workflows/foo/run", &workflow.StartWorklfowRequest{
+		Temperature: 0.56,
+		Model:       "aiai",
+		ImageModel:  "aiia",
+		Variables: map[string]any{"image": map[string]any{
+			"name": "go.csv",
+			"data": "data:text/csv;base64,SGVsbG8sIFdvcmxkIQ==",
+		}},
+	})
+	require.NoError(t, err)
+	resp := server.Send(req)
+	require.Equal(t, 200, resp.response.Code)
+	require.Equal(t, 1, len(mockWorkflow.StartCalls()))
+}
