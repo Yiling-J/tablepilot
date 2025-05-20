@@ -71,6 +71,13 @@ type WorkflowCreateTablePayload struct {
 	Request    table.TableGenRequest        `json:"request"`
 }
 
+type WorkflowAutofillPayload struct {
+	Count   int      `json:"count"`
+	Batch   int      `json:"batch"`
+	Table   string   `json:"table"`
+	Columns []string `json:"columns"`
+}
+
 type FileInfo struct {
 	Name string
 	Data []byte

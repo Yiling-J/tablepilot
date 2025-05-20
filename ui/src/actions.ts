@@ -520,7 +520,7 @@ export interface UserInputStepPayload {
 }
 
 export interface CreateTableStepPayload {
-  schema: TableCreateRequest;
+  request: TableCreateRequest;
   on_exists: string;
 }
 
@@ -551,6 +551,13 @@ export interface GenerateStepPayload {
   count: number;
 }
 
+export interface AutofillStepPayload {
+  table: string;
+  batch: number;
+  count: number;
+  columns: string[];
+}
+
 export interface ExportStepPayload {
   table: string;
 }
@@ -562,7 +569,7 @@ interface WorkflowStepPayloadMap {
   CreateColumn: CreateColumnStepPayload;
   DeleteColumn: DeleteColumnStepPayload;
   Generate: GenerateStepPayload;
-  Autofill: GenerateStepPayload;
+  Autofill: AutofillStepPayload;
   DeleteTable: DeleteTableStepPayload;
   ExportTable: ExportStepPayload;
 }

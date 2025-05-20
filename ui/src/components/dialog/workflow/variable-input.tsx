@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -101,6 +102,7 @@ export function VariablesDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
+        <DialogDescription />
         <DialogHeader>
           <DialogTitle>Input Variables</DialogTitle>
         </DialogHeader>

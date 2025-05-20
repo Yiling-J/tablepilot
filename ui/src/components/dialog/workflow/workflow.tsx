@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogFooter,
     DialogOverlay,
     DialogTitle,
@@ -14,6 +15,8 @@ import { Slider } from "@/components/ui/slider";
 import { Terminal } from "@/components/ui/terminal";
 import { JSONObject } from "@/json";
 import { cn } from "@/lib/utils";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { useEffect, useRef, useState } from "react";
 import { VariablesDialog } from "./variable-input";
 
@@ -121,6 +124,45 @@ export default function WorkflowExecutionDialog({
             },
           ]);
           break;
+        case "EXPORT":
+          if ("__TAURI_INTERNALS__" in window) {
+            save({
+              filters: [
+                {
+                  name: "output.csv",
+                  extensions: ["csv"],
+                },
+              ],
+            }).then((path) => {
+              if (path) {
+                writeTextFile(path, msg.data as string);
+              }
+            });
+          } else {
+            // Create a blob from the CSV data
+            const blob = new Blob([msg.data as string], { type: 'text/csv' });
+            // Create a URL for the blob
+            const url = window.URL.createObjectURL(blob);
+            // Create a temporary link element
+            const link = document.createElement('a');
+            // Set the current timestamp for the filename
+            const now = new Date();
+            const timestamp = now.getFullYear() +
+              String(now.getMonth() + 1).padStart(2, '0') +
+              String(now.getDate()).padStart(2, '0') +
+              String(now.getHours()).padStart(2, '0') +
+              String(now.getMinutes()).padStart(2, '0') +
+              String(now.getSeconds()).padStart(2, '0');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `output_${timestamp}.csv`);
+            // Append to body, click, and remove
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            // Clean up the URL object
+            window.URL.revokeObjectURL(url);
+          }
+          break;
         case "ERROR":
           setEvents((old) => [
             ...old,
@@ -199,6 +241,7 @@ export default function WorkflowExecutionDialog({
           e.preventDefault();
         }}
       >
+        <DialogDescription />
         <VariablesDialog
           open={varDialogOpen}
           onOpenChange={setVarDialogOpen}
@@ -291,7 +334,10 @@ export default function WorkflowExecutionDialog({
             <div className="w-full bg-gray-900 h-full rounded-lg shadow-sm overflow-auto border-amber-100/50 border-2 border-solid">
               <Terminal ref={terminalRef} running={running}>
                 {(running || (!running && events.length > 0)) && (
-                  <div className="text-cyan-400">Workflow started...</div>
+                  <div>
+                    <div className="text-cyan-400">Workflow started...</div>
+                    <br />
+                  </div>
                 )}
                 {events.map((event, index) => (
                   <div key={index} className="mb-3">

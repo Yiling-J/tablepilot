@@ -2,8 +2,6 @@ package api
 
 import (
 	"errors"
-	"log"
-	"os"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services/provider"
@@ -412,11 +410,11 @@ func (hs *HTTPServer) RunWorkflow(ctx *gin.Context) {
 			})
 			ctx.Writer.Flush()
 		case workflow.WorkflowActionExport:
-			//nolint:gosec
-			err := os.WriteFile(result.ExportPath, []byte(result.ExportData), 0644)
-			if err != nil {
-				log.Fatalf("failed to write file: %v", err)
-			}
+			ctx.SSEvent("message", map[string]any{
+				"type": "EXPORT",
+				"data": result.ExportData,
+			})
+			ctx.Writer.Flush()
 			ctx.SSEvent("message", map[string]any{
 				"type": "MESSAGE",
 				"data": result.Message,

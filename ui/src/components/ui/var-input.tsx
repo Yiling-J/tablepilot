@@ -225,11 +225,15 @@ export function MentionInput({
 
     // Create the mention span
     const mentionSpan = document.createElement("span");
+    let vid = document.createAttribute("vid");
+    const vidv = Math.random().toString(20);
+    vid.value = vidv;
     mentionSpan.className =
       "inline-block bg-primary border border-gray-300 rounded px-1 mx-0.5 text-secondary";
     mentionSpan.contentEditable = "false";
     mentionSpan.dataset.path = variable.path;
     mentionSpan.textContent = variable.display;
+    mentionSpan.attributes.setNamedItem(vid);
 
     // Create a temporary div to get the HTML of the mention span
     const tempDiv = document.createElement("div");
@@ -254,20 +258,11 @@ export function MentionInput({
     // Position cursor at the end
     const newSelection = window.getSelection();
     const newRange = document.createRange();
+    const el = inputRef.current.querySelector(`span[vid='${vidv}']`);
 
-    // Find the last text node
-    let lastTextNode = null;
-    for (let i = inputRef.current.childNodes.length - 1; i >= 0; i--) {
-      const node = inputRef.current.childNodes[i];
-      if (node.nodeType === Node.TEXT_NODE) {
-        lastTextNode = node;
-        break;
-      }
-    }
-
-    if (lastTextNode) {
-      newRange.setStart(lastTextNode, lastTextNode.textContent?.length || 0);
-      newRange.setEnd(lastTextNode, lastTextNode.textContent?.length || 0);
+    if (el) {
+      newRange.setStartAfter(el);
+      newRange.setEndAfter(el);
       newSelection?.removeAllRanges();
       newSelection?.addRange(newRange);
     }
@@ -409,7 +404,10 @@ export function MentionInput({
               {filteredVars.map((variable, index) => (
                 <li
                   key={index}
-                  className="px-3 py-2 text-sm cursor-pointer hover:bg-primary/10"
+                  className={cn(
+                    "px-3 py-2 text-sm cursor-pointer hover:bg-primary/10",
+                    index === selectedIndex ? "bg-primary/10" : "",
+                  )}
                   onClick={() => handleVariableClick(variable)}
                 >
                   <span className="font-medium">{variable.display}</span>

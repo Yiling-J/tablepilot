@@ -290,15 +290,21 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			Message:   fmt.Sprintf("Start generating rows for table %s...", req.Table),
 			Generator: generator, Action: WorkflowActionGenerate}, nil
 	case schema.WorkflowStepTypeAutofill:
-		var req table.GenerateRowsRequest
+		var req WorkflowAutofillPayload
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling autofill request: %w", err)
 		}
-		req.Model = r.model
-		req.ImageModel = r.imageModel
-		req.Temperature = r.temperature
-		generator, err := r.tableService.Genetate(ctx, req)
+		genreq := table.GenerateRowsRequest{
+			Table:       req.Table,
+			Model:       r.model,
+			ImageModel:  r.imageModel,
+			Temperature: r.temperature,
+			Count:       req.Count,
+			Batch:       req.Batch,
+		}
+		genreq.Autofill = table.AutofillRequest{Enable: true, Columns: req.Columns, ContextColumns: []string{}}
+		generator, err := r.tableService.Genetate(ctx, genreq)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: autofilling rows: %w", err)
 		}

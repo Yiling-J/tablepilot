@@ -128,7 +128,7 @@ export default function WorkflowBuilderDialog({
           break;
         case "CreateTable":
           nv.push({
-            display: `CreateTable[${(step.payload as CreateTableStepPayload).schema?.name ?? ""}].table`,
+            display: `CreateTable[${(step.payload as CreateTableStepPayload).request?.name ?? ""}].table`,
             path: `step${index}.table`,
             type: "string",
           });
@@ -163,7 +163,7 @@ export default function WorkflowBuilderDialog({
           type,
           payload: {
             on_exists: "Stop",
-            schema: {
+            request: {
               name: "",
               description: "",
               sources: [],
@@ -190,7 +190,10 @@ export default function WorkflowBuilderDialog({
       case "Generate":
         return { type, payload: { count: 20, batch: 5, table: "" } };
       case "Autofill":
-        return { type, payload: { count: 20, batch: 5, table: "" } };
+        return {
+          type,
+          payload: { count: 20, batch: 5, table: "", columns: [] },
+        };
       case "ExportTable":
         return { type, payload: { table: "" } };
       default:
@@ -381,8 +384,7 @@ export default function WorkflowBuilderDialog({
             )}
           </div>
           <DialogDescription>
-            Create a workflow by adding actions and configuring their
-            properties.
+            Create a workflow by adding steps and configuring their properties.
           </DialogDescription>
         </DialogHeader>
 
@@ -695,13 +697,13 @@ export default function WorkflowBuilderDialog({
                           isOpen={createTableDialogOpen}
                           setIsOpen={setCreateTableDialogOpen}
                           close={() => {}}
-                          form={selectedStep.payload.schema}
+                          form={selectedStep.payload.request}
                           onSave={(v) => {
                             updateStep({
                               type: selectedStep.type,
                               payload: {
                                 ...selectedStep.payload,
-                                schema: v,
+                                request: v,
                               },
                             });
                             setCreateTableDialogOpen(false);
@@ -721,7 +723,7 @@ export default function WorkflowBuilderDialog({
                                 Name:
                               </span>
                               <span>
-                                {selectedStep.payload.schema.name ||
+                                {selectedStep.payload.request.name ||
                                   "Unnamed Table"}
                               </span>
                             </div>
@@ -730,7 +732,7 @@ export default function WorkflowBuilderDialog({
                                 Description:
                               </span>
                               <span>
-                                {selectedStep.payload.schema.description ||
+                                {selectedStep.payload.request.description ||
                                   "No description"}
                               </span>
                             </div>
@@ -739,7 +741,7 @@ export default function WorkflowBuilderDialog({
                                 Columns:
                               </span>
                               <span>
-                                {selectedStep.payload.schema.columns.length}{" "}
+                                {selectedStep.payload.request.columns.length}{" "}
                                 columns
                               </span>
                             </div>
@@ -748,7 +750,7 @@ export default function WorkflowBuilderDialog({
                                 Sources:
                               </span>
                               <span>
-                                {selectedStep.payload.schema.sources.length}{" "}
+                                {selectedStep.payload.request.sources.length}{" "}
                                 sources
                               </span>
                             </div>
@@ -1010,6 +1012,25 @@ export default function WorkflowBuilderDialog({
                             }
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="generateBatch">Columns</Label>
+                          <MentionInput
+                            id="AutofillColumns"
+                            value={selectedStep.payload.columns.join("\n")}
+                            variables={stepVariables[selectedStepIndex!]}
+                            rows={3}
+                            textarea={true}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  columns: e.target.value.split("\n"),
+                                },
+                              })
+                            }
+                          />
+                        </div>
                       </>
                     )}
 
@@ -1090,7 +1111,7 @@ export default function WorkflowBuilderDialog({
                   </div>
                 ) : (
                   <div className="text-center p-8 text-muted-foreground">
-                    Select an action from the workflow to edit its properties.
+                    Select a step from the workflow to edit its properties.
                   </div>
                 )}
               </div>
