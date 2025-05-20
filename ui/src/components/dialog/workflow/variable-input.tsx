@@ -69,19 +69,32 @@ export function VariablesDialog({
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Combine regular values and file information
     const combinedValues = { ...values };
 
-    // Add file names for file type variables
-    Object.entries(files).forEach(([name, file]) => {
+    // Create an array of promises for file loading
+    const filePromises = Object.entries(files).map(([name, file]) => {
       if (!file) {
-        return;
+        return Promise.resolve();
       }
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      combinedValues[name] = reader.result as string;
+      return new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          combinedValues[name] = {
+            data: reader.result as string,
+            name: file.name,
+          };
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
     });
+
+    // Wait for all files to be loaded
+    await Promise.all(filePromises);
+
+    // Now that all files are loaded, call onSave
     onSave(combinedValues);
   };
 
@@ -101,7 +114,6 @@ export function VariablesDialog({
                 {renderInputForVariable(
                   variable,
                   values[variable.name],
-                  files[variable.name],
                   (value) => handleInputChange(variable.name, value),
                   (file) => handleFileChange(variable.name, file),
                 )}
@@ -122,14 +134,13 @@ export function VariablesDialog({
 function renderInputForVariable(
   variable: WorkflowVariable,
   value: JSONValue,
-  file: File | null,
   onChange: (value: JSONValue) => void,
   onFileChange: (file: File | null) => void,
 ) {
   // Handle file type
   if (variable.type === "file") {
     return (
-      <div className="flex flex-col gap-2">
+      <div>
         <Input
           id={variable.name}
           type="file"
@@ -138,7 +149,6 @@ function renderInputForVariable(
             onFileChange(selectedFile);
           }}
         />
-        {file && <p className="text-sm text-gray-500">Selected: {file.name}</p>}
       </div>
     );
   }
@@ -180,7 +190,7 @@ function renderInputForVariable(
         id={variable.name}
         type="number"
         step="1"
-        value={value || ""}
+        value={(value as number) || ""}
         onChange={(e) => onChange(Number.parseInt(e.target.value, 10) || 0)}
       />
     );
@@ -192,7 +202,7 @@ function renderInputForVariable(
         id={variable.name}
         type="number"
         step="any"
-        value={value || ""}
+        value={(value as number) || ""}
         onChange={(e) => onChange(Number.parseFloat(e.target.value) || 0)}
       />
     );
@@ -203,7 +213,7 @@ function renderInputForVariable(
     <Input
       id={variable.name}
       type="text"
-      value={value || ""}
+      value={(value as string) || ""}
       onChange={(e) => onChange(e.target.value)}
     />
   );

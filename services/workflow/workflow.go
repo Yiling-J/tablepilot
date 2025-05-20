@@ -23,6 +23,7 @@ type WorkflowService interface {
 	Get(ctx context.Context, wf string) (*ent.Workflow, error)
 	Delete(ctx context.Context, wf string) error
 	Create(ctx context.Context, wf *Workflow) (string, error)
+	Update(ctx context.Context, id string, wf *Workflow) (string, error)
 	Start(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error)
 	List(ctx context.Context) ([]*ent.Workflow, error)
 }
@@ -75,6 +76,20 @@ func (w *WorkflowServiceImpl) Create(ctx context.Context, wf *Workflow) (string,
 		return "", fmt.Errorf("workflow.Create: saving workflow: %w", err)
 	}
 	return dbwf.Nanoid, nil
+}
+
+func (w *WorkflowServiceImpl) Update(ctx context.Context, id string, wf *Workflow) (string, error) {
+	if len(wf.Name) == 0 {
+		return "", errors.New("name must not be empty")
+	}
+	if len(wf.Steps) == 0 {
+		return "", errors.New("steps must not be empty")
+	}
+	err := w.db.Workflow.Update().Where(workflow.Nanoid(id)).SetName(wf.Name).SetDescription(wf.Description).SetVariables(wf.Variables).SetSteps(wf.Steps).Exec(ctx)
+	if err != nil {
+		return "", fmt.Errorf("workflow.Create: saving workflow: %w", err)
+	}
+	return id, nil
 }
 
 func (w *WorkflowServiceImpl) Start(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error) {
@@ -221,38 +236,42 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling import file params: %w", err)
 		}
-		content, ok := r.context[req.File]
+		fileInfo, ok := r.context[req.File]
 		if !ok {
 			return nil, fmt.Errorf("workflow.Next: file %s not found", req.File)
 		}
-		cb, ok := content.([]byte)
+		cb, ok := fileInfo.(FileInfo)
 		if !ok {
 			return nil, errors.New("invalid file content")
 		}
-		switch filepath.Ext(req.File) {
+		switch filepath.Ext(cb.Name) {
 		case ".csv":
-			bf := bytes.NewBuffer(cb)
+			bf := bytes.NewBuffer(cb.Data)
 			id, err := r.tableService.Import(ctx, req.Table, bf)
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: importing CSV: %w", err)
 			}
+			stepContext.Table = id
 			return &WorkflowStepResult{
 				Message: fmt.Sprintf("CSV imported: %s", id),
 				Action:  WorkflowActionShowMessage,
 			}, nil
 		case ".png", ".jpg", ".jpeg":
 			id, err := r.tableService.ImportImage(ctx, table.ImageImportRequest{
-				Data:   cb,
+				Data:   cb.Data,
 				Prompt: req.Prompt,
 				Model:  r.model,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: importing image: %w", err)
 			}
+			stepContext.Table = id
 			return &WorkflowStepResult{
 				Message: fmt.Sprintf("Image imported: %s", id),
 				Action:  WorkflowActionShowMessage,
 			}, nil
+		default:
+			return nil, fmt.Errorf("unsupported file ext %s", filepath.Ext(req.File))
 		}
 	case schema.WorkflowStepTypeGenerate:
 		var req table.GenerateRowsRequest
@@ -323,14 +342,19 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling create column params: %w", err)
 		}
-		req.Column.FillMode = "ai"
-		id, err := r.tableService.CreateColumn(ctx, req.Table, req.Column)
+		col := table.TableGenColumn{
+			Name:        req.Name,
+			Description: req.Description,
+			Type:        req.Type,
+			FillMode:    "ai",
+		}
+		id, err := r.tableService.CreateColumn(ctx, req.Table, col)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: creating column: %w", err)
 		}
 		stepContext.Column = id
 		return &WorkflowStepResult{
-			Message: fmt.Sprintf("Column %s created", req.Column.Name),
+			Message: fmt.Sprintf("Column %s created", req.Name),
 			Action:  WorkflowActionShowMessage,
 		}, nil
 	case schema.WorkflowStepTypeDeleteColumn:
@@ -347,6 +371,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			Message: fmt.Sprintf("Column %s deleted", req.Column),
 			Action:  WorkflowActionShowMessage,
 		}, nil
+	default:
+		return nil, fmt.Errorf("unknown step type %s", step.Type)
 	}
-	return nil, nil
 }

@@ -35,6 +35,10 @@ export function NameDescriptionForm({
   const [name, setName] = useState(formData.name);
 
   const validateName = (name: string) => {
+    // skip name validation in workflow step creation, because name may contains variables
+    if (variables) {
+      return true;
+    }
     if (!name) {
       setError("Table name cannot be empty.");
       return false;

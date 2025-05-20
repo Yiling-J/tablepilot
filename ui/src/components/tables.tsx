@@ -1,5 +1,6 @@
 import {
     deleteTable,
+    deleteWorkflow,
     getTables,
     getWorkflow,
     getWorkflows,
@@ -211,9 +212,11 @@ function WorkflowList() {
         onOpenChange={setRunWorkflowOpen}
       />
       <WorkflowBuilderDialog
+        id={workflow?.id}
         workflow={workflow}
         open={WorkflowBuilderOpen}
         onOpenChange={setRunWorkflowBuilderOpen}
+        onSave={refreshWorkflows}
       />
       {loading
         ? Array.from({ length: 4 }).map((_, index) => (
@@ -263,11 +266,9 @@ function WorkflowList() {
                   onClick={async (e) => {
                     e.stopPropagation();
                     setLoading(true);
-                    await deleteTable(wf.id);
-                    const wfs = await getWorkflows();
-                    setWorkflows(wfs.workflows);
+                    await deleteWorkflow(wf.id);
                     setLoading(false);
-                    setRunWorkflowOpen(true);
+                    refreshWorkflows();
                   }}
                 >
                   Delete

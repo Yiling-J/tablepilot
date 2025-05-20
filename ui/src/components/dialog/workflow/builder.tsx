@@ -20,6 +20,8 @@ import {
     WorkflowStepType,
     WorkflowVariable,
     WorkflowVariableType,
+    createWorkflow,
+    updateWorkflow,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,17 +48,22 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ContextVariable, MentionInput } from "@/components/ui/var-input";
 import { CreateTableDialog } from "../create-table";
 
 export default function WorkflowBuilderDialog({
+  id,
   workflow,
   open,
   onOpenChange,
+  onSave,
 }: {
+  id?: string;
   workflow?: Workflow;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave: () => Promise<void>;
 }) {
   // Workflow state
   const [workflowName, setWorkflowName] = useState<string>("New Workflow");
@@ -179,7 +186,13 @@ export default function WorkflowBuilderDialog({
       case "DeleteColumn":
         return { type, payload: { table: "", column: "" } };
       case "Import":
-        return { type, payload: { file: "" } };
+        return { type, payload: { file: "", prompt: "" } };
+      case "Generate":
+        return { type, payload: { count: 20, batch: 5, table: "" } };
+      case "Autofill":
+        return { type, payload: { count: 20, batch: 5, table: "" } };
+      case "ExportTable":
+        return { type, payload: { table: "" } };
       default:
         throw new Error("unknown step type");
     }
@@ -303,7 +316,7 @@ export default function WorkflowBuilderDialog({
   };
 
   // Save the workflow
-  const saveWorkflow = () => {
+  const saveWorkflow = async () => {
     const wf = {
       variables: [] as WorkflowVariable[],
       steps: [] as TypedWorkflowStep[],
@@ -318,7 +331,13 @@ export default function WorkflowBuilderDialog({
           wf.steps.push(s);
       }
     });
+    if (id) {
+      await updateWorkflow(id, wf);
+    } else {
+      await createWorkflow(wf);
+    }
     onOpenChange(false);
+    await onSave();
   };
 
   // Get the selected action
@@ -375,7 +394,7 @@ export default function WorkflowBuilderDialog({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline">
-                    <Plus className="h-4 w-4 mr-1" /> Add Action
+                    <Plus className="h-4 w-4 mr-1" /> Add Step
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -393,6 +412,15 @@ export default function WorkflowBuilderDialog({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => addStep("Import")}>
                     Import Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("ExportTable")}>
+                    Export Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("Generate")}>
+                    Generate
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => addStep("Autofill")}>
+                    Autofill
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -476,7 +504,7 @@ export default function WorkflowBuilderDialog({
                   <div className="space-y-4">
                     {/* Common properties for all actions */}
                     <div className="space-y-2">
-                      <Label>Action Type</Label>
+                      <Label>Step Type</Label>
                       <div className="flex items-center gap-2 p-2 bg-muted/30 border rounded-md">
                         <span className="font-medium">{selectedStep.type}</span>
                       </div>
@@ -597,6 +625,26 @@ export default function WorkflowBuilderDialog({
                                               ? "e.g. 20"
                                               : 'e.g. {"key": "value"}'
                                       }
+                                    />
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`var-options-${idx}`}>
+                                      Options (optional, one per line)
+                                    </Label>
+                                    <Textarea
+                                      id={`var-options-${idx}`}
+                                      defaultValue={variable.options.join("\n")}
+                                      onChange={(e) => {
+                                        updateVariable(idx, {
+                                          ...variable,
+                                          options: e.target.value
+                                            .split("\n")
+                                            .filter((opt) => opt.trim() !== ""),
+                                        });
+                                      }}
+                                      className="w-full min-h-[100px] p-2 border rounded-md"
+                                      placeholder="Enter options, one per line, will select one option when workflow start instead input value manually."
                                     />
                                   </div>
                                 </div>
@@ -739,15 +787,16 @@ export default function WorkflowBuilderDialog({
                             variables={stepVariables[selectedStepIndex!]}
                             id="tableName"
                             value={selectedStep.payload.table}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              console.log(e.target.value);
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
                                   table: e.target.value,
                                 },
-                              })
-                            }
+                              });
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
@@ -984,7 +1033,7 @@ export default function WorkflowBuilderDialog({
                             <SelectValue placeholder="Select file variable" />
                           </SelectTrigger>
                           <SelectContent>
-                            {stepVariables[0]
+                            {stepVariables[1]
                               .filter((v) => v.type === "file")
                               .map((v, idx) => (
                                 <SelectItem key={idx} value={v.path}>
@@ -993,6 +1042,26 @@ export default function WorkflowBuilderDialog({
                               ))}
                           </SelectContent>
                         </Select>
+                        <div>
+                          <Label htmlFor="importPrompt">Prompt</Label>
+                          <MentionInput
+                            id="importPrompt"
+                            className="mt-2"
+                            textarea={true}
+                            rows={3}
+                            value={selectedStep.payload.prompt}
+                            variables={stepVariables[selectedStepIndex!]}
+                            onChange={(e) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...selectedStep.payload,
+                                  prompt: e.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </div>
                       </div>
                     )}
 

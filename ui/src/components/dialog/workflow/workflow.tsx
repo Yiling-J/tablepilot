@@ -290,6 +290,9 @@ export default function WorkflowExecutionDialog({
             {/* Right column - Terminal */}
             <div className="w-full bg-gray-900 h-full rounded-lg shadow-sm overflow-auto border-amber-100/50 border-2 border-solid">
               <Terminal ref={terminalRef} running={running}>
+                {(running || (!running && events.length > 0)) && (
+                  <div className="text-cyan-400">Workflow started...</div>
+                )}
                 {events.map((event, index) => (
                   <div key={index} className="mb-3">
                     {event.type === "Message" && (
@@ -304,7 +307,7 @@ export default function WorkflowExecutionDialog({
                       ))}
                   </div>
                 ))}
-                {events.length === 0 && (
+                {events.length === 0 && !running && (
                   <div className="text-gray-500">
                     Waiting for workflow to start...
                   </div>

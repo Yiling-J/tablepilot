@@ -236,8 +236,11 @@ export function MentionInput({
     tempDiv.appendChild(mentionSpan);
     const mentionHtml = tempDiv.innerHTML;
 
+    let newHtml = beforeAt + mentionHtml;
     // Combine the parts with the mention
-    const newHtml = beforeAt + mentionHtml + " " + afterAt;
+    if (afterAt.length > 0) {
+      newHtml = newHtml + " " + afterAt;
+    }
 
     // Update the content
     inputRef.current.innerHTML = newHtml;
@@ -359,7 +362,12 @@ export function MentionInput({
   }, []);
 
   return (
-    <div className="relative">
+    <div
+      className={cn(
+        "relative",
+        textarea ? `min-h-[${rows * 24 + 16}px]` : "min-h-[40px]",
+      )}
+    >
       <div
         ref={inputRef}
         contentEditable

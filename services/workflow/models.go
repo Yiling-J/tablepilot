@@ -36,8 +36,10 @@ type WorkflowDeleteTableParams struct {
 }
 
 type WorkflowCreateColumnParams struct {
-	Table  string               `json:"table"`
-	Column table.TableGenColumn `json:"column"`
+	Table       string `json:"table"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
 }
 
 type WorkflowDeleteColumnParams struct {
@@ -67,4 +69,9 @@ type WorkflowCreateTablePayload struct {
 	SchemaFile string                       `json:"schema_file"`
 	OnExists   schema.WorkflowTableOnExists `json:"on_exists"`
 	Request    table.TableGenRequest        `json:"request"`
+}
+
+type FileInfo struct {
+	Name string
+	Data []byte
 }

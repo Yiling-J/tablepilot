@@ -34,6 +34,9 @@ var _ WorkflowService = &WorkflowServiceMock{}
 //			StartFunc: func(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error) {
 //				panic("mock out the Start method")
 //			},
+//			UpdateFunc: func(ctx context.Context, id string, wf *Workflow) (string, error) {
+//				panic("mock out the Update method")
+//			},
 //		}
 //
 //		// use mockedWorkflowService in code that requires WorkflowService
@@ -55,6 +58,9 @@ type WorkflowServiceMock struct {
 
 	// StartFunc mocks the Start method.
 	StartFunc func(ctx context.Context, id string, request StartWorklfowRequest) (Runner, error)
+
+	// UpdateFunc mocks the Update method.
+	UpdateFunc func(ctx context.Context, id string, wf *Workflow) (string, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -93,12 +99,22 @@ type WorkflowServiceMock struct {
 			// Request is the request argument value.
 			Request StartWorklfowRequest
 		}
+		// Update holds details about calls to the Update method.
+		Update []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// ID is the id argument value.
+			ID string
+			// Wf is the wf argument value.
+			Wf *Workflow
+		}
 	}
 	lockCreate sync.RWMutex
 	lockDelete sync.RWMutex
 	lockGet    sync.RWMutex
 	lockList   sync.RWMutex
 	lockStart  sync.RWMutex
+	lockUpdate sync.RWMutex
 }
 
 // Create calls CreateFunc.
@@ -278,6 +294,46 @@ func (mock *WorkflowServiceMock) StartCalls() []struct {
 	mock.lockStart.RLock()
 	calls = mock.calls.Start
 	mock.lockStart.RUnlock()
+	return calls
+}
+
+// Update calls UpdateFunc.
+func (mock *WorkflowServiceMock) Update(ctx context.Context, id string, wf *Workflow) (string, error) {
+	if mock.UpdateFunc == nil {
+		panic("WorkflowServiceMock.UpdateFunc: method is nil but WorkflowService.Update was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		ID  string
+		Wf  *Workflow
+	}{
+		Ctx: ctx,
+		ID:  id,
+		Wf:  wf,
+	}
+	mock.lockUpdate.Lock()
+	mock.calls.Update = append(mock.calls.Update, callInfo)
+	mock.lockUpdate.Unlock()
+	return mock.UpdateFunc(ctx, id, wf)
+}
+
+// UpdateCalls gets all the calls that were made to Update.
+// Check the length with:
+//
+//	len(mockedWorkflowService.UpdateCalls())
+func (mock *WorkflowServiceMock) UpdateCalls() []struct {
+	Ctx context.Context
+	ID  string
+	Wf  *Workflow
+} {
+	var calls []struct {
+		Ctx context.Context
+		ID  string
+		Wf  *Workflow
+	}
+	mock.lockUpdate.RLock()
+	calls = mock.calls.Update
+	mock.lockUpdate.RUnlock()
 	return calls
 }
 

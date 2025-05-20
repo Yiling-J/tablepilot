@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -356,12 +357,30 @@ func (hs *HTTPServer) RunWorkflow(ctx *gin.Context) {
 	for _, va := range wf.Variables {
 		if va.Type == schema.WorkflowVariableTypeFile {
 			if v, ok := request.Variables[va.Name]; ok {
-				content, err := DecodeDataURL(cast.ToString(v))
+				vt, ok := v.(map[string]any)
+				if !ok {
+					errorResponse(ctx, 500, errors.New("invalid file input"))
+					return
+				}
+				name, ok := vt["name"].(string)
+				if !ok {
+					errorResponse(ctx, 500, errors.New("invalid file input"))
+					return
+				}
+				data, ok := vt["data"].(string)
+				if !ok {
+					errorResponse(ctx, 500, errors.New("invalid file input"))
+					return
+				}
+				content, err := DecodeDataURL(data)
 				if err != nil {
 					errorResponse(ctx, 500, err)
 					return
 				}
-				request.Variables[va.Name] = content
+				request.Variables[va.Name] = workflow.FileInfo{
+					Data: content,
+					Name: name,
+				}
 			}
 		}
 	}
@@ -462,6 +481,45 @@ func (hs *HTTPServer) RunWorkflow(ctx *gin.Context) {
 	ctx.JSON(200, "")
 }
 
+func (hs *HTTPServer) CreateWorkflow(ctx *gin.Context) {
+	var wf workflow.Workflow
+	err := ctx.ShouldBindJSON(&wf)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	id, err := hs.WorkflowService.Create(ctx.Request.Context(), &wf)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, gin.H{"id": id})
+}
+
+func (hs *HTTPServer) UpdateWorkflow(ctx *gin.Context) {
+	var wf workflow.Workflow
+	err := ctx.ShouldBindJSON(&wf)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+	id, err := hs.WorkflowService.Update(ctx.Request.Context(), ctx.Param("id"), &wf)
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, gin.H{"id": id})
+}
+
+func (hs *HTTPServer) DeleteWorkflow(ctx *gin.Context) {
+	err := hs.WorkflowService.Delete(ctx.Request.Context(), ctx.Param("id"))
+	if err != nil {
+		errorResponse(ctx, 500, err)
+		return
+	}
+	ctx.JSON(200, "")
+}
+
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)
@@ -487,4 +545,7 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/workflows", hs.ListWorkflows)
 	hs.apiv1.GET("/workflows/:id", hs.GetWorkflow)
 	hs.apiv1.POST("/workflows/:workflow/run", hs.RunWorkflow)
+	hs.apiv1.POST("/workflows", hs.CreateWorkflow)
+	hs.apiv1.PATCH("/workflows/:id", hs.UpdateWorkflow)
+	hs.apiv1.DELETE("/workflows/:id", hs.DeleteWorkflow)
 }
