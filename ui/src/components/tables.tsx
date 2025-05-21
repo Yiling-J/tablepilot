@@ -25,18 +25,34 @@ import { cn } from "@/lib/utils";
 import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import WorkflowBuilderDialog from "./dialog/workflow/builder.tsx";
 import WorkflowExecutionDialog from "./dialog/workflow/workflow.tsx";
 import { TablepilotHeader } from "./header.tsx";
 
 export function TableListPage() {
-  const [tab, setTab] = useState("tables");
-  // const [refreshKey, setRefreshKey] = useState(0); // Removed
-  // const handleRefresh = useCallback(async () => { // Removed
-  //   setRefreshKey(prevKey => prevKey + 1);
-  // }, []);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Initial tab state based on current URL path
+  const [tab, setTab] = useState(() =>
+    location.pathname.startsWith("/workflows") ? "workflows" : "tables"
+  );
+
+  // Effect to update tab state if URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    if (location.pathname.startsWith("/workflows")) {
+      setTab("workflows");
+    } else {
+      // Defaults to "tables" for "/tables" or any other path reaching here
+      setTab("tables");
+    }
+  }, [location.pathname]);
+
+  const handleTabChange = (newTab: string) => {
+    navigate(`/${newTab}`); // newTab will be "tables" or "workflows"
+  };
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -44,7 +60,7 @@ export function TableListPage() {
       <TablepilotHeader
         title="Tablepilot"
         currentTab={tab}
-        onTabChange={setTab}
+        onTabChange={handleTabChange}
         // onRefresh={handleRefresh} // Removed
       />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
@@ -68,7 +84,7 @@ function TableList(/*{ refreshKey }: TableListProps*/) { // Removed refreshKey f
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
   const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { refreshTables } = useTables();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // This instance is for TableList's own navigation needs, separate from TableListPage
 
   const fetchTables = useCallback(async () => {
     setLoading(true);

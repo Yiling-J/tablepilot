@@ -8,7 +8,7 @@ import "./index.css";
 
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "react-hot-toast";
-import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
 import { Sidebar } from "./components/sidebar.tsx";
 import { SidebarProvider } from "./context/sidebar.tsx";
 import { TablesProvider } from "./context/tables.tsx";
@@ -37,11 +37,15 @@ const router = createBrowserRouter([
             </div>
           </div>
         ),
-        children: [{ path: "/tables/:id", element: <TablePage /> }],
+        children: [
+          { path: "/tables/:id", element: <TablePage /> },
+          { path: "/tables", element: <TableListPage /> },
+          { path: "/workflows", element: <TableListPage /> },
+        ],
       },
       {
         path: "/",
-        element: <TableListPage />,
+        element: <Navigate to="/tables" replace />,
       },
     ],
   },
