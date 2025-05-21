@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ContextVariable, MentionInput } from "@/components/ui/var-input";
+import { AutofillInput } from "../autofill-input";
 import { CreateTableDialog } from "../create-table";
 
 interface StepContext {
@@ -1117,6 +1118,14 @@ export default function WorkflowBuilderDialog({
                             </SelectContent>
                           </Select>
                         </div>
+                        <AutofillInput
+                          columns={
+                            stepContexts[selectedStepIndex!].tables.find(
+                              (t) => t.id === selectedStep.payload.table,
+                            )?.columns ?? []
+                          }
+                          onChange={(columns, contextColumns) => {}}
+                        />
                         <div className="space-y-2">
                           <Label htmlFor="generateCount">Count</Label>
                           <NumberInput
@@ -1144,30 +1153,6 @@ export default function WorkflowBuilderDialog({
                                 payload: {
                                   ...selectedStep.payload,
                                   batch: e ?? 2,
-                                },
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="generateBatch">Columns</Label>
-                          <MentionInput
-                            id="AutofillColumns"
-                            placeholder="Columns need to be autofilled, one per line. Use @ to reference columns from previous steps. Columns will be autofilled automatically."
-                            value={selectedStep.payload.columns.join("\n")}
-                            variables={
-                              stepContexts[selectedStepIndex!].variables
-                            }
-                            rows={3}
-                            textarea={true}
-                            onChange={(e) =>
-                              updateStep({
-                                type: selectedStep.type,
-                                payload: {
-                                  ...selectedStep.payload,
-                                  columns: e.target.value
-                                    .split("\n")
-                                    .map((v) => v.trim()),
                                 },
                               })
                             }

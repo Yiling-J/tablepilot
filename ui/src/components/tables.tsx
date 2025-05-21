@@ -99,7 +99,7 @@ function TableList() {
     // refreshTables() from context was removed as fetchTables handles local data.
     // If global context needs refresh, it should be handled more explicitly if needed,
     // or the component consuming global context should use refreshTables itself.
-  }, [fetchTables]); // refreshKey removed from dependency array
+  }, [fetchTables]);
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -209,7 +209,7 @@ function WorkflowList() {
 
   useEffect(() => {
     refreshWorkflows();
-  }, [refreshWorkflows]); // refreshKey removed from dependency array
+  }, [refreshWorkflows]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
