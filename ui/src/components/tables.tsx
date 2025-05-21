@@ -21,11 +21,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
-import { cn } from "@/lib/utils";
 import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
 import { SettingsIcon } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import WorkflowBuilderDialog from "./dialog/workflow/builder.tsx";
 import WorkflowExecutionDialog from "./dialog/workflow/workflow.tsx";
@@ -37,7 +36,7 @@ export function TableListPage() {
 
   // Initial tab state based on current URL path
   const [tab, setTab] = useState(() =>
-    location.pathname.startsWith("/workflows") ? "workflows" : "tables"
+    location.pathname.startsWith("/workflows") ? "workflows" : "tables",
   );
 
   // Effect to update tab state if URL changes (e.g., browser back/forward)
@@ -74,17 +73,13 @@ export function TableListPage() {
   );
 }
 
-// interface TableListProps { // Removed refreshKey
-//   refreshKey: number;
-// }
-
-function TableList(/*{ refreshKey }: TableListProps*/) { // Removed refreshKey from props destructuring
+function TableList() {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
   const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { refreshTables } = useTables();
-  const navigate = useNavigate(); // This instance is for TableList's own navigation needs, separate from TableListPage
+  const navigate = useNavigate();
 
   const fetchTables = useCallback(async () => {
     setLoading(true);
@@ -191,11 +186,8 @@ function TableList(/*{ refreshKey }: TableListProps*/) { // Removed refreshKey f
   );
 }
 
-// interface WorkflowListProps { // Removed refreshKey
-//   refreshKey: number;
-// }
-
-function WorkflowList(/*{ refreshKey }: WorkflowListProps*/) { // Removed refreshKey from props destructuring
+function WorkflowList() {
+  // Removed refreshKey from props destructuring
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
