@@ -53,6 +53,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
 import { ContextVariable, MentionInput } from "@/components/ui/var-input";
 import { CreateTableDialog } from "../create-table";
 
@@ -245,7 +246,17 @@ export default function WorkflowBuilderDialog({
       case "DeleteColumn":
         return { type, payload: { table: "", column: "" } };
       case "Import":
-        return { type, payload: { file: "", prompt: "" } };
+      return {
+        type,
+        payload: {
+          file: "",
+          prompt: "",
+          importOption: "Create new table", // Added: Default option
+          name: "",                         // Added: Default to empty string
+          table: "",                        // Added: Default to empty string
+          truncate: false,                  // Added: Default to false
+        },
+      };
       case "Generate":
         return { type, payload: { count: 20, batch: 5, table: "" } };
       case "Autofill":
@@ -390,7 +401,29 @@ export default function WorkflowBuilderDialog({
           wf.variables = (s.payload as UserInputStepPayload).variables;
           break;
         default:
-          wf.steps.push(s);
+          let stepToPush = s;
+          if (s.type === "Import") {
+            const originalPayload = s.payload as ImportDataStepPayload;
+            const newPayload: Partial<ImportDataStepPayload> = { // Use Partial to build up
+              file: originalPayload.file,
+              prompt: originalPayload.prompt,
+              importOption: originalPayload.importOption,
+            };
+
+            if (originalPayload.importOption === "Create new table") {
+              newPayload.name = originalPayload.name;
+              // `truncate` should probably be false if it's a new table.
+              // `table` should be undefined/omitted.
+              newPayload.truncate = false;
+            } else { // "Import into existing table"
+              newPayload.table = originalPayload.table;
+              newPayload.truncate = originalPayload.truncate;
+              // `name` should be undefined/omitted.
+            }
+            stepToPush = { ...s, payload: newPayload as ImportDataStepPayload };
+          }
+          wf.steps.push(stepToPush);
+          break; 
       }
     });
     if (id) {
@@ -1151,41 +1184,136 @@ export default function WorkflowBuilderDialog({
 
                     {/* ImportData properties */}
                     {selectedStep.type === "Import" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="importFile">File Variable</Label>
-                        <Select
-                          value={selectedStep.payload.file}
-                          onValueChange={(value) =>
-                            updateStep({
-                              type: selectedStep.type,
-                              payload: {
-                                ...selectedStep.payload,
-                                file: value,
-                              },
-                            })
-                          }
-                        >
-                          <SelectTrigger id="importFile">
-                            <SelectValue placeholder="Select file variable" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {stepContexts[1].variables
-                              .filter((v) => v.type === "file")
-                              .map((v, idx) => (
-                                <SelectItem key={idx} value={v.path}>
-                                  {v.display}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                        <div>
+                      <div className="space-y-4"> {/* Increased spacing */}
+                        {/* File Variable Select */}
+                        <div className="space-y-2">
+                          <Label htmlFor="importFile">File Variable</Label>
+                          <Select
+                            value={(selectedStep.payload as ImportDataStepPayload).file}
+                            onValueChange={(value) =>
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: {
+                                  ...(selectedStep.payload as ImportDataStepPayload),
+                                  file: value,
+                                },
+                              })
+                            }
+                          >
+                            <SelectTrigger id="importFile">
+                              <SelectValue placeholder="Select file variable" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stepContexts[1].variables
+                                .filter((v) => v.type === "file")
+                                .map((v, idx) => (
+                                  <SelectItem key={idx} value={v.path}>
+                                    {v.display}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Import Option Select */}
+                        <div className="space-y-2">
+                          <Label htmlFor="importOption">Import Option</Label>
+                          <Select
+                            value={(selectedStep.payload as ImportDataStepPayload).importOption}
+                            onValueChange={(value) => {
+                              const newPayload = { ...(selectedStep.payload as ImportDataStepPayload), importOption: value };
+                              if (value === "Create new table") {
+                                newPayload.table = "";
+                                newPayload.truncate = false;
+                              } else { // "Import into existing table"
+                                newPayload.name = "";
+                              }
+                              updateStep({
+                                type: selectedStep.type,
+                                payload: newPayload,
+                              });
+                            }}
+                          >
+                            <SelectTrigger id="importOption">
+                              <SelectValue placeholder="Select import option" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Create new table">Create new table</SelectItem>
+                              <SelectItem value="Import into existing table">Import into existing table</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Conditional Fields */}
+                        {(selectedStep.payload as ImportDataStepPayload).importOption === "Create new table" && (
+                          <div className="space-y-2">
+                            <Label htmlFor="newTableName">New Table Name</Label>
+                            <MentionInput
+                              id="newTableName"
+                              variables={stepContexts[selectedStepIndex!].variables}
+                              value={(selectedStep.payload as ImportDataStepPayload).name ?? ""}
+                              onChange={(e) =>
+                                updateStep({
+                                  type: selectedStep.type,
+                                  payload: { ...(selectedStep.payload as ImportDataStepPayload), name: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+
+                        {(selectedStep.payload as ImportDataStepPayload).importOption === "Import into existing table" && (
+                          <>
+                            <div className="space-y-2">
+                              <Label htmlFor="existingTableName">Select Table</Label>
+                              <Select
+                                value={(selectedStep.payload as ImportDataStepPayload).table ?? ""}
+                                onValueChange={(value) =>
+                                  updateStep({
+                                    type: selectedStep.type,
+                                    payload: { ...(selectedStep.payload as ImportDataStepPayload), table: value },
+                                  })
+                                }
+                              >
+                                <SelectTrigger id="existingTableName">
+                                  <SelectValue placeholder="Select existing table" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {existingTables.current.map((t) => (
+                                    <SelectItem key={t.id} value={t.id}>
+                                      {t.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Checkbox
+                                id="truncateTable"
+                                checked={(selectedStep.payload as ImportDataStepPayload).truncate}
+                                onCheckedChange={(checked) =>
+                                  updateStep({
+                                    type: selectedStep.type,
+                                    payload: { ...(selectedStep.payload as ImportDataStepPayload), truncate: !!checked },
+                                  })
+                                }
+                              />
+                              <Label htmlFor="truncateTable" className="cursor-pointer">
+                                Truncate table before import
+                              </Label>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Prompt */}
+                        <div className="space-y-2">
                           <Label htmlFor="importPrompt">Prompt</Label>
                           <MentionInput
                             id="importPrompt"
                             className="mt-2"
                             textarea={true}
                             rows={3}
-                            value={selectedStep.payload.prompt}
+                            value={(selectedStep.payload as ImportDataStepPayload).prompt}
                             variables={
                               stepContexts[selectedStepIndex!].variables
                             }
@@ -1193,7 +1321,7 @@ export default function WorkflowBuilderDialog({
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
-                                  ...selectedStep.payload,
+                                  ...(selectedStep.payload as ImportDataStepPayload),
                                   prompt: e.target.value,
                                 },
                               })

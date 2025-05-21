@@ -567,9 +567,10 @@ export interface DeleteColumnStepPayload {
 }
 
 export interface ImportDataStepPayload {
-  table: string;
+  importOption: string;
+  table?: string;
   truncate: boolean;
-  name: string;
+  name?: string;
   file: string;
   prompt: string;
 }
