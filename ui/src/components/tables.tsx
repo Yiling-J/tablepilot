@@ -82,8 +82,10 @@ function TableList({ refreshKey }: TableListProps) {
 
   useEffect(() => {
     fetchTables();
-    refreshTables(); // This context function might also need adjustment if it has its own fetch
-  }, [refreshKey, fetchTables, refreshTables]);
+    // refreshTables() from context was removed as fetchTables handles local data.
+    // If global context needs refresh, it should be handled more explicitly if needed,
+    // or the component consuming global context should use refreshTables itself.
+  }, [refreshKey, fetchTables]);
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">

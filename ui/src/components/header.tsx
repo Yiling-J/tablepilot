@@ -94,54 +94,43 @@ export function TablepilotHeader({
   return (
     <div>
       <header className="sticky top-0 font-bold flex items-center gap-4 border-b bg-background px-4 md:px-6 justify-between py-2">
-        <div className="flex items-center text-xl tracking-wider">
-          {collapsed && (
-            <ChevronRightIcon
-              className="mr-2 cursor-pointer"
-              onClick={() => setCollapsed(false)}
-            />
-          )}
-          {title}
-        </div>
-        <div className="relative flex items-center">
+        {/* Left Group (Tabs, Title & Sidebar Toggle) */}
+        <div className="flex items-center gap-x-6">
+          {/* Tables/Workflows switch (only if currentTab and onTabChange are provided) */}
           {currentTab && onTabChange && (
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                className="rounded-full"
-                onClick={() => onTabChange("tables")}
-              >
-                <h1
-                  className={cn(
-                    "text-xl font-bold tracking-wider",
-                    currentTab !== "tables" && "text-primary/25",
-                  )}
-                >
+            <div className="flex items-center"> {/* Container for the two tabs */}
+              <Button variant="ghost" onClick={() => onTabChange("tables")}>
+                <h1 className={cn("text-lg font-medium py-2 px-3", currentTab === "tables" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
                   Tables
                 </h1>
               </Button>
-              <p className="mx-2 text-xl font-bold">/</p>
-              <Button
-                variant="ghost"
-                className="rounded-full"
-                onClick={() => onTabChange("workflows")}
-              >
-                <h1
-                  className={cn(
-                    "text-xl font-bold tracking-wider",
-                    currentTab !== "workflows" && "text-primary/25",
-                  )}
-                >
+              <Button variant="ghost" onClick={() => onTabChange("workflows")}>
+                <h1 className={cn("text-lg font-medium py-2 px-3", currentTab === "workflows" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
                   Workflows
                 </h1>
               </Button>
             </div>
           )}
+
+          {/* Title and Sidebar Toggle */}
+          <div className="flex items-center text-xl tracking-wider">
+            {collapsed && (
+              <ChevronRightIcon
+                className="mr-2 cursor-pointer"
+                onClick={() => setCollapsed(false)}
+              />
+            )}
+            {title}
+          </div>
+        </div>
+
+        {/* Right Group (Controls: Refresh, ModeSwitch, Avatar) */}
+        <div className="relative flex items-center">
           {onRefresh && (
             <Button
               variant="outline"
               onClick={onRefresh}
-              className="ml-4 mr-4" // Added margin for spacing
+              className="ml-4 mr-4" // Keep existing margin or adjust as needed
             >
               <ReloadIcon className="w-6 h-6 mr-2" />
               Refresh
