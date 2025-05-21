@@ -28,6 +28,7 @@ import {
     updateWorkflow,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
 import {
     Dialog,
     DialogContent,
@@ -53,7 +54,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
 import { ContextVariable, MentionInput } from "@/components/ui/var-input";
 import { CreateTableDialog } from "../create-table";
 
@@ -94,6 +94,7 @@ export default function WorkflowBuilderDialog({
   const onOpen = async () => {
     await fetchTables();
     if (workflow) {
+      setWorkflowName(workflow.name);
       const wsteps: TypedWorkflowStep[] = [
         {
           type: "UserInput",
@@ -246,17 +247,16 @@ export default function WorkflowBuilderDialog({
       case "DeleteColumn":
         return { type, payload: { table: "", column: "" } };
       case "Import":
-      return {
-        type,
-        payload: {
-          file: "",
-          prompt: "",
-          importOption: "Create new table", // Added: Default option
-          name: "",                         // Added: Default to empty string
-          table: "",                        // Added: Default to empty string
-          truncate: false,                  // Added: Default to false
-        },
-      };
+        return {
+          type,
+          payload: {
+            file: "",
+            prompt: "",
+            name: "", // Added: Default to empty string
+            table: "", // Added: Default to empty string
+            truncate: false, // Added: Default to false
+          },
+        };
       case "Generate":
         return { type, payload: { count: 20, batch: 5, table: "" } };
       case "Autofill":
@@ -401,29 +401,8 @@ export default function WorkflowBuilderDialog({
           wf.variables = (s.payload as UserInputStepPayload).variables;
           break;
         default:
-          let stepToPush = s;
-          if (s.type === "Import") {
-            const originalPayload = s.payload as ImportDataStepPayload;
-            const newPayload: Partial<ImportDataStepPayload> = { // Use Partial to build up
-              file: originalPayload.file,
-              prompt: originalPayload.prompt,
-              importOption: originalPayload.importOption,
-            };
-
-            if (originalPayload.importOption === "Create new table") {
-              newPayload.name = originalPayload.name;
-              // `truncate` should probably be false if it's a new table.
-              // `table` should be undefined/omitted.
-              newPayload.truncate = false;
-            } else { // "Import into existing table"
-              newPayload.table = originalPayload.table;
-              newPayload.truncate = originalPayload.truncate;
-              // `name` should be undefined/omitted.
-            }
-            stepToPush = { ...s, payload: newPayload as ImportDataStepPayload };
-          }
-          wf.steps.push(stepToPush);
-          break; 
+          wf.steps.push(s);
+          break;
       }
     });
     if (id) {
@@ -1184,12 +1163,17 @@ export default function WorkflowBuilderDialog({
 
                     {/* ImportData properties */}
                     {selectedStep.type === "Import" && (
-                      <div className="space-y-4"> {/* Increased spacing */}
+                      <div className="space-y-4">
+                        {" "}
+                        {/* Increased spacing */}
                         {/* File Variable Select */}
                         <div className="space-y-2">
                           <Label htmlFor="importFile">File Variable</Label>
                           <Select
-                            value={(selectedStep.payload as ImportDataStepPayload).file}
+                            value={
+                              (selectedStep.payload as ImportDataStepPayload)
+                                .file
+                            }
                             onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
@@ -1214,19 +1198,28 @@ export default function WorkflowBuilderDialog({
                             </SelectContent>
                           </Select>
                         </div>
-
                         {/* Import Option Select */}
                         <div className="space-y-2">
                           <Label htmlFor="importOption">Import Option</Label>
                           <Select
-                            value={(selectedStep.payload as ImportDataStepPayload).importOption}
+                            value={
+                              (selectedStep.payload as ImportDataStepPayload)
+                                .table === ""
+                                ? "Create new table"
+                                : "Import into existing table"
+                            }
                             onValueChange={(value) => {
-                              const newPayload = { ...(selectedStep.payload as ImportDataStepPayload), importOption: value };
+                              const newPayload = {
+                                ...(selectedStep.payload as ImportDataStepPayload),
+                                importOption: value,
+                              };
                               if (value === "Create new table") {
                                 newPayload.table = "";
                                 newPayload.truncate = false;
-                              } else { // "Import into existing table"
+                              } else {
+                                // "Import into existing table"
                                 newPayload.name = "";
+                                newPayload.table = "__select__";
                               }
                               updateStep({
                                 type: selectedStep.type,
@@ -1238,40 +1231,61 @@ export default function WorkflowBuilderDialog({
                               <SelectValue placeholder="Select import option" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Create new table">Create new table</SelectItem>
-                              <SelectItem value="Import into existing table">Import into existing table</SelectItem>
+                              <SelectItem value="Create new table">
+                                Create new table
+                              </SelectItem>
+                              <SelectItem value="Import into existing table">
+                                Import into existing table
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-
                         {/* Conditional Fields */}
-                        {(selectedStep.payload as ImportDataStepPayload).importOption === "Create new table" && (
+                        {(selectedStep.payload as ImportDataStepPayload)
+                          .table === "" && (
                           <div className="space-y-2">
                             <Label htmlFor="newTableName">New Table Name</Label>
                             <MentionInput
                               id="newTableName"
-                              variables={stepContexts[selectedStepIndex!].variables}
-                              value={(selectedStep.payload as ImportDataStepPayload).name ?? ""}
+                              variables={
+                                stepContexts[selectedStepIndex!].variables
+                              }
+                              value={
+                                (selectedStep.payload as ImportDataStepPayload)
+                                  .name ?? ""
+                              }
                               onChange={(e) =>
                                 updateStep({
                                   type: selectedStep.type,
-                                  payload: { ...(selectedStep.payload as ImportDataStepPayload), name: e.target.value },
+                                  payload: {
+                                    ...(selectedStep.payload as ImportDataStepPayload),
+                                    name: e.target.value,
+                                  },
                                 })
                               }
                             />
                           </div>
                         )}
-
-                        {(selectedStep.payload as ImportDataStepPayload).importOption === "Import into existing table" && (
+                        {(selectedStep.payload as ImportDataStepPayload)
+                          .table !== "" && (
                           <>
                             <div className="space-y-2">
-                              <Label htmlFor="existingTableName">Select Table</Label>
+                              <Label htmlFor="existingTableName">
+                                Select Table
+                              </Label>
                               <Select
-                                value={(selectedStep.payload as ImportDataStepPayload).table ?? ""}
+                                value={
+                                  (
+                                    selectedStep.payload as ImportDataStepPayload
+                                  ).table ?? ""
+                                }
                                 onValueChange={(value) =>
                                   updateStep({
                                     type: selectedStep.type,
-                                    payload: { ...(selectedStep.payload as ImportDataStepPayload), table: value },
+                                    payload: {
+                                      ...(selectedStep.payload as ImportDataStepPayload),
+                                      table: value,
+                                    },
                                   })
                                 }
                               >
@@ -1290,21 +1304,30 @@ export default function WorkflowBuilderDialog({
                             <div className="flex items-center space-x-2 mt-2">
                               <Checkbox
                                 id="truncateTable"
-                                checked={(selectedStep.payload as ImportDataStepPayload).truncate}
+                                checked={
+                                  (
+                                    selectedStep.payload as ImportDataStepPayload
+                                  ).truncate
+                                }
                                 onCheckedChange={(checked) =>
                                   updateStep({
                                     type: selectedStep.type,
-                                    payload: { ...(selectedStep.payload as ImportDataStepPayload), truncate: !!checked },
+                                    payload: {
+                                      ...(selectedStep.payload as ImportDataStepPayload),
+                                      truncate: !!checked,
+                                    },
                                   })
                                 }
                               />
-                              <Label htmlFor="truncateTable" className="cursor-pointer">
+                              <Label
+                                htmlFor="truncateTable"
+                                className="cursor-pointer"
+                              >
                                 Truncate table before import
                               </Label>
                             </div>
                           </>
                         )}
-
                         {/* Prompt */}
                         <div className="space-y-2">
                           <Label htmlFor="importPrompt">Prompt</Label>
@@ -1313,7 +1336,10 @@ export default function WorkflowBuilderDialog({
                             className="mt-2"
                             textarea={true}
                             rows={3}
-                            value={(selectedStep.payload as ImportDataStepPayload).prompt}
+                            value={
+                              (selectedStep.payload as ImportDataStepPayload)
+                                .prompt
+                            }
                             variables={
                               stepContexts[selectedStepIndex!].variables
                             }
