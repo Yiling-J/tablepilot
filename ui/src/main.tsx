@@ -37,14 +37,16 @@ const router = createBrowserRouter([
             </div>
           </div>
         ),
-        children: [
+        children: [ // Routes that WILL have the Sidebar
           { path: "/tables/:id", element: <TablePage /> },
-          { path: "/tables", element: <TableListPage /> },
-          { path: "/workflows", element: <TableListPage /> },
+          // Add other routes that need the sidebar here
         ],
       },
+      // Routes that will NOT have the Sidebar (rendered directly into the root Outlet)
+      { path: "/tables", element: <TableListPage /> },
+      { path: "/workflows", element: <TableListPage /> },
       {
-        path: "/",
+        path: "/", // Root redirect
         element: <Navigate to="/tables" replace />,
       },
     ],
