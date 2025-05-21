@@ -33,11 +33,10 @@ import { TablepilotHeader } from "./header.tsx";
 
 export function TableListPage() {
   const [tab, setTab] = useState("tables");
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleRefresh = useCallback(async () => {
-    setRefreshKey(prevKey => prevKey + 1);
-  }, []);
+  // const [refreshKey, setRefreshKey] = useState(0); // Removed
+  // const handleRefresh = useCallback(async () => { // Removed
+  //   setRefreshKey(prevKey => prevKey + 1);
+  // }, []);
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -46,20 +45,21 @@ export function TableListPage() {
         title="Tablepilot"
         currentTab={tab}
         onTabChange={setTab}
-        onRefresh={handleRefresh}
+        // onRefresh={handleRefresh} // Removed
       />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
-        {tab === "tables" ? <TableList refreshKey={refreshKey} /> : <WorkflowList refreshKey={refreshKey} />}
+        {/* refreshKey prop removed from TableList and WorkflowList */}
+        {tab === "tables" ? <TableList /> : <WorkflowList />}
       </div>
     </div>
   );
 }
 
-interface TableListProps {
-  refreshKey: number;
-}
+// interface TableListProps { // Removed refreshKey
+//   refreshKey: number;
+// }
 
-function TableList({ refreshKey }: TableListProps) {
+function TableList(/*{ refreshKey }: TableListProps*/) { // Removed refreshKey from props destructuring
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
@@ -85,7 +85,7 @@ function TableList({ refreshKey }: TableListProps) {
     // refreshTables() from context was removed as fetchTables handles local data.
     // If global context needs refresh, it should be handled more explicitly if needed,
     // or the component consuming global context should use refreshTables itself.
-  }, [refreshKey, fetchTables]);
+  }, [fetchTables]); // refreshKey removed from dependency array
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -172,11 +172,11 @@ function TableList({ refreshKey }: TableListProps) {
   );
 }
 
-interface WorkflowListProps {
-  refreshKey: number;
-}
+// interface WorkflowListProps { // Removed refreshKey
+//   refreshKey: number;
+// }
 
-function WorkflowList({ refreshKey }: WorkflowListProps) {
+function WorkflowList(/*{ refreshKey }: WorkflowListProps*/) { // Removed refreshKey from props destructuring
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
@@ -198,7 +198,7 @@ function WorkflowList({ refreshKey }: WorkflowListProps) {
 
   useEffect(() => {
     refreshWorkflows();
-  }, [refreshKey, refreshWorkflows]);
+  }, [refreshWorkflows]); // refreshKey removed from dependency array
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">

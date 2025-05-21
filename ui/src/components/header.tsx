@@ -70,7 +70,7 @@ interface TablepilotHeaderProps {
   modeSwitchDisabled?: boolean;
   currentTab?: string;
   onTabChange?: (tabName: string) => void;
-  onRefresh?: () => void;
+  // onRefresh?: () => void; // Removed
 }
 
 export function TablepilotHeader({
@@ -79,7 +79,7 @@ export function TablepilotHeader({
   modeSwitchDisabled,
   currentTab,
   onTabChange,
-  onRefresh,
+  // onRefresh, // Removed
 }: TablepilotHeaderProps) {
   const { collapsed, setCollapsed } = useSidebar();
 
@@ -94,24 +94,8 @@ export function TablepilotHeader({
   return (
     <div>
       <header className="sticky top-0 font-bold flex items-center gap-4 border-b bg-background px-4 md:px-6 justify-between py-2">
-        {/* Left Group (Tabs, Title & Sidebar Toggle) */}
+        {/* Left Group (Title & Sidebar Toggle, THEN Tabs) */}
         <div className="flex items-center gap-x-6">
-          {/* Tables/Workflows switch (only if currentTab and onTabChange are provided) */}
-          {currentTab && onTabChange && (
-            <div className="flex items-center"> {/* Container for the two tabs */}
-              <Button variant="ghost" onClick={() => onTabChange("tables")}>
-                <h1 className={cn("text-lg font-medium py-2 px-3", currentTab === "tables" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
-                  Tables
-                </h1>
-              </Button>
-              <Button variant="ghost" onClick={() => onTabChange("workflows")}>
-                <h1 className={cn("text-lg font-medium py-2 px-3", currentTab === "workflows" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
-                  Workflows
-                </h1>
-              </Button>
-            </div>
-          )}
-
           {/* Title and Sidebar Toggle */}
           <div className="flex items-center text-xl tracking-wider">
             {collapsed && (
@@ -122,20 +106,27 @@ export function TablepilotHeader({
             )}
             {title}
           </div>
+
+          {/* Tables/Workflows switch (only if currentTab and onTabChange are provided) */}
+          {currentTab && onTabChange && (
+            <div className="flex items-center"> {/* Container for the two tabs */}
+              <Button variant="ghost" onClick={() => onTabChange("tables")}>
+                <h1 className={cn("text-base font-medium py-2 px-3", currentTab === "tables" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
+                  Tables
+                </h1>
+              </Button>
+              <Button variant="ghost" onClick={() => onTabChange("workflows")}>
+                <h1 className={cn("text-base font-medium py-2 px-3", currentTab === "workflows" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
+                  Workflows
+                </h1>
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Right Group (Controls: Refresh, ModeSwitch, Avatar) */}
+        {/* Right Group (Controls: ModeSwitch, Avatar) */}
         <div className="relative flex items-center">
-          {onRefresh && (
-            <Button
-              variant="outline"
-              onClick={onRefresh}
-              className="ml-4 mr-4" // Keep existing margin or adjust as needed
-            >
-              <ReloadIcon className="w-6 h-6 mr-2" />
-              Refresh
-            </Button>
-          )}
+          {/* Refresh button removed */}
           {modeRef && (
             <ModeSwitch
               modeRef={modeRef}
