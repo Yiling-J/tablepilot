@@ -1,7 +1,8 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/context/sidebar";
 import { cn } from "@/lib/utils";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { ChevronRightIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { IconGithub } from "./ui/icons";
 
@@ -67,12 +68,18 @@ interface TablepilotHeaderProps {
   title: string;
   modeRef?: React.MutableRefObject<"generate" | "autofill">;
   modeSwitchDisabled?: boolean;
+  currentTab?: string;
+  onTabChange?: (tabName: string) => void;
+  onRefresh?: () => void;
 }
 
 export function TablepilotHeader({
   title,
   modeRef,
   modeSwitchDisabled,
+  currentTab,
+  onTabChange,
+  onRefresh,
 }: TablepilotHeaderProps) {
   const { collapsed, setCollapsed } = useSidebar();
 
@@ -96,7 +103,50 @@ export function TablepilotHeader({
           )}
           {title}
         </div>
-        <div className="relative flex">
+        <div className="relative flex items-center">
+          {currentTab && onTabChange && (
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                className="rounded-full"
+                onClick={() => onTabChange("tables")}
+              >
+                <h1
+                  className={cn(
+                    "text-xl font-bold tracking-wider",
+                    currentTab !== "tables" && "text-primary/25",
+                  )}
+                >
+                  Tables
+                </h1>
+              </Button>
+              <p className="mx-2 text-xl font-bold">/</p>
+              <Button
+                variant="ghost"
+                className="rounded-full"
+                onClick={() => onTabChange("workflows")}
+              >
+                <h1
+                  className={cn(
+                    "text-xl font-bold tracking-wider",
+                    currentTab !== "workflows" && "text-primary/25",
+                  )}
+                >
+                  Workflows
+                </h1>
+              </Button>
+            </div>
+          )}
+          {onRefresh && (
+            <Button
+              variant="outline"
+              onClick={onRefresh}
+              className="ml-4 mr-4" // Added margin for spacing
+            >
+              <ReloadIcon className="w-6 h-6 mr-2" />
+              Refresh
+            </Button>
+          )}
           {modeRef && (
             <ModeSwitch
               modeRef={modeRef}

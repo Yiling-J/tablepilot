@@ -22,9 +22,9 @@ import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import { cn } from "@/lib/utils";
-import { FileIcon, PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
 import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import WorkflowBuilderDialog from "./dialog/workflow/builder.tsx";
@@ -33,56 +33,33 @@ import { TablepilotHeader } from "./header.tsx";
 
 export function TableListPage() {
   const [tab, setTab] = useState("tables");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  }, []);
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
       <ModeToggle hide={true} />
-      <TablepilotHeader title="Tablepilot" />
+      <TablepilotHeader
+        title="Tablepilot"
+        currentTab={tab}
+        onTabChange={setTab}
+        onRefresh={handleRefresh}
+      />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              className="rounded-full"
-              onClick={() => setTab("tables")}
-            >
-              <h1
-                className={cn(
-                  "text-xl font-bold tracking-wider",
-                  tab === "tables" ? "" : "text-primary/25",
-                )}
-              >
-                Tables
-              </h1>
-            </Button>
-            <p className="mx-2 text-xl font-bold">/</p>
-            <Button
-              className="rounded-full"
-              variant="ghost"
-              onClick={() => setTab("workflows")}
-            >
-              <h1
-                className={cn(
-                  "text-xl font-bold tracking-wider",
-                  tab === "workflows" ? "" : "text-primary/25",
-                )}
-              >
-                Workflows
-              </h1>
-            </Button>
-          </div>
-          <Button variant="outline" onClick={() => {}}>
-            <ReloadIcon className="w-6 h-6 mr-2" />
-            Refresh
-          </Button>
-        </div>
-        {tab === "tables" ? <TableList /> : <WorkflowList />}
+        {tab === "tables" ? <TableList refreshKey={refreshKey} /> : <WorkflowList refreshKey={refreshKey} />}
       </div>
     </div>
   );
 }
 
-function TableList() {
+interface TableListProps {
+  refreshKey: number;
+}
+
+function TableList({ refreshKey }: TableListProps) {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
@@ -90,16 +67,23 @@ function TableList() {
   const { refreshTables } = useTables();
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchTables = useCallback(async () => {
     setLoading(true);
-    fetchTables().finally(() => setLoading(false));
-    refreshTables();
+    try {
+      const response = await getTables();
+      setTables(response.tables ?? []);
+    } catch (error) {
+      console.error("Failed to fetch tables:", error);
+      setTables([]); // Set to empty array on error
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchTables = async () => {
-    const response = await getTables();
-    setTables(response.tables ?? []);
-  };
+  useEffect(() => {
+    fetchTables();
+    refreshTables(); // This context function might also need adjustment if it has its own fetch
+  }, [refreshKey, fetchTables, refreshTables]);
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -145,11 +129,11 @@ function TableList() {
                     variant="destructive"
                     onClick={async (e) => {
                       e.stopPropagation();
-                      setLoading(true);
+                      // No need to setLoading(true) here as fetchTables handles it.
                       await deleteTable(table.id);
-                      await fetchTables();
-                      refreshTables();
-                      setLoading(false);
+                      await fetchTables(); // Refetch after delete
+                      refreshTables(); // Context refresh
+                      // No need to setLoading(false) here
                     }}
                   >
                     Delete
@@ -186,23 +170,33 @@ function TableList() {
   );
 }
 
-function WorkflowList() {
+interface WorkflowListProps {
+  refreshKey: number;
+}
+
+function WorkflowList({ refreshKey }: WorkflowListProps) {
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
   const [runWorkflowOpen, setRunWorkflowOpen] = useState(false);
   const [WorkflowBuilderOpen, setRunWorkflowBuilderOpen] = useState(false);
 
-  const refreshWorkflows = async () => {
+  const refreshWorkflows = useCallback(async () => {
     setLoading(true);
-    const wf = await getWorkflows();
-    setWorkflows(wf.workflows);
-    setLoading(false);
-  };
+    try {
+      const wf = await getWorkflows();
+      setWorkflows(wf.workflows ?? []); // Ensure workflows is an array
+    } catch (error) {
+      console.error("Failed to fetch workflows:", error);
+      setWorkflows([]); // Set to empty array on error
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     refreshWorkflows();
-  }, []);
+  }, [refreshKey, refreshWorkflows]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,10 +259,10 @@ function WorkflowList() {
                   variant="destructive"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    setLoading(true);
+                    // No need to setLoading(true) here as refreshWorkflows handles it.
                     await deleteWorkflow(wf.id);
-                    setLoading(false);
-                    refreshWorkflows();
+                    await refreshWorkflows(); // Refetch after delete
+                    // No need to setLoading(false) here
                   }}
                 >
                   Delete
