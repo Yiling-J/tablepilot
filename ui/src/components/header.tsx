@@ -1,7 +1,8 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/context/sidebar";
 import { cn } from "@/lib/utils";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
+import { ChevronRightIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import { IconGithub } from "./ui/icons";
 
@@ -67,12 +68,18 @@ interface TablepilotHeaderProps {
   title: string;
   modeRef?: React.MutableRefObject<"generate" | "autofill">;
   modeSwitchDisabled?: boolean;
+  currentTab?: string;
+  onTabChange?: (tabName: string) => void;
+  // onRefresh?: () => void; // Removed
 }
 
 export function TablepilotHeader({
   title,
   modeRef,
   modeSwitchDisabled,
+  currentTab,
+  onTabChange,
+  // onRefresh, // Removed
 }: TablepilotHeaderProps) {
   const { collapsed, setCollapsed } = useSidebar();
 
@@ -87,16 +94,39 @@ export function TablepilotHeader({
   return (
     <div>
       <header className="sticky top-0 font-bold flex items-center gap-4 border-b bg-background px-4 md:px-6 justify-between py-2">
-        <div className="flex items-center text-xl tracking-wider">
-          {collapsed && (
-            <ChevronRightIcon
-              className="mr-2 cursor-pointer"
-              onClick={() => setCollapsed(false)}
-            />
+        {/* Left Group (Title & Sidebar Toggle, THEN Tabs) */}
+        <div className="flex items-center gap-x-6">
+          {/* Title and Sidebar Toggle */}
+          <div className="flex items-center text-xl tracking-wider">
+            {collapsed && (
+              <ChevronRightIcon
+                className="mr-2 cursor-pointer"
+                onClick={() => setCollapsed(false)}
+              />
+            )}
+            {title}
+          </div>
+
+          {/* Tables/Workflows switch (only if currentTab and onTabChange are provided) */}
+          {currentTab && onTabChange && (
+            <div className="flex items-center"> {/* Container for the two tabs */}
+              <Button variant="ghost" onClick={() => onTabChange("tables")}>
+                <h1 className={cn("text-base font-medium py-2 px-3", currentTab === "tables" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
+                  Tables
+                </h1>
+              </Button>
+              <Button variant="ghost" onClick={() => onTabChange("workflows")}>
+                <h1 className={cn("text-base font-medium py-2 px-3", currentTab === "workflows" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-primary")}>
+                  Workflows
+                </h1>
+              </Button>
+            </div>
           )}
-          {title}
         </div>
-        <div className="relative flex">
+
+        {/* Right Group (Controls: ModeSwitch, Avatar) */}
+        <div className="relative flex items-center">
+          {/* Refresh button removed */}
           {modeRef && (
             <ModeSwitch
               modeRef={modeRef}

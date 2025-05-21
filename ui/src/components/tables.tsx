@@ -22,84 +22,89 @@ import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import { cn } from "@/lib/utils";
-import { FileIcon, PlusIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
 import { SettingsIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import WorkflowBuilderDialog from "./dialog/workflow/builder.tsx";
 import WorkflowExecutionDialog from "./dialog/workflow/workflow.tsx";
 import { TablepilotHeader } from "./header.tsx";
 
 export function TableListPage() {
-  const [tab, setTab] = useState("tables");
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Initial tab state based on current URL path
+  const [tab, setTab] = useState(() =>
+    location.pathname.startsWith("/workflows") ? "workflows" : "tables"
+  );
+
+  // Effect to update tab state if URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    if (location.pathname.startsWith("/workflows")) {
+      setTab("workflows");
+    } else {
+      // Defaults to "tables" for "/tables" or any other path reaching here
+      setTab("tables");
+    }
+  }, [location.pathname]);
+
+  const handleTabChange = (newTab: string) => {
+    navigate(`/${newTab}`); // newTab will be "tables" or "workflows"
+  };
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
       <ModeToggle hide={true} />
-      <TablepilotHeader title="Tablepilot" />
+      <TablepilotHeader
+        title="Tablepilot"
+        currentTab={tab}
+        onTabChange={handleTabChange}
+        // onRefresh={handleRefresh} // Removed
+      />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              className="rounded-full"
-              onClick={() => setTab("tables")}
-            >
-              <h1
-                className={cn(
-                  "text-xl font-bold tracking-wider",
-                  tab === "tables" ? "" : "text-primary/25",
-                )}
-              >
-                Tables
-              </h1>
-            </Button>
-            <p className="mx-2 text-xl font-bold">/</p>
-            <Button
-              className="rounded-full"
-              variant="ghost"
-              onClick={() => setTab("workflows")}
-            >
-              <h1
-                className={cn(
-                  "text-xl font-bold tracking-wider",
-                  tab === "workflows" ? "" : "text-primary/25",
-                )}
-              >
-                Workflows
-              </h1>
-            </Button>
-          </div>
-          <Button variant="outline" onClick={() => {}}>
-            <ReloadIcon className="w-6 h-6 mr-2" />
-            Refresh
-          </Button>
+        {/* refreshKey prop removed from TableList and WorkflowList */}
+        {/* Wrapped conditional rendering for fade-in animation */}
+        <div key={tab} className="tab-content-container">
+          {tab === "tables" ? <TableList /> : <WorkflowList />}
         </div>
-        {tab === "tables" ? <TableList /> : <WorkflowList />}
       </div>
     </div>
   );
 }
 
-function TableList() {
+// interface TableListProps { // Removed refreshKey
+//   refreshKey: number;
+// }
+
+function TableList(/*{ refreshKey }: TableListProps*/) { // Removed refreshKey from props destructuring
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
   const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { refreshTables } = useTables();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // This instance is for TableList's own navigation needs, separate from TableListPage
 
-  useEffect(() => {
+  const fetchTables = useCallback(async () => {
     setLoading(true);
-    fetchTables().finally(() => setLoading(false));
-    refreshTables();
+    try {
+      const response = await getTables();
+      setTables(response.tables ?? []);
+    } catch (error) {
+      console.error("Failed to fetch tables:", error);
+      setTables([]); // Set to empty array on error
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchTables = async () => {
-    const response = await getTables();
-    setTables(response.tables ?? []);
-  };
+  useEffect(() => {
+    fetchTables();
+    // refreshTables() from context was removed as fetchTables handles local data.
+    // If global context needs refresh, it should be handled more explicitly if needed,
+    // or the component consuming global context should use refreshTables itself.
+  }, [fetchTables]); // refreshKey removed from dependency array
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -145,11 +150,11 @@ function TableList() {
                     variant="destructive"
                     onClick={async (e) => {
                       e.stopPropagation();
-                      setLoading(true);
+                      // No need to setLoading(true) here as fetchTables handles it.
                       await deleteTable(table.id);
-                      await fetchTables();
-                      refreshTables();
-                      setLoading(false);
+                      await fetchTables(); // Refetch after delete
+                      refreshTables(); // Context refresh
+                      // No need to setLoading(false) here
                     }}
                   >
                     Delete
@@ -186,23 +191,33 @@ function TableList() {
   );
 }
 
-function WorkflowList() {
+// interface WorkflowListProps { // Removed refreshKey
+//   refreshKey: number;
+// }
+
+function WorkflowList(/*{ refreshKey }: WorkflowListProps*/) { // Removed refreshKey from props destructuring
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
   const [runWorkflowOpen, setRunWorkflowOpen] = useState(false);
   const [WorkflowBuilderOpen, setRunWorkflowBuilderOpen] = useState(false);
 
-  const refreshWorkflows = async () => {
+  const refreshWorkflows = useCallback(async () => {
     setLoading(true);
-    const wf = await getWorkflows();
-    setWorkflows(wf.workflows);
-    setLoading(false);
-  };
+    try {
+      const wf = await getWorkflows();
+      setWorkflows(wf.workflows ?? []); // Ensure workflows is an array
+    } catch (error) {
+      console.error("Failed to fetch workflows:", error);
+      setWorkflows([]); // Set to empty array on error
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     refreshWorkflows();
-  }, []);
+  }, [refreshWorkflows]); // refreshKey removed from dependency array
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,10 +280,10 @@ function WorkflowList() {
                   variant="destructive"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    setLoading(true);
+                    // No need to setLoading(true) here as refreshWorkflows handles it.
                     await deleteWorkflow(wf.id);
-                    setLoading(false);
-                    refreshWorkflows();
+                    await refreshWorkflows(); // Refetch after delete
+                    // No need to setLoading(false) here
                   }}
                 >
                   Delete
