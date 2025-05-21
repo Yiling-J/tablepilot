@@ -49,7 +49,10 @@ export function TableListPage() {
       />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
         {/* refreshKey prop removed from TableList and WorkflowList */}
-        {tab === "tables" ? <TableList /> : <WorkflowList />}
+        {/* Wrapped conditional rendering for fade-in animation */}
+        <div key={tab} className="tab-content-container">
+          {tab === "tables" ? <TableList /> : <WorkflowList />}
+        </div>
       </div>
     </div>
   );
