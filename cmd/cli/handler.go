@@ -438,6 +438,10 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	prompt, err := cmd.Flags().GetString("prompt")
+	if err != nil {
+		return err
+	}
 
 	generator, err := h.backend.TableService.Genetate(
 		cmd.Context(), table.GenerateRowsRequest{
@@ -452,6 +456,7 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 				Offset:         offset,
 				Columns:        columns,
 				ContextColumns: contextColumns,
+				Prompt:         prompt,
 			},
 		},
 	)

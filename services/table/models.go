@@ -43,10 +43,10 @@ type AutofillRequest struct {
 	Offset         int      `json:"offset"`
 	Columns        []string `json:"columns"`
 	ContextColumns []string `json:"context_columns"`
+	Prompt         string   `json:"prompt"`
 
 	// fields below are used in regenerate API
-	Rows   []string `json:"rows"`
-	Prompt string   `json:"prompt"`
+	Rows []string `json:"rows"`
 }
 
 type GenerateRowsRequest struct {

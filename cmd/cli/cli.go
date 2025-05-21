@@ -198,6 +198,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 		panic(err)
 	}
 	autofill.Flags().StringArray("context_columns", []string{}, "columns that should be put in prompt as context, default to all other columns")
+	autofill.Flags().StringP("prompt", "p", "", "optional prompt text send to LLM")
 
 	cmd.AddCommand(autofill)
 

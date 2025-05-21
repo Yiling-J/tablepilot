@@ -558,6 +558,64 @@ func TestRowsGenerator_Autofill(t *testing.T) {
 	}
 }
 
+func TestRowsGenerator_AutofillSelf(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	tb, err := db.TableMeta.Create().SetName("table").Save(ctx)
+	require.NoError(t, err)
+	c1, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	row, err := db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "foo"}}).Save(ctx)
+	require.NoError(t, err)
+	promptContent := ""
+	aiService := &ai.AiServiceMock{
+		ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			promptContent = request.Messages[0].Content[0].Data
+			data := []map[string]any{{c1.Nanoid: "foo", "__id__": row.Nanoid}}
+			b, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}
+
+	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
+		Table: tb.Nanoid,
+		Count: 1,
+		Batch: 1,
+		Autofill: AutofillRequest{
+			Enable:         true,
+			Columns:        []string{"c1"},
+			ContextColumns: []string{"c1"},
+			Prompt:         "baz",
+		},
+	}, db, aiService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	v, err := generator.Next(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(v))
+	require.Equal(t, 1, len(aiService.ChatCalls()))
+	builder := promptbuilder.NewRowsBuilder(1)
+	builder.AddDescription("")
+	builder.AddUserPrompt("baz")
+	builder.AddTableColumns([]*ent.TableColumn{c1}, true)
+	missing := []*ent.TableColumn{c1}
+	builder.AddMissingColumns(missing, true)
+	rows := []map[string]any{
+		{c1.Nanoid: "foo", "__id__": row.Nanoid},
+	}
+	err = builder.AddExistings(rows)
+	require.NoError(t, err)
+	p, err := builder.Prompt()
+	require.NoError(t, err)
+	require.Equal(t, p, promptContent)
+}
+
 func TestRowsGenerator_AutofillNext(t *testing.T) {
 	cases := []struct {
 		count     int

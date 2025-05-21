@@ -613,6 +613,7 @@ func TestHandler_Autofill(t *testing.T) {
 					require.Equal(t, 3, params.Autofill.Offset)
 					require.Equal(t, []string{"c1"}, params.Autofill.Columns)
 					require.Equal(t, []string{"c2"}, params.Autofill.ContextColumns)
+					require.Equal(t, "baz", params.Autofill.Prompt)
 					return mockRowGen, nil
 				},
 			}
@@ -635,6 +636,7 @@ func TestHandler_Autofill(t *testing.T) {
 			cmd.Flags().StringP("saveto", "s", "", "")
 			cmd.Flags().Float64P("temperature", "", 0.6, "")
 			cmd.Flags().StringP("model", "", "", "")
+			cmd.Flags().StringP("prompt", "", "", "")
 			cmd.Flags().Int("offset", 3, "")
 			cmd.Flags().StringArray("columns", []string{}, "")
 			cmd.Flags().StringArray("context_columns", []string{}, "")
@@ -650,6 +652,9 @@ func TestHandler_Autofill(t *testing.T) {
 			require.NoError(t, err)
 
 			err = cmd.Flags().Set("model", "aiai")
+			require.NoError(t, err)
+
+			err = cmd.Flags().Set("prompt", "baz")
 			require.NoError(t, err)
 
 			err = cmd.Flags().Set("columns", "c1")
