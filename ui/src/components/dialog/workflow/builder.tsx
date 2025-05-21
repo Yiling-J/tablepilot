@@ -427,8 +427,23 @@ export default function WorkflowBuilderDialog({
     }
   };
 
+  const clear = () => {
+    setWorkflowName("New Workflow");
+    setSteps([]);
+    setSelectedStepIndex(null);
+    setStepContexts([]);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          clear();
+        }
+        onOpenChange(v);
+      }}
+    >
       <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
         <DialogHeader>
           <div className="flex items-center gap-2">
@@ -1400,7 +1415,13 @@ export default function WorkflowBuilderDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              clear();
+              onOpenChange(false);
+            }}
+          >
             Cancel
           </Button>
           <Button onClick={saveWorkflow}>Save Workflow</Button>

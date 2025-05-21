@@ -287,6 +287,7 @@ function WorkflowList() {
         <div
           className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1"
           onClick={() => {
+            setWorkflow(undefined);
             setRunWorkflowBuilderOpen(true);
           }}
         >
