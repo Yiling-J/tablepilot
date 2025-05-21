@@ -39,6 +39,7 @@ interface ColumnsFormProps {
   updateFormData: (data: Partial<TableCreateRequest>) => void;
   disabled: boolean;
   variables?: ContextVariable[];
+  tables?: TableInfo[];
 }
 
 export function ColumnsForm({
@@ -46,6 +47,7 @@ export function ColumnsForm({
   updateFormData,
   disabled,
   variables,
+  tables: tablesProp,
 }: ColumnsFormProps) {
   const [columnName, setColumnName] = useState("");
   const [columnDescription, setColumnDescription] = useState("");
@@ -92,8 +94,12 @@ export function ColumnsForm({
   // Fetch tables from API
   const fetchTables = async () => {
     try {
-      const resp = await getTables();
-      setTables(resp.tables);
+      if (tablesProp) {
+        setTables(tablesProp);
+      } else {
+        const resp = await getTables();
+        setTables(resp.tables);
+      }
       const so = await getSources();
       // if shared source has same name as form source, only keep form source
       sourcesRef.current = so.filter(

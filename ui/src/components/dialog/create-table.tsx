@@ -1,4 +1,4 @@
-import { TableCreateRequest } from "@/actions";
+import { TableCreateRequest, TableInfo } from "@/actions";
 import CreateTableForm from "@/components/create-table-form/create-table-form";
 import {
     Dialog,
@@ -19,6 +19,7 @@ interface CreateTableDialogProps {
   submitCallback?: () => Promise<void>;
   variables?: ContextVariable[];
   onSave?: (form: TableCreateRequest) => void;
+  tables?: TableInfo[];
 }
 
 export function CreateTableDialog({
@@ -31,6 +32,7 @@ export function CreateTableDialog({
   submitCallback,
   variables,
   onSave,
+  tables,
 }: CreateTableDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -53,6 +55,7 @@ export function CreateTableDialog({
             submitCallback={submitCallback}
             variables={variables}
             onSave={onSave}
+            tables={tables}
           />
         </div>
       </DialogContent>

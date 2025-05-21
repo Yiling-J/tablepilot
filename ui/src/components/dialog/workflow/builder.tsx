@@ -8,12 +8,14 @@ import {
     X,
 } from "lucide-react";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
+    ColumnType,
     CreateColumnStepPayload,
     CreateTableStepPayload,
     ImportDataStepPayload,
+    TableInfo,
     TypedWorkflowStep,
     UserInputStepPayload,
     Workflow,
@@ -21,6 +23,8 @@ import {
     WorkflowVariable,
     WorkflowVariableType,
     createWorkflow,
+    getTables,
+    tableCreateRequestToTableInfo,
     updateWorkflow,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
@@ -52,6 +56,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { ContextVariable, MentionInput } from "@/components/ui/var-input";
 import { CreateTableDialog } from "../create-table";
 
+interface StepContext {
+  variables: ContextVariable[];
+  tables: TableInfo[];
+}
+
 export default function WorkflowBuilderDialog({
   id,
   workflow,
@@ -72,10 +81,17 @@ export default function WorkflowBuilderDialog({
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(
     null,
   );
-  const [stepVariables, setStepVariables] = useState<ContextVariable[][]>([]);
+  const [stepContexts, setStepContexts] = useState<StepContext[]>([]);
   const [createTableDialogOpen, setCreateTableDialogOpen] = useState(false);
+  const existingTables = useRef<TableInfo[]>([]);
 
-  useEffect(() => {
+  const fetchTables = async () => {
+    const resp = await getTables();
+    existingTables.current = resp.tables;
+  };
+
+  const onOpen = async () => {
+    await fetchTables();
     if (workflow) {
       const wsteps: TypedWorkflowStep[] = [
         {
@@ -87,12 +103,7 @@ export default function WorkflowBuilderDialog({
         ...workflow.steps,
       ];
       setSteps(wsteps);
-    }
-  }, [workflow]);
-
-  // Initialize workflow with UserInput step
-  useEffect(() => {
-    if (steps.length === 0) {
+    } else {
       setSteps([
         {
           type: "UserInput",
@@ -101,19 +112,29 @@ export default function WorkflowBuilderDialog({
       ]);
       setSelectedStepIndex(0);
     }
-  }, [steps.length]);
+  };
 
-  // workflow validation and variables reset
   useEffect(() => {
-    const vars: ContextVariable[][] = [
-      [
-        { path: "date", display: "date", type: "string" },
-        { path: "time", display: "time", type: "string" },
-        { path: "datetime", display: "datetime", type: "string" },
-      ],
+    if (!open) {
+      return;
+    }
+    onOpen();
+  }, [open]);
+
+  const buildStepContext = () => {
+    const contexts: StepContext[] = [
+      {
+        variables: [
+          { path: "date", display: "date", type: "string" },
+          { path: "time", display: "time", type: "string" },
+          { path: "datetime", display: "datetime", type: "string" },
+        ],
+        tables: [...existingTables.current],
+      },
     ];
     steps.forEach((step, index) => {
-      const nv: ContextVariable[] = [...vars[index]];
+      const nv: ContextVariable[] = [...contexts[index].variables];
+      const tbs: TableInfo[] = [...contexts[index].tables];
       switch (step.type) {
         case "UserInput":
           nv.push(
@@ -127,18 +148,44 @@ export default function WorkflowBuilderDialog({
           );
           break;
         case "CreateTable":
+          const tableName = (step.payload as CreateTableStepPayload).request
+            .name;
           nv.push({
-            display: `CreateTable[${(step.payload as CreateTableStepPayload).request?.name ?? ""}].table`,
+            display: `CreateTable[${tableName}].table`,
             path: `step${index}.table`,
             type: "string",
           });
+          const ii = tbs.findIndex((t) => t.name === tableName);
+          const tr = (step.payload as CreateTableStepPayload).request;
+          const ti = tableCreateRequestToTableInfo(
+            `{{step${index}.table}}`,
+            tr,
+          );
+          if (ii === -1) {
+            tbs.push(ti);
+          } else {
+            tbs[ii] = ti;
+          }
           break;
         case "CreateColumn":
+          const pd = step.payload as CreateColumnStepPayload;
           nv.push({
-            display: `CreateColumn[${(step.payload as CreateColumnStepPayload).name}].column`,
+            display: `CreateColumn[${pd.name}].column`,
             path: `step${index}.column`,
             type: "string",
           });
+          let t = tbs.find((t) => t.name === pd.table);
+          if (t) {
+            t.columns.push({
+              id: pd.name,
+              name: pd.name,
+              description: pd.description,
+              type: pd.type as ColumnType,
+              fill_mode: "ai",
+            });
+          }
+          break;
+        case "DeleteColumn":
           break;
         case "Import":
           nv.push({
@@ -146,11 +193,23 @@ export default function WorkflowBuilderDialog({
             path: `step${index}.table`,
             type: "string",
           });
+          tbs.push({
+            id: `{{step${index}.table}}`,
+            name: `Import[${(step.payload as ImportDataStepPayload).file}].table`,
+            description: "",
+            columns: [],
+            model: "",
+          });
           break;
       }
-      vars.push(nv);
+      contexts.push({ variables: nv, tables: tbs });
     });
-    setStepVariables(vars);
+    setStepContexts(contexts);
+  };
+
+  // workflow validation and variables reset
+  useEffect(() => {
+    buildStepContext();
   }, [steps]);
 
   // Helper to create a new action
@@ -693,7 +752,7 @@ export default function WorkflowBuilderDialog({
                           </Select>
                         </div>
                         <CreateTableDialog
-                          variables={stepVariables[selectedStepIndex!]}
+                          variables={stepContexts[selectedStepIndex!].variables}
                           isOpen={createTableDialogOpen}
                           setIsOpen={setCreateTableDialogOpen}
                           close={() => {}}
@@ -763,20 +822,29 @@ export default function WorkflowBuilderDialog({
                     {selectedStep.type === "DeleteTable" && (
                       <div className="space-y-2">
                         <Label htmlFor="tableName">Table Name</Label>
-                        <MentionInput
-                          variables={stepVariables[selectedStepIndex!]}
-                          id="tableName"
+                        <Select
                           value={selectedStep.payload.table}
-                          onChange={(e) =>
+                          onValueChange={(value) =>
                             updateStep({
                               type: selectedStep.type,
                               payload: {
                                 ...selectedStep.payload,
-                                table: e.target.value,
+                                table: value,
                               },
                             })
                           }
-                        />
+                        >
+                          <SelectTrigger id="tables">
+                            <SelectValue placeholder="Select a table" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stepContexts[selectedStepIndex!].tables.map(
+                              (t) => (
+                                <SelectItem value={t.id}>{t.name}</SelectItem>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
@@ -785,27 +853,38 @@ export default function WorkflowBuilderDialog({
                       <div key={selectedStepIndex}>
                         <div className="space-y-2">
                           <Label htmlFor="tableName">Table Name</Label>
-                          <MentionInput
-                            variables={stepVariables[selectedStepIndex!]}
-                            id="tableName"
+                          <Select
                             value={selectedStep.payload.table}
-                            onChange={(e) => {
-                              console.log(e.target.value);
+                            onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  table: e.target.value,
+                                  table: value,
                                 },
-                              });
-                            }}
-                          />
+                              })
+                            }
+                          >
+                            <SelectTrigger id="tables">
+                              <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stepContexts[selectedStepIndex!].tables.map(
+                                (t) => (
+                                  <SelectItem value={t.id}>{t.name}</SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
+
                         <div className="space-y-2">
                           <Label htmlFor="columnName">Column Name</Label>
                           <MentionInput
                             id="columnName"
-                            variables={stepVariables[selectedStepIndex!]}
+                            variables={
+                              stepContexts[selectedStepIndex!].variables
+                            }
                             value={selectedStep.payload.name}
                             onChange={(e) =>
                               updateStep({
@@ -824,7 +903,9 @@ export default function WorkflowBuilderDialog({
                           </Label>
                           <MentionInput
                             id="columnDescription"
-                            variables={stepVariables[selectedStepIndex!]}
+                            variables={
+                              stepContexts[selectedStepIndex!].variables
+                            }
                             value={selectedStep.payload.description}
                             onChange={(e) =>
                               updateStep({
@@ -870,26 +951,37 @@ export default function WorkflowBuilderDialog({
                       <>
                         <div className="space-y-2">
                           <Label htmlFor="tableName">Table Name</Label>
-                          <MentionInput
-                            id="tableName"
+                          <Select
                             value={selectedStep.payload.table}
-                            variables={stepVariables[selectedStepIndex!]}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  table: e.target.value,
+                                  table: value,
                                 },
                               })
                             }
-                          />
+                          >
+                            <SelectTrigger id="tables">
+                              <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stepContexts[selectedStepIndex!].tables.map(
+                                (t) => (
+                                  <SelectItem value={t.id}>{t.name}</SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="columnName">Column Name</Label>
                           <MentionInput
                             id="columnName"
-                            variables={stepVariables[selectedStepIndex!]}
+                            variables={
+                              stepContexts[selectedStepIndex!].variables
+                            }
                             value={selectedStep.payload.column}
                             onChange={(e) =>
                               updateStep({
@@ -910,20 +1002,29 @@ export default function WorkflowBuilderDialog({
                       <>
                         <div className="space-y-2">
                           <Label htmlFor="tableName">Table Name</Label>
-                          <MentionInput
-                            id="tableName"
+                          <Select
                             value={selectedStep.payload.table}
-                            variables={stepVariables[selectedStepIndex!]}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  table: e.target.value,
+                                  table: value,
                                 },
                               })
                             }
-                          />
+                          >
+                            <SelectTrigger id="tables">
+                              <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stepContexts[selectedStepIndex!].tables.map(
+                                (t) => (
+                                  <SelectItem value={t.id}>{t.name}</SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="generateCount">Count</Label>
@@ -965,20 +1066,29 @@ export default function WorkflowBuilderDialog({
                       <>
                         <div className="space-y-2">
                           <Label htmlFor="tableName">Table Name</Label>
-                          <MentionInput
-                            id="tableName"
+                          <Select
                             value={selectedStep.payload.table}
-                            variables={stepVariables[selectedStepIndex!]}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  table: e.target.value,
+                                  table: value,
                                 },
                               })
                             }
-                          />
+                          >
+                            <SelectTrigger id="tables">
+                              <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stepContexts[selectedStepIndex!].tables.map(
+                                (t) => (
+                                  <SelectItem value={t.id}>{t.name}</SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="generateCount">Count</Label>
@@ -1018,7 +1128,9 @@ export default function WorkflowBuilderDialog({
                             id="AutofillColumns"
                             placeholder="Columns need to be autofilled, one per line. Use @ to reference columns from previous steps. Columns will be autofilled automatically."
                             value={selectedStep.payload.columns.join("\n")}
-                            variables={stepVariables[selectedStepIndex!]}
+                            variables={
+                              stepContexts[selectedStepIndex!].variables
+                            }
                             rows={3}
                             textarea={true}
                             onChange={(e) =>
@@ -1057,7 +1169,7 @@ export default function WorkflowBuilderDialog({
                             <SelectValue placeholder="Select file variable" />
                           </SelectTrigger>
                           <SelectContent>
-                            {stepVariables[1]
+                            {stepContexts[1].variables
                               .filter((v) => v.type === "file")
                               .map((v, idx) => (
                                 <SelectItem key={idx} value={v.path}>
@@ -1074,7 +1186,9 @@ export default function WorkflowBuilderDialog({
                             textarea={true}
                             rows={3}
                             value={selectedStep.payload.prompt}
-                            variables={stepVariables[selectedStepIndex!]}
+                            variables={
+                              stepContexts[selectedStepIndex!].variables
+                            }
                             onChange={(e) =>
                               updateStep({
                                 type: selectedStep.type,
@@ -1094,20 +1208,29 @@ export default function WorkflowBuilderDialog({
                       <div>
                         <div className="space-y-2">
                           <Label htmlFor="tableName">Table Name</Label>
-                          <MentionInput
-                            id="tableName"
+                          <Select
                             value={selectedStep.payload.table}
-                            variables={stepVariables[selectedStepIndex!]}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  table: e.target.value,
+                                  table: value,
                                 },
                               })
                             }
-                          />
+                          >
+                            <SelectTrigger id="tables">
+                              <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stepContexts[selectedStepIndex!].tables.map(
+                                (t) => (
+                                  <SelectItem value={t.id}>{t.name}</SelectItem>
+                                ),
+                              )}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     )}

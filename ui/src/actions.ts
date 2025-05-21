@@ -28,6 +28,32 @@ export interface TableInfo {
   model: string;
 }
 
+// used in workflow only, id will be var path in {{.var}} format
+export function tableCreateRequestToTableInfo(
+  id: string,
+  request: TableCreateRequest,
+): TableInfo {
+  const convertedColumns: Column[] = request.columns.map((reqCol, _) => {
+    return {
+      id: id,
+      name: reqCol.name,
+      description: reqCol.description,
+      type: reqCol.type as ColumnType,
+      fill_mode: reqCol.fill_mode,
+    };
+  });
+
+  const tableInfo: TableInfo = {
+    id: request.name,
+    name: request.name,
+    description: request.description,
+    columns: convertedColumns,
+    model: "",
+  };
+
+  return tableInfo;
+}
+
 export interface GetTablesResponse {
   tables: TableInfo[];
   total: number;
@@ -541,6 +567,8 @@ export interface DeleteColumnStepPayload {
 }
 
 export interface ImportDataStepPayload {
+  table: string;
+  name: string;
   file: string;
   prompt: string;
 }

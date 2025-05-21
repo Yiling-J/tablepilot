@@ -1,5 +1,6 @@
 import {
     TableCreateRequest,
+    TableInfo,
     createRows,
     createTable,
     updateTable,
@@ -42,6 +43,7 @@ interface CreateTableFormProps {
   submitCallback?: () => Promise<void>;
   variables?: ContextVariable[];
   onSave?: (form: TableCreateRequest) => void;
+  tables?: TableInfo[];
 }
 
 export default function CreateTableForm({
@@ -52,6 +54,7 @@ export default function CreateTableForm({
   submitCallback,
   variables,
   onSave,
+  tables,
 }: CreateTableFormProps) {
   const [formData, setFormData] = useState<TableCreateRequest>(
     form ?? initialFormData,
@@ -170,6 +173,7 @@ export default function CreateTableForm({
                   formData={formData}
                   updateFormData={updateFormData}
                   disabled={!isStep1Valid || loading}
+                  tables={tables}
                 />
               </TabsContent>
             </Tabs>
