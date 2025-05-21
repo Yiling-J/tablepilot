@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"time"
 
@@ -247,7 +248,15 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		switch filepath.Ext(cb.Name) {
 		case ".csv":
 			bf := bytes.NewBuffer(cb.Data)
-			id, err := r.tableService.Import(ctx, req.Table, bf)
+			fileName := filepath.Base(req.File)
+			fileName = strings.TrimSuffix(fileName, filepath.Ext(req.File))
+			id, err := r.tableService.Import(ctx, table.ImportRequest{
+				Table:    req.Table,
+				Truncate: req.Truncate,
+				Reader:   bf,
+				Filename: fileName,
+				Name:     req.Name,
+			})
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: importing CSV: %w", err)
 			}
@@ -257,10 +266,16 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 				Action:  WorkflowActionShowMessage,
 			}, nil
 		case ".png", ".jpg", ".jpeg":
-			id, err := r.tableService.ImportImage(ctx, table.ImageImportRequest{
-				Data:   cb.Data,
-				Prompt: req.Prompt,
-				Model:  r.model,
+			fileName := filepath.Base(req.File)
+			fileName = strings.TrimSuffix(fileName, filepath.Ext(req.File))
+			id, err := r.tableService.ImportImage(ctx, table.ImportRequest{
+				Table:    req.Table,
+				Truncate: req.Truncate,
+				Name:     req.Name,
+				Data:     cb.Data,
+				Prompt:   req.Prompt,
+				Model:    r.model,
+				Filename: fileName,
 			})
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: importing image: %w", err)

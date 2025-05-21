@@ -293,7 +293,7 @@ func (hs *HTTPServer) UpdateProvider(ctx *gin.Context) {
 }
 
 func (hs *HTTPServer) ImportImage(ctx *gin.Context) {
-	var req table.ImageImportRequest
+	var req table.ImportRequest
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		errorResponse(ctx, 400, err)

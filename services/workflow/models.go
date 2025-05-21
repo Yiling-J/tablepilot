@@ -53,9 +53,11 @@ type WorkflowExportTableParams struct {
 }
 
 type WorkflowImportFileParams struct {
-	Table  string `json:"table"`
-	File   string `json:"file"`
-	Prompt string `json:"prompt"`
+	Table    string `json:"table"`
+	Name     string `json:"name"`
+	File     string `json:"file"`
+	Prompt   string `json:"prompt"`
+	Truncate bool   `json:"truncate"`
 }
 
 type StartWorklfowRequest struct {

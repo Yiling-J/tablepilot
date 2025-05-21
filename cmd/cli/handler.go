@@ -319,16 +319,23 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	name, err := cmd.Flags().GetString("name")
+	if err != nil {
+		return err
+	}
+
+	truncate, err := cmd.Flags().GetBool("truncate")
+	if err != nil {
+		return err
+	}
 	tableFile := args[0]
 	reader, err := os.Open(tableFile)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = reader.Close() }()
-	if tb == "" {
-		tb = filepath.Base(tableFile)
-		tb = strings.TrimSuffix(tb, filepath.Ext(tb))
-	}
+	fileName := filepath.Base(tableFile)
+	fileName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
 
 	_, _, err = image.DecodeConfig(reader)
 
@@ -354,10 +361,14 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read image %s: %w", tableFile, err)
 		}
-		id, importErr = h.backend.TableService.ImportImage(cmd.Context(), table.ImageImportRequest{
-			Data:   d,
-			Model:  model,
-			Prompt: prompt,
+		id, importErr = h.backend.TableService.ImportImage(cmd.Context(), table.ImportRequest{
+			Data:     d,
+			Model:    model,
+			Prompt:   prompt,
+			Table:    tb,
+			Filename: fileName,
+			Truncate: truncate,
+			Name:     name,
 		})
 		if importErr != nil {
 			return fmt.Errorf("failed to import image %s: %w", tableFile, importErr)
@@ -366,7 +377,13 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 	} else {
 		h.backend.Logger.Debugw("file not detected as image or error decoding image config, using default Import",
 			"file", tableFile, "decode_error", err.Error())
-		id, importErr = h.backend.TableService.Import(cmd.Context(), tb, reader)
+		id, importErr = h.backend.TableService.Import(cmd.Context(), table.ImportRequest{
+			Reader:   reader,
+			Table:    tb,
+			Filename: fileName,
+			Truncate: truncate,
+			Name:     name,
+		})
 		if importErr != nil {
 			return fmt.Errorf("failed to import file %s as table %s: %w", tableFile, tb, importErr)
 		}

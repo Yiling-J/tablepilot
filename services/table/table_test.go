@@ -476,7 +476,13 @@ func TestTableService_Import(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	// create table when importing with given table name
+	id, err := srv.Import(ctx, ImportRequest{
+		Filename: "bar.csv",
+		Table:    "",
+		Reader:   strings.NewReader(buffer.String()),
+		Name:     "foo",
+	})
 	require.NoError(t, err)
 
 	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
@@ -501,6 +507,17 @@ func TestTableService_Import(t *testing.T) {
 	}
 	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
 
+	// create table when importing, file name
+	id, err = srv.Import(ctx, ImportRequest{
+		Filename: "bar",
+		Reader:   strings.NewReader(buffer.String()),
+	})
+	require.NoError(t, err)
+
+	t2, err := db.TableMeta.Query().Where(tablemeta.Nanoid(id)).Only(ctx)
+	require.NoError(t, err)
+	require.True(t, strings.HasPrefix(t2.Name, "bar_"))
+
 	// import some data again, test table exists case
 	records = [][]string{
 		{"col2", "col4", "col1"},
@@ -516,7 +533,10 @@ func TestTableService_Import(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err = srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	id, err = srv.Import(ctx, ImportRequest{
+		Table:  "foo",
+		Reader: strings.NewReader(buffer.String()),
+	})
 	require.NoError(t, err)
 	require.Equal(t, table.Nanoid, id)
 	table, err = db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
@@ -566,7 +586,10 @@ func TestTableService_ImportAutoType(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	id, err := srv.Import(ctx, ImportRequest{
+		Reader: strings.NewReader(buffer.String()),
+		Table:  "foo",
+	})
 	require.NoError(t, err)
 
 	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
@@ -677,7 +700,10 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 			}
 			w.Flush()
 
-			id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+			id, err := srv.Import(ctx, ImportRequest{
+				Table:  "foo",
+				Reader: strings.NewReader(buffer.String()),
+			})
 			require.NoError(t, err)
 
 			table, err := db.TableMeta.Query().WithRows(func(trq *ent.TableRowQuery) {
@@ -744,7 +770,7 @@ func TestTableService_ImportImage(t *testing.T) {
 
 	pb, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC")
 	require.NoError(t, err)
-	id, err := srv.ImportImage(ctx, ImageImportRequest{
+	id, err := srv.ImportImage(ctx, ImportRequest{
 		Data:   pb,
 		Prompt: "foobar",
 		Model:  "m1",
@@ -777,6 +803,75 @@ func TestTableService_ImportImage(t *testing.T) {
 		rows = append(rows, r)
 	}
 	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
+}
+
+func TestTableService_ImportImageToTable(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	table, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	col, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(table).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModePick).
+		SetTablemeta(table).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	_ = col2
+
+	data := ""
+	srv, err := NewTableService(&config.Config{}, db, &ai.AiServiceMock{
+		ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			data = request.Messages[0].Content[0].Data
+			require.Equal(t, 0.1, request.Temperature)
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, int64(6000), request.MaxOutputTokens)
+
+			d := []map[string]any{{"__id__": 0, col.Nanoid: "d"}, {"__id__": 1, col.Nanoid: "e"}}
+			b, err := json.Marshal(map[string]any{"data": d})
+			require.NoError(t, err)
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	pb, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC")
+	require.NoError(t, err)
+	id, err := srv.ImportImage(ctx, ImportRequest{
+		Data:   pb,
+		Prompt: "foobar",
+		Model:  "m1",
+		Table:  "foo",
+	})
+	require.NoError(t, err)
+	require.Equal(t, table.Nanoid, id)
+
+	rows, err := table.QueryRows().All(ctx)
+	require.NoError(t, err)
+	nw := [][]any{}
+	for _, row := range rows {
+		r := []any{}
+		for _, cell := range row.Cells {
+			r = append(r, cell.Value)
+		}
+		nw = append(nw, r)
+	}
+	require.Equal(t, [][]any{{"d", nil}, {"e", nil}}, nw)
+	builder := promptbuilder.NewNewImageToTableBuilder("foobar")
+	tm, err := db.TableMeta.Query().WithColumns().Where(tablemeta.ID(table.ID)).Only(ctx)
+	require.NoError(t, err)
+	builder.ToTable(tm)
+	prompt, err := builder.Prompt()
+	require.NoError(t, err)
+	require.Equal(t, prompt, data)
 }
 
 func TestTableService_ListTables(t *testing.T) {
@@ -1044,7 +1139,10 @@ func TestTableService_ImportLinked(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err := srv.Import(ctx, "t1", strings.NewReader(buffer.String()))
+	id, err := srv.Import(ctx, ImportRequest{
+		Table:  "t1",
+		Reader: strings.NewReader(buffer.String()),
+	})
 	require.NoError(t, err)
 	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))

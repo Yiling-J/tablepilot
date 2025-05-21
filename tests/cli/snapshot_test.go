@@ -168,7 +168,7 @@ func TestIntegrationCLI_SnapshotsAutofill(t *testing.T) {
 	}{
 		{"pokemons", "pokemons/pokemons.json", [][]string{
 			{"create", "../../examples/pokemons/pokemons.json"},
-			{"import", "examples/pokemons/pokemons.csv"},
+			{"import", "examples/pokemons/pokemons.csv", "-t", "pokemons"},
 			{"autofill", "pokemons", "-c", "5", "-b", "3", "--columns", "Ecology"},
 		}},
 		{"pokemons_autofill", "pokemons_autofill/pokemons.json", [][]string{

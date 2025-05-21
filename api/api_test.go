@@ -616,14 +616,14 @@ func TestAPI_Regenerate(t *testing.T) {
 }
 
 func TestAPI_ImageImport(t *testing.T) {
-	req := table.ImageImportRequest{
+	req := table.ImportRequest{
 		Data:   []byte("data"),
 		Prompt: "pm",
 		Model:  "mm",
 	}
 
 	tableMock := &table.TableServiceMock{
-		ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+		ImportImageFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
 			require.Equal(t, req, request)
 			return "foobar", nil
 		},

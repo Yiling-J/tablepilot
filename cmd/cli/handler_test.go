@@ -397,8 +397,8 @@ func TestHandler_Generate(t *testing.T) {
 }
 
 func TestHandler_Import(t *testing.T) {
-	for _, name := range []string{"", "bar"} {
-		t.Run(name, func(t *testing.T) {
+	for _, to := range []string{"", "bar"} {
+		t.Run(to, func(t *testing.T) {
 			file, err := os.Create("foo.csv")
 			require.NoError(t, err)
 			defer file.Close()
@@ -413,13 +413,15 @@ func TestHandler_Import(t *testing.T) {
 			writer.Flush()
 
 			tableMock := &table.TableServiceMock{
-				ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
-					if name == "" {
-						require.Equal(t, "foo", table)
+				ImportFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
+					require.Equal(t, "foo", request.Filename)
+					if to == "" {
+						require.Equal(t, "", request.Table)
+						require.Equal(t, "bar", request.Name)
 					} else {
-						require.Equal(t, name, table)
+						require.Equal(t, to, request.Table)
 					}
-					b, err := io.ReadAll(reader)
+					b, err := io.ReadAll(request.Reader)
 					require.NoError(t, err)
 					require.Equal(t, "c1,c2\nv1,v2\n", string(b))
 					return "123", nil
@@ -433,8 +435,13 @@ func TestHandler_Import(t *testing.T) {
 			)
 			cmd := &cobra.Command{}
 			cmd.Flags().String("table", "", "")
-			if name != "" {
-				err = cmd.Flags().Set("table", name)
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().Bool("truncate", false, "")
+			if to != "" {
+				err = cmd.Flags().Set("table", to)
+				require.NoError(t, err)
+			} else {
+				err = cmd.Flags().Set("name", "bar")
 				require.NoError(t, err)
 			}
 			err = handler.Import(cmd, []string{"foo.csv"})
@@ -460,9 +467,10 @@ func TestHandler_ImportImage(t *testing.T) {
 	require.NoError(t, err)
 
 	tableMock := &table.TableServiceMock{
-		ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+		ImportImageFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
 			require.Equal(t, "foobar", request.Prompt)
 			require.Equal(t, "m1", request.Model)
+			require.Equal(t, "bar", request.Name)
 			return "t1", nil
 		},
 	}
@@ -474,11 +482,15 @@ func TestHandler_ImportImage(t *testing.T) {
 	)
 	cmd := &cobra.Command{}
 	cmd.Flags().String("table", "", "")
+	cmd.Flags().String("name", "", "")
+	cmd.Flags().Bool("truncate", false, "")
 	cmd.Flags().String("prompt", "", "")
 	cmd.Flags().String("model", "", "")
 	err = cmd.Flags().Set("prompt", "foobar")
 	require.NoError(t, err)
 	err = cmd.Flags().Set("model", "m1")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("name", "bar")
 	require.NoError(t, err)
 	err = handler.Import(cmd, []string{"foo.png"})
 	require.NoError(t, err)

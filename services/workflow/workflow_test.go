@@ -266,7 +266,7 @@ func TestWorkflowRunner_Import(t *testing.T) {
 		{
 			name: "import csv", step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeImport,
-				Payload: json.RawMessage(`{"table": "foo","file":"test.csv","prompt":"bar"}`),
+				Payload: json.RawMessage(`{"table": "foo","name":"bar","file":"test.csv","prompt":"bar"}`),
 			},
 			message: "CSV imported: z",
 			tp:      "csv",
@@ -274,7 +274,7 @@ func TestWorkflowRunner_Import(t *testing.T) {
 		{
 			name: "import image", step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeImport,
-				Payload: json.RawMessage(`{"table": "foo","file":"test.png","prompt":"bar"}`),
+				Payload: json.RawMessage(`{"table": "foo","name":"bar","file":"test.png","prompt":"bar"}`),
 			},
 			message: "Image imported: z",
 			tp:      "img",
@@ -285,14 +285,19 @@ func TestWorkflowRunner_Import(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := db.NewTestDB()
 			tm := &table.TableServiceMock{
-				ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
-					require.Equal(t, "foo", table)
-					d, err := io.ReadAll(reader)
+				ImportFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
+					require.Equal(t, "foo", request.Table)
+					require.Equal(t, "bar", request.Name)
+					require.Equal(t, "test", request.Filename)
+					d, err := io.ReadAll(request.Reader)
 					require.NoError(t, err)
 					require.Equal(t, "csv", string(d))
 					return "z", nil
 				},
-				ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+				ImportImageFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
+					require.Equal(t, "foo", request.Table)
+					require.Equal(t, "bar", request.Name)
+					require.Equal(t, "test", request.Filename)
 					require.Equal(t, "bar", request.Prompt)
 					require.Equal(t, "m1", request.Model)
 					require.Equal(t, []byte("png"), request.Data)
