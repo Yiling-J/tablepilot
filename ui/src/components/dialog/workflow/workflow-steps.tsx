@@ -1,9 +1,9 @@
-import { WorkflowStep } from "@/actions";
+import { TypedWorkflowStep } from "@/actions";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Circle, Loader2, XCircle } from "lucide-react";
 
 type WorkflowStepsProps = {
-  steps: WorkflowStep[];
+  steps: TypedWorkflowStep[];
   currentStep: number;
   failed: boolean;
 };

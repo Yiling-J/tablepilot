@@ -77,7 +77,12 @@ describe("ImportFile", () => {
       nextRun = true;
     };
     render(
-      <ImportFileDialog isOpen={true} setIsOpen={vi.fn()} onNext={onNext} />,
+      <ImportFileDialog
+        isOpen={true}
+        setIsOpen={vi.fn()}
+        onNext={onNext}
+        tables={[]}
+      />,
     );
     const csvContent =
       "name,job\nAlice,Engineer\nBob,Designer\nCharlie,Manager";
@@ -105,7 +110,12 @@ describe("ImportFile", () => {
       return "foobar";
     });
     render(
-      <ImportFileDialog isOpen={true} setIsOpen={vi.fn()} onNext={onNext} />,
+      <ImportFileDialog
+        isOpen={true}
+        setIsOpen={vi.fn()}
+        onNext={onNext}
+        tables={[]}
+      />,
     );
     const fileContent = "foobar";
     const blob = new Blob([fileContent], { type: "image/png" });
