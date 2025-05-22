@@ -106,6 +106,7 @@ function TableList() {
       <ImportFileDialog
         isOpen={importCSVOpen}
         setIsOpen={setImportCSVOpen}
+        tables={tables}
         onNext={(form: TableCreateRequest, rows: JSONObject[]) => {
           withForm(form);
           withRows(rows);

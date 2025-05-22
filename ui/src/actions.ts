@@ -474,13 +474,16 @@ export async function updateProvider(
   return res.json();
 }
 
-export interface ImportImageRequest {
+export interface ImportRequest {
   data: string;
   prompt: string;
   model: string;
+  table: string;
+  name: string;
+  truncate: boolean;
 }
 
-export async function importImage(req: ImportImageRequest): Promise<string> {
+export async function importImage(req: ImportRequest): Promise<string> {
   const res = await fetch(importImageUrl(), {
     method: "POST",
     headers: {

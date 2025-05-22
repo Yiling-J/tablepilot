@@ -1,4 +1,4 @@
-import { Source, TableCreateRequest, importImage } from "@/actions";
+import { Source, TableCreateRequest, TableInfo, importImage } from "@/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -9,6 +9,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { JSONArray, JSONObject } from "@/json";
 import { ReloadIcon } from "@radix-ui/react-icons";
@@ -17,14 +24,18 @@ import Papa from "papaparse";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModelSelector } from "../model-selector.tsx";
+import { Checkbox } from "../ui/checkbox.tsx";
+import { Input } from "../ui/input.tsx";
 
 interface ImportFileDialogProps {
   isOpen: boolean;
   setIsOpen: (v: boolean) => void;
   onNext: (form: TableCreateRequest, rows: JSONObject[]) => void;
+  tables: TableInfo[];
 }
 
 export function ImportFileDialog({
+  tables,
   isOpen,
   setIsOpen,
   onNext,
@@ -36,6 +47,9 @@ export function ImportFileDialog({
   const [isImage, setIsImage] = useState<boolean>(false);
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState("");
+  const [importTo, setImportTo] = useState("");
+  const [newName, setNewName] = useState("");
+  const [truncate, setTruncate] = useState(false);
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -55,6 +69,9 @@ export function ImportFileDialog({
           const id = await importImage({
             prompt: prompt,
             model: model,
+            table: importTo,
+            truncate: truncate,
+            name: newName,
             data: (reader.result as string)
               .replace("data:", "")
               .replace(/^.+,/, ""),
@@ -101,17 +118,29 @@ export function ImportFileDialog({
       };
       onNext(form, rows);
     } finally {
-      setFile(null);
-      setFileName("");
-      setIsImage(false);
-      setPrompt("");
-      setModel("");
-      setLoading(false);
+      clear();
     }
+  };
+  const clear = () => {
+    setFile(null);
+    setFileName("");
+    setIsImage(false);
+    setPrompt("");
+    setModel("");
+    setLoading(false);
+    setImportTo("");
+    setNewName("");
+    setTruncate(false);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(v) => {
+        setIsOpen(v);
+        clear();
+      }}
+    >
       <DialogOverlay />
       <DialogContent
         onInteractOutside={(e) => {
@@ -175,8 +204,85 @@ export function ImportFileDialog({
             </CardContent>
           </Card>
         </div>
+        {file && (
+          <div>
+            <div className="space-y-2">
+              <Label htmlFor="importOption">Import Option</Label>
+              <Select
+                value={
+                  importTo === ""
+                    ? "Create new table"
+                    : "Import into existing table"
+                }
+                onValueChange={(value) => {
+                  if (value === "Create new table") {
+                    setImportTo("");
+                    setTruncate(false);
+                  } else {
+                    setImportTo("__select__");
+                    setNewName("");
+                  }
+                }}
+              >
+                <SelectTrigger id="importOption">
+                  <SelectValue placeholder="Select import option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Create new table">
+                    Create new table
+                  </SelectItem>
+                  <SelectItem value="Import into existing table">
+                    Import into existing table
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {importTo === "" && (
+              <div className="space-y-2">
+                <Label htmlFor="newTableName">New Table Name</Label>
+                <Input
+                  id="newTableName"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+            )}
+            {importTo !== "" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="existingTableName">Select Table</Label>
+                  <Select
+                    value={importTo}
+                    onValueChange={(value) => setImportTo(value)}
+                  >
+                    <SelectTrigger id="existingTableName">
+                      <SelectValue placeholder="Select existing table" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tables.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Checkbox
+                    id="truncateTable"
+                    checked={truncate}
+                    onCheckedChange={(checked) => setTruncate(!!checked)}
+                  />
+                  <Label htmlFor="truncateTable" className="cursor-pointer">
+                    Truncate table before import
+                  </Label>
+                </div>
+              </>
+            )}
+          </div>
+        )}
         {isImage && (
-          <div className="grid gap-2 px-5">
+          <div className="grid gap-2">
             <Label htmlFor="prompt" className="flex items-center gap-1">
               Prompt
               <span className="text-xs text-muted-foreground">(optional)</span>
@@ -202,7 +308,12 @@ export function ImportFileDialog({
           </Button>
           <Button
             onClick={handleSubmitCSV}
-            disabled={!file || loading || (isImage && model === "")}
+            disabled={
+              !file ||
+              loading ||
+              (isImage && model === "") ||
+              importTo === "__select__"
+            }
           >
             {loading ? <ReloadIcon className="animate-spin" /> : "Next"}
           </Button>
