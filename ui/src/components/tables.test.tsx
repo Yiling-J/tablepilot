@@ -1,7 +1,7 @@
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Mock } from "vitest";
 import { TableInfo, deleteTable, getTables } from "../actions";
 import { TableListPage } from "./tables";
@@ -11,6 +11,13 @@ describe("Tables", () => {
     vi.mock("react-router-dom");
     const m = vi.mocked(useNavigate);
     m.mockReturnValue(vi.fn());
+    vi.mocked(useLocation).mockReturnValue({
+      key: "",
+      pathname: "/tables",
+      search: "",
+      hash: "",
+      state: null,
+    });
     vi.mock("@/actions");
     const userTable = {
       id: "abc",
@@ -84,7 +91,7 @@ describe("Tables", () => {
     const recipeTable = {
       id: "abd",
       name: "recipes",
-      description: "recipes table",
+      description: "recipes table new",
       columns: [
         {
           id: "col1",
@@ -105,6 +112,7 @@ describe("Tables", () => {
     expect(screen.getByText("users table")).toBeInTheDocument();
     await userEvent.click(screen.getAllByText("Delete")[0]);
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
+    await screen.findByText("recipes table new");
     expect(screen.queryByText("users table")).toBe(null);
   });
   it("should open create table form when click add new table", async () => {

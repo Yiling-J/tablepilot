@@ -146,11 +146,9 @@ function TableList() {
                     variant="destructive"
                     onClick={async (e) => {
                       e.stopPropagation();
-                      // No need to setLoading(true) here as fetchTables handles it.
                       await deleteTable(table.id);
                       await fetchTables(); // Refetch after delete
                       refreshTables(); // Context refresh
-                      // No need to setLoading(false) here
                     }}
                   >
                     Delete

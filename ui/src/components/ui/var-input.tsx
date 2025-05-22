@@ -14,6 +14,7 @@ type MentionInputProps = (InputProps & TextareaProps) & {
   variables?: ContextVariable[];
   textarea?: boolean;
   rows?: number;
+  testAt?: boolean;
 };
 
 export function MentionInput({
@@ -24,9 +25,13 @@ export function MentionInput({
   className,
   textarea = false,
   rows = 1,
+  testAt,
   ...rest
 }: MentionInputProps) {
   if (variables === undefined) {
+    if (placeholder === "Type @ to mention a variable...") {
+      placeholder = "input value";
+    }
     if (textarea) {
       return (
         <Textarea
@@ -51,8 +56,9 @@ export function MentionInput({
     }
   }
 
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [filteredVars, setFilteredVars] = useState<ContextVariable[]>([]);
+  const [showDropdown, setShowDropdown] = useState(testAt ?? false);
+  const [filteredVars, setFilteredVars] =
+    useState<ContextVariable[]>(variables);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const inputRef = useRef<HTMLDivElement>(null);
@@ -353,7 +359,7 @@ export function MentionInput({
   }, []);
 
   useEffect(() => {
-    buildElements(value as string);
+    buildElements((value ?? "") as string);
   }, []);
 
   const minHeightVariants = {
