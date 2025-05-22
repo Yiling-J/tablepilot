@@ -16,48 +16,55 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { ContextVariable, MentionInput } from "../ui/var-input";
 
 interface AutofillInputProps {
-  columns: Column[];
-  onChange: (columns: Column[], contextColumns: Column[]) => void;
+  allColumns: Column[];
+  columns: string[];
+  contextColumns: string[];
+  prompt: string;
+  onColumnsChange: (columns: string[]) => void;
+  onContextColumnsChange: (columns: string[]) => void;
+  onPromptChange: (prompt: string) => void;
+  variables?: ContextVariable[];
 }
 
-export function AutofillInput({ columns, onChange }: AutofillInputProps) {
-  const [selectedColumns, setSelectedColumns] = useState<Column[]>([]);
-  const [selectedContextColumns, setSelectedContextColumns] = useState<
-    Column[]
-  >([]);
-
+export function AutofillInput({
+  allColumns,
+  columns,
+  contextColumns,
+  prompt,
+  onColumnsChange,
+  onContextColumnsChange,
+  onPromptChange,
+  variables,
+}: AutofillInputProps) {
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [contextColumnsOpen, setContextColumnsOpen] = useState(false);
 
-  useEffect(() => {
-    onChange(selectedColumns, selectedContextColumns);
-  }, [selectedColumns, selectedContextColumns]);
-
-  const toggleColumn = (column: Column) => {
-    setSelectedColumns((current) =>
-      current.includes(column)
-        ? current.filter((c) => c !== column)
-        : [...current, column],
+  const toggleColumn = (column: string) => {
+    onColumnsChange(
+      columns.includes(column)
+        ? columns.filter((c) => c !== column)
+        : [...columns, column],
     );
   };
 
-  const toggleContextColumn = (column: Column) => {
-    setSelectedContextColumns((current) =>
-      current.includes(column)
-        ? current.filter((c) => c !== column)
-        : [...current, column],
+  const toggleContextColumn = (column: string) => {
+    onContextColumnsChange(
+      contextColumns.includes(column)
+        ? contextColumns.filter((c) => c !== column)
+        : [...contextColumns, column],
     );
   };
 
   const addAllColumns = () => {
-    setSelectedColumns(columns);
+    onColumnsChange(allColumns.map((e) => e.id));
   };
 
   const addAllContextColumns = () => {
-    setSelectedContextColumns(columns);
+    onContextColumnsChange(allColumns.map((e) => e.id));
   };
 
   return (
@@ -83,8 +90,8 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
               aria-expanded={columnsOpen}
               className="w-full justify-between"
             >
-              {selectedColumns.length > 0
-                ? `${selectedColumns.length} selected`
+              {columns.length > 0
+                ? `${columns.length} selected`
                 : "Select columns..."}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -95,16 +102,16 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
               <CommandList>
                 <CommandEmpty>No column found.</CommandEmpty>
                 <CommandGroup>
-                  {columns.map((column) => (
+                  {allColumns.map((column) => (
                     <CommandItem
                       key={column.id}
                       value={column.id}
-                      onSelect={() => toggleColumn(column)}
+                      onSelect={() => toggleColumn(column.id)}
                     >
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedColumns.includes(column)
+                          columns.includes(column.id)
                             ? "opacity-100"
                             : "opacity-0",
                         )}
@@ -117,14 +124,14 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
             </Command>
           </PopoverContent>
         </Popover>
-        {selectedColumns.length > 0 && (
+        {columns.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {selectedColumns.map((column) => (
+            {columns.map((column) => (
               <div
-                key={column.id}
+                key={column}
                 className="flex items-center rounded-md bg-muted px-2 py-1 text-sm"
               >
-                {column.name}
+                {allColumns.find((c) => c.id === column)?.name}
                 <button
                   className="ml-1 rounded-full text-muted-foreground hover:text-foreground"
                   onClick={() => toggleColumn(column)}
@@ -162,8 +169,8 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
               aria-expanded={contextColumnsOpen}
               className="w-full justify-between"
             >
-              {selectedContextColumns.length > 0
-                ? `${selectedContextColumns.length} selected`
+              {contextColumns.length > 0
+                ? `${contextColumns.length} selected`
                 : "Select context columns..."}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -174,16 +181,16 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
               <CommandList>
                 <CommandEmpty>No column found.</CommandEmpty>
                 <CommandGroup>
-                  {columns.map((column) => (
+                  {allColumns.map((column) => (
                     <CommandItem
                       key={column.id}
                       value={column.id}
-                      onSelect={() => toggleContextColumn(column)}
+                      onSelect={() => toggleContextColumn(column.id)}
                     >
                       <Check
                         className={cn(
                           "mr-2 h-4 w-4",
-                          selectedContextColumns.includes(column)
+                          contextColumns.includes(column.id)
                             ? "opacity-100"
                             : "opacity-0",
                         )}
@@ -196,14 +203,14 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
             </Command>
           </PopoverContent>
         </Popover>
-        {selectedContextColumns.length > 0 && (
+        {contextColumns.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {selectedContextColumns.map((column) => (
+            {contextColumns.map((column) => (
               <div
-                key={column.id}
+                key={column}
                 className="flex items-center rounded-md bg-muted px-2 py-1 text-sm"
               >
-                {column.name}
+                {allColumns.find((c) => c.id === column)?.name}
                 <button
                   className="ml-1 rounded-full text-muted-foreground hover:text-foreground"
                   onClick={() => toggleContextColumn(column)}
@@ -214,6 +221,19 @@ export function AutofillInput({ columns, onChange }: AutofillInputProps) {
             ))}
           </div>
         )}
+        <div className="space-y-2">
+          <Label htmlFor="autofillPrompt">Prompt</Label>
+          <MentionInput
+            value={prompt}
+            onChange={(e) => {
+              onPromptChange(e.target.value);
+            }}
+            textarea={true}
+            rows={4}
+            placeholder="Optional prompt for autofill. This is especially helpful when your columns and context columns are the same, since Tablepilot can only infer your intent from the column descriptions, this prompt serves as an additional guide."
+            variables={variables}
+          />
+        </div>
       </div>
     </div>
   );

@@ -585,6 +585,8 @@ export interface AutofillStepPayload {
   batch: number;
   count: number;
   columns: string[];
+  context_columns: string[];
+  prompt: string;
 }
 
 export interface ExportStepPayload {

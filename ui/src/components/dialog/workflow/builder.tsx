@@ -263,7 +263,14 @@ export default function WorkflowBuilderDialog({
       case "Autofill":
         return {
           type,
-          payload: { count: 20, batch: 5, table: "", columns: [] },
+          payload: {
+            count: 20,
+            batch: 5,
+            table: "",
+            columns: [],
+            context_columns: [],
+            prompt: "",
+          },
         };
       case "ExportTable":
         return { type, payload: { table: "" } };
@@ -1102,6 +1109,8 @@ export default function WorkflowBuilderDialog({
                                 payload: {
                                   ...selectedStep.payload,
                                   table: value,
+                                  columns: [],
+                                  context_columns: [],
                                 },
                               })
                             }
@@ -1119,44 +1128,76 @@ export default function WorkflowBuilderDialog({
                           </Select>
                         </div>
                         <AutofillInput
-                          columns={
+                          allColumns={
                             stepContexts[selectedStepIndex!].tables.find(
                               (t) => t.id === selectedStep.payload.table,
                             )?.columns ?? []
                           }
-                          onChange={(columns, contextColumns) => {}}
+                          variables={stepContexts[selectedStepIndex!].variables}
+                          columns={selectedStep.payload.columns}
+                          contextColumns={selectedStep.payload.context_columns}
+                          prompt={selectedStep.payload.prompt}
+                          onColumnsChange={(v) => {
+                            updateStep({
+                              type: selectedStep.type,
+                              payload: {
+                                ...selectedStep.payload,
+                                columns: [...v],
+                              },
+                            });
+                          }}
+                          onContextColumnsChange={(v) => {
+                            updateStep({
+                              type: selectedStep.type,
+                              payload: {
+                                ...selectedStep.payload,
+                                context_columns: [...v],
+                              },
+                            });
+                          }}
+                          onPromptChange={(v) => {
+                            updateStep({
+                              type: selectedStep.type,
+                              payload: {
+                                ...selectedStep.payload,
+                                prompt: v,
+                              },
+                            });
+                          }}
                         />
-                        <div className="space-y-2">
-                          <Label htmlFor="generateCount">Count</Label>
-                          <NumberInput
-                            id="GenerateCount"
-                            value={selectedStep.payload.count}
-                            onValueChange={(e) =>
-                              updateStep({
-                                type: selectedStep.type,
-                                payload: {
-                                  ...selectedStep.payload,
-                                  count: e ?? 10,
-                                },
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="generateBatch">Batch</Label>
-                          <NumberInput
-                            id="GenerateBatch"
-                            value={selectedStep.payload.count}
-                            onValueChange={(e) =>
-                              updateStep({
-                                type: selectedStep.type,
-                                payload: {
-                                  ...selectedStep.payload,
-                                  batch: e ?? 2,
-                                },
-                              })
-                            }
-                          />
+                        <div className="flex flex-row items-center space-x-4">
+                          <div className="flex flex-row items-center space-x-2">
+                            <Label htmlFor="generateCount">Count</Label>
+                            <NumberInput
+                              id="GenerateCount"
+                              value={selectedStep.payload.count}
+                              onValueChange={(e) =>
+                                updateStep({
+                                  type: selectedStep.type,
+                                  payload: {
+                                    ...selectedStep.payload,
+                                    count: e ?? 10,
+                                  },
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="flex flex-row items-center space-x-2">
+                            <Label htmlFor="generateBatch">Batch</Label>
+                            <NumberInput
+                              id="GenerateBatch"
+                              value={selectedStep.payload.count}
+                              onValueChange={(e) =>
+                                updateStep({
+                                  type: selectedStep.type,
+                                  payload: {
+                                    ...selectedStep.payload,
+                                    batch: e ?? 2,
+                                  },
+                                })
+                              }
+                            />
+                          </div>
                         </div>
                       </>
                     )}

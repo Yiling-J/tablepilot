@@ -356,11 +356,19 @@ export function MentionInput({
     buildElements(value as string);
   }, []);
 
+  const minHeightVariants = {
+    1: "min-h-[20px]",
+    2: "min-h-[40px]",
+    3: "min-h-[60px]",
+    4: "min-h-[80px]",
+    5: "min-h-[100px]",
+  } as Record<number, string>;
+
   return (
     <div
       className={cn(
         "relative",
-        textarea ? `min-h-[${rows * 24 + 16}px]` : "min-h-[40px]",
+        textarea ? (minHeightVariants[rows] ?? "min-h-[80px]") : "min-h-[40px]",
       )}
     >
       <div
@@ -368,7 +376,9 @@ export function MentionInput({
         contentEditable
         className={cn(
           "w-full rounded-md border border-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          textarea ? `min-h-[${rows * 24 + 16}px]` : "min-h-[40px]",
+          textarea
+            ? (minHeightVariants[rows] ?? "min-h-[80px]")
+            : "min-h-[40px]",
           className,
         )}
         onInput={handleInput}
