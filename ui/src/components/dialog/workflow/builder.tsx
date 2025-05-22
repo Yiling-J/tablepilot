@@ -160,10 +160,7 @@ export default function WorkflowBuilderDialog({
           });
           const ii = tbs.findIndex((t) => t.name === tableName);
           const tr = (step.payload as CreateTableStepPayload).request;
-          const ti = tableCreateRequestToTableInfo(
-            `{{step${index}.table}}`,
-            tr,
-          );
+          const ti = tableCreateRequestToTableInfo(tr);
           if (ii === -1) {
             tbs.push(ti);
           } else {
@@ -1011,23 +1008,32 @@ export default function WorkflowBuilderDialog({
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="columnName">Column Name</Label>
-                          <MentionInput
-                            id="columnName"
-                            variables={
-                              stepContexts[selectedStepIndex!].variables
-                            }
+                          <Label htmlFor="columnName">Column</Label>
+                          <Select
                             value={selectedStep.payload.column}
-                            onChange={(e) =>
+                            onValueChange={(value) =>
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  column: e.target.value,
+                                  column: value,
                                 },
                               })
                             }
-                          />
+                          >
+                            <SelectTrigger id="column">
+                              <SelectValue placeholder="Select a columns" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(
+                                stepContexts[selectedStepIndex!].tables.find(
+                                  (t) => t.id === selectedStep.payload.table,
+                                )?.columns ?? []
+                              ).map((c) => (
+                                <SelectItem value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </>
                     )}
@@ -1209,7 +1215,7 @@ export default function WorkflowBuilderDialog({
                         {/* Increased spacing */}
                         {/* File Variable Select */}
                         <div className="space-y-2">
-                          <Label htmlFor="importFile">File Variable</Label>
+                          <Label htmlFor="importFile">File</Label>
                           <Select
                             value={
                               (selectedStep.payload as ImportDataStepPayload)
@@ -1226,7 +1232,7 @@ export default function WorkflowBuilderDialog({
                             }
                           >
                             <SelectTrigger id="importFile">
-                              <SelectValue placeholder="Select file variable" />
+                              <SelectValue placeholder="Select file" />
                             </SelectTrigger>
                             <SelectContent>
                               {stepContexts[1].variables
@@ -1238,6 +1244,11 @@ export default function WorkflowBuilderDialog({
                                 ))}
                             </SelectContent>
                           </Select>
+                          <p className="text-xs text-primary/80">
+                            You can select any file-type variable defined in the
+                            UserInput step here. When the workflow starts, the
+                            user will be prompted to select the file first.
+                          </p>
                         </div>
                         {/* Import Option Select */}
                         <div className="space-y-2">
@@ -1371,12 +1382,15 @@ export default function WorkflowBuilderDialog({
                         )}
                         {/* Prompt */}
                         <div className="space-y-2">
-                          <Label htmlFor="importPrompt">Prompt</Label>
+                          <Label htmlFor="importPrompt">
+                            Prompt (Import Image)
+                          </Label>
                           <MentionInput
                             id="importPrompt"
                             className="mt-2"
                             textarea={true}
                             rows={3}
+                            placeholder="Used only when importing images, as AI is required to extract data from them."
                             value={
                               (selectedStep.payload as ImportDataStepPayload)
                                 .prompt

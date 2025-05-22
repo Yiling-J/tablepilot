@@ -357,11 +357,11 @@ export function MentionInput({
   }, []);
 
   const minHeightVariants = {
-    1: "min-h-[20px]",
-    2: "min-h-[40px]",
-    3: "min-h-[60px]",
-    4: "min-h-[80px]",
-    5: "min-h-[100px]",
+    1: "min-h-[30px]",
+    2: "min-h-[60px]",
+    3: "min-h-[90px]",
+    4: "min-h-[120px]",
+    5: "min-h-[150px]",
   } as Record<number, string>;
 
   return (

@@ -229,7 +229,7 @@ export function AutofillInput({
               onPromptChange(e.target.value);
             }}
             textarea={true}
-            rows={4}
+            rows={3}
             placeholder="Optional prompt for autofill. This is especially helpful when your columns and context columns are the same, since Tablepilot can only infer your intent from the column descriptions, this prompt serves as an additional guide."
             variables={variables}
           />

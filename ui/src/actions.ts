@@ -30,12 +30,11 @@ export interface TableInfo {
 
 // used in workflow only, id will be var path in {{.var}} format
 export function tableCreateRequestToTableInfo(
-  id: string,
   request: TableCreateRequest,
 ): TableInfo {
   const convertedColumns: Column[] = request.columns.map((reqCol, _) => {
     return {
-      id: id,
+      id: reqCol.name,
       name: reqCol.name,
       description: reqCol.description,
       type: reqCol.type as ColumnType,
