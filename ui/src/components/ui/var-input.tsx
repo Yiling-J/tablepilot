@@ -225,7 +225,7 @@ export function MentionInput({
 
     // Create the mention span
     const mentionSpan = document.createElement("span");
-    let vid = document.createAttribute("vid");
+    const vid = document.createAttribute("vid");
     const vidv = Math.random().toString(20);
     vid.value = vidv;
     mentionSpan.className =

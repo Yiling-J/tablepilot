@@ -174,7 +174,7 @@ export default function WorkflowBuilderDialog({
             path: `step${index}.column`,
             type: "string",
           });
-          let t = tbs.find((t) => t.name === pd.table);
+          const t = tbs.find((t) => t.name === pd.table);
           if (t) {
             t.columns.push({
               id: pd.name,
