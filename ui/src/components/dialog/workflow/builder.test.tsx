@@ -1,4 +1,19 @@
-import { createWorkflow, getTables, TableInfo } from "@/actions";
+import {
+  createWorkflow,
+  getTables,
+  TableInfo,
+  // Payload Types for casting
+  WorkflowStepType, 
+  CreateTableStepPayload,
+  DeleteTableStepPayload,
+  CreateColumnStepPayload,
+  DeleteColumnStepPayload,
+  ImportDataStepPayload,
+  ExportStepPayload,
+  GenerateStepPayload,
+  AutofillStepPayload,
+  // UserInputStepPayload, 
+} from "@/actions";
 import { TestProvider } from "@/test/helpers/test-provider";
 import {
   render,
@@ -14,7 +29,7 @@ import { MemoryRouter } from "react-router-dom";
 
 describe("Workflow Builder", () => {
   beforeEach(async () => {
-    const recipeTable = { // This is an existing table from "DB"
+    const recipeTable = { 
       id: "abd",
       name: "recipes",
       description: "recipes table new",
@@ -138,10 +153,11 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("CreateTable");
-    expect(step.payload.request.name).toBe("");
-    expect(step.payload.request.description).toBe("");
-    expect(step.payload.on_exists).toBe("Stop");
+    expect(step.type).toBe(WorkflowStepType.CreateTable);
+    const payload = step.payload as CreateTableStepPayload;
+    expect(payload.request.name).toBe("");
+    expect(payload.request.description).toBe("");
+    expect(payload.on_exists).toBe("Stop");
   });
 
   it("DeleteTable action should correctly save workflow", async () => {
@@ -158,8 +174,9 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("DeleteTable");
-    expect(step.payload.table).toBe("abd");
+    expect(step.type).toBe(WorkflowStepType.DeleteTable);
+    const payload = step.payload as DeleteTableStepPayload;
+    expect(payload.table).toBe("abd");
   });
 
   it("CreateColumn action should correctly save workflow", async () => {
@@ -182,11 +199,12 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("CreateColumn");
-    expect(step.payload.table).toBe("abd");
-    expect(step.payload.name).toBe("NewColumn");
-    expect(step.payload.description).toBe("A new test column");
-    expect(step.payload.type).toBe("string");
+    expect(step.type).toBe(WorkflowStepType.CreateColumn);
+    const payload = step.payload as CreateColumnStepPayload;
+    expect(payload.table).toBe("abd");
+    expect(payload.name).toBe("NewColumn");
+    expect(payload.description).toBe("A new test column");
+    expect(payload.type).toBe("string");
   });
 
   it("DeleteColumn action should correctly save workflow", async () => {
@@ -205,9 +223,10 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("DeleteColumn");
-    expect(step.payload.table).toBe("abd"); 
-    expect(step.payload.column).toBe("col1"); 
+    expect(step.type).toBe(WorkflowStepType.DeleteColumn);
+    const payload = step.payload as DeleteColumnStepPayload;
+    expect(payload.table).toBe("abd"); 
+    expect(payload.column).toBe("col1"); 
   });
 
   it("Import action should correctly save workflow with new table", async () => {
@@ -233,12 +252,13 @@ describe("Workflow Builder", () => {
     expect(wf.variables[0].type).toBe("file");
     expect(wf.steps).toHaveLength(1); 
     const importStep = wf.steps[0];
-    expect(importStep.type).toBe("Import");
-    expect(importStep.payload.file).toBe("importFileVar"); 
-    expect(importStep.payload.name).toBe("ImportedTable");
-    expect(importStep.payload.table).toBe(""); 
-    expect(importStep.payload.truncate).toBe(false); 
-    expect(importStep.payload.prompt).toBe("Importing data");
+    expect(importStep.type).toBe(WorkflowStepType.Import);
+    const payload = importStep.payload as ImportDataStepPayload;
+    expect(payload.file).toBe("importFileVar"); 
+    expect(payload.name).toBe("ImportedTable");
+    expect(payload.table).toBe(""); 
+    expect(payload.truncate).toBe(false); 
+    expect(payload.prompt).toBe("Importing data");
   });
 
   it("ExportTable action should correctly save workflow", async () => {
@@ -253,8 +273,9 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("ExportTable");
-    expect(step.payload.table).toBe("abd"); 
+    expect(step.type).toBe(WorkflowStepType.ExportTable);
+    const payload = step.payload as ExportStepPayload;
+    expect(payload.table).toBe("abd"); 
   });
 
   it("Generate action should correctly save workflow", async () => {
@@ -275,10 +296,11 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("Generate");
-    expect(step.payload.table).toBe("abd");
-    expect(step.payload.count).toBe(50);
-    expect(step.payload.batch).toBe(10);
+    expect(step.type).toBe(WorkflowStepType.Generate);
+    const payload = step.payload as GenerateStepPayload;
+    expect(payload.table).toBe("abd");
+    expect(payload.count).toBe(50);
+    expect(payload.batch).toBe(10);
   });
 
   it("Autofill action should correctly save workflow", async () => {
@@ -305,13 +327,14 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe("Autofill");
-    expect(step.payload.table).toBe("abd");
-    expect(step.payload.columns).toEqual(["col1"]);
-    expect(step.payload.context_columns).toEqual([]);
-    expect(step.payload.prompt).toBe("Autofill recipe names");
-    expect(step.payload.count).toBe(30);
-    expect(step.payload.batch).toBe(3);
+    expect(step.type).toBe(WorkflowStepType.Autofill);
+    const payload = step.payload as AutofillStepPayload;
+    expect(payload.table).toBe("abd");
+    expect(payload.columns).toEqual(["col1"]);
+    expect(payload.context_columns).toEqual([]);
+    expect(payload.prompt).toBe("Autofill recipe names");
+    expect(payload.count).toBe(30);
+    expect(payload.batch).toBe(3);
   });
 
   it("should correctly save a complex multi-step workflow", async () => {
@@ -324,7 +347,6 @@ describe("Workflow Builder", () => {
     // Step 1: CreateTable
     await userEvent.click(screen.getByText("Add Step"));
     await userEvent.click(screen.getByText("Create Table"));
-    // "On Exists" is "Stop" by default, no interaction needed to verify.
 
     // Step 2: CreateColumn
     await userEvent.click(screen.getByText("Add Step"));
@@ -332,8 +354,6 @@ describe("Workflow Builder", () => {
     let tableNameSelect = screen.getByRole("combobox", { name: /table name/i });
     await userEvent.click(tableNameSelect);
     let listbox = await screen.findByRole("listbox");
-    // The display name for "step0.table" might be generic like "Output of Create Table step"
-    // or include the (empty) name. Assuming "Output of Create Table step" for now.
     await userEvent.click(within(listbox).getByText(/output of create table step/i)); 
     await userEvent.type(screen.getByLabelText("Column Name"), "AddedColumn1");
     await userEvent.type(screen.getByLabelText("Column Description"), "Test column for MultiStepTable");
@@ -352,7 +372,7 @@ describe("Workflow Builder", () => {
     let columnSelect = screen.getByRole("combobox", { name: /column/i });
     await userEvent.click(columnSelect);
     listbox = await screen.findByRole("listbox");
-    await userEvent.click(within(listbox).getByText("AddedColumn1")); // Display name of "step1.column"
+    await userEvent.click(within(listbox).getByText("AddedColumn1")); 
 
     // Step 4: Import
     await userEvent.click(screen.getByText("Add Step"));
@@ -361,7 +381,6 @@ describe("Workflow Builder", () => {
     await userEvent.click(fileVarSelect);
     listbox = await screen.findByRole("listbox");
     await userEvent.click(within(listbox).getByText("inputFile1"));
-    // "Create new table" is default.
     await userEvent.type(screen.getByLabelText("New Table Name"), "SecondMultiStepTable");
     await userEvent.type(screen.getByLabelText("Prompt (Import Image)"), "Importing for multi-step");
 
@@ -385,7 +404,6 @@ describe("Workflow Builder", () => {
     tableNameSelect = screen.getByRole("combobox", { name: /table name/i });
     await userEvent.click(tableNameSelect);
     listbox = await screen.findByRole("listbox");
-    // The display name for "step3.table" (from Import) will be "SecondMultiStepTable"
     await userEvent.click(within(listbox).getByText("SecondMultiStepTable"));
 
     // Save Workflow
@@ -395,23 +413,57 @@ describe("Workflow Builder", () => {
     expect(createWorkflow).toHaveBeenCalled();
     const wf = vi.mocked(createWorkflow).mock.calls[0][0];
 
-    // Variables Assertion
     expect(wf.variables).toHaveLength(1);
     expect(wf.variables[0]).toMatchObject({ name: "inputFile1", type: "file" });
 
-    // Steps Assertion
     expect(wf.steps).toHaveLength(6);
+    
     // Step 1: CreateTable
-    expect(wf.steps[0]).toMatchObject({ type: "CreateTable", payload: { request: { name: "", description: "" }, on_exists: "Stop" } });
+    const s0 = wf.steps[0];
+    expect(s0.type).toBe(WorkflowStepType.CreateTable);
+    const s0p = s0.payload as CreateTableStepPayload;
+    expect(s0p.request.name).toBe("");
+    expect(s0p.request.description).toBe("");
+    expect(s0p.on_exists).toBe("Stop");
+    
     // Step 2: CreateColumn
-    expect(wf.steps[1]).toMatchObject({ type: "CreateColumn", payload: { table: "step0.table", name: "AddedColumn1", description: "Test column for MultiStepTable", type: "string" } });
+    const s1 = wf.steps[1];
+    expect(s1.type).toBe(WorkflowStepType.CreateColumn);
+    const s1p = s1.payload as CreateColumnStepPayload;
+    expect(s1p.table).toBe("step0.table");
+    expect(s1p.name).toBe("AddedColumn1");
+    expect(s1p.description).toBe("Test column for MultiStepTable");
+    expect(s1p.type).toBe("string");
+    
     // Step 3: DeleteColumn
-    expect(wf.steps[2]).toMatchObject({ type: "DeleteColumn", payload: { table: "step0.table", column: "step1.column" } });
+    const s2 = wf.steps[2];
+    expect(s2.type).toBe(WorkflowStepType.DeleteColumn);
+    const s2p = s2.payload as DeleteColumnStepPayload;
+    expect(s2p.table).toBe("step0.table");
+    expect(s2p.column).toBe("step1.column");
+    
     // Step 4: Import
-    expect(wf.steps[3]).toMatchObject({ type: "Import", payload: { file: "inputFile1", name: "SecondMultiStepTable", table: "", truncate: false, prompt: "Importing for multi-step" } });
+    const s3 = wf.steps[3];
+    expect(s3.type).toBe(WorkflowStepType.Import);
+    const s3p = s3.payload as ImportDataStepPayload;
+    expect(s3p.file).toBe("inputFile1");
+    expect(s3p.name).toBe("SecondMultiStepTable");
+    expect(s3p.table).toBe("");
+    expect(s3p.truncate).toBe(false);
+    expect(s3p.prompt).toBe("Importing for multi-step");
+    
     // Step 5: Generate
-    expect(wf.steps[4]).toMatchObject({ type: "Generate", payload: { table: "step0.table", count: 10, batch: 2 } });
+    const s4 = wf.steps[4];
+    expect(s4.type).toBe(WorkflowStepType.Generate);
+    const s4p = s4.payload as GenerateStepPayload;
+    expect(s4p.table).toBe("step0.table");
+    expect(s4p.count).toBe(10);
+    expect(s4p.batch).toBe(2);
+    
     // Step 6: ExportTable
-    expect(wf.steps[5]).toMatchObject({ type: "ExportTable", payload: { table: "step3.table" } });
+    const s5 = wf.steps[5];
+    expect(s5.type).toBe(WorkflowStepType.ExportTable);
+    const s5p = s5.payload as ExportStepPayload;
+    expect(s5p.table).toBe("step3.table");
   });
 });
