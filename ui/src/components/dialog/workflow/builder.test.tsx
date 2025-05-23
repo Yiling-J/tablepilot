@@ -3,7 +3,7 @@ import {
   getTables,
   TableInfo,
   // Payload Types for casting
-  WorkflowStepType, 
+  // WorkflowStepType, // Removed as no longer used
   CreateTableStepPayload,
   DeleteTableStepPayload,
   CreateColumnStepPayload,
@@ -19,7 +19,7 @@ import {
   render,
   screen,
   within,
-  waitFor, 
+  // waitFor, // Removed as no longer used by active tests
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import WorkflowBuilderDialog from "./builder";
@@ -153,7 +153,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.CreateTable);
+    expect(step.type).toBe("CreateTable"); 
     const payload = step.payload as CreateTableStepPayload;
     expect(payload.request.name).toBe("");
     expect(payload.request.description).toBe("");
@@ -174,7 +174,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.DeleteTable);
+    expect(step.type).toBe("DeleteTable"); 
     const payload = step.payload as DeleteTableStepPayload;
     expect(payload.table).toBe("abd");
   });
@@ -199,7 +199,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.CreateColumn);
+    expect(step.type).toBe("CreateColumn"); 
     const payload = step.payload as CreateColumnStepPayload;
     expect(payload.table).toBe("abd");
     expect(payload.name).toBe("NewColumn");
@@ -223,7 +223,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.DeleteColumn);
+    expect(step.type).toBe("DeleteColumn"); 
     const payload = step.payload as DeleteColumnStepPayload;
     expect(payload.table).toBe("abd"); 
     expect(payload.column).toBe("col1"); 
@@ -252,7 +252,7 @@ describe("Workflow Builder", () => {
     expect(wf.variables[0].type).toBe("file");
     expect(wf.steps).toHaveLength(1); 
     const importStep = wf.steps[0];
-    expect(importStep.type).toBe(WorkflowStepType.Import);
+    expect(importStep.type).toBe("Import"); 
     const payload = importStep.payload as ImportDataStepPayload;
     expect(payload.file).toBe("importFileVar"); 
     expect(payload.name).toBe("ImportedTable");
@@ -273,7 +273,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.ExportTable);
+    expect(step.type).toBe("ExportTable"); 
     const payload = step.payload as ExportStepPayload;
     expect(payload.table).toBe("abd"); 
   });
@@ -296,7 +296,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.Generate);
+    expect(step.type).toBe("Generate"); 
     const payload = step.payload as GenerateStepPayload;
     expect(payload.table).toBe("abd");
     expect(payload.count).toBe(50);
@@ -327,7 +327,7 @@ describe("Workflow Builder", () => {
     const workflow = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(workflow.steps).toHaveLength(1);
     const step = workflow.steps[0];
-    expect(step.type).toBe(WorkflowStepType.Autofill);
+    expect(step.type).toBe("Autofill"); 
     const payload = step.payload as AutofillStepPayload;
     expect(payload.table).toBe("abd");
     expect(payload.columns).toEqual(["col1"]);
@@ -420,7 +420,7 @@ describe("Workflow Builder", () => {
     
     // Step 1: CreateTable
     const s0 = wf.steps[0];
-    expect(s0.type).toBe(WorkflowStepType.CreateTable);
+    expect(s0.type).toBe("CreateTable"); 
     const s0p = s0.payload as CreateTableStepPayload;
     expect(s0p.request.name).toBe("");
     expect(s0p.request.description).toBe("");
@@ -428,7 +428,7 @@ describe("Workflow Builder", () => {
     
     // Step 2: CreateColumn
     const s1 = wf.steps[1];
-    expect(s1.type).toBe(WorkflowStepType.CreateColumn);
+    expect(s1.type).toBe("CreateColumn"); 
     const s1p = s1.payload as CreateColumnStepPayload;
     expect(s1p.table).toBe("step0.table");
     expect(s1p.name).toBe("AddedColumn1");
@@ -437,14 +437,14 @@ describe("Workflow Builder", () => {
     
     // Step 3: DeleteColumn
     const s2 = wf.steps[2];
-    expect(s2.type).toBe(WorkflowStepType.DeleteColumn);
+    expect(s2.type).toBe("DeleteColumn"); 
     const s2p = s2.payload as DeleteColumnStepPayload;
     expect(s2p.table).toBe("step0.table");
     expect(s2p.column).toBe("step1.column");
     
     // Step 4: Import
     const s3 = wf.steps[3];
-    expect(s3.type).toBe(WorkflowStepType.Import);
+    expect(s3.type).toBe("Import"); 
     const s3p = s3.payload as ImportDataStepPayload;
     expect(s3p.file).toBe("inputFile1");
     expect(s3p.name).toBe("SecondMultiStepTable");
@@ -454,7 +454,7 @@ describe("Workflow Builder", () => {
     
     // Step 5: Generate
     const s4 = wf.steps[4];
-    expect(s4.type).toBe(WorkflowStepType.Generate);
+    expect(s4.type).toBe("Generate"); 
     const s4p = s4.payload as GenerateStepPayload;
     expect(s4p.table).toBe("step0.table");
     expect(s4p.count).toBe(10);
@@ -462,7 +462,7 @@ describe("Workflow Builder", () => {
     
     // Step 6: ExportTable
     const s5 = wf.steps[5];
-    expect(s5.type).toBe(WorkflowStepType.ExportTable);
+    expect(s5.type).toBe("ExportTable"); 
     const s5p = s5.payload as ExportStepPayload;
     expect(s5p.table).toBe("step3.table");
   });
