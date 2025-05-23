@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ContextVariable, MentionInput } from "@/components/ui/var-input";
+import { DialogTitle } from "@radix-ui/react-dialog";
 import { AutofillInput } from "../autofill-input";
 import { CreateTableDialog } from "../create-table";
 
@@ -451,6 +452,7 @@ export default function WorkflowBuilderDialog({
     >
       <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
         <DialogHeader>
+          <DialogTitle hidden={true}></DialogTitle>
           <div className="flex items-center gap-2">
             {isEditingName ? (
               <Input
@@ -696,50 +698,58 @@ export default function WorkflowBuilderDialog({
                                     </Select>
                                   </div>
 
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`var-default-${idx}`}>
-                                      Default Value
-                                    </Label>
-                                    <MentionInput
-                                      id={`var-default-${idx}`}
-                                      value={variable.default_value}
-                                      onChange={(v) =>
-                                        updateVariable(idx, {
-                                          ...variable,
-                                          default_value: v.target.value,
-                                        })
-                                      }
-                                      placeholder={
-                                        variable.type === "string"
-                                          ? 'e.g. "users"'
-                                          : variable.type === "number"
-                                            ? "e.g. 3.14"
-                                            : variable.type === "integer"
-                                              ? "e.g. 20"
-                                              : 'e.g. {"key": "value"}'
-                                      }
-                                    />
-                                  </div>
+                                  {variable.type !== "file" && (
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`var-default-${idx}`}>
+                                        Default Value
+                                      </Label>
+                                      <MentionInput
+                                        id={`var-default-${idx}`}
+                                        value={variable.default_value}
+                                        onChange={(v) =>
+                                          updateVariable(idx, {
+                                            ...variable,
+                                            default_value: v.target.value,
+                                          })
+                                        }
+                                        placeholder={
+                                          variable.type === "string"
+                                            ? 'e.g. "users"'
+                                            : variable.type === "number"
+                                              ? "e.g. 3.14"
+                                              : variable.type === "integer"
+                                                ? "e.g. 20"
+                                                : 'e.g. {"key": "value"}'
+                                        }
+                                      />
+                                    </div>
+                                  )}
 
-                                  <div className="space-y-2">
-                                    <Label htmlFor={`var-options-${idx}`}>
-                                      Options (optional, one per line)
-                                    </Label>
-                                    <Textarea
-                                      id={`var-options-${idx}`}
-                                      defaultValue={variable.options.join("\n")}
-                                      onChange={(e) => {
-                                        updateVariable(idx, {
-                                          ...variable,
-                                          options: e.target.value
-                                            .split("\n")
-                                            .filter((opt) => opt.trim() !== ""),
-                                        });
-                                      }}
-                                      className="w-full min-h-[100px] p-2 border rounded-md"
-                                      placeholder="Enter options, one per line, will select one option when workflow start instead input value manually."
-                                    />
-                                  </div>
+                                  {variable.type !== "file" && (
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`var-options-${idx}`}>
+                                        Options (optional, one per line)
+                                      </Label>
+                                      <Textarea
+                                        id={`var-options-${idx}`}
+                                        defaultValue={variable.options.join(
+                                          "\n",
+                                        )}
+                                        onChange={(e) => {
+                                          updateVariable(idx, {
+                                            ...variable,
+                                            options: e.target.value
+                                              .split("\n")
+                                              .filter(
+                                                (opt) => opt.trim() !== "",
+                                              ),
+                                          });
+                                        }}
+                                        className="w-full min-h-[100px] p-2 border rounded-md"
+                                        placeholder="Enter options, one per line, will select one option when workflow start instead input value manually."
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ),
                             )}
