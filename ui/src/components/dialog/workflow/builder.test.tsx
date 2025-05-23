@@ -14,7 +14,6 @@ import {
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
 import WorkflowBuilderDialog from "./builder";
 
 vi.mock(import("@/components/ui/var-input"), () => ({
@@ -62,20 +61,15 @@ describe("Workflow Builder", () => {
     vi.mock("@/actions");
     render(
       <TestProvider>
-        <MemoryRouter>
-          <WorkflowBuilderDialog
-            open={true}
-            onOpenChange={() => {}}
-            onSave={async () => {}}
-          />
-        </MemoryRouter>
+        <WorkflowBuilderDialog
+          open={true}
+          onOpenChange={() => {}}
+          onSave={async () => {}}
+        />
       </TestProvider>,
     );
+    await screen.findByText("Workflow Steps");
   });
-
-  // afterEach(() => {
-  //   consoleLogSpy.mockRestore();
-  // });
 
   it("UserInput should add variables", async () => {
     await screen.findAllByText("UserInput");
