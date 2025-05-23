@@ -69,10 +69,12 @@ export default function WorkflowExecutionDialog({
   const scroll = async () => {
     if (terminalRef.current) {
       await new Promise((resolve) => setTimeout(resolve, 50));
-      terminalRef.current.scrollTo({
-        top: terminalRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      if (terminalRef.current) {
+        terminalRef.current.scrollTo({
+          top: terminalRef.current.scrollHeight,
+          behavior: "smooth",
+        });
+      }
     }
   };
 
@@ -242,7 +244,7 @@ export default function WorkflowExecutionDialog({
           e.preventDefault();
         }}
       >
-        <DialogDescription />
+        <DialogDescription hidden={true} />
         <VariablesDialog
           open={varDialogOpen}
           onOpenChange={setVarDialogOpen}
