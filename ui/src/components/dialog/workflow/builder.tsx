@@ -1032,7 +1032,7 @@ export default function WorkflowBuilderDialog({
                             }
                           >
                             <SelectTrigger id="column">
-                              <SelectValue placeholder="Select a columns" />
+                              <SelectValue placeholder="Select a column" />
                             </SelectTrigger>
                             <SelectContent>
                               {(
@@ -1078,23 +1078,23 @@ export default function WorkflowBuilderDialog({
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="generateCount">Count</Label>
+                          <Label htmlFor="GenerateCount">Count</Label>
                           <NumberInput
                             id="GenerateCount"
                             value={selectedStep.payload.count}
-                            onValueChange={(e) =>
+                            onValueChange={(e) => {
                               updateStep({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  count: e ?? 10,
+                                  count: e ?? 0,
                                 },
-                              })
-                            }
+                              });
+                            }}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="generateBatch">Batch</Label>
+                          <Label htmlFor="GenerateBatch">Batch</Label>
                           <NumberInput
                             id="GenerateBatch"
                             value={selectedStep.payload.batch}
@@ -1103,7 +1103,7 @@ export default function WorkflowBuilderDialog({
                                 type: selectedStep.type,
                                 payload: {
                                   ...selectedStep.payload,
-                                  batch: e ?? 2,
+                                  batch: e ?? 0,
                                 },
                               })
                             }
@@ -1183,7 +1183,7 @@ export default function WorkflowBuilderDialog({
                         />
                         <div className="flex flex-row items-center space-x-4">
                           <div className="flex flex-row items-center space-x-2">
-                            <Label htmlFor="generateCount">Count</Label>
+                            <Label htmlFor="GenerateCount">Count</Label>
                             <NumberInput
                               id="GenerateCount"
                               value={selectedStep.payload.count}
@@ -1192,14 +1192,14 @@ export default function WorkflowBuilderDialog({
                                   type: selectedStep.type,
                                   payload: {
                                     ...selectedStep.payload,
-                                    count: e ?? 10,
+                                    count: e ?? 0,
                                   },
                                 })
                               }
                             />
                           </div>
                           <div className="flex flex-row items-center space-x-2">
-                            <Label htmlFor="generateBatch">Batch</Label>
+                            <Label htmlFor="GenerateBatch">Batch</Label>
                             <NumberInput
                               id="GenerateBatch"
                               value={selectedStep.payload.count}
@@ -1208,7 +1208,7 @@ export default function WorkflowBuilderDialog({
                                   type: selectedStep.type,
                                   payload: {
                                     ...selectedStep.payload,
-                                    batch: e ?? 2,
+                                    batch: e ?? 0,
                                   },
                                 })
                               }

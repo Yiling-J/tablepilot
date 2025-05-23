@@ -224,6 +224,7 @@ export function AutofillInput({
         <div className="space-y-2">
           <Label htmlFor="autofillPrompt">Prompt</Label>
           <MentionInput
+            id="autofillPrompt"
             value={prompt}
             onChange={(e) => {
               onPromptChange(e.target.value);
