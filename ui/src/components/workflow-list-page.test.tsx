@@ -1,49 +1,20 @@
+import {
+    Provider,
+    Workflow,
+    WorkflowInfo,
+    deleteWorkflow,
+    getModels,
+    getProviders,
+    getTables,
+    getWorkflow,
+    getWorkflows,
+} from "@/actions";
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useLocation, useNavigate } from "react-router-dom";
-import { vi, Mock } from "vitest";
-import {
-  WorkflowInfo,
-  Workflow,
-  getWorkflows,
-  getWorkflow,
-  deleteWorkflow,
-} from "@/actions";
+import { useNavigate } from "react-router-dom";
+import { vi } from "vitest";
 import { WorkflowListPage } from "./workflow-list-page";
-
-// Mock actions directly
-vi.mock("@/actions");
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return {
-    ...actual,
-    useNavigate: vi.fn(),
-    useLocation: vi.fn(),
-  };
-});
-
-// Mock for WorkflowBuilderDialog and WorkflowExecutionDialog
-vi.mock("@/components/dialog/workflow/builder", () => ({
-  __esModule: true,
-  default: ({ open, workflow, onOpenChange }: { open: boolean, workflow?: Workflow, onOpenChange: (open: boolean) => void }) =>
-    open ? <div data-testid="workflow-builder-dialog">{workflow ? `Edit: ${workflow.name}` : "Create New Workflow"} <button onClick={() => onOpenChange(false)}>Close Builder</button></div> : null,
-}));
-
-vi.mock("@/components/dialog/workflow/workflow", () => ({
-  __esModule: true,
-  default: ({ open, workflow, onOpenChange }: { open: boolean, workflow?: Workflow, onOpenChange: (open: boolean) => void }) =>
-    open && workflow ? <div data-testid="workflow-execution-dialog">{`Run: ${workflow.name}`} <button onClick={() => onOpenChange(false)}>Close Runner</button></div> : null,
-}));
-
-const mockNavigate = vi.fn();
-const mockUseLocation = vi.mocked(useLocation);
-const mockUseNavigate = vi.mocked(useNavigate);
-
-// Declare mocked actions for typing
-let mockedGetWorkflows: Mock<[], Promise<{ workflows: WorkflowInfo[]; total: number }>>;
-let mockedGetWorkflow: Mock<[string], Promise<Workflow>>;
-let mockedDeleteWorkflow: Mock<[string], Promise<number>>;
 
 const sampleWorkflows: WorkflowInfo[] = [
   { id: "wf1", name: "Workflow One", description: "Description for one" },
@@ -56,36 +27,44 @@ const sampleWorkflowDetail: Workflow = {
   description: "Detailed description for one",
   steps: [],
   variables: [],
-  model_config: {},
 };
 
 describe("WorkflowListPage", () => {
   beforeEach(async () => {
-    mockUseNavigate.mockReturnValue(mockNavigate);
-    mockUseLocation.mockReturnValue({
-      key: "testKey",
-      pathname: "/workflows",
-      search: "",
-      hash: "",
-      state: null,
+    vi.mock("react-router-dom");
+    const m = vi.mocked(useNavigate);
+    m.mockReturnValue(vi.fn());
+    vi.mock("@/actions");
+    const mockedGetModels = vi.mocked(getModels);
+    mockedGetModels.mockResolvedValue({
+      default_model: "ai",
+      default_image_model: "",
+      models: [
+        { name: "ai", image: false },
+        { name: "bi", image: false },
+        { name: "ci", image: true },
+      ],
     });
+    const mockedGetProviders = vi.mocked(getProviders);
+    mockedGetProviders.mockResolvedValue([
+      {
+        id: 1,
+        name: "p",
+        type: "openai",
+        models: [{ model: "ai" }],
+      } as Provider,
+    ]);
 
-    // Initialize mocks from @/actions
-    mockedGetWorkflows = vi.mocked(getWorkflows);
-    mockedGetWorkflow = vi.mocked(getWorkflow);
-    mockedDeleteWorkflow = vi.mocked(deleteWorkflow);
-
+    const mockedGetWorkflows = vi.mocked(getWorkflows);
     mockedGetWorkflows.mockResolvedValue({
       workflows: sampleWorkflows,
-      total: sampleWorkflows.length,
+      total: 2,
     });
-    mockedGetWorkflow.mockResolvedValue(sampleWorkflowDetail);
-    mockedDeleteWorkflow.mockResolvedValue(1); // Simulate successful deletion
 
     render(
       <TestProvider>
         <WorkflowListPage />
-      </TestProvider>
+      </TestProvider>,
     );
     await screen.findByText("Workflow One"); // Wait for initial data to load
   });
@@ -98,50 +77,86 @@ describe("WorkflowListPage", () => {
   });
 
   it("should open workflow execution dialog when a workflow card is clicked", async () => {
+    const mockedGetWorkflow = vi.mocked(getWorkflow);
+    mockedGetWorkflow.mockResolvedValue(sampleWorkflowDetail);
     await userEvent.click(screen.getByText("Workflow One"));
     expect(mockedGetWorkflow).toHaveBeenCalledWith("wf1");
-    await screen.findByTestId("workflow-execution-dialog");
-    expect(screen.getByText("Run: Workflow One")).toBeInTheDocument();
+    await screen.findByText("Steps");
+    const dg = screen.getByRole("dialog");
+    expect(within(dg).getByText("Workflow One")).toBeInTheDocument();
   });
 
   it("should open workflow builder dialog when 'Add New Workflow' is clicked", async () => {
+    const mockedGetTables = vi.mocked(getTables);
+    mockedGetTables.mockResolvedValue({
+      tables: [],
+      total: 0,
+    });
     await userEvent.click(screen.getByText("Add New Workflow"));
-    await screen.findByTestId("workflow-builder-dialog");
-    expect(screen.getByText("Create New Workflow")).toBeInTheDocument();
+    await screen.findByText("New Workflow");
+    expect(screen.getByText("New Workflow")).toBeInTheDocument();
   });
 
   it("should open workflow builder dialog for editing when settings icon is clicked", async () => {
+    const mockedGetTables = vi.mocked(getTables);
+    mockedGetTables.mockResolvedValue({
+      tables: [],
+      total: 0,
+    });
+    const mockedGetWorkflow = vi.mocked(getWorkflow);
+    mockedGetWorkflow.mockResolvedValue(sampleWorkflowDetail);
     // Find the card for "Workflow One"
-    const workflowOneCard = screen.getByText("Workflow One").closest('div[class*="cursor-pointer"]');
-    if (!workflowOneCard) throw new Error("Workflow card not found for 'Workflow One'");
+    const workflowOneCard = screen
+      .getByText("Workflow One")
+      .closest('div[class*="cursor-pointer"]');
+    if (!workflowOneCard)
+      throw new Error("Workflow card not found for 'Workflow One'");
 
-    // The settings button is a Button component wrapping an SVG. It doesn't have a textual name.
-    // We find all buttons within the card and assume the first one that isn't "Delete" is settings.
-    // A more robust way would be a data-testid on the settings button in the component.
-    const buttonsInCard = await within(workflowOneCard).findAllByRole('button');
-    const settingsButton = buttonsInCard.find(button => !button.textContent?.includes("Delete"));
+    const buttonsInCard = await within(
+      workflowOneCard as HTMLElement,
+    ).findAllByRole("button");
+    const settingsButton = buttonsInCard.find(
+      (button) => !button.textContent?.includes("Delete"),
+    );
 
-    if (!settingsButton) throw new Error("Settings button not found for Workflow One");
-    
+    if (!settingsButton)
+      throw new Error("Settings button not found for Workflow One");
+
     await userEvent.click(settingsButton);
-    
+
     expect(mockedGetWorkflow).toHaveBeenCalledWith("wf1");
-    await screen.findByTestId("workflow-builder-dialog");
-    expect(screen.getByText("Edit: Workflow One")).toBeInTheDocument();
+    await screen.findByText("Workflow Steps");
+    const dg = screen.getByRole("dialog");
+    expect(within(dg).getByText("Workflow One")).toBeInTheDocument();
   });
 
   it("should call deleteWorkflow and refresh list when delete button is clicked", async () => {
-    mockedGetWorkflows.mockClear(); // Clear previous calls from beforeEach
+    const mockedDeleteWorkflow = vi.mocked(deleteWorkflow);
+    mockedDeleteWorkflow.mockResolvedValue();
 
     // Find the card for "Workflow One"
-    const workflowOneCard = screen.getByText("Workflow One").closest('div[class*="cursor-pointer"]');
-    if (!workflowOneCard) throw new Error("Workflow card not found for 'Workflow One'");
-    
-    const deleteButton = within(workflowOneCard).getByRole('button', { name: /delete/i });
+    const workflowOneCard = screen
+      .getByText("Workflow One")
+      .closest('div[class*="cursor-pointer"]');
+    if (!workflowOneCard)
+      throw new Error("Workflow card not found for 'Workflow One'");
+
+    const mockedGetWorkflows = vi.mocked(getWorkflows);
+    mockedGetWorkflows.mockReset();
+    mockedGetWorkflows.mockResolvedValue({
+      workflows: [],
+      total: 0,
+    });
+    const deleteButton = within(workflowOneCard as HTMLElement).getByRole(
+      "button",
+      {
+        name: /delete/i,
+      },
+    );
     await userEvent.click(deleteButton);
 
     expect(mockedDeleteWorkflow).toHaveBeenCalledWith("wf1");
-    
+
     // Check if getWorkflows was called again after delete (due to refreshWorkflows)
     await waitFor(() => {
       expect(mockedGetWorkflows).toHaveBeenCalledTimes(1);

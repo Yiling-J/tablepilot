@@ -3,10 +3,10 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mock } from "vitest";
-import { TableInfo, deleteTable, getTables } from "../actions";
-import { TableListPage } from "./tables";
+import { TableInfo, deleteTable, getModels, getTables } from "../actions";
+import { TableListPage } from "./table-list-page";
 
-describe("Tables", () => {
+describe("TableListPage", () => {
   beforeEach(async () => {
     vi.mock("react-router-dom");
     const m = vi.mocked(useNavigate);
@@ -19,6 +19,16 @@ describe("Tables", () => {
       state: null,
     });
     vi.mock("@/actions");
+    const mockedGetModels = vi.mocked(getModels);
+    mockedGetModels.mockResolvedValue({
+      default_model: "ai",
+      default_image_model: "",
+      models: [
+        { name: "ai", image: false },
+        { name: "bi", image: false },
+        { name: "ci", image: true },
+      ],
+    });
     const userTable = {
       id: "abc",
       name: "users",

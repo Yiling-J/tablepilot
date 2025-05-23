@@ -23,16 +23,10 @@ import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header.tsx";
 
 export function TableListPage() {
-  const navigate = useNavigate();
-
   return (
     <div className="grow overflow-auto h-full flex flex-col">
       <ModeToggle hide={true} />
-      <TablepilotHeader
-        title="Tablepilot"
-        currentTab="tables"
-        // onRefresh={handleRefresh} // Removed
-      />
+      <TablepilotHeader title="Tablepilot" currentTab="tables" />
       <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
         <div className="tab-content-container">
           <TableList />

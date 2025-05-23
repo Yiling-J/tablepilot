@@ -140,21 +140,22 @@ export default function WorkflowExecutionDialog({
             });
           } else {
             // Create a blob from the CSV data
-            const blob = new Blob([msg.data as string], { type: 'text/csv' });
+            const blob = new Blob([msg.data as string], { type: "text/csv" });
             // Create a URL for the blob
             const url = window.URL.createObjectURL(blob);
             // Create a temporary link element
-            const link = document.createElement('a');
+            const link = document.createElement("a");
             // Set the current timestamp for the filename
             const now = new Date();
-            const timestamp = now.getFullYear() +
-              String(now.getMonth() + 1).padStart(2, '0') +
-              String(now.getDate()).padStart(2, '0') +
-              String(now.getHours()).padStart(2, '0') +
-              String(now.getMinutes()).padStart(2, '0') +
-              String(now.getSeconds()).padStart(2, '0');
-            link.setAttribute('href', url);
-            link.setAttribute('download', `output_${timestamp}.csv`);
+            const timestamp =
+              now.getFullYear() +
+              String(now.getMonth() + 1).padStart(2, "0") +
+              String(now.getDate()).padStart(2, "0") +
+              String(now.getHours()).padStart(2, "0") +
+              String(now.getMinutes()).padStart(2, "0") +
+              String(now.getSeconds()).padStart(2, "0");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `output_${timestamp}.csv`);
             // Append to body, click, and remove
             document.body.appendChild(link);
             link.click();

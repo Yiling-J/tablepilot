@@ -3,6 +3,7 @@ import { useSidebar } from "@/context/sidebar";
 import { cn } from "@/lib/utils";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { IconGithub } from "./ui/icons";
 
 interface TablepilotHeaderProps {
@@ -74,11 +75,11 @@ function ModeSwitch({
 export function TablepilotHeader({
   title,
   currentTab,
-  onTabChange,
   modeRef,
   modeSwitchDisabled,
 }: TablepilotHeaderProps) {
   const { collapsed, setCollapsed } = useSidebar();
+  const navigate = useNavigate();
 
   const handleAvatarClick = () => {
     window.open(
@@ -105,12 +106,12 @@ export function TablepilotHeader({
           </div>
 
           {/* Tables/Workflows switch (only if currentTab and onTabChange are provided) */}
-          {currentTab && onTabChange && (
+          {currentTab && (
             <div className="flex items-center">
               {" "}
               {/* Container for the two tabs */}
               <div
-                onClick={() => onTabChange("tables")}
+                onClick={() => navigate("/tables")}
                 className="cursor-pointer"
               >
                 <h1
@@ -125,7 +126,7 @@ export function TablepilotHeader({
                 </h1>
               </div>
               <div
-                onClick={() => onTabChange("workflows")}
+                onClick={() => navigate("/workflows")}
                 className="ml-4 cursor-pointer"
               >
                 <h1

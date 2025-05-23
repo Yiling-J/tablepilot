@@ -1,15 +1,20 @@
 import "@material-symbols/font-400/rounded.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { TableListPage } from "./components/table-list-page.tsx";
 import { TablePage } from "./components/table.tsx";
-import { TableListPage } from "./components/tables.tsx";
 import { WorkflowListPage } from "./components/workflow-list-page.tsx";
 import { CreateTableDialogProvider } from "./context/create-table.tsx";
 import "./index.css";
 
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "react-hot-toast";
-import { Navigate, Outlet, RouterProvider, createBrowserRouter } from "react-router-dom";
+import {
+    Navigate,
+    Outlet,
+    RouterProvider,
+    createBrowserRouter,
+} from "react-router-dom";
 import { Sidebar } from "./components/sidebar.tsx";
 import { SidebarProvider } from "./context/sidebar.tsx";
 import { TablesProvider } from "./context/tables.tsx";
@@ -38,7 +43,8 @@ const router = createBrowserRouter([
             </div>
           </div>
         ),
-        children: [ // Routes that WILL have the Sidebar
+        children: [
+          // Routes that WILL have the Sidebar
           { path: "/tables/:id", element: <TablePage /> },
           // Add other routes that need the sidebar here
         ],
