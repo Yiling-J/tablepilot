@@ -3,6 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { TablePage } from "./components/table.tsx";
 import { TableListPage } from "./components/tables.tsx";
+import { WorkflowListPage } from "./components/workflow-list-page.tsx";
 import { CreateTableDialogProvider } from "./context/create-table.tsx";
 import "./index.css";
 
@@ -44,7 +45,7 @@ const router = createBrowserRouter([
       },
       // Routes that will NOT have the Sidebar (rendered directly into the root Outlet)
       { path: "/tables", element: <TableListPage /> },
-      { path: "/workflows", element: <TableListPage /> },
+      { path: "/workflows", element: <WorkflowListPage /> },
       {
         path: "/", // Root redirect
         element: <Navigate to="/tables" replace />,
