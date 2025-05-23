@@ -266,6 +266,15 @@ describe("Workflow Builder", () => {
     expect(payload.table).toBe("");
     expect(payload.truncate).toBe(false);
     expect(payload.prompt).toBe("Importing data");
+
+    // next step should be able to select the table created
+    await userEvent.click(screen.getByText("Add Step"));
+    await userEvent.click(screen.getByText("Delete Column"));
+    await userEvent.click(screen.getByText("Select a table").parentElement!);
+    const tableListbox = await screen.findByRole("listbox");
+    const options = within(tableListbox).getAllByRole("option");
+    expect(options.length).toBe(2);
+    await userEvent.click(within(tableListbox).getByText("ImportedTable"));
   });
 
   it("Import action should correctly save workflow with selected table", async () => {
@@ -317,6 +326,14 @@ describe("Workflow Builder", () => {
     expect(payload.table).toBe("abd");
     expect(payload.truncate).toBe(false);
     expect(payload.prompt).toBe("Importing data");
+
+    await userEvent.click(screen.getByText("Add Step"));
+    await userEvent.click(screen.getByText("Delete Column"));
+    await userEvent.click(screen.getByText("Select a table").parentElement!);
+    const tableListbox = await screen.findByRole("listbox");
+    const options = within(tableListbox).getAllByRole("option");
+    expect(options.length).toBe(1);
+    await userEvent.click(within(tableListbox).getByText("recipes"));
   });
 
   it("ExportTable action should correctly save workflow", async () => {

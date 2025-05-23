@@ -90,7 +90,7 @@ export default function WorkflowBuilderDialog({
 
   const fetchTables = async () => {
     const resp = await getTables();
-    existingTables.current = resp.tables;
+    existingTables.current = resp.tables ?? [];
   };
 
   const onOpen = async () => {
@@ -189,18 +189,23 @@ export default function WorkflowBuilderDialog({
         case "DeleteColumn":
           break;
         case "Import":
-          nv.push({
-            display: `Import[${(step.payload as ImportDataStepPayload).file}].table`,
-            path: `step${index}.table`,
-            type: "string",
-          });
-          tbs.push({
-            id: `{{step${index}.table}}`,
-            name: `Import[${(step.payload as ImportDataStepPayload).file}].table`,
-            description: "",
-            columns: [],
-            model: "",
-          });
+          if (step.payload.table.length > 0) {
+            nv.push({
+              display: `Import[${(step.payload as ImportDataStepPayload).file}].table`,
+              path: `step${index}.table`,
+              type: "string",
+            });
+          }
+
+          if (step.payload.name.length > 0 && step.payload.table.length === 0) {
+            tbs.push({
+              id: step.payload.name,
+              name: step.payload.name,
+              description: "",
+              columns: [],
+              model: "",
+            });
+          }
           break;
       }
       contexts.push({ variables: nv, tables: tbs });
@@ -1202,7 +1207,7 @@ export default function WorkflowBuilderDialog({
                             <Label htmlFor="GenerateBatch">Batch</Label>
                             <NumberInput
                               id="GenerateBatch"
-                              value={selectedStep.payload.count}
+                              value={selectedStep.payload.batch}
                               onValueChange={(e) =>
                                 updateStep({
                                   type: selectedStep.type,
@@ -1355,11 +1360,13 @@ export default function WorkflowBuilderDialog({
                                   <SelectValue placeholder="Select existing table" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {existingTables.current.map((t) => (
-                                    <SelectItem key={t.id} value={t.id}>
-                                      {t.name}
-                                    </SelectItem>
-                                  ))}
+                                  {stepContexts[selectedStepIndex!].tables.map(
+                                    (t) => (
+                                      <SelectItem key={t.id} value={t.id}>
+                                        {t.name}
+                                      </SelectItem>
+                                    ),
+                                  )}
                                 </SelectContent>
                               </Select>
                             </div>
