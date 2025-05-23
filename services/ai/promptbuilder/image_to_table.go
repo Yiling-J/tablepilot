@@ -49,6 +49,7 @@ func (ib *ImageToTableBuilder) ToTable(table *ent.TableMeta) {
 		}
 		cel := ec.CreateElement("Column")
 		cel.CreateAttr("name", col.Name)
+		cel.CreateAttr("id", col.Nanoid)
 		cel.CreateAttr("description", col.Description)
 	}
 }
