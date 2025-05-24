@@ -154,11 +154,6 @@ export default function WorkflowBuilderDialog({
         case "CreateTable":
           const tableName = (step.payload as CreateTableStepPayload).request
             .name;
-          nv.push({
-            display: `CreateTable[${tableName}].table`,
-            path: `step${index}.table`,
-            type: "string",
-          });
           const ii = tbs.findIndex((t) => t.name === tableName);
           const tr = (step.payload as CreateTableStepPayload).request;
           const ti = tableCreateRequestToTableInfo(tr);
@@ -170,11 +165,6 @@ export default function WorkflowBuilderDialog({
           break;
         case "CreateColumn":
           const pd = step.payload as CreateColumnStepPayload;
-          nv.push({
-            display: `CreateColumn[${pd.name}].column`,
-            path: `step${index}.column`,
-            type: "string",
-          });
           const t = tbs.find((t) => t.name === pd.table);
           if (t) {
             t.columns.push({
@@ -189,14 +179,6 @@ export default function WorkflowBuilderDialog({
         case "DeleteColumn":
           break;
         case "Import":
-          if (step.payload.table.length > 0) {
-            nv.push({
-              display: `Import[${(step.payload as ImportDataStepPayload).file}].table`,
-              path: `step${index}.table`,
-              type: "string",
-            });
-          }
-
           if (step.payload.name.length > 0 && step.payload.table.length === 0) {
             tbs.push({
               id: step.payload.name,
@@ -917,8 +899,10 @@ export default function WorkflowBuilderDialog({
                             </SelectTrigger>
                             <SelectContent>
                               {stepContexts[selectedStepIndex!].tables.map(
-                                (t) => (
-                                  <SelectItem value={t.id}>{t.name}</SelectItem>
+                                (t, i) => (
+                                  <SelectItem value={t.id} key={i}>
+                                    {t.name}
+                                  </SelectItem>
                                 ),
                               )}
                             </SelectContent>

@@ -1,9 +1,4 @@
-import {
-    deleteTable,
-    getTables,
-    TableCreateRequest,
-    TableInfo,
-} from "@/actions";
+import { deleteTable, TableCreateRequest } from "@/actions";
 import { ImportFileDialog } from "@/components/dialog/import-file";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,21 +32,18 @@ export function TableListPage() {
 }
 
 function TableList() {
-  const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
   const [importCSVOpen, setImportCSVOpen] = useState(false);
-  const { refreshTables } = useTables();
+  const { tables, refreshTables } = useTables();
   const navigate = useNavigate();
 
   const fetchTables = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getTables();
-      setTables(response.tables ?? []);
+      await refreshTables();
     } catch (error) {
       console.error("Failed to fetch tables:", error);
-      setTables([]); // Set to empty array on error
     } finally {
       setLoading(false);
     }
