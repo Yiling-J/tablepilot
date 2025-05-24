@@ -341,7 +341,9 @@ describe("Workflow Builder", () => {
     await userEvent.click(screen.getByText("Add Step"));
     await userEvent.click(screen.getByText("Export Data"));
     // Updated placeholder text for ExportTableStep
-    await userEvent.click(screen.getByText("Select a table to export").parentElement!);
+    await userEvent.click(
+      screen.getByText("Select a table to export").parentElement!,
+    );
     const tablesBox = await screen.findByRole("listbox");
     await userEvent.click(within(tablesBox).getByText("recipes"));
     await userEvent.click(screen.getByText("Save Workflow"));
@@ -430,12 +432,14 @@ describe("Workflow Builder - UserInput Variable Name Validation", () => {
         />
       </TestProvider>,
     );
-    await screen.findByText("Workflow Steps"); // Ensure dialog is loaded
+    await screen.findByText("Workflow Steps");
+    await within(
+      screen.getByText("Workflow Steps").parentElement!.parentElement!,
+    ).findByText("UserInput");
 
     // Select UserInput step and add a variable
     await userEvent.click(screen.getAllByText("UserInput")[0]);
     await userEvent.click(screen.getByText("Add Variable"));
-    // Ensure "Variable 1" is present before each test case proceeds
     await screen.findByText("Variable 1");
   });
 
@@ -484,7 +488,7 @@ describe("Workflow Builder - UserInput Variable Name Validation", () => {
     const wf = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(wf.variables[0].name).toBe("");
   });
-  
+
   it("should filter leading and trailing invalid characters", async () => {
     const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
     await userEvent.type(variableNameInput, "!@#Valid$%\^");
@@ -498,7 +502,7 @@ describe("Workflow Builder - UserInput Variable Name Validation", () => {
     const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
     await userEvent.type(variableNameInput, "!@#$%^");
     await userEvent.click(screen.getByText("Save Workflow"));
-    
+
     const wf = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(wf.variables[0].name).toBe("");
   });
