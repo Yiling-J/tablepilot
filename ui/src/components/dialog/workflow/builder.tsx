@@ -96,6 +96,7 @@ export default function WorkflowBuilderDialog({
       ];
       setSteps(wsteps);
       buildStepContext(wsteps);
+      setSelectedStepIndex(0);
     } else {
       const s = [
         {
