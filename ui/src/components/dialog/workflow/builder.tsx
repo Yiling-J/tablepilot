@@ -595,6 +595,13 @@ export default function WorkflowBuilderDialog({
                     {/* UserInput properties */}
                     {selectedStep.type === "UserInput" && (
                       <div className="space-y-4">
+                        <p className="text-xs">
+                          This step lets you add variables used in the workflow.
+                          When creating other steps, you can type '@' to
+                          reference any variables defined here. When the
+                          workflow starts, you’ll be prompted to input or select
+                          values for all variables first.
+                        </p>
                         <div className="flex justify-between items-center">
                           <Label>Variables</Label>
                           <Button
