@@ -95,13 +95,16 @@ export default function WorkflowBuilderDialog({
         ...workflow.steps,
       ];
       setSteps(wsteps);
+      buildStepContext(wsteps);
     } else {
-      setSteps([
+      const s = [
         {
           type: "UserInput",
           payload: { variables: [] } as UserInputStepPayload,
-        },
-      ]);
+        } as TypedWorkflowStep,
+      ];
+      setSteps(s);
+      buildStepContext(s);
       setSelectedStepIndex(0);
     }
   };
@@ -111,7 +114,6 @@ export default function WorkflowBuilderDialog({
       return;
     }
     onOpen();
-    buildStepContext(steps);
   }, [open]);
 
   const buildStepContext = (steps: TypedWorkflowStep[]) => {
