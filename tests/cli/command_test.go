@@ -193,7 +193,7 @@ func TestIntegrationCLI_Import(t *testing.T) {
 	err = w.WriteAll(records)
 	require.NoError(t, err)
 
-	root.SetArgs([]string{"import", "users.csv", "--config", "test.toml"})
+	root.SetArgs([]string{"import", "users.csv", "--config", "test.toml", "-n", "users"})
 	err = root.Execute()
 	require.NoError(t, err)
 
@@ -207,13 +207,16 @@ EfhxLZ	Robert	Griesemer	gri
 `
 	require.Equal(t, strings.TrimSpace(expectedShow), strings.TrimSpace(out))
 
-	root.SetArgs([]string{"import", "users.csv", "--config", "test.toml", "-t", "foo"})
+	root.SetArgs([]string{"import", "users.csv", "--config", "test.toml", "-t", "users"})
 	err = root.Execute()
 	require.NoError(t, err)
-	root.SetArgs([]string{"show", "foo", "--config", "test.toml"})
+	root.SetArgs([]string{"show", "users", "--config", "test.toml"})
 	out, err = captureStdout(root.Execute)
 	require.NoError(t, err)
 	expectedShow = `
+UkLWZg	Rob	Pike	rob
+gbHJdm	Ken	Thompson	ken
+EfhxLZ	Robert	Griesemer	gri
 VqXmZF	Rob	Pike	rob
 uw2YK1	Ken	Thompson	ken
 OIJLhN	Robert	Griesemer	gri

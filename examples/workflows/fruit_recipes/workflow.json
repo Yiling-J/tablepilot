@@ -1,0 +1,39 @@
+{
+  "name": "fruit recipe",
+  "variables": [
+    {
+      "name": "fruit",
+      "type": "string",
+      "default_value": "orange",
+      "options": ["apple", "orange", "banana", "strawberry", "mango"]
+    }
+  ],
+  "steps": [
+    {
+      "type": "CreateTable",
+      "payload": {
+        "on_exists": "Recreate",
+        "schema_file": "examples/workflows/fruit_recipes/recipes.json"
+      }
+    },
+    {
+      "type": "CreateColumn",
+      "payload": {
+        "table": "{{.step1.table}}",
+        "column": {
+          "name": "Image",
+          "type": "image",
+          "description": "image of the recipe"
+        }
+      }
+    },
+    {
+      "type": "Generate",
+      "payload": {
+        "table": "{{.step1.table}}",
+        "count": 2,
+        "batch": 1
+      }
+    }
+  ]
+}

@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
-	"io"
 	"sync"
 )
 
@@ -24,14 +23,23 @@ var _ TableService = &TableServiceMock{}
 //			BuildTableFunc: func(ctx context.Context, name string, description string, depends []string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error) {
 //				panic("mock out the BuildTable method")
 //			},
+//			CSVFunc: func(ctx context.Context, table string) ([]byte, error) {
+//				panic("mock out the CSV method")
+//			},
 //			CreateFunc: func(ctx context.Context, req *TableGenRequest) (string, error) {
 //				panic("mock out the Create method")
+//			},
+//			CreateColumnFunc: func(ctx context.Context, table string, column TableGenColumn) (string, error) {
+//				panic("mock out the CreateColumn method")
 //			},
 //			CreateRowsFunc: func(ctx context.Context, table string, rows []map[string]any) error {
 //				panic("mock out the CreateRows method")
 //			},
 //			DeleteFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Delete method")
+//			},
+//			DeleteColumnFunc: func(ctx context.Context, table string, column string) (string, error) {
+//				panic("mock out the DeleteColumn method")
 //			},
 //			GenerateBuilderTablesFunc: func(ctx context.Context, prompt string, params ModelParams) ([]BuilderTable, error) {
 //				panic("mock out the GenerateBuilderTables method")
@@ -45,10 +53,10 @@ var _ TableService = &TableServiceMock{}
 //			GetTableSchemaFunc: func(ctx context.Context, table string) (*TableGenRequest, error) {
 //				panic("mock out the GetTableSchema method")
 //			},
-//			ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
+//			ImportFunc: func(ctx context.Context, request ImportRequest) (string, error) {
 //				panic("mock out the Import method")
 //			},
-//			ImportImageFunc: func(ctx context.Context, request ImageImportRequest) (string, error) {
+//			ImportImageFunc: func(ctx context.Context, request ImportRequest) (string, error) {
 //				panic("mock out the ImportImage method")
 //			},
 //			ListTablesFunc: func(ctx context.Context) (*ListTablesResponse, error) {
@@ -85,14 +93,23 @@ type TableServiceMock struct {
 	// BuildTableFunc mocks the BuildTable method.
 	BuildTableFunc func(ctx context.Context, name string, description string, depends []string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error)
 
+	// CSVFunc mocks the CSV method.
+	CSVFunc func(ctx context.Context, table string) ([]byte, error)
+
 	// CreateFunc mocks the Create method.
 	CreateFunc func(ctx context.Context, req *TableGenRequest) (string, error)
+
+	// CreateColumnFunc mocks the CreateColumn method.
+	CreateColumnFunc func(ctx context.Context, table string, column TableGenColumn) (string, error)
 
 	// CreateRowsFunc mocks the CreateRows method.
 	CreateRowsFunc func(ctx context.Context, table string, rows []map[string]any) error
 
 	// DeleteFunc mocks the Delete method.
 	DeleteFunc func(ctx context.Context, table string) (int, error)
+
+	// DeleteColumnFunc mocks the DeleteColumn method.
+	DeleteColumnFunc func(ctx context.Context, table string, column string) (string, error)
 
 	// GenerateBuilderTablesFunc mocks the GenerateBuilderTables method.
 	GenerateBuilderTablesFunc func(ctx context.Context, prompt string, params ModelParams) ([]BuilderTable, error)
@@ -107,10 +124,10 @@ type TableServiceMock struct {
 	GetTableSchemaFunc func(ctx context.Context, table string) (*TableGenRequest, error)
 
 	// ImportFunc mocks the Import method.
-	ImportFunc func(ctx context.Context, table string, reader io.Reader) (string, error)
+	ImportFunc func(ctx context.Context, request ImportRequest) (string, error)
 
 	// ImportImageFunc mocks the ImportImage method.
-	ImportImageFunc func(ctx context.Context, request ImageImportRequest) (string, error)
+	ImportImageFunc func(ctx context.Context, request ImportRequest) (string, error)
 
 	// ListTablesFunc mocks the ListTables method.
 	ListTablesFunc func(ctx context.Context) (*ListTablesResponse, error)
@@ -153,12 +170,28 @@ type TableServiceMock struct {
 			// Params is the params argument value.
 			Params ModelParams
 		}
+		// CSV holds details about calls to the CSV method.
+		CSV []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table string
+		}
 		// Create holds details about calls to the Create method.
 		Create []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Req is the req argument value.
 			Req *TableGenRequest
+		}
+		// CreateColumn holds details about calls to the CreateColumn method.
+		CreateColumn []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table string
+			// Column is the column argument value.
+			Column TableGenColumn
 		}
 		// CreateRows holds details about calls to the CreateRows method.
 		CreateRows []struct {
@@ -175,6 +208,15 @@ type TableServiceMock struct {
 			Ctx context.Context
 			// Table is the table argument value.
 			Table string
+		}
+		// DeleteColumn holds details about calls to the DeleteColumn method.
+		DeleteColumn []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Table is the table argument value.
+			Table string
+			// Column is the column argument value.
+			Column string
 		}
 		// GenerateBuilderTables holds details about calls to the GenerateBuilderTables method.
 		GenerateBuilderTables []struct {
@@ -210,17 +252,15 @@ type TableServiceMock struct {
 		Import []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Table is the table argument value.
-			Table string
-			// Reader is the reader argument value.
-			Reader io.Reader
+			// Request is the request argument value.
+			Request ImportRequest
 		}
 		// ImportImage holds details about calls to the ImportImage method.
 		ImportImage []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 			// Request is the request argument value.
-			Request ImageImportRequest
+			Request ImportRequest
 		}
 		// ListTables holds details about calls to the ListTables method.
 		ListTables []struct {
@@ -288,9 +328,12 @@ type TableServiceMock struct {
 		}
 	}
 	lockBuildTable            sync.RWMutex
+	lockCSV                   sync.RWMutex
 	lockCreate                sync.RWMutex
+	lockCreateColumn          sync.RWMutex
 	lockCreateRows            sync.RWMutex
 	lockDelete                sync.RWMutex
+	lockDeleteColumn          sync.RWMutex
 	lockGenerateBuilderTables sync.RWMutex
 	lockGenetate              sync.RWMutex
 	lockGetTableDetail        sync.RWMutex
@@ -359,6 +402,42 @@ func (mock *TableServiceMock) BuildTableCalls() []struct {
 	return calls
 }
 
+// CSV calls CSVFunc.
+func (mock *TableServiceMock) CSV(ctx context.Context, table string) ([]byte, error) {
+	if mock.CSVFunc == nil {
+		panic("TableServiceMock.CSVFunc: method is nil but TableService.CSV was just called")
+	}
+	callInfo := struct {
+		Ctx   context.Context
+		Table string
+	}{
+		Ctx:   ctx,
+		Table: table,
+	}
+	mock.lockCSV.Lock()
+	mock.calls.CSV = append(mock.calls.CSV, callInfo)
+	mock.lockCSV.Unlock()
+	return mock.CSVFunc(ctx, table)
+}
+
+// CSVCalls gets all the calls that were made to CSV.
+// Check the length with:
+//
+//	len(mockedTableService.CSVCalls())
+func (mock *TableServiceMock) CSVCalls() []struct {
+	Ctx   context.Context
+	Table string
+} {
+	var calls []struct {
+		Ctx   context.Context
+		Table string
+	}
+	mock.lockCSV.RLock()
+	calls = mock.calls.CSV
+	mock.lockCSV.RUnlock()
+	return calls
+}
+
 // Create calls CreateFunc.
 func (mock *TableServiceMock) Create(ctx context.Context, req *TableGenRequest) (string, error) {
 	if mock.CreateFunc == nil {
@@ -392,6 +471,46 @@ func (mock *TableServiceMock) CreateCalls() []struct {
 	mock.lockCreate.RLock()
 	calls = mock.calls.Create
 	mock.lockCreate.RUnlock()
+	return calls
+}
+
+// CreateColumn calls CreateColumnFunc.
+func (mock *TableServiceMock) CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error) {
+	if mock.CreateColumnFunc == nil {
+		panic("TableServiceMock.CreateColumnFunc: method is nil but TableService.CreateColumn was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Table  string
+		Column TableGenColumn
+	}{
+		Ctx:    ctx,
+		Table:  table,
+		Column: column,
+	}
+	mock.lockCreateColumn.Lock()
+	mock.calls.CreateColumn = append(mock.calls.CreateColumn, callInfo)
+	mock.lockCreateColumn.Unlock()
+	return mock.CreateColumnFunc(ctx, table, column)
+}
+
+// CreateColumnCalls gets all the calls that were made to CreateColumn.
+// Check the length with:
+//
+//	len(mockedTableService.CreateColumnCalls())
+func (mock *TableServiceMock) CreateColumnCalls() []struct {
+	Ctx    context.Context
+	Table  string
+	Column TableGenColumn
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Table  string
+		Column TableGenColumn
+	}
+	mock.lockCreateColumn.RLock()
+	calls = mock.calls.CreateColumn
+	mock.lockCreateColumn.RUnlock()
 	return calls
 }
 
@@ -468,6 +587,46 @@ func (mock *TableServiceMock) DeleteCalls() []struct {
 	mock.lockDelete.RLock()
 	calls = mock.calls.Delete
 	mock.lockDelete.RUnlock()
+	return calls
+}
+
+// DeleteColumn calls DeleteColumnFunc.
+func (mock *TableServiceMock) DeleteColumn(ctx context.Context, table string, column string) (string, error) {
+	if mock.DeleteColumnFunc == nil {
+		panic("TableServiceMock.DeleteColumnFunc: method is nil but TableService.DeleteColumn was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Table  string
+		Column string
+	}{
+		Ctx:    ctx,
+		Table:  table,
+		Column: column,
+	}
+	mock.lockDeleteColumn.Lock()
+	mock.calls.DeleteColumn = append(mock.calls.DeleteColumn, callInfo)
+	mock.lockDeleteColumn.Unlock()
+	return mock.DeleteColumnFunc(ctx, table, column)
+}
+
+// DeleteColumnCalls gets all the calls that were made to DeleteColumn.
+// Check the length with:
+//
+//	len(mockedTableService.DeleteColumnCalls())
+func (mock *TableServiceMock) DeleteColumnCalls() []struct {
+	Ctx    context.Context
+	Table  string
+	Column string
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Table  string
+		Column string
+	}
+	mock.lockDeleteColumn.RLock()
+	calls = mock.calls.DeleteColumn
+	mock.lockDeleteColumn.RUnlock()
 	return calls
 }
 
@@ -620,23 +779,21 @@ func (mock *TableServiceMock) GetTableSchemaCalls() []struct {
 }
 
 // Import calls ImportFunc.
-func (mock *TableServiceMock) Import(ctx context.Context, table string, reader io.Reader) (string, error) {
+func (mock *TableServiceMock) Import(ctx context.Context, request ImportRequest) (string, error) {
 	if mock.ImportFunc == nil {
 		panic("TableServiceMock.ImportFunc: method is nil but TableService.Import was just called")
 	}
 	callInfo := struct {
-		Ctx    context.Context
-		Table  string
-		Reader io.Reader
+		Ctx     context.Context
+		Request ImportRequest
 	}{
-		Ctx:    ctx,
-		Table:  table,
-		Reader: reader,
+		Ctx:     ctx,
+		Request: request,
 	}
 	mock.lockImport.Lock()
 	mock.calls.Import = append(mock.calls.Import, callInfo)
 	mock.lockImport.Unlock()
-	return mock.ImportFunc(ctx, table, reader)
+	return mock.ImportFunc(ctx, request)
 }
 
 // ImportCalls gets all the calls that were made to Import.
@@ -644,14 +801,12 @@ func (mock *TableServiceMock) Import(ctx context.Context, table string, reader i
 //
 //	len(mockedTableService.ImportCalls())
 func (mock *TableServiceMock) ImportCalls() []struct {
-	Ctx    context.Context
-	Table  string
-	Reader io.Reader
+	Ctx     context.Context
+	Request ImportRequest
 } {
 	var calls []struct {
-		Ctx    context.Context
-		Table  string
-		Reader io.Reader
+		Ctx     context.Context
+		Request ImportRequest
 	}
 	mock.lockImport.RLock()
 	calls = mock.calls.Import
@@ -660,13 +815,13 @@ func (mock *TableServiceMock) ImportCalls() []struct {
 }
 
 // ImportImage calls ImportImageFunc.
-func (mock *TableServiceMock) ImportImage(ctx context.Context, request ImageImportRequest) (string, error) {
+func (mock *TableServiceMock) ImportImage(ctx context.Context, request ImportRequest) (string, error) {
 	if mock.ImportImageFunc == nil {
 		panic("TableServiceMock.ImportImageFunc: method is nil but TableService.ImportImage was just called")
 	}
 	callInfo := struct {
 		Ctx     context.Context
-		Request ImageImportRequest
+		Request ImportRequest
 	}{
 		Ctx:     ctx,
 		Request: request,
@@ -683,11 +838,11 @@ func (mock *TableServiceMock) ImportImage(ctx context.Context, request ImageImpo
 //	len(mockedTableService.ImportImageCalls())
 func (mock *TableServiceMock) ImportImageCalls() []struct {
 	Ctx     context.Context
-	Request ImageImportRequest
+	Request ImportRequest
 } {
 	var calls []struct {
 		Ctx     context.Context
-		Request ImageImportRequest
+		Request ImportRequest
 	}
 	mock.lockImportImage.RLock()
 	calls = mock.calls.ImportImage

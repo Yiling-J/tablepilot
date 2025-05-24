@@ -1,6 +1,7 @@
 package table
 
 import (
+	"bytes"
 	"cmp"
 	"context"
 	"encoding/csv"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -22,6 +24,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/table/source/huggingface"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/spf13/cast"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 
 	"github.com/invopop/jsonschema"
 	"github.com/tidwall/gjson"
@@ -51,8 +54,8 @@ type TableService interface {
 	Rows(ctx context.Context, table string) (*Rows, error)
 	Truncate(ctx context.Context, table string) (int, error)
 	Delete(ctx context.Context, table string) (int, error)
-	Import(ctx context.Context, table string, reader io.Reader) (string, error)
-	ImportImage(ctx context.Context, request ImageImportRequest) (string, error)
+	Import(ctx context.Context, request ImportRequest) (string, error)
+	ImportImage(ctx context.Context, request ImportRequest) (string, error)
 	CreateRows(ctx context.Context, table string, rows []map[string]any) error
 	SharedSources(ctx context.Context) []*SharedSource
 	GetTableSchema(ctx context.Context, table string) (*TableGenRequest, error)
@@ -60,6 +63,9 @@ type TableService interface {
 	PolishBuilderTables(ctx context.Context, tables []BuilderTable, prompt string, params ModelParams) ([]BuilderTable, error)
 	BuildTable(ctx context.Context, name, description string, depends []string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error)
 	PolishBuilderTable(ctx context.Context, table *TableGenRequest, prompt string, exists []*TableInfo, params ModelParams) (*TableGenRequest, error)
+	CSV(ctx context.Context, table string) ([]byte, error)
+	CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error)
+	DeleteColumn(ctx context.Context, table string, column string) (string, error)
 }
 
 type TableServiceImpl struct {
@@ -529,6 +535,49 @@ func (t *TableServiceImpl) Rows(ctx context.Context, table string) (*Rows, error
 	return &Rows{Columns: meta.Edges.Columns, Rows: meta.Edges.Rows}, nil
 }
 
+func cellString(v any) string {
+	vs, err := cast.ToStringE(v)
+	if err != nil {
+		vb, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Sprintf("%+v", v)
+		}
+		return string(vb)
+	}
+	return vs
+}
+
+func (t *TableServiceImpl) CSV(ctx context.Context, table string) ([]byte, error) {
+	rows, err := t.Rows(ctx, table)
+	if err != nil {
+		return nil, fmt.Errorf("table.CSV: querying rows: %w", err)
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	csvwriter := csv.NewWriter(buffer)
+	columns := []string{}
+	for _, col := range rows.Columns {
+		columns = append(columns, col.Name)
+	}
+	err = csvwriter.Write(columns)
+	if err != nil {
+		return nil, fmt.Errorf("table.CSV: write headers to csv: %w", err)
+	}
+	data := [][]string{}
+	for _, row := range rows.Rows {
+		r := []string{}
+		for _, v := range row.Cells {
+			r = append(r, cellString(v.Value))
+		}
+		data = append(data, r)
+	}
+	err = csvwriter.WriteAll(data)
+	if err != nil {
+		return nil, fmt.Errorf("table.CSV: write data to csv: %w", err)
+	}
+	return buffer.Bytes(), nil
+}
+
 func (t *TableServiceImpl) Truncate(ctx context.Context, table string) (int, error) {
 	meta, err := t.db.TableMeta.Query().Where(tablemeta.Or(
 		tablemeta.Nanoid(table),
@@ -555,32 +604,87 @@ func (t *TableServiceImpl) Delete(ctx context.Context, table string) (int, error
 	return count, nil
 }
 
-func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportRequest) (string, error) {
+func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImportRequest) (string, error) {
 	builder := promptbuilder.NewNewImageToTableBuilder(request.Prompt)
-	tables, err := t.db.TableMeta.Query().All(ctx)
+	var genSchema *jsonschema.Schema
+	tx, err := t.db.Tx(ctx)
 	if err != nil {
-		return "", fmt.Errorf("table.ImportImage: querying tables: %w", err)
+		return "", fmt.Errorf("table.ImportImage: starting transaction: %w", err)
 	}
-	tableNames := []string{}
-	for _, t := range tables {
-		tableNames = append(tableNames, t.Name)
+	if len(request.Table) > 0 {
+		table, err := tx.TableMeta.Query().WithColumns().Where(tablemeta.Or(
+			tablemeta.Nanoid(request.Table),
+			tablemeta.Name(request.Table),
+		)).Only(ctx)
+		if err != nil {
+			return "", fmt.Errorf("table.ImportImage: get table: %w", err)
+		}
+		if request.Truncate {
+			_, err = tx.TableRow.Delete().Where(tablerow.HasTablemetaWith(tablemeta.ID(table.ID))).Exec(ctx)
+			if err != nil {
+				return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: truncating existing table: %w", err))
+			}
+		}
+		builder.ToTable(table)
+
+		om := orderedmap.New[string, *jsonschema.Schema]()
+		om.Set("__id__", &jsonschema.Schema{Type: "integer"})
+		required := []string{"__id__"}
+		for _, col := range table.Edges.Columns {
+			if col.FillMode != tablecolumn.FillModeAi {
+				continue
+			}
+			s := &jsonschema.Schema{
+				Type: col.Type.String(),
+			}
+			if s.Type == "array" {
+				s.Items = &jsonschema.Schema{Type: "string"}
+			}
+			om.Set(col.Nanoid, s)
+			required = append(required, col.Nanoid)
+		}
+		rowsSchema := &jsonschema.Schema{
+			Type: "array",
+			Items: &jsonschema.Schema{
+				Type:                 "object",
+				Properties:           om,
+				AdditionalProperties: jsonschema.FalseSchema,
+				Required:             required,
+			},
+		}
+		omw := orderedmap.New[string, *jsonschema.Schema]()
+		omw.Set("data", rowsSchema)
+		genSchema = &jsonschema.Schema{
+			Type:                 "object",
+			Properties:           omw,
+			AdditionalProperties: jsonschema.FalseSchema,
+		}
+	} else {
+		tables, err := tx.TableMeta.Query().All(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: querying tables: %w", err))
+		}
+		tableNames := []string{}
+		for _, t := range tables {
+			tableNames = append(tableNames, t.Name)
+		}
+		builder.AddExistingTableNames(tableNames)
+		var v ImageExtractionOutput
+		reflector := jsonschema.Reflector{
+			AllowAdditionalProperties: false,
+			DoNotReference:            true,
+		}
+		genSchema = reflector.Reflect(v)
 	}
-	builder.AddExistingTableNames(tableNames)
 	prompt, err := builder.Prompt()
 	if err != nil {
-		return "", fmt.Errorf("table.ImportImage: building prompt: %w", err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: building prompt: %w", err))
 	}
 	encoded, err := imageURLFromData(request.Data)
 	if err != nil {
-		return "", fmt.Errorf("table.ImportImage: encoding image: %w", err)
+		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: encoding image: %w", err))
 	}
 	input := client.UserMessageWithSingleImage(prompt, encoded)
-	reflector := jsonschema.Reflector{
-		AllowAdditionalProperties: false,
-		DoNotReference:            true,
-	}
-	var v ImageExtractionOutput
-	genSchema := reflector.Reflect(v)
 	resp, err := t.ai.Chat(ctx, &client.ChatRequest{
 		Temperature:     0.1,
 		MaxOutputTokens: GENERATE_DATA_MAX_TOKENS,
@@ -589,74 +693,122 @@ func (t *TableServiceImpl) ImportImage(ctx context.Context, request ImageImportR
 		Schema:          genSchema,
 	})
 	if err != nil {
-		return "", fmt.Errorf("table.ImportImage: AI chat request: %w", err)
-	}
-	var generated ImageExtractionOutput
-	err = json.Unmarshal([]byte(resp.Content), &generated)
-	if err != nil {
-		return "", fmt.Errorf("table.ImportImage: unmarshaling AI response: %w", err)
-	}
-	tx, err := t.db.Tx(ctx)
-	if err != nil {
-		return "", fmt.Errorf("table.ImportImage: starting transaction: %w", err)
-	}
-	tablemeta, err := tx.TableMeta.Create().SetName(generated.TableName).SetDescription(generated.TableDescription).Save(ctx)
-	if err != nil {
-		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating table metadata: %w", err))
-	}
-	columnCreates := []*ent.TableColumnCreate{}
-	for _, col := range generated.Columns {
-		columnCreates = append(
-			columnCreates, tx.TableColumn.Create().SetName(col.Name).SetType(tablecolumn.TypeString).SetDescription(col.Description).
-				SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tablemeta),
-		)
-	}
-	err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
-	if err != nil {
-		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating columns: %w", err))
-	}
-	schemaRows := [][]*schema.CellValue{}
-	for _, row := range generated.Rows {
-		if len(row) != len(generated.Columns) {
-			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: inconsistent row data"))
-		}
-		cells := []*schema.CellValue{}
-		for _, cell := range row {
-			cells = append(cells, &schema.CellValue{Value: cell})
-		}
-		schemaRows = append(schemaRows, cells)
+		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: AI chat request: %w", err))
 	}
 
-	rowCreates := []*ent.TableRowCreate{}
-	for _, row := range schemaRows {
-		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(row).SetTablemeta(tablemeta))
+	creates := []*ent.TableRowCreate{}
+	tableID := ""
+	if len(request.Table) > 0 {
+		table, err := tx.TableMeta.Query().WithColumns().Where(tablemeta.Or(
+			tablemeta.Nanoid(request.Table),
+			tablemeta.Name(request.Table),
+		)).Only(ctx)
+		tableID = table.Nanoid
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: get table: %w", err))
+		}
+		rows, err := util.TryDecodeJsonArray[map[string]any](
+			gjson.Get(resp.Content, "data").String(),
+		)
+		// log error only because we need those successfully generated rows
+		if err != nil {
+			t.logger.Errorw("table.ImportImage: TryDecodeJsonArray error", "errpr", err)
+		}
+
+		generated := []map[string]*schema.CellValue{}
+		for _, row := range rows {
+			n := map[string]*schema.CellValue{}
+			for k, v := range row {
+				n[k] = &schema.CellValue{Value: v}
+			}
+			delete(row, "__id__")
+			generated = append(generated, n)
+		}
+		indexer := util.NewColumnIndexer(table.Edges.Columns)
+		for _, row := range generated {
+			v, err := indexer.RowMapToSlice(row)
+			if err != nil {
+				return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: RowMapToSlice: %w", err))
+			}
+			creates = append(creates, tx.TableRow.Create().SetNanoid(
+				cast.ToString(row["__id__"].Value),
+			).SetCells(v).SetTablemeta(table))
+		}
+	} else {
+		var generated ImageExtractionOutput
+		err = json.Unmarshal([]byte(resp.Content), &generated)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: unmarshaling AI response: %w", err))
+		}
+		name := generated.TableName
+		if len(request.Name) > 0 {
+			name = request.Name
+		}
+		tablemeta, err := tx.TableMeta.Create().SetName(name).SetDescription(generated.TableDescription).Save(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating table metadata: %w", err))
+		}
+		tableID = tablemeta.Nanoid
+		columnCreates := []*ent.TableColumnCreate{}
+		for _, col := range generated.Columns {
+			columnCreates = append(
+				columnCreates, tx.TableColumn.Create().SetName(col.Name).SetType(tablecolumn.TypeString).SetDescription(col.Description).
+					SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tablemeta),
+			)
+		}
+		err = tx.TableColumn.CreateBulk(columnCreates...).Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating columns: %w", err))
+		}
+		schemaRows := [][]*schema.CellValue{}
+		for _, row := range generated.Rows {
+			if len(row) != len(generated.Columns) {
+				return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: inconsistent row data"))
+			}
+			cells := []*schema.CellValue{}
+			for _, cell := range row {
+				cells = append(cells, &schema.CellValue{Value: cell})
+			}
+			schemaRows = append(schemaRows, cells)
+		}
+
+		for _, row := range schemaRows {
+			creates = append(creates, tx.TableRow.Create().SetCells(row).SetTablemeta(tablemeta))
+		}
 	}
-	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
+	err = tx.TableRow.CreateBulk(creates...).Exec(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("table.ImportImage: creating rows: %w", err))
 	}
-	return tablemeta.Nanoid, tx.Commit()
+	return tableID, tx.Commit()
 }
 
-func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.Reader) (string, error) {
+func (t *TableServiceImpl) Import(ctx context.Context, request ImportRequest) (string, error) {
 	tx, err := t.db.Tx(ctx)
 	if err != nil {
 		return "", fmt.Errorf("table.Import: starting a transaction: %w", err)
 	}
-	exists, err := tx.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
-		tcq.Order(ent.Asc(tablecolumn.FieldID))
-	}).Where(
-		tablemeta.Name(table),
-	).All(ctx)
-	if err != nil {
-		return "", ent.Rollback(tx, fmt.Errorf("table.Import: querying existing table: %w", err))
+	var tm *ent.TableMeta
+	if len(request.Table) > 0 {
+		tm, err = tx.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
+			tcq.Order(ent.Asc(tablecolumn.FieldID))
+		}).Where(
+			tablemeta.Or(
+				tablemeta.Nanoid(request.Table),
+				tablemeta.Name(request.Table),
+			),
+		).Only(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.Import: querying existing table: %w", err))
+		}
+		if request.Truncate {
+			_, err = tx.TableRow.Delete().Where(tablerow.HasTablemetaWith(tablemeta.ID(tm.ID))).Exec(ctx)
+			if err != nil {
+				return "", ent.Rollback(tx, fmt.Errorf("table.Import: truncating existing table: %w", err))
+			}
+		}
 	}
-	// if table already exists, import data to matched columns for the table
-	var tablemeta *ent.TableMeta
-	if len(exists) > 0 {
-		tablemeta = exists[0]
-	}
-	cr := csv.NewReader(reader)
+	cr := csv.NewReader(request.Reader)
 	columns := []string{}
 	// rows read from csv
 	rows := [][]string{}
@@ -680,15 +832,15 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 	}
 
 	var tableColumns []*ent.TableColumn
-	if tablemeta != nil {
+	if tm != nil {
 		cm := map[string]int{}
 		for i, col := range columns {
 			cm[col] = i
 		}
-		tableColumns = tablemeta.Edges.Columns
+		tableColumns = tm.Edges.Columns
 		for _, row := range rows {
 			newRow := []any{}
-			for _, col := range tablemeta.Edges.Columns {
+			for _, col := range tm.Edges.Columns {
 				if j, ok := cm[col.Name]; ok {
 					v, err := util.ConvertStringToType(row[j], col.Type)
 					if err != nil {
@@ -713,7 +865,11 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 			}
 			importRows = append(importRows, newRow)
 		}
-		tablemeta, err = tx.TableMeta.Create().SetName(table).Save(ctx)
+		tableName := request.Name
+		if len(tableName) == 0 {
+			tableName = fmt.Sprintf("%s_%d", request.Filename, time.Now().Unix())
+		}
+		tm, err = tx.TableMeta.Create().SetName(tableName).Save(ctx)
 		if err != nil {
 			return "", ent.Rollback(tx, fmt.Errorf("table.Import: creating table metadata: %w", err))
 		}
@@ -721,7 +877,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		for _, col := range columns {
 			columnCreates = append(
 				columnCreates, tx.TableColumn.Create().SetName(col).SetType(tablecolumn.TypeString).
-					SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tablemeta),
+					SetFillMode(tablecolumn.FillModeAi).SetTablemeta(tm),
 			)
 		}
 		tableColumns, err = tx.TableColumn.CreateBulk(columnCreates...).Save(ctx)
@@ -742,7 +898,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 		if len(col.Source) == 0 {
 			continue
 		}
-		rs, ok := tablemeta.Sources[col.Source]
+		rs, ok := tm.Sources[col.Source]
 		if !ok {
 			return "", ent.Rollback(tx, fmt.Errorf("table.Import: source not found"))
 		}
@@ -796,13 +952,13 @@ func (t *TableServiceImpl) Import(ctx context.Context, table string, reader io.R
 
 	rowCreates := []*ent.TableRowCreate{}
 	for _, row := range schemaRows {
-		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(row).SetTablemeta(tablemeta))
+		rowCreates = append(rowCreates, tx.TableRow.Create().SetCells(row).SetTablemeta(tm))
 	}
 	err = tx.TableRow.CreateBulk(rowCreates...).Exec(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("table.Import: creating rows: %w", err))
 	}
-	return tablemeta.Nanoid, tx.Commit()
+	return tm.Nanoid, tx.Commit()
 }
 
 func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []map[string]any) error {
@@ -1004,4 +1160,147 @@ func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) e
 		}
 	}
 	return nil
+}
+
+func (t *TableServiceImpl) CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error) {
+	t.logger.Debugw("creating column", "column", column.Name)
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.CreateColumn: starting a transaction: %w", err)
+	}
+	tb, err := tx.TableMeta.Query().Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).Only(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.CreateColumn: get table: %w", err)
+	}
+	sources := tb.Sources
+	if len(t.sharedSources) > 0 {
+		for _, so := range t.sharedSources {
+			if _, ok := sources[so.Name]; !ok {
+				vs, err := source.ValidateSource(ctx, so.Data, tx.Client())
+				if err != nil {
+					return "", ent.Rollback(tx, fmt.Errorf("table.Create: validating shared source: %w", err))
+				}
+				bs, err := json.Marshal(vs)
+				if err != nil {
+					return "", ent.Rollback(tx, fmt.Errorf("table.Create: marshaling shared source: %w", err))
+				}
+				sources[so.Name] = bs
+			}
+		}
+	}
+
+	// validate linked column column/context_columns exists
+	err = validateLinkedColumnInfo(ctx, tx, []TableGenColumn{column}, sources)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: validating linked column info: %w", err))
+	}
+
+	cc := tx.TableColumn.Create().
+		SetTablemeta(tb).
+		SetFillMode(tablecolumn.FillMode(column.FillMode)).
+		SetName(column.Name).
+		SetDescription(column.Description).
+		SetType(tablecolumn.Type(column.Type)).
+		SetContextLength(column.ContextLength)
+
+	if column.Source != "" && column.FillMode == "pick" {
+		if _, ok := sources[column.Source]; ok {
+			cc.SetSource(column.Source).SetRandom(column.Random).
+				SetReplacement(column.Replacement).
+				SetRepeat(column.Repeat).SetLinkedColumn(column.LinkedColumn).
+				SetLinkedContextColumns(column.LinkedContextColumns)
+		} else {
+			return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: source %s not found", column.Source))
+		}
+	}
+	t.logger.Debugw(
+		"creating column", "name", column.Name, "description", column.Description,
+		"fill_mode", column.FillMode, "type", column.Type, "source", column.Source,
+	)
+
+	err = cc.Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: creating column: %w", err))
+	}
+
+	// update rows if exists
+	rows, err := tb.QueryRows().All(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: querying rows: %w", err))
+	}
+	updates := []*ent.TableRowCreate{}
+	zv, err := util.ZeroValue(tablecolumn.Type(column.Type))
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.Update: getting zero value for column type: %w", err))
+	}
+	for _, row := range rows {
+		row.Cells = append(row.Cells, &schema.CellValue{Value: zv})
+		updates = append(updates, tx.TableRow.Create().SetTablemeta(tb).SetCells(row.Cells).SetNanoid(row.Nanoid))
+	}
+	if len(updates) > 0 {
+		err = tx.TableRow.CreateBulk(updates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.Update: updating rows: %w", err))
+		}
+	}
+
+	t.logger.Debug("finish creating column")
+	return tb.Nanoid, tx.Commit()
+}
+
+func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, column string) (string, error) {
+	t.logger.Debugw("deleting column", "column", column)
+	tx, err := t.db.Tx(ctx)
+	if err != nil {
+		return "", fmt.Errorf("table.DeleteColumn: starting a transaction: %w", err)
+	}
+	tb, err := tx.TableMeta.Query().Where(tablemeta.Or(
+		tablemeta.Nanoid(table),
+		tablemeta.Name(table),
+	)).WithColumns(func(tcq *ent.TableColumnQuery) {
+		tcq.Order(ent.Asc(tablecolumn.FieldID))
+	}).Only(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: get table: %w", err))
+	}
+	removeIndex := 0
+	removeId := 0
+	for i, col := range tb.Edges.Columns {
+		if col.Nanoid == column || col.Name == column {
+			removeIndex = i
+			removeId = col.ID
+			break
+		}
+	}
+	if removeId == 0 {
+		return "", nil
+	}
+	_, err = tx.TableColumn.Delete().Where(tablecolumn.ID(removeId)).Exec(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: delete column: %w", err))
+	}
+	rows, err := tb.QueryRows().All(ctx)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: querying rows: %w", err))
+	}
+	updates := []*ent.TableRowCreate{}
+	for _, row := range rows {
+		cells := []*schema.CellValue{}
+		for i, cell := range row.Cells {
+			if i != removeIndex {
+				cells = append(cells, cell)
+			}
+		}
+		updates = append(updates, tx.TableRow.Create().SetTablemeta(tb).SetCells(cells).SetNanoid(row.Nanoid))
+	}
+	if len(updates) > 0 {
+		err = tx.TableRow.CreateBulk(updates...).OnConflictColumns(tablerow.FieldNanoid).UpdateNewValues().Exec(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("table.DeleteColumn: updating rows: %w", err))
+		}
+	}
+	return "", tx.Commit()
 }

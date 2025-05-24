@@ -29,23 +29,23 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Edit, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ContextVariable, MentionInput } from "../ui/var-input";
 
 interface SourcesFormProps {
   formData: TableCreateRequest;
   updateFormData: (data: Partial<TableCreateRequest>) => void;
-}
-
-interface SourcesFormProps {
-  formData: TableCreateRequest;
-  updateFormData: (data: Partial<TableCreateRequest>) => void;
+  variables?: ContextVariable[];
 }
 
 type SourceType = "ai" | "list" | "linked";
 
-export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
+export function SourcesForm({
+  formData,
+  updateFormData,
+  variables,
+}: SourcesFormProps) {
   const [sourceName, setSourceName] = useState("");
   const [sourceType, setSourceType] = useState<SourceType>("ai");
   const [prompt, setPrompt] = useState("");
@@ -257,12 +257,14 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
               {sourceType === "ai" && (
                 <div className="grid gap-2">
                   <Label htmlFor="prompt">AI Prompt</Label>
-                  <Textarea
+                  <MentionInput
                     id="prompt"
+                    variables={variables}
                     placeholder="e.g., Generate 20 recipe cuisines."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     rows={3}
+                    textarea={true}
                   />
                 </div>
               )}
@@ -270,12 +272,14 @@ export function SourcesForm({ formData, updateFormData }: SourcesFormProps) {
               {sourceType === "list" && (
                 <div className="grid gap-2">
                   <Label htmlFor="options">Options (one per line)</Label>
-                  <Textarea
+                  <MentionInput
                     id="options"
+                    variables={variables}
                     placeholder="e.g., Dinner&#10;Breakfast&#10;Lunch"
                     value={options}
                     onChange={(e) => setOptions(e.target.value)}
                     rows={5}
+                    textarea={true}
                   />
                 </div>
               )}

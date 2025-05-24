@@ -441,7 +441,11 @@ export function Table({ id }: TableProps) {
         isOpen={autofillOpen}
         setIsOpen={setAutofillOpen}
         columns={table.columns}
-        onStart={(columns: Column[], contextColumns: Column[]) => {
+        onStart={(
+          columns: string[],
+          contextColumns: string[],
+          prompt: string,
+        ) => {
           setAutofillOpen(false);
           setButton({
             text: "Stop",
@@ -456,11 +460,11 @@ export function Table({ id }: TableProps) {
           autofill(id, abortControllerRef.current.signal, handleAutofillEvent, {
             genRequest: genRequestRef.current,
             autofill: {
-              columns: columns.map((c) => c.id),
-              context_columns: contextColumns.map((c) => c.id),
+              columns: columns,
+              context_columns: contextColumns,
               offset: 0,
               rows: [],
-              prompt: "",
+              prompt: prompt,
             },
           });
         }}

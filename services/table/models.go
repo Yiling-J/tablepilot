@@ -2,6 +2,7 @@ package table
 
 import (
 	"encoding/json"
+	"io"
 
 	"github.com/Yiling-J/tablepilot/ent"
 )
@@ -42,10 +43,10 @@ type AutofillRequest struct {
 	Offset         int      `json:"offset"`
 	Columns        []string `json:"columns"`
 	ContextColumns []string `json:"context_columns"`
+	Prompt         string   `json:"prompt"`
 
 	// fields below are used in regenerate API
-	Rows   []string `json:"rows"`
-	Prompt string   `json:"prompt"`
+	Rows []string `json:"rows"`
 }
 
 type GenerateRowsRequest struct {
@@ -126,10 +127,22 @@ type ModelParams struct {
 	Model       string  `json:"model"`
 }
 
-type ImageImportRequest struct {
+type ImportRequest struct {
+	Model string
+	// import to existing table
+	Table string
+	// create a new table with given name
+	Name string
+	// remove existing rows in To
+	Truncate bool
+	// file name, if To is empty and Name is empty, the new table's name will using Filename_timestamp as new name
+	Filename string
+
+	// import image
 	Data   []byte
 	Prompt string
-	Model  string
+	// import csv
+	Reader io.Reader
 }
 
 type ImageExtractionColumn struct {

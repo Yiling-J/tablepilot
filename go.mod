@@ -8,6 +8,7 @@ require (
 	github.com/beevik/etree v1.5.0
 	github.com/bmatcuk/doublestar/v4 v4.8.1
 	github.com/charmbracelet/lipgloss v1.0.0
+	github.com/eiannone/keyboard v0.0.0-20220611211555-0d226195f203
 	github.com/gammazero/toposort v0.1.1
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/static v1.1.3

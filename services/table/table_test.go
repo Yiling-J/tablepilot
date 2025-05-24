@@ -23,6 +23,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
 	"github.com/Yiling-J/tablepilot/services/table/source"
 	"github.com/parquet-go/parquet-go"
+	"github.com/spf13/cast"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -475,7 +476,13 @@ func TestTableService_Import(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	// create table when importing with given table name
+	id, err := srv.Import(ctx, ImportRequest{
+		Filename: "bar.csv",
+		Table:    "",
+		Reader:   strings.NewReader(buffer.String()),
+		Name:     "foo",
+	})
 	require.NoError(t, err)
 
 	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
@@ -500,6 +507,17 @@ func TestTableService_Import(t *testing.T) {
 	}
 	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
 
+	// create table when importing, file name
+	id, err = srv.Import(ctx, ImportRequest{
+		Filename: "bar",
+		Reader:   strings.NewReader(buffer.String()),
+	})
+	require.NoError(t, err)
+
+	t2, err := db.TableMeta.Query().Where(tablemeta.Nanoid(id)).Only(ctx)
+	require.NoError(t, err)
+	require.True(t, strings.HasPrefix(t2.Name, "bar_"))
+
 	// import some data again, test table exists case
 	records = [][]string{
 		{"col2", "col4", "col1"},
@@ -515,7 +533,10 @@ func TestTableService_Import(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err = srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	id, err = srv.Import(ctx, ImportRequest{
+		Table:  "foo",
+		Reader: strings.NewReader(buffer.String()),
+	})
 	require.NoError(t, err)
 	require.Equal(t, table.Nanoid, id)
 	table, err = db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
@@ -565,7 +586,10 @@ func TestTableService_ImportAutoType(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+	id, err := srv.Import(ctx, ImportRequest{
+		Reader: strings.NewReader(buffer.String()),
+		Table:  "foo",
+	})
 	require.NoError(t, err)
 
 	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
@@ -676,7 +700,10 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 			}
 			w.Flush()
 
-			id, err := srv.Import(ctx, "foo", strings.NewReader(buffer.String()))
+			id, err := srv.Import(ctx, ImportRequest{
+				Table:  "foo",
+				Reader: strings.NewReader(buffer.String()),
+			})
 			require.NoError(t, err)
 
 			table, err := db.TableMeta.Query().WithRows(func(trq *ent.TableRowQuery) {
@@ -743,7 +770,7 @@ func TestTableService_ImportImage(t *testing.T) {
 
 	pb, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC")
 	require.NoError(t, err)
-	id, err := srv.ImportImage(ctx, ImageImportRequest{
+	id, err := srv.ImportImage(ctx, ImportRequest{
 		Data:   pb,
 		Prompt: "foobar",
 		Model:  "m1",
@@ -776,6 +803,75 @@ func TestTableService_ImportImage(t *testing.T) {
 		rows = append(rows, r)
 	}
 	require.Equal(t, [][]any{{"a", "1"}, {"b", "2"}}, rows)
+}
+
+func TestTableService_ImportImageToTable(t *testing.T) {
+	db := db.NewTestDB()
+	ctx := context.Background()
+	table, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
+	require.NoError(t, err)
+	col, err := db.TableColumn.Create().
+		SetName("c1").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(table).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	col2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModePick).
+		SetTablemeta(table).
+		SetType(tablecolumn.TypeString).Save(ctx)
+	require.NoError(t, err)
+	_ = col2
+
+	data := ""
+	srv, err := NewTableService(&config.Config{}, db, &ai.AiServiceMock{
+		ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			data = request.Messages[0].Content[0].Data
+			require.Equal(t, 0.1, request.Temperature)
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, int64(6000), request.MaxOutputTokens)
+
+			d := []map[string]any{{"__id__": 0, col.Nanoid: "d"}, {"__id__": 1, col.Nanoid: "e"}}
+			b, err := json.Marshal(map[string]any{"data": d})
+			require.NoError(t, err)
+			require.NoError(t, err)
+			return &client.ChatResponse{
+				Content: string(b),
+			}, nil
+		},
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+
+	pb, err := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAIAAAACDbGyAAAAEklEQVR4nGJiQAWU8gEBAAD//wIwAAtSRUCpAAAAAElFTkSuQmCC")
+	require.NoError(t, err)
+	id, err := srv.ImportImage(ctx, ImportRequest{
+		Data:   pb,
+		Prompt: "foobar",
+		Model:  "m1",
+		Table:  "foo",
+	})
+	require.NoError(t, err)
+	require.Equal(t, table.Nanoid, id)
+
+	rows, err := table.QueryRows().All(ctx)
+	require.NoError(t, err)
+	nw := [][]any{}
+	for _, row := range rows {
+		r := []any{}
+		for _, cell := range row.Cells {
+			r = append(r, cell.Value)
+		}
+		nw = append(nw, r)
+	}
+	require.Equal(t, [][]any{{"d", nil}, {"e", nil}}, nw)
+	builder := promptbuilder.NewNewImageToTableBuilder("foobar")
+	tm, err := db.TableMeta.Query().WithColumns().Where(tablemeta.ID(table.ID)).Only(ctx)
+	require.NoError(t, err)
+	builder.ToTable(tm)
+	prompt, err := builder.Prompt()
+	require.NoError(t, err)
+	require.Equal(t, prompt, data)
 }
 
 func TestTableService_ListTables(t *testing.T) {
@@ -1043,7 +1139,10 @@ func TestTableService_ImportLinked(t *testing.T) {
 	}
 	w.Flush()
 
-	id, err := srv.Import(ctx, "t1", strings.NewReader(buffer.String()))
+	id, err := srv.Import(ctx, ImportRequest{
+		Table:  "t1",
+		Reader: strings.NewReader(buffer.String()),
+	})
 	require.NoError(t, err)
 	table, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
@@ -1054,9 +1153,6 @@ func TestTableService_ImportLinked(t *testing.T) {
 	rows := [][]*schema.CellValue{}
 	for _, row := range table.Edges.Rows {
 		rows = append(rows, row.Cells)
-		for _, cell := range row.Cells {
-			fmt.Println(cell.Value, cell.ContextValue)
-		}
 	}
 	require.Equal(t, [][]*schema.CellValue{
 		{&schema.CellValue{Value: "a", ContextValue: map[string]any{"c1": "a", "c2": "v1"}}, &schema.CellValue{Value: "aa", ContextValue: map[string]any{
@@ -1306,4 +1402,124 @@ func TestTableService_Validate(t *testing.T) {
 		err := srv.Validate(ctx, tc.req)
 		require.Equal(t, tc.err, err.Error())
 	}
+}
+
+func TestTableService_CSV(t *testing.T) {
+	db := db.NewTestDB()
+	userTable, err := db.TableMeta.Create().SetName("user").Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(t.Context())
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.CreateRows(t.Context(), "user", []map[string]any{
+		{"name": "aa", "age": 1},
+		{"name": "bb", "age": 2},
+	})
+	require.NoError(t, err)
+	data, err := srv.CSV(t.Context(), "user")
+	require.NoError(t, err)
+	require.Equal(t, "name,age\naa,1\nbb,2\n", string(data))
+}
+
+func TestTableService_CreateColumn(t *testing.T) {
+	db := db.NewTestDB()
+	userTable, err := db.TableMeta.Create().SetName("user").Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(t.Context())
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.CreateRows(t.Context(), "user", []map[string]any{
+		{"name": "aa", "age": 1},
+		{"name": "bb", "age": 2},
+	})
+	require.NoError(t, err)
+	_, err = srv.CreateColumn(t.Context(), "user", TableGenColumn{
+		Name:        "job",
+		Description: "user job",
+		Type:        "string",
+		FillMode:    "ai",
+	})
+	require.NoError(t, err)
+
+	columns, err := userTable.QueryColumns().All(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 3, len(columns))
+	found := false
+	for _, col := range columns {
+		if col.Name == "job" {
+			require.Equal(t, "user job", col.Description)
+			require.Equal(t, tablecolumn.TypeString, col.Type)
+			require.Equal(t, tablecolumn.FillModeAi, col.FillMode)
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+	rows, err := userTable.QueryRows().All(t.Context())
+	require.NoError(t, err)
+	for _, row := range rows {
+		cells := row.Cells
+		require.Equal(t, "", cells[2].Value)
+	}
+}
+func TestTableService_DeleteColumn(t *testing.T) {
+	db := db.NewTestDB()
+	userTable, err := db.TableMeta.Create().SetName("user").Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.TableColumn.CreateBulk(
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("name").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("age").SetType(
+			tablecolumn.TypeInteger,
+		).SetFillMode(tablecolumn.FillModeAi),
+		db.TableColumn.Create().SetTablemeta(userTable).SetName("job").SetType(
+			tablecolumn.TypeString,
+		).SetFillMode(tablecolumn.FillModeAi),
+	).Save(t.Context())
+	require.NoError(t, err)
+	srv, err := NewTableService(&config.Config{}, db, nil, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.CreateRows(t.Context(), "user", []map[string]any{
+		{"name": "aa", "age": 1, "job": "a"},
+		{"name": "bb", "age": 2, "job": "b"},
+	})
+	require.NoError(t, err)
+
+	_, err = srv.DeleteColumn(t.Context(), "user", "age")
+	require.NoError(t, err)
+
+	columns, err := userTable.QueryColumns().All(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 2, len(columns))
+	require.Equal(t, "name", columns[0].Name)
+	require.Equal(t, "job", columns[1].Name)
+	rows, err := userTable.QueryRows().All(t.Context())
+	require.NoError(t, err)
+	ns := []string{}
+	js := []string{}
+	for _, row := range rows {
+		cells := row.Cells
+		require.Equal(t, 2, len(cells))
+		ns = append(ns, cast.ToString(cells[0].Value))
+		js = append(js, cast.ToString(cells[1].Value))
+	}
+	require.ElementsMatch(t, []string{"aa", "bb"}, ns)
+	require.ElementsMatch(t, []string{"a", "b"}, js)
 }

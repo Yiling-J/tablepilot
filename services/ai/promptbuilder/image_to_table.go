@@ -3,6 +3,9 @@ package promptbuilder
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 )
 
 type ImageToTableBuilder struct {
@@ -27,5 +30,26 @@ func NewNewImageToTableBuilder(prompt string) *ImageToTableBuilder {
 func (ib *ImageToTableBuilder) AddExistingTableNames(names []string) {
 	if len(names) > 0 {
 		ib.AddText(fmt.Sprintf("- Avoid using table names that already exist: <tables>%s</tables>", strings.Join(names, ",")))
+	}
+}
+
+func (ib *ImageToTableBuilder) ToTable(table *ent.TableMeta) {
+	ib.AddText("## Below is the table info that extracted data should match.")
+	ib.AddText("### Table Information:")
+	el := ib.NewXML("TableName")
+	el.CreateText(table.Name)
+	el = ib.NewXML("TableDescription")
+	el.CreateText(table.Description)
+
+	ib.AddText("### Columns:")
+	ec := ib.NewXML("Columns")
+	for _, col := range table.Edges.Columns {
+		if col.FillMode != tablecolumn.FillModeAi {
+			continue
+		}
+		cel := ec.CreateElement("Column")
+		cel.CreateAttr("name", col.Name)
+		cel.CreateAttr("id", col.Nanoid)
+		cel.CreateAttr("description", col.Description)
 	}
 }

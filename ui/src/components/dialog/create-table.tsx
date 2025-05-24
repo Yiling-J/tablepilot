@@ -1,4 +1,4 @@
-import { TableCreateRequest } from "@/actions";
+import { TableCreateRequest, TableInfo } from "@/actions";
 import CreateTableForm from "@/components/create-table-form/create-table-form";
 import {
     Dialog,
@@ -7,6 +7,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { JSONObject } from "@/json";
+import { ContextVariable } from "../ui/var-input";
 
 interface CreateTableDialogProps {
   table?: string;
@@ -16,6 +17,9 @@ interface CreateTableDialogProps {
   form?: TableCreateRequest;
   rows?: JSONObject[];
   submitCallback?: () => Promise<void>;
+  variables?: ContextVariable[];
+  onSave?: (form: TableCreateRequest) => void;
+  tables?: TableInfo[];
 }
 
 export function CreateTableDialog({
@@ -26,6 +30,9 @@ export function CreateTableDialog({
   form,
   rows,
   submitCallback,
+  variables,
+  onSave,
+  tables,
 }: CreateTableDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -46,6 +53,9 @@ export function CreateTableDialog({
             rows={rows}
             table={table}
             submitCallback={submitCallback}
+            variables={variables}
+            onSave={onSave}
+            tables={tables}
           />
         </div>
       </DialogContent>

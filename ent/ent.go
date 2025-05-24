@@ -17,6 +17,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/ent/tablerow"
+	"github.com/Yiling-J/tablepilot/ent/workflow"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -82,6 +83,7 @@ func checkColumn(table, column string) error {
 			tablecolumn.Table: tablecolumn.ValidColumn,
 			tablemeta.Table:   tablemeta.ValidColumn,
 			tablerow.Table:    tablerow.ValidColumn,
+			workflow.Table:    workflow.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

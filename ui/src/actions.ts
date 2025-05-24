@@ -1,19 +1,23 @@
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+import toast from "react-hot-toast";
 import { JSONObject } from "./json";
 import {
     autofillUrl,
     generateUrl,
+    getWorkflowUrl,
     importImageUrl,
     modelsUrl,
     providerUrl,
     providersUrl,
     regenerateUrl,
     rowsUrl,
+    runWorkflowUrl,
     schemaUrl,
     sourcesUrl,
     tableUrl,
     tablesUrl,
     truncateUrl,
+    workflowsUrl,
 } from "./urls";
 
 export interface TableInfo {
@@ -22,6 +26,31 @@ export interface TableInfo {
   description: string;
   columns: Array<Column>;
   model: string;
+}
+
+// used in workflow only, id will be var path in {{.var}} format
+export function tableCreateRequestToTableInfo(
+  request: TableCreateRequest,
+): TableInfo {
+  const convertedColumns: Column[] = request.columns.map((reqCol, _) => {
+    return {
+      id: reqCol.name,
+      name: reqCol.name,
+      description: reqCol.description,
+      type: reqCol.type as ColumnType,
+      fill_mode: reqCol.fill_mode,
+    };
+  });
+
+  const tableInfo: TableInfo = {
+    id: request.name,
+    name: request.name,
+    description: request.description,
+    columns: convertedColumns,
+    model: "",
+  };
+
+  return tableInfo;
 }
 
 export interface GetTablesResponse {
@@ -37,7 +66,8 @@ export async function getTables(): Promise<GetTablesResponse> {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to fetch tables");
+    throw new Error("Failed to fetch tables");
   }
   return res.json();
 }
@@ -50,7 +80,8 @@ export async function deleteTable(id: string) {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to delete table");
+    throw new Error("Failed to delete table");
   }
   return res.status;
 }
@@ -79,7 +110,8 @@ export async function getRows(id: string): Promise<JSONObject[]> {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to fetch table rows");
+    throw new Error("Failed to fetch table rows");
   }
   return res.json().then((v) => v.data);
 }
@@ -92,7 +124,8 @@ export async function getTable(id: string): Promise<TableInfo> {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to fetch table details");
+    throw new Error("Failed to fetch table details");
   }
   return res.json();
 }
@@ -149,7 +182,8 @@ export async function createTable(
     body: JSON.stringify(request),
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to create table");
+    throw new Error("Failed to create table");
   }
   return res.json();
 }
@@ -166,7 +200,8 @@ export async function updateTable(
     body: JSON.stringify(request),
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to update table");
+    throw new Error("Failed to update table");
   }
   return res.json();
 }
@@ -190,7 +225,8 @@ export async function getModels(): Promise<ModelList> {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to fetch models");
+    throw new Error("Failed to fetch models");
   }
   return res.json();
 }
@@ -305,6 +341,7 @@ export async function truncateTable(table: string) {
     body: null,
   });
   if (!res.ok) {
+    toast.error("Failed to truncate table");
     throw new Error("Failed to truncate table");
   }
 }
@@ -318,7 +355,8 @@ export async function createRows(table: string, rows: JSONObject[]) {
     body: JSON.stringify({ rows }),
   });
   if (!res.ok) {
-    throw new Error("Failed to truncate table");
+    toast.error("Failed to create rows");
+    throw new Error("Failed to create rows");
   }
 }
 
@@ -336,7 +374,8 @@ export async function getSources(): Promise<SourceData[]> {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to fetch sources");
+    throw new Error("Failed to fetch sources");
   }
   return res.json().then((v) => v.sources);
 }
@@ -348,7 +387,8 @@ export async function getTableSchema(
     method: "GET",
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to fetch table schema");
+    throw new Error("Failed to fetch table schema");
   }
   return res.json();
 }
@@ -380,6 +420,7 @@ export async function getProviders(): Promise<Provider[]> {
   });
 
   if (!res.ok) {
+    toast.error("Failed to fetch providers");
     throw new Error("Failed to fetch providers");
   }
 
@@ -394,7 +435,8 @@ export async function deleteProvider(id: string) {
     },
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to delete provider");
+    throw new Error("Failed to delete provider");
   }
   return res.status;
 }
@@ -408,7 +450,8 @@ export async function createProvider(provider: Provider): Promise<TableInfo> {
     body: JSON.stringify(provider),
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to create provider");
+    throw new Error("Failed to create provider");
   }
   return res.json();
 }
@@ -425,18 +468,22 @@ export async function updateProvider(
     body: JSON.stringify(provider),
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to update provider");
+    throw new Error("Failed to update provider");
   }
   return res.json();
 }
 
-export interface ImportImageRequest {
+export interface ImportRequest {
   data: string;
   prompt: string;
   model: string;
+  table: string;
+  name: string;
+  truncate: boolean;
 }
 
-export async function importImage(req: ImportImageRequest): Promise<string> {
+export async function importImage(req: ImportRequest): Promise<string> {
   const res = await fetch(importImageUrl(), {
     method: "POST",
     headers: {
@@ -445,7 +492,228 @@ export async function importImage(req: ImportImageRequest): Promise<string> {
     body: JSON.stringify(req),
   });
   if (!res.ok) {
-    throw new Error("Failed to fetch data");
+    toast.error("Failed to import image");
+    throw new Error("Failed to import image");
   }
   return res.json().then((v) => v.id);
+}
+
+export interface WorkflowInfo {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface GetWorkflowsResponse {
+  workflows: WorkflowInfo[];
+  total: number;
+}
+
+export async function getWorkflows(): Promise<GetWorkflowsResponse> {
+  const res = await fetch(workflowsUrl(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    toast.error("Failed to fetch workflows");
+    throw new Error("Failed to fetch workflows");
+  }
+  return res.json();
+}
+
+export type WorkflowVariableType = "string" | "number" | "integer" | "file";
+
+export type WorkflowStepType =
+  | "UserInput"
+  | "CreateTable"
+  | "Import"
+  | "CreateColumn"
+  | "DeleteColumn"
+  | "Generate"
+  | "Autofill"
+  | "ExportTable"
+  | "DeleteTable";
+
+export interface WorkflowVariable {
+  name: string;
+  type: WorkflowVariableType;
+  default_value: string | number;
+  options: (string | number)[];
+}
+
+export interface UserInputStepPayload {
+  variables: WorkflowVariable[];
+}
+
+export interface CreateTableStepPayload {
+  request: TableCreateRequest;
+  on_exists: string;
+}
+
+export interface DeleteTableStepPayload {
+  table: string;
+}
+
+export interface CreateColumnStepPayload {
+  table: string;
+  name: string;
+  description: string;
+  type: string;
+}
+
+export interface DeleteColumnStepPayload {
+  table: string;
+  column: string;
+}
+
+export interface ImportDataStepPayload {
+  table: string;
+  truncate: boolean;
+  name: string;
+  file: string;
+  prompt: string;
+}
+
+export interface GenerateStepPayload {
+  table: string;
+  batch: number;
+  count: number;
+}
+
+export interface AutofillStepPayload {
+  table: string;
+  batch: number;
+  count: number;
+  columns: string[];
+  context_columns: string[];
+  prompt: string;
+}
+
+export interface ExportStepPayload {
+  table: string;
+}
+
+interface WorkflowStepPayloadMap {
+  UserInput: UserInputStepPayload;
+  CreateTable: CreateTableStepPayload;
+  Import: ImportDataStepPayload;
+  CreateColumn: CreateColumnStepPayload;
+  DeleteColumn: DeleteColumnStepPayload;
+  Generate: GenerateStepPayload;
+  Autofill: AutofillStepPayload;
+  DeleteTable: DeleteTableStepPayload;
+  ExportTable: ExportStepPayload;
+}
+
+export type TypedWorkflowStep = {
+  [K in WorkflowStepType]: {
+    type: K;
+    payload: K extends keyof WorkflowStepPayloadMap
+      ? WorkflowStepPayloadMap[K]
+      : never; // `never` for unmapped means they shouldn't exist or are an error
+    status?: string;
+  };
+}[WorkflowStepType]; // This gets a union of all possible objects.
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  variables: WorkflowVariable[];
+  steps: TypedWorkflowStep[];
+}
+
+export async function getWorkflow(id: string): Promise<Workflow> {
+  const res = await fetch(getWorkflowUrl(id), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    toast.error("Failed to fetch workflow");
+    throw new Error("Failed to fetch workflow");
+  }
+
+  return res.json();
+}
+
+export async function runWorkflow(
+  workflow: string,
+  signal: AbortSignal,
+  callback: (data: string) => void,
+  temperature: number,
+  model: string,
+  imageModel: string,
+  variables: JSONObject,
+) {
+  await fetchEventSource(runWorkflowUrl(workflow), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      temperature,
+      model,
+      image_model: imageModel,
+      variables,
+    }),
+    signal: signal,
+    openWhenHidden: true,
+    onclose() {
+      callback("[DONE]");
+    },
+    onmessage(ev) {
+      callback(ev.data);
+    },
+  });
+  callback("[DONE]");
+}
+
+export async function createWorkflow(request: Workflow): Promise<string> {
+  const res = await fetch(workflowsUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    toast.error("Failed to create workflow");
+    throw new Error("Failed to create workflow");
+  }
+  return res.json().then((v) => v.id);
+}
+
+export async function updateWorkflow(
+  id: string,
+  request: Workflow,
+): Promise<string> {
+  const res = await fetch(getWorkflowUrl(id), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    toast.error("Failed to update workflow");
+    throw new Error("Failed to update workflow");
+  }
+  return res.json().then((v) => v.id);
+}
+
+export async function deleteWorkflow(id: string) {
+  const res = await fetch(getWorkflowUrl(id), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    toast.error("Failed to delete workflow");
+    throw new Error("Failed to delete workflow");
+  }
 }

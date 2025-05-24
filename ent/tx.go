@@ -22,6 +22,8 @@ type Tx struct {
 	TableMeta *TableMetaClient
 	// TableRow is the client for interacting with the TableRow builders.
 	TableRow *TableRowClient
+	// Workflow is the client for interacting with the Workflow builders.
+	Workflow *WorkflowClient
 
 	// lazily loaded.
 	client     *Client
@@ -158,6 +160,7 @@ func (tx *Tx) init() {
 	tx.TableColumn = NewTableColumnClient(tx.config)
 	tx.TableMeta = NewTableMetaClient(tx.config)
 	tx.TableRow = NewTableRowClient(tx.config)
+	tx.Workflow = NewWorkflowClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

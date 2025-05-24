@@ -1,17 +1,34 @@
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Mock } from "vitest";
-import { TableInfo, deleteTable, getTables } from "../actions";
-import { TableListPage } from "./tables";
+import { TableInfo, deleteTable, getModels, getTables } from "../actions";
+import { TableListPage } from "./table-list-page";
 
-describe("Tables", () => {
+describe("TableListPage", () => {
   beforeEach(async () => {
     vi.mock("react-router-dom");
     const m = vi.mocked(useNavigate);
     m.mockReturnValue(vi.fn());
+    vi.mocked(useLocation).mockReturnValue({
+      key: "",
+      pathname: "/tables",
+      search: "",
+      hash: "",
+      state: null,
+    });
     vi.mock("@/actions");
+    const mockedGetModels = vi.mocked(getModels);
+    mockedGetModels.mockResolvedValue({
+      default_model: "ai",
+      default_image_model: "",
+      models: [
+        { name: "ai", image: false },
+        { name: "bi", image: false },
+        { name: "ci", image: true },
+      ],
+    });
     const userTable = {
       id: "abc",
       name: "users",
@@ -84,7 +101,7 @@ describe("Tables", () => {
     const recipeTable = {
       id: "abd",
       name: "recipes",
-      description: "recipes table",
+      description: "recipes table new",
       columns: [
         {
           id: "col1",
@@ -105,6 +122,7 @@ describe("Tables", () => {
     expect(screen.getByText("users table")).toBeInTheDocument();
     await userEvent.click(screen.getAllByText("Delete")[0]);
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
+    await screen.findByText("recipes table new");
     expect(screen.queryByText("users table")).toBe(null);
   });
   it("should open create table form when click add new table", async () => {

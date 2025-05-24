@@ -3,7 +3,16 @@ import { useSidebar } from "@/context/sidebar";
 import { cn } from "@/lib/utils";
 import { ChevronRightIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { IconGithub } from "./ui/icons";
+
+interface TablepilotHeaderProps {
+  title: string;
+  modeRef?: React.MutableRefObject<"generate" | "autofill">;
+  modeSwitchDisabled?: boolean;
+  currentTab?: string;
+  onTabChange?: (tabName: string) => void;
+}
 
 function ModeSwitch({
   modeRef,
@@ -63,18 +72,14 @@ function ModeSwitch({
   );
 }
 
-interface TablepilotHeaderProps {
-  title: string;
-  modeRef?: React.MutableRefObject<"generate" | "autofill">;
-  modeSwitchDisabled?: boolean;
-}
-
 export function TablepilotHeader({
   title,
+  currentTab,
   modeRef,
   modeSwitchDisabled,
 }: TablepilotHeaderProps) {
   const { collapsed, setCollapsed } = useSidebar();
+  const navigate = useNavigate();
 
   const handleAvatarClick = () => {
     window.open(
@@ -87,16 +92,60 @@ export function TablepilotHeader({
   return (
     <div>
       <header className="sticky top-0 flex items-center gap-4 border-b bg-background px-4 md:px-6 justify-between py-2">
-        <div className="flex items-center text-xl tracking-wider">
-          {collapsed && (
-            <ChevronRightIcon
-              className="mr-2 cursor-pointer"
-              onClick={() => setCollapsed(false)}
-            />
+        {/* Left Group (Title & Sidebar Toggle, THEN Tabs) */}
+        <div className="flex items-center gap-x-6">
+          {/* Title and Sidebar Toggle */}
+          <div className="flex items-center text-xl tracking-wider font-bold">
+            {collapsed && (
+              <ChevronRightIcon
+                className="mr-2 cursor-pointer"
+                onClick={() => setCollapsed(false)}
+              />
+            )}
+            {title}
+          </div>
+
+          {/* Tables/Workflows switch (only if currentTab and onTabChange are provided) */}
+          {currentTab && (
+            <div className="flex items-center">
+              {" "}
+              {/* Container for the two tabs */}
+              <div
+                onClick={() => navigate("/tables")}
+                className="cursor-pointer"
+              >
+                <h1
+                  className={cn(
+                    "text-base font-medium py-2 px-3 border-b-2",
+                    currentTab === "tables"
+                      ? "border-primary text-primary"
+                      : "text-muted-foreground hover:text-primary hover:border-primary border-transparent",
+                  )}
+                >
+                  Tables
+                </h1>
+              </div>
+              <div
+                onClick={() => navigate("/workflows")}
+                className="ml-4 cursor-pointer"
+              >
+                <h1
+                  className={cn(
+                    "text-base font-medium py-2 px-3 border-b-2",
+                    currentTab === "workflows"
+                      ? "border-primary text-primary"
+                      : "text-muted-foreground hover:text-primary hover:border-primary border-transparent",
+                  )}
+                >
+                  Workflows
+                </h1>
+              </div>
+            </div>
           )}
-          {title}
         </div>
-        <div className="relative flex">
+
+        {/* Right Group (Controls: ModeSwitch, Avatar) */}
+        <div className="relative flex items-center">
           {modeRef && (
             <ModeSwitch
               modeRef={modeRef}

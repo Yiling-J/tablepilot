@@ -20,3 +20,6 @@ type TableMeta func(*sql.Selector)
 
 // TableRow is the predicate function for tablerow builders.
 type TableRow func(*sql.Selector)
+
+// Workflow is the predicate function for workflow builders.
+type Workflow func(*sql.Selector)

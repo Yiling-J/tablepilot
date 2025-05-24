@@ -198,6 +198,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 		panic(err)
 	}
 	autofill.Flags().StringArray("context_columns", []string{}, "columns that should be put in prompt as context, default to all other columns")
+	autofill.Flags().StringP("prompt", "p", "", "optional prompt text send to LLM")
 
 	cmd.AddCommand(autofill)
 
@@ -208,12 +209,14 @@ func BuildCLI(root *cobra.Command) *CLI {
 			return handler.Import(cmd, args)
 		},
 	}
-	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing. Defaults to file name if not set")
+	importCmd.Flags().StringP("table", "t", "", "imports into an existing table or creates a new one if missing.")
+	importCmd.Flags().StringP("name", "n", "", "name of the new table, if to flag is not set. Optional and if not set, new table name will be file name + current timestamp")
 	importCmd.Flags().StringP("prompt", "p", "", "optional prompt text send to LLM")
 	importCmd.Flags().StringP(
 		"model", "m", "",
 		"specify the model used to extract data from image. If not provided, the default model will be used",
 	)
+	importCmd.Flags().Bool("truncate", false, "remove all rows in the table first before importing")
 	cmd.AddCommand(importCmd)
 
 	builder := &cobra.Command{
@@ -256,6 +259,57 @@ func BuildCLI(root *cobra.Command) *CLI {
 		panic(err)
 	}
 	cmd.AddCommand(regenerate)
+
+	workflowCommand := &cobra.Command{
+		Use:   "workflow",
+		Short: "workflow subcommands",
+	}
+
+	runWorkflowCommand := &cobra.Command{
+		Use:   "run <workflow>",
+		Short: "Run workflow of given id or name",
+		Args:  cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handler.RunWorkflow(cmd, args)
+		},
+	}
+	runWorkflowCommand.Flags().Float64P("temperature", "t", 0.6, "The sampling temperature. Higher values will make the output more random.")
+	runWorkflowCommand.Flags().StringP(
+		"model", "m", "",
+		"specify the model used to generate rows. If not provided, the default model will be used",
+	)
+	runWorkflowCommand.Flags().StringP(
+		"image_model", "i", "",
+		"specify the image model used to generate rows. If not provided, the default model will be used",
+	)
+	workflowCommand.AddCommand(
+		&cobra.Command{
+			Use:   "list",
+			Short: "List workflows",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.ListWorkflows(cmd, args)
+			},
+		},
+		&cobra.Command{
+			Use:   "create <file>",
+			Short: "Create workflow from schema JSON files",
+			Args:  cobra.MinimumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.CreateWorkflow(cmd, args)
+			},
+		},
+		runWorkflowCommand,
+		&cobra.Command{
+			Use:   "delete <workflow>",
+			Short: "Delete workflow of given id or name",
+			Args:  cobra.MinimumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return handler.DeleteWorkflow(cmd, args)
+			},
+		},
+	)
+
+	cmd.AddCommand(workflowCommand)
 
 	return cli
 }

@@ -74,12 +74,7 @@ export function ModelSelector({
         </div>
       )}
       {models && models.models && models.models.length > 0 && (
-        <div
-          className={cn(
-            "flex rounded-sm items-center",
-            hasImageColumn ? "" : "border",
-          )}
-        >
+        <div className="flex rounded-sm items-center">
           {hasImageColumn && <BookTypeIcon className="mr-2" />}
           <Select
             value={model}
@@ -91,7 +86,7 @@ export function ModelSelector({
             open={modelSelectOpen}
             onOpenChange={setModelSelectOpen}
           >
-            <SelectTrigger className="w-[180px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
+            <SelectTrigger className="w-[180px] ring-0 border focus:ring-offset-0 focus:ring-0">
               <SelectValue placeholder="Select a model" />
             </SelectTrigger>
             <SelectContent>
@@ -154,7 +149,7 @@ export function ModelSelector({
               open={imageModelSelectOpen}
               onOpenChange={setImageModelSelectOpen}
             >
-              <SelectTrigger className="w-[200px] ring-0 border-0 focus:ring-offset-0 focus:ring-0 focus:border-0">
+              <SelectTrigger className="w-[200px] ring-0 border focus:ring-offset-0 focus:ring-0">
                 <SelectValue placeholder="Select image gen model" />
               </SelectTrigger>
               <SelectContent>

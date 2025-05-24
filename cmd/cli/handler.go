@@ -9,16 +9,19 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 	"github.com/gammazero/toposort"
 
@@ -27,14 +30,16 @@ import (
 )
 
 type Handler struct {
-	backend    *services.Backend
-	getPrinter func() tableprinter.TablePrinter
+	backend          *services.Backend
+	getPrinter       func() tableprinter.TablePrinter
+	promptUserSelect func(prompt string, options []string, defaultValue string) (string, error)
 }
 
 func NewHandler(backend *services.Backend) *Handler {
 	return &Handler{
-		backend:    backend,
-		getPrinter: newPrinter,
+		backend:          backend,
+		getPrinter:       newPrinter,
+		promptUserSelect: SelectFromSlice,
 	}
 }
 
@@ -314,16 +319,23 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	name, err := cmd.Flags().GetString("name")
+	if err != nil {
+		return err
+	}
+
+	truncate, err := cmd.Flags().GetBool("truncate")
+	if err != nil {
+		return err
+	}
 	tableFile := args[0]
 	reader, err := os.Open(tableFile)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = reader.Close() }()
-	if tb == "" {
-		tb = filepath.Base(tableFile)
-		tb = strings.TrimSuffix(tb, filepath.Ext(tb))
-	}
+	fileName := filepath.Base(tableFile)
+	fileName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
 
 	_, _, err = image.DecodeConfig(reader)
 
@@ -349,10 +361,14 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read image %s: %w", tableFile, err)
 		}
-		id, importErr = h.backend.TableService.ImportImage(cmd.Context(), table.ImageImportRequest{
-			Data:   d,
-			Model:  model,
-			Prompt: prompt,
+		id, importErr = h.backend.TableService.ImportImage(cmd.Context(), table.ImportRequest{
+			Data:     d,
+			Model:    model,
+			Prompt:   prompt,
+			Table:    tb,
+			Filename: fileName,
+			Truncate: truncate,
+			Name:     name,
 		})
 		if importErr != nil {
 			return fmt.Errorf("failed to import image %s: %w", tableFile, importErr)
@@ -361,7 +377,13 @@ func (h *Handler) Import(cmd *cobra.Command, args []string) error {
 	} else {
 		h.backend.Logger.Debugw("file not detected as image or error decoding image config, using default Import",
 			"file", tableFile, "decode_error", err.Error())
-		id, importErr = h.backend.TableService.Import(cmd.Context(), tb, reader)
+		id, importErr = h.backend.TableService.Import(cmd.Context(), table.ImportRequest{
+			Reader:   reader,
+			Table:    tb,
+			Filename: fileName,
+			Truncate: truncate,
+			Name:     name,
+		})
 		if importErr != nil {
 			return fmt.Errorf("failed to import file %s as table %s: %w", tableFile, tb, importErr)
 		}
@@ -416,6 +438,10 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	prompt, err := cmd.Flags().GetString("prompt")
+	if err != nil {
+		return err
+	}
 
 	generator, err := h.backend.TableService.Genetate(
 		cmd.Context(), table.GenerateRowsRequest{
@@ -430,6 +456,7 @@ func (h *Handler) Autofill(cmd *cobra.Command, args []string) error {
 				Offset:         offset,
 				Columns:        columns,
 				ContextColumns: contextColumns,
+				Prompt:         prompt,
 			},
 		},
 	)
@@ -819,4 +846,178 @@ func (h *Handler) Regenerate(cmd *cobra.Command, args []string) error {
 	}
 	h.backend.Logger.Infow("regenerate done")
 	return nil
+}
+
+func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
+	temperature, err := cmd.Flags().GetFloat64("temperature")
+	if err != nil {
+		return err
+	}
+	model, err := cmd.Flags().GetString("model")
+	if err != nil {
+		return err
+	}
+	imageModel, err := cmd.Flags().GetString("image_model")
+	if err != nil {
+		return err
+	}
+	// collect variables interactively
+	wf, err := h.backend.WorkflowService.Get(cmd.Context(), args[0])
+	if err != nil {
+		return err
+	}
+	vars := map[string]any{}
+	if len(wf.Variables) > 0 {
+		for _, v := range wf.Variables {
+			var input string
+			reader := bufio.NewReader(cmd.InOrStdin())
+			if len(v.Options) > 0 {
+				ops := []string{}
+				for _, v := range v.Options {
+					ops = append(ops, cast.ToString(v))
+				}
+				input, err = h.promptUserSelect(fmt.Sprintf("Please select a value for variable %s", v.Name), ops, cast.ToString(v.DefaultValue))
+				if err != nil {
+					return fmt.Errorf("failed to read user selected input: %w", err)
+				}
+			} else {
+				fmt.Println("Please input variable value (leave empty to use default one), press Enter to finish.")
+				fmt.Printf("Variable Name: %s, Variable Type: %s, Default Value: %s\n", v.Name, v.Type, v.DefaultValue)
+				fmt.Print("> ")
+				input, err = readLine(reader)
+				if err != nil {
+					return fmt.Errorf("failed to read prompt: %w", err)
+				}
+				input = strings.TrimSpace(input)
+			}
+			var iv any = input
+			switch v.Type {
+			case schema.WorkflowVariableTypeInteger:
+				iv, err = cast.ToIntE(input)
+				if err != nil {
+					return fmt.Errorf("failed to convert input value to integer: %w", err)
+				}
+			case schema.WorkflowVariableTypeNumber:
+				iv, err = cast.ToFloat64E(input)
+				if err != nil {
+					return fmt.Errorf("failed to convert input value to number: %w", err)
+				}
+			case schema.WorkflowVariableTypeString:
+			case schema.WorkflowVariableTypeFile:
+				b, err := os.ReadFile(cast.ToString(iv))
+				if err != nil {
+					return fmt.Errorf("failed to read file: %w", err)
+				}
+				iv = b
+			}
+			vars[v.Name] = iv
+		}
+	}
+	runner, err := h.backend.WorkflowService.Start(cmd.Context(), args[0], workflow.StartWorklfowRequest{
+		Model:       model,
+		ImageModel:  imageModel,
+		Temperature: temperature,
+		Variables:   vars,
+	})
+	if err != nil {
+		return err
+	}
+	for {
+		result, err := runner.Next(cmd.Context())
+		if err != nil {
+			return err
+		}
+		if result == nil {
+			break
+		}
+		switch result.Action {
+		case workflow.WorkflowActionShowMessage:
+			fmt.Println(result.Message)
+		case workflow.WorkflowActionExport:
+			//nolint:gosec
+			err := os.WriteFile(result.ExportPath, []byte(result.ExportData), 0644)
+			if err != nil {
+				log.Fatalf("failed to write file: %v", err)
+			}
+			fmt.Println(result.Message)
+		case workflow.WorkflowActionGenerate:
+			fmt.Println(result.Message)
+			generator := result.Generator
+			indexer := util.NewColumnIndexer(generator.Table().Edges.Columns)
+			tp := h.getPrinter()
+			headers := []string{"[ID]"}
+			headers = append(headers, indexer.ColumnNames()...)
+			tp.AddHeader(headers)
+			for {
+				batch, err := generator.Next(cmd.Context())
+				if err != nil {
+					return err
+				}
+				if len(batch) == 0 {
+					break
+				}
+				for _, row := range batch {
+					tp.AddField(cast.ToString(row["__id__"].Value))
+					v, err := indexer.RowMapToSlice(row)
+					if err != nil {
+						return err
+					}
+					for _, cell := range v {
+						sv := cellString(cell.Value)
+						tp.AddField(sv)
+					}
+					tp.EndRow()
+				}
+				err = tp.Render()
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	h.backend.Logger.Infow("workflow complete")
+	return nil
+}
+
+func (h *Handler) CreateWorkflow(cmd *cobra.Command, args []string) error {
+	var req workflow.Workflow
+	f, err := os.ReadFile(args[0])
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(f, &req)
+	if err != nil {
+		return err
+	}
+	id, err := h.backend.WorkflowService.Create(cmd.Context(), &req)
+	if err != nil {
+		return err
+	}
+	h.backend.Logger.Infow("workflow created", "id", id)
+	return nil
+}
+
+func (h *Handler) DeleteWorkflow(cmd *cobra.Command, args []string) error {
+	err := h.backend.WorkflowService.Delete(cmd.Context(), args[0])
+	if err != nil {
+		return err
+	}
+	h.backend.Logger.Infow("workflow deleted", "workflow", args[0])
+	return nil
+}
+
+func (h *Handler) ListWorkflows(cmd *cobra.Command, args []string) error {
+	wfs, err := h.backend.WorkflowService.List(cmd.Context())
+	if err != nil {
+		return err
+	}
+	tp := h.getPrinter()
+	tp.AddHeader([]string{"ID", "Name", "Description"})
+	for _, w := range wfs {
+		tp.AddField(w.Nanoid)
+		tp.AddField(w.Name)
+		tp.AddField(w.Description)
+		tp.EndRow()
+	}
+	return tp.Render()
 }

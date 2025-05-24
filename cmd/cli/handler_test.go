@@ -21,6 +21,7 @@ import (
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
 
 	"github.com/spf13/cast"
@@ -44,7 +45,7 @@ func TestHandler_Create(t *testing.T) {
 	handler := &Handler{
 		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	}
 	cmd := &cobra.Command{}
@@ -79,7 +80,7 @@ func TestHandler_Update(t *testing.T) {
 	handler := &Handler{
 		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	}
 	cmd := &cobra.Command{}
@@ -127,7 +128,7 @@ func TestHandler_Show(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -167,7 +168,7 @@ func TestHandler_List(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -196,7 +197,7 @@ func TestHandler_Delete(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	cmd := &cobra.Command{}
@@ -232,7 +233,7 @@ func TestHandler_Export(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil,
+					nil, tableMock, nil, nil,
 				),
 			)
 			cmd := &cobra.Command{}
@@ -329,7 +330,7 @@ func TestHandler_Generate(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil,
+					nil, tableMock, nil, nil,
 				),
 			)
 			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -396,8 +397,8 @@ func TestHandler_Generate(t *testing.T) {
 }
 
 func TestHandler_Import(t *testing.T) {
-	for _, name := range []string{"", "bar"} {
-		t.Run(name, func(t *testing.T) {
+	for _, to := range []string{"", "bar"} {
+		t.Run(to, func(t *testing.T) {
 			file, err := os.Create("foo.csv")
 			require.NoError(t, err)
 			defer file.Close()
@@ -412,13 +413,15 @@ func TestHandler_Import(t *testing.T) {
 			writer.Flush()
 
 			tableMock := &table.TableServiceMock{
-				ImportFunc: func(ctx context.Context, table string, reader io.Reader) (string, error) {
-					if name == "" {
-						require.Equal(t, "foo", table)
+				ImportFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
+					require.Equal(t, "foo", request.Filename)
+					if to == "" {
+						require.Equal(t, "", request.Table)
+						require.Equal(t, "bar", request.Name)
 					} else {
-						require.Equal(t, name, table)
+						require.Equal(t, to, request.Table)
 					}
-					b, err := io.ReadAll(reader)
+					b, err := io.ReadAll(request.Reader)
 					require.NoError(t, err)
 					require.Equal(t, "c1,c2\nv1,v2\n", string(b))
 					return "123", nil
@@ -427,13 +430,18 @@ func TestHandler_Import(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil,
+					nil, tableMock, nil, nil,
 				),
 			)
 			cmd := &cobra.Command{}
 			cmd.Flags().String("table", "", "")
-			if name != "" {
-				err = cmd.Flags().Set("table", name)
+			cmd.Flags().String("name", "", "")
+			cmd.Flags().Bool("truncate", false, "")
+			if to != "" {
+				err = cmd.Flags().Set("table", to)
+				require.NoError(t, err)
+			} else {
+				err = cmd.Flags().Set("name", "bar")
 				require.NoError(t, err)
 			}
 			err = handler.Import(cmd, []string{"foo.csv"})
@@ -459,25 +467,30 @@ func TestHandler_ImportImage(t *testing.T) {
 	require.NoError(t, err)
 
 	tableMock := &table.TableServiceMock{
-		ImportImageFunc: func(ctx context.Context, request table.ImageImportRequest) (string, error) {
+		ImportImageFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
 			require.Equal(t, "foobar", request.Prompt)
 			require.Equal(t, "m1", request.Model)
+			require.Equal(t, "bar", request.Name)
 			return "t1", nil
 		},
 	}
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	cmd := &cobra.Command{}
 	cmd.Flags().String("table", "", "")
+	cmd.Flags().String("name", "", "")
+	cmd.Flags().Bool("truncate", false, "")
 	cmd.Flags().String("prompt", "", "")
 	cmd.Flags().String("model", "", "")
 	err = cmd.Flags().Set("prompt", "foobar")
 	require.NoError(t, err)
 	err = cmd.Flags().Set("model", "m1")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("name", "bar")
 	require.NoError(t, err)
 	err = handler.Import(cmd, []string{"foo.png"})
 	require.NoError(t, err)
@@ -493,7 +506,7 @@ func TestHandler_Truncate(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	cmd := &cobra.Command{}
@@ -528,7 +541,7 @@ func TestHandler_Describe(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -600,6 +613,7 @@ func TestHandler_Autofill(t *testing.T) {
 					require.Equal(t, 3, params.Autofill.Offset)
 					require.Equal(t, []string{"c1"}, params.Autofill.Columns)
 					require.Equal(t, []string{"c2"}, params.Autofill.ContextColumns)
+					require.Equal(t, "baz", params.Autofill.Prompt)
 					return mockRowGen, nil
 				},
 			}
@@ -612,7 +626,7 @@ func TestHandler_Autofill(t *testing.T) {
 			handler := NewHandler(
 				services.NewBackend(
 					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil,
+					nil, tableMock, nil, nil,
 				),
 			)
 			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -622,6 +636,7 @@ func TestHandler_Autofill(t *testing.T) {
 			cmd.Flags().StringP("saveto", "s", "", "")
 			cmd.Flags().Float64P("temperature", "", 0.6, "")
 			cmd.Flags().StringP("model", "", "", "")
+			cmd.Flags().StringP("prompt", "", "", "")
 			cmd.Flags().Int("offset", 3, "")
 			cmd.Flags().StringArray("columns", []string{}, "")
 			cmd.Flags().StringArray("context_columns", []string{}, "")
@@ -637,6 +652,9 @@ func TestHandler_Autofill(t *testing.T) {
 			require.NoError(t, err)
 
 			err = cmd.Flags().Set("model", "aiai")
+			require.NoError(t, err)
+
+			err = cmd.Flags().Set("prompt", "baz")
 			require.NoError(t, err)
 
 			err = cmd.Flags().Set("columns", "c1")
@@ -759,7 +777,7 @@ func TestHandler_Builder(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, db.NewTestDB(), zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	cmd := &cobra.Command{}
@@ -933,7 +951,7 @@ func TestHandler_Regenerate(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil,
+			nil, tableMock, nil, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -973,4 +991,198 @@ func TestHandler_Regenerate(t *testing.T) {
 	require.Equal(t, []string{"id", "0", "t0", "id", "1", "t1"}, fields)
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 2, len(printer.RenderCalls()))
+}
+
+func TestHandler_WorkflowRun(t *testing.T) {
+	defer func() { _ = os.Remove("tmpw.csv") }()
+	count := -1
+	cc := 0
+	mockRowGen := &table.RowsGeneratorMock{
+		NextFunc: func(ctx context.Context) ([]map[string]*schema.CellValue, error) {
+			defer func() { cc += 1 }()
+			if cc < 2 {
+				return []map[string]*schema.CellValue{
+					{
+						"__id__": &schema.CellValue{Value: "id"},
+						"1":      &schema.CellValue{Value: cast.ToString(cc)},
+						"2":      &schema.CellValue{Value: "t" + cast.ToString(cc)},
+					},
+				}, nil
+			}
+			return []map[string]*schema.CellValue{}, nil
+		},
+		TableFunc: func() *ent.TableMeta {
+			return &ent.TableMeta{
+				Name: "foo",
+				Edges: ent.TableMetaEdges{
+					Columns: []*ent.TableColumn{
+						{Nanoid: "1", Name: "c1"},
+						{Nanoid: "2", Name: "c2"},
+					},
+				},
+			}
+		},
+	}
+	runnerMock := &workflow.RunnerMock{
+		NextFunc: func(ctx context.Context) (*workflow.WorkflowStepResult, error) {
+			results := []*workflow.WorkflowStepResult{
+				{Action: workflow.WorkflowActionShowMessage, Message: "foobar"},
+				{Action: workflow.WorkflowActionExport, ExportPath: "tmpw.csv", ExportData: "go"},
+				{Action: workflow.WorkflowActionGenerate, Generator: mockRowGen},
+				nil,
+			}
+			count += 1
+			return results[count], nil
+		},
+	}
+	workflowMock := &workflow.WorkflowServiceMock{
+		GetFunc: func(ctx context.Context, wf string) (*ent.Workflow, error) {
+			require.Equal(t, "foo", wf)
+			return &ent.Workflow{
+				Variables: []schema.WorkflowVariable{
+					{Name: "foo", Type: schema.WorkflowVariableTypeString, Options: []any{"aa", "bb"}, DefaultValue: "bb"},
+				},
+			}, nil
+		},
+		StartFunc: func(ctx context.Context, workflow string, req workflow.StartWorklfowRequest) (workflow.Runner, error) {
+			require.Equal(t, "foo", workflow)
+			require.Equal(t, map[string]any{"foo": "aa"}, req.Variables)
+			require.Equal(t, "aiai", req.Model)
+			require.Equal(t, "aiia", req.ImageModel)
+			require.Equal(t, 0.56, req.Temperature)
+			return runnerMock, nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, nil, nil, workflowMock,
+		),
+	)
+	printer := &tableprinter.TablePrinterMock{
+		AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
+		AddFieldFunc:  func(s string, fieldOptions ...tableprinter.FieldOption) {},
+		EndRowFunc:    func() {},
+		RenderFunc:    func() error { return nil },
+	}
+	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
+	handler.promptUserSelect = func(prompt string, options []string, defaultValue string) (string, error) {
+		require.Equal(t, "Please select a value for variable foo", prompt)
+		require.Equal(t, []string{"aa", "bb"}, options)
+		require.Equal(t, "bb", defaultValue)
+		return options[0], nil
+	}
+	cmd := &cobra.Command{}
+	cmd.Flags().Float64P("temperature", "", 0.6, "")
+	cmd.Flags().StringP("model", "", "", "")
+	cmd.Flags().StringP("image_model", "", "", "")
+	err := cmd.Flags().Set("temperature", "0.56")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("model", "aiai")
+	require.NoError(t, err)
+	err = cmd.Flags().Set("image_model", "aiia")
+	require.NoError(t, err)
+	err = handler.RunWorkflow(cmd, []string{"foo"})
+	require.NoError(t, err)
+	require.Equal(t, 4, len(runnerMock.NextCalls()))
+	b, err := os.ReadFile("tmpw.csv")
+	require.NoError(t, err)
+	require.Equal(t, "go", string(b))
+	require.Equal(t, []string{"[ID]", "c1", "c2"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, 6, len(printer.AddFieldCalls()))
+	fields := []string{}
+	for _, call := range printer.AddFieldCalls() {
+		fields = append(fields, call.S)
+	}
+	require.Equal(t, []string{"id", "0", "t0", "id", "1", "t1"}, fields)
+	require.Equal(t, 2, len(printer.EndRowCalls()))
+	require.Equal(t, 2, len(printer.RenderCalls()))
+}
+
+func TestHandler_WorkflowCreate(t *testing.T) {
+	workflowMock := &workflow.WorkflowServiceMock{
+		CreateFunc: func(ctx context.Context, wf *workflow.Workflow) (string, error) {
+			require.Equal(t, &workflow.Workflow{
+				Name:        "wf",
+				Description: "d1",
+				Variables:   []schema.WorkflowVariable{{Name: "var1"}},
+				Steps:       []schema.WorkflowStep{{Type: schema.WorkflowStepTypeAutofill}},
+			}, wf)
+			return "id", nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, nil, nil, workflowMock,
+		),
+	)
+	testFile := fmt.Sprintf("foo_%d.json", time.Now().UnixNano())
+	file, err := os.Create(testFile)
+	require.NoError(t, err)
+	defer os.Remove(testFile)
+	_, err = file.WriteString(
+		`{"name":"wf","description":"d1","variables":[{"name":"var1"}],"steps":[{"type":"Autofill"}]}`,
+	)
+	require.NoError(t, err)
+	cmd := &cobra.Command{}
+	err = handler.CreateWorkflow(cmd, []string{testFile})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(workflowMock.CreateCalls()))
+}
+
+func TestHandler_WorkflowDelete(t *testing.T) {
+	workflowMock := &workflow.WorkflowServiceMock{
+		DeleteFunc: func(ctx context.Context, wf string) error {
+			require.Equal(t, "foo", wf)
+			return nil
+		},
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, nil, nil, workflowMock,
+		),
+	)
+	cmd := &cobra.Command{}
+	err := handler.DeleteWorkflow(cmd, []string{"foo"})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(workflowMock.DeleteCalls()))
+}
+
+func TestHandler_WorkflowList(t *testing.T) {
+	workflowMock := &workflow.WorkflowServiceMock{
+		ListFunc: func(ctx context.Context) ([]*ent.Workflow, error) {
+			return []*ent.Workflow{
+				{Nanoid: "1", Name: "t1", Description: "d1"},
+				{Nanoid: "2", Name: "t2", Description: "d2"},
+			}, nil
+		},
+	}
+	printer := &tableprinter.TablePrinterMock{
+		AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
+		AddFieldFunc:  func(s string, fieldOptions ...tableprinter.FieldOption) {},
+		EndRowFunc:    func() {},
+		RenderFunc:    func() error { return nil },
+	}
+	handler := NewHandler(
+		services.NewBackend(
+			&config.Config{}, nil, zap.NewNop().Sugar(),
+			nil, nil, nil, workflowMock,
+		),
+	)
+	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
+	cmd := &cobra.Command{}
+	err := handler.ListWorkflows(cmd, []string{})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(printer.AddHeaderCalls()))
+	require.Equal(t, []string{"ID", "Name", "Description"}, printer.AddHeaderCalls()[0].Strings)
+	require.Equal(t, 6, len(printer.AddFieldCalls()))
+	fields := []string{}
+	for _, call := range printer.AddFieldCalls() {
+		fields = append(fields, call.S)
+	}
+	require.Equal(t, []string{"1", "t1", "d1", "2", "t2", "d2"}, fields)
+	require.Equal(t, 2, len(printer.EndRowCalls()))
+	require.Equal(t, 1, len(printer.RenderCalls()))
 }

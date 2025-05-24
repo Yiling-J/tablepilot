@@ -1,5 +1,11 @@
 import { TableInfo, getTables } from "@/actions";
-import { ReactNode, createContext, useContext, useState } from "react";
+import {
+    ReactNode,
+    createContext,
+    useCallback,
+    useContext,
+    useState,
+} from "react";
 
 interface TablesContextValue {
   tables: TableInfo[];
@@ -25,12 +31,12 @@ interface TablesProviderProps {
 export function TablesProvider({ children }: TablesProviderProps) {
   const [tables, setTables] = useState<TableInfo[]>([]);
 
-  const refreshTables = async () => {
+  const refreshTables = useCallback(async () => {
     const response = await getTables();
     if (response) {
-      setTables(response.tables);
+      setTables(response.tables ?? []);
     }
-  };
+  }, []); // setTables is stable, getTables is a static import
 
   return (
     <TablesContext.Provider value={{ tables, refreshTables }}>
