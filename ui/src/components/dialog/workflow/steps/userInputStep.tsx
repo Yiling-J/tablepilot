@@ -21,12 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { MentionInput, ContextVariable } from "@/components/ui/var-input"; // Ensure ContextVariable is imported if needed by MentionInput
+import { MentionInput } from "@/components/ui/var-input"; // Removed ContextVariable
 
 interface UserInputStepProps {
   step: UserInputStepPayload;
   context: StepContext; // Added context prop
-  onUpdateStep: (payload: UserInputStepPayload) => void;
+  // onUpdateStep: (payload: UserInputStepPayload) => void; // Removed unused prop
   onAddVariable: () => void;
   onUpdateVariable: (
     variableIndex: number,
@@ -38,7 +38,7 @@ interface UserInputStepProps {
 export function UserInputStep({
   step,
   context, // Destructure context
-  onUpdateStep,
+  // onUpdateStep, // Removed unused prop from destructuring
   onAddVariable,
   onUpdateVariable,
   onRemoveVariable,

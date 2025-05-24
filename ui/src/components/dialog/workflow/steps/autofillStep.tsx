@@ -1,6 +1,6 @@
 import {
   AutofillStepPayload,
-  ColumnInfo, // For AutofillInput allColumns
+  // ColumnInfo, // For AutofillInput allColumns - Removed as unused
 } from "@/actions";
 import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";

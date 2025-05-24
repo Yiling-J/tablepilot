@@ -1,6 +1,6 @@
 import {
   DeleteColumnStepPayload,
-  TableInfo, // Assuming TableInfo is needed for context.tables
+  // TableInfo, // Assuming TableInfo is needed for context.tables - Removed as unused
 } from "@/actions";
 import { Label } from "@/components/ui/label";
 import {

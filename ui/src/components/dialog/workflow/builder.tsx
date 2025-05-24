@@ -19,7 +19,7 @@ import {
     Workflow,
     WorkflowStepType,
     WorkflowVariable,
-    WorkflowVariableType,
+    // WorkflowVariableType, // Removed as per lint error
     createWorkflow,
     getTables,
     tableCreateRequestToTableInfo,
@@ -44,13 +44,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 // import { NumberInput } from "@/components/ui/number-input"; // Removed, handled by step components
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+// import { // Removed as per lint error
+// Select,
+// SelectContent,
+// SelectItem,
+// SelectTrigger,
+// SelectValue,
+// } from "@/components/ui/select";
 // import { ContextVariable, MentionInput } from "@/components/ui/var-input"; // Removed, handled by step components
 import { ContextVariable } from "@/components/ui/var-input"; // Keep ContextVariable if StepContext uses it
 import { DialogTitle } from "@radix-ui/react-dialog";
