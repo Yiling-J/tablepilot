@@ -243,9 +243,10 @@ describe("Workflow Builder", () => {
     await userEvent.click(fileVarSelect);
     const fileVarListbox = await screen.findByRole("listbox");
     await userEvent.click(within(fileVarListbox).getByText("importFileVar"));
-    const input = screen.getAllByPlaceholderText(
-      "Type @ to mention a variable...",
-    )[0];
+    // Updated placeholder for New Table Name in ImportStep
+    const input = screen.getByPlaceholderText(
+      "Enter new table name or use @ for variables",
+    );
     await userEvent.type(input, "ImportedTable");
     const promptInput = screen.getByPlaceholderText(
       "Used only when importing images, as AI is required to extract data from them.",
@@ -339,7 +340,8 @@ describe("Workflow Builder", () => {
   it("ExportTable action should correctly save workflow", async () => {
     await userEvent.click(screen.getByText("Add Step"));
     await userEvent.click(screen.getByText("Export Data"));
-    await userEvent.click(screen.getByText("Select a table").parentElement!);
+    // Updated placeholder text for ExportTableStep
+    await userEvent.click(screen.getByText("Select a table to export").parentElement!);
     const tablesBox = await screen.findByRole("listbox");
     await userEvent.click(within(tablesBox).getByText("recipes"));
     await userEvent.click(screen.getByText("Save Workflow"));
@@ -409,5 +411,95 @@ describe("Workflow Builder", () => {
     expect(payload.prompt).toBe("Autofill recipe names");
     expect(payload.count).toBe(30);
     expect(payload.batch).toBe(3);
+  });
+});
+
+describe("Workflow Builder - UserInput Variable Name Validation", () => {
+  beforeEach(async () => {
+    // Common setup for these validation tests
+    const mockedGetTables = vi.mocked(getTables);
+    mockedGetTables.mockResolvedValue({ tables: [], total: 0 }); // No tables needed for these tests
+    vi.mock("@/actions"); // Reset mocks
+
+    render(
+      <TestProvider>
+        <WorkflowBuilderDialog
+          open={true}
+          onOpenChange={() => {}}
+          onSave={async () => {}}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Workflow Steps"); // Ensure dialog is loaded
+
+    // Select UserInput step and add a variable
+    await userEvent.click(screen.getAllByText("UserInput")[0]);
+    await userEvent.click(screen.getByText("Add Variable"));
+    // Ensure "Variable 1" is present before each test case proceeds
+    await screen.findByText("Variable 1");
+  });
+
+  it("should allow valid alphanumeric name", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "TestVar123");
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("TestVar123");
+  });
+
+  it("should prevent spaces in name", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "Test Var 123"); // Type with spaces
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("TestVar123"); // Spaces should be ignored
+  });
+
+  it("should prevent special characters in name", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "Test@Var!"); // Type with special chars
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("TestVar"); // Special chars should be ignored
+  });
+
+  it("should handle mixed valid and invalid characters", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "Alpha1-Beta2="); // Mixed
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("Alpha1Beta2"); // Invalid chars ignored
+  });
+
+  it("should allow empty name after typing and deleting", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "abc");
+    await userEvent.clear(variableNameInput);
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("");
+  });
+  
+  it("should filter leading and trailing invalid characters", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "!@#Valid$%\^");
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("Valid");
+  });
+
+  it("should result in an empty name if only invalid characters are typed", async () => {
+    const variableNameInput = screen.getByPlaceholderText("e.g. tableName");
+    await userEvent.type(variableNameInput, "!@#$%^");
+    await userEvent.click(screen.getByText("Save Workflow"));
+    
+    const wf = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(wf.variables[0].name).toBe("");
   });
 });
