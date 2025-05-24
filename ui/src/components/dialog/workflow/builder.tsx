@@ -111,9 +111,10 @@ export default function WorkflowBuilderDialog({
       return;
     }
     onOpen();
+    buildStepContext(steps);
   }, [open]);
 
-  const buildStepContext = () => {
+  const buildStepContext = (steps: TypedWorkflowStep[]) => {
     const contexts: StepContext[] = [
       {
         variables: [
@@ -183,13 +184,9 @@ export default function WorkflowBuilderDialog({
     setStepContexts(contexts);
   };
 
-  // workflow validation and variables reset
-  useEffect(() => {
-    buildStepContext();
-  }, [steps]);
-
   // Helper to create a new action
   const createNewStep = (type: WorkflowStepType): TypedWorkflowStep => {
+    buildStepContext(steps);
     switch (type) {
       case "UserInput":
         return { type, payload: { variables: [] } };
@@ -269,6 +266,7 @@ export default function WorkflowBuilderDialog({
     const newWorkflow = [...steps];
     newWorkflow.splice(index, 1);
     setSteps(newWorkflow);
+    buildStepContext(newWorkflow);
 
     if (selectedStepIndex === index) {
       setSelectedStepIndex(null);
@@ -567,7 +565,10 @@ export default function WorkflowBuilderDialog({
           </div>
 
           {/* Right Column - Action Properties */}
-          <div className="w-3/5 border rounded-md flex flex-col">
+          <div
+            className="w-3/5 border rounded-md flex flex-col"
+            key={selectedStepIndex}
+          >
             <ScrollArea className="flex-1">
               <div className="p-4">
                 {selectedStep ? (
