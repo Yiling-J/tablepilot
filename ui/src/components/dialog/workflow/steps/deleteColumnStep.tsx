@@ -1,16 +1,13 @@
-import {
-  DeleteColumnStepPayload,
-  // TableInfo, // Assuming TableInfo is needed for context.tables - Removed as unused
-} from "@/actions";
+import { DeleteColumnStepPayload } from "@/actions";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
-import { StepContext } from "../builder"; // Import StepContext from builder
+import { StepContext } from "../builder";
 
 interface DeleteColumnStepProps {
   step: DeleteColumnStepPayload;

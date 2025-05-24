@@ -1,15 +1,13 @@
-import {
-  DeleteTableStepPayload,
-} from "@/actions";
+import { DeleteTableStepPayload } from "@/actions";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
-import { StepContext } from "../builder"; // Import StepContext from builder
+import { StepContext } from "../builder";
 
 interface DeleteTableStepProps {
   step: DeleteTableStepPayload;
@@ -39,7 +37,9 @@ export function DeleteTableStep({
         </SelectTrigger>
         <SelectContent>
           {context.tables.map((t) => (
-            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+            <SelectItem key={t.id} value={t.id}>
+              {t.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

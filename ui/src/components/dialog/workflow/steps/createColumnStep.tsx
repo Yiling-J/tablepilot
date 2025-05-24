@@ -1,16 +1,14 @@
-import {
-  CreateColumnStepPayload,
-} from "@/actions";
+import { CreateColumnStepPayload } from "@/actions";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { MentionInput } from "@/components/ui/var-input";
-import { StepContext } from "../builder"; // Import StepContext from builder
+import { StepContext } from "../builder";
 
 interface CreateColumnStepProps {
   step: CreateColumnStepPayload;

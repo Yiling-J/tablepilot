@@ -1,10 +1,4 @@
-import {
-    ChevronDown,
-    ChevronUp,
-    Pencil,
-    Plus,
-    Trash2,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -19,14 +13,12 @@ import {
     Workflow,
     WorkflowStepType,
     WorkflowVariable,
-    // WorkflowVariableType, // Removed as per lint error
     createWorkflow,
     getTables,
     tableCreateRequestToTableInfo,
     updateWorkflow,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
-// import { Checkbox } from "@/components/ui/checkbox"; // Checkbox will be removed if not used elsewhere
 import {
     Dialog,
     DialogContent,
@@ -42,31 +34,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { NumberInput } from "@/components/ui/number-input"; // Removed, handled by step components
 import { ScrollArea } from "@/components/ui/scroll-area";
-// import { // Removed as per lint error
-// Select,
-// SelectContent,
-// SelectItem,
-// SelectTrigger,
-// SelectValue,
-// } from "@/components/ui/select";
-// import { ContextVariable, MentionInput } from "@/components/ui/var-input"; // Removed, handled by step components
-import { ContextVariable } from "@/components/ui/var-input"; // Keep ContextVariable if StepContext uses it
+import { ContextVariable } from "@/components/ui/var-input";
 import { DialogTitle } from "@radix-ui/react-dialog";
-// import { AutofillInput } from "../autofill-input"; // Removed, handled by AutofillStep
-import { UserInputStep } from "./steps/userInputStep"; // Import the new component
-import { CreateTableStep } from "./steps/createTableStep"; // Import the new component
-import { DeleteTableStep } from "./steps/deleteTableStep"; // Import the new component
-import { CreateColumnStep } from "./steps/createColumnStep"; // Import the new component
-import { DeleteColumnStep } from "./steps/deleteColumnStep"; // Import the new component
-import { ImportStep } from "./steps/importStep"; // Import the new component
-import { GenerateStep } from "./steps/generateStep"; // Import the new component
-import { AutofillStep } from "./steps/autofillStep"; // Import the new component
-import { ExportTableStep } from "./steps/exportTableStep"; // Import the new component
-// import { CreateTableDialog } from "../create-table"; // Removed CreateTableDialog import
+import { AutofillStep } from "./steps/autofillStep";
+import { CreateColumnStep } from "./steps/createColumnStep";
+import { CreateTableStep } from "./steps/createTableStep";
+import { DeleteColumnStep } from "./steps/deleteColumnStep";
+import { DeleteTableStep } from "./steps/deleteTableStep";
+import { ExportTableStep } from "./steps/exportTableStep";
+import { GenerateStep } from "./steps/generateStep";
+import { ImportStep } from "./steps/importStep";
+import { UserInputStep } from "./steps/userInputStep";
 
-interface StepContext {
+export interface StepContext {
   variables: ContextVariable[];
   tables: TableInfo[];
 }
@@ -600,111 +581,120 @@ export default function WorkflowBuilderDialog({
                     </div>
 
                     {/* UserInput properties */}
-                    {selectedStep.type === "UserInput" && selectedStepIndex !== null && (
-                      <UserInputStep
-                        step={selectedStep.payload as UserInputStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "UserInput", payload })
-                        }
-                        onAddVariable={addVariable}
-                        onUpdateVariable={updateVariable}
-                        onRemoveVariable={removeVariable}
-                      />
-                    )}
+                    {selectedStep.type === "UserInput" &&
+                      selectedStepIndex !== null && (
+                        <UserInputStep
+                          step={selectedStep.payload as UserInputStepPayload}
+                          context={stepContexts[selectedStepIndex]}
+                          onAddVariable={addVariable}
+                          onUpdateVariable={updateVariable}
+                          onRemoveVariable={removeVariable}
+                        />
+                      )}
 
                     {/* CreateTable properties */}
-                    {selectedStep.type === "CreateTable" && selectedStepIndex !== null && (
-                      <CreateTableStep
-                        step={selectedStep.payload as CreateTableStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "CreateTable", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "CreateTable" &&
+                      selectedStepIndex !== null && (
+                        <CreateTableStep
+                          step={selectedStep.payload as CreateTableStepPayload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "CreateTable", payload })
+                          }
+                        />
+                      )}
 
                     {/* DeleteTable properties */}
-                    {selectedStep.type === "DeleteTable" && selectedStepIndex !== null && (
-                     <DeleteTableStep
-                        step={selectedStep.payload as DeleteTableStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "DeleteTable", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "DeleteTable" &&
+                      selectedStepIndex !== null && (
+                        <DeleteTableStep
+                          step={selectedStep.payload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "DeleteTable", payload })
+                          }
+                        />
+                      )}
 
                     {/* CreateColumn properties */}
-                    {selectedStep.type === "CreateColumn" && selectedStepIndex !== null && (
-                      <CreateColumnStep
-                        step={selectedStep.payload as CreateColumnStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "CreateColumn", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "CreateColumn" &&
+                      selectedStepIndex !== null && (
+                        <CreateColumnStep
+                          step={selectedStep.payload as CreateColumnStepPayload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "CreateColumn", payload })
+                          }
+                        />
+                      )}
 
                     {/* DeleteColumn properties */}
-                    {selectedStep.type === "DeleteColumn" && selectedStepIndex !== null && (
-                      <DeleteColumnStep
-                        step={selectedStep.payload as DeleteColumnStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "DeleteColumn", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "DeleteColumn" &&
+                      selectedStepIndex !== null && (
+                        <DeleteColumnStep
+                          step={selectedStep.payload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "DeleteColumn", payload })
+                          }
+                        />
+                      )}
 
                     {/* Generate properties */}
-                    {selectedStep.type === "Generate" && selectedStepIndex !== null && (
-                      <GenerateStep
-                        step={selectedStep.payload as GenerateStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "Generate", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "Generate" &&
+                      selectedStepIndex !== null && (
+                        <GenerateStep
+                          step={selectedStep.payload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "Generate", payload })
+                          }
+                        />
+                      )}
 
                     {/* Autofill properties */}
-                    {selectedStep.type === "Autofill" && selectedStepIndex !== null && (
-                      <AutofillStep
-                        step={selectedStep.payload as AutofillStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "Autofill", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "Autofill" &&
+                      selectedStepIndex !== null && (
+                        <AutofillStep
+                          step={selectedStep.payload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "Autofill", payload })
+                          }
+                        />
+                      )}
 
                     {/* ImportData properties */}
-                    {selectedStep.type === "Import" && selectedStepIndex !== null && stepContexts[0] && (
-                      <ImportStep
-                        step={selectedStep.payload as ImportDataStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        allUserInputVariables={ (steps[0].payload as UserInputStepPayload).variables.map(v => ({
-                          display: v.name,
-                          path: v.name,
-                          type: v.type,
-                        }))}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "Import", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "Import" &&
+                      selectedStepIndex !== null &&
+                      stepContexts[0] && (
+                        <ImportStep
+                          step={selectedStep.payload as ImportDataStepPayload}
+                          context={stepContexts[selectedStepIndex]}
+                          allUserInputVariables={(
+                            steps[0].payload as UserInputStepPayload
+                          ).variables.map((v) => ({
+                            display: v.name,
+                            path: v.name,
+                            type: v.type,
+                          }))}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "Import", payload })
+                          }
+                        />
+                      )}
 
                     {/* Export properties */}
-                    {selectedStep.type === "ExportTable" && selectedStepIndex !== null && (
-                      <ExportTableStep
-                        step={selectedStep.payload as ExportStepPayload}
-                        context={stepContexts[selectedStepIndex]}
-                        onUpdateStep={(payload) =>
-                          updateStep({ type: "ExportTable", payload })
-                        }
-                      />
-                    )}
+                    {selectedStep.type === "ExportTable" &&
+                      selectedStepIndex !== null && (
+                        <ExportTableStep
+                          step={selectedStep.payload}
+                          context={stepContexts[selectedStepIndex]}
+                          onUpdateStep={(payload) =>
+                            updateStep({ type: "ExportTable", payload })
+                          }
+                        />
+                      )}
                   </div>
                 ) : (
                   <div className="text-center p-8 text-muted-foreground">

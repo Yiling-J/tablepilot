@@ -1,32 +1,28 @@
-import {
-  PlusCircle,
-  X,
-} from "lucide-react";
+import { PlusCircle, X } from "lucide-react";
 
 import {
-  UserInputStepPayload,
-  WorkflowVariable,
-  WorkflowVariableType,
-} from "@/actions"; // Assuming these types are exported from actions
-import { StepContext } from "../builder"; // Import StepContext from builder
+    UserInputStepPayload,
+    WorkflowVariable,
+    WorkflowVariableType,
+} from "@/actions";
+import { StepContext } from "../builder";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { MentionInput } from "@/components/ui/var-input"; // Removed ContextVariable
+import { MentionInput } from "@/components/ui/var-input";
 
 interface UserInputStepProps {
   step: UserInputStepPayload;
-  context: StepContext; // Added context prop
-  // onUpdateStep: (payload: UserInputStepPayload) => void; // Removed unused prop
+  context: StepContext;
   onAddVariable: () => void;
   onUpdateVariable: (
     variableIndex: number,
@@ -37,8 +33,7 @@ interface UserInputStepProps {
 
 export function UserInputStep({
   step,
-  context, // Destructure context
-  // onUpdateStep, // Removed unused prop from destructuring
+  context,
   onAddVariable,
   onUpdateVariable,
   onRemoveVariable,
@@ -138,7 +133,7 @@ export function UserInputStep({
                   <Label htmlFor={`var-default-${idx}`}>Default Value</Label>
                   <MentionInput
                     id={`var-default-${idx}`}
-                    variables={context.variables} // Pass context variables
+                    variables={context.variables}
                     value={variable.default_value}
                     onChange={(v) =>
                       handleUpdateVariable(idx, {
@@ -164,7 +159,7 @@ export function UserInputStep({
                   <Label htmlFor={`var-options-${idx}`}>
                     Options (optional, one per line)
                   </Label>
-                  <Textarea // Textarea does not use MentionInput's variable suggestions
+                  <Textarea
                     id={`var-options-${idx}`}
                     defaultValue={variable.options.join("\n")}
                     onChange={(e) => {

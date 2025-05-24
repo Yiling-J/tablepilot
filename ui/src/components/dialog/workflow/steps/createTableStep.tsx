@@ -1,20 +1,17 @@
 import { Pencil } from "lucide-react";
 import { useState } from "react";
 
-import {
-  CreateTableStepPayload,
-  TableCreationRequest,
-} from "@/actions";
+import { CreateTableStepPayload } from "@/actions";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { CreateTableDialog } from "../../create-table";
-import { StepContext } from "../builder"; // Import StepContext from builder
+import { StepContext } from "../builder";
 
 interface CreateTableStepProps {
   step: CreateTableStepPayload;
@@ -60,7 +57,7 @@ export function CreateTableStep({
         setIsOpen={setCreateTableDialogOpen}
         close={() => {}} // Assuming close can be a no-op if handled by setIsOpen
         form={step.request}
-        onSave={(v: TableCreationRequest) => {
+        onSave={(v) => {
           onUpdateStep({
             ...step,
             request: v,
@@ -83,9 +80,7 @@ export function CreateTableStep({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Description:</span>
-            <span>
-              {step.request.description || "No description"}
-            </span>
+            <span>{step.request.description || "No description"}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Columns:</span>

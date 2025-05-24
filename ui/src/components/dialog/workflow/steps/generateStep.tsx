@@ -1,14 +1,12 @@
-import {
-  GenerateStepPayload,
-} from "@/actions";
+import { GenerateStepPayload } from "@/actions";
 import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { StepContext } from "../builder";
 

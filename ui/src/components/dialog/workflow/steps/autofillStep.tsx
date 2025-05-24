@@ -1,17 +1,14 @@
-import {
-  AutofillStepPayload,
-  // ColumnInfo, // For AutofillInput allColumns - Removed as unused
-} from "@/actions";
+import { AutofillStepPayload } from "@/actions";
 import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
-import { AutofillInput } from "../../autofill-input"; // Corrected path
+import { AutofillInput } from "../../autofill-input";
 import { StepContext } from "../builder";
 
 interface AutofillStepProps {
