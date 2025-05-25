@@ -4,13 +4,14 @@
 
 # Tablepilot
 
-Tablepilot is a simple yet powerful AI-native platform for tabular data generation and automation.
+Tablepilot is a simple yet powerful AI-native platform for tabular data generation.
 
 ### Key Features
 
-* Generate, Autofill, or Regenerate Rows in any table
-* Available on CLI, Web UI, and App
-* Supports Vision, Image Generation, and Image Editing
+* Easily Generate, Autofill, Regenerate Rows
+* Available on CLI, Web UI, App
+* Supports Vision, Image Generation, Image Editing
+* Create diverse and creative content using customizable sources
 * Create Workflows to automate repetitive content generation tasks
 
 ### Demos
