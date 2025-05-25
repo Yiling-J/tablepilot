@@ -324,7 +324,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			Count:       cast.ToInt(req.Count),
 			Batch:       cast.ToInt(req.Batch),
 		}
-		genreq.Autofill = table.AutofillRequest{Enable: true, Columns: req.Columns, ContextColumns: []string{}}
+		genreq.Autofill = table.AutofillRequest{Enable: true, Columns: req.Columns, ContextColumns: req.ContextColumns}
 		generator, err := r.tableService.Genetate(ctx, genreq)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: autofilling rows: %w", err)
