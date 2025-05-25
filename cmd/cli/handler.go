@@ -889,6 +889,9 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 					return fmt.Errorf("failed to read prompt: %w", err)
 				}
 				input = strings.TrimSpace(input)
+				if input == "" {
+					input = cast.ToString(v.DefaultValue)
+				}
 			}
 			var iv any = input
 			switch v.Type {
