@@ -4,19 +4,36 @@
 
 # Tablepilot
 
-Tablepilot is a simple yet powerful AI-native platform that lets you create tables using natural language and effortlessly generate or autofill data with AI, available via CLI, WebUI and App. One of the most powerful features of Tablepilot is its ability to incorporate external context: such as other tables, predefined list, AI generated list, [local CSV/Parquet files, or datasets from Kaggle or Hugging Face](contribute/csv-and-parquet.md). Making it easy to generate diverse results.
+Tablepilot is a simple yet powerful AI-native platform for tabular data generation and automation.
 
-Tablepilot uses a declarative schema format to create tables. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation. WebUI/Desktop App is also available. See the demo below:
+### Key Features
 
-![Demo](./demo.gif)
+* Generate, Autofill, or Regenerate Rows in any table
+* Available on CLI, Web UI, and App
+* Supports Vision, Image Generation, and Image Editing
+* Create Workflows to automate repetitive content generation tasks
 
-Tablepilot also includes experimental support for image understanding, image generation, and image editing. See this [detailed example](examples/recipes_with_image) for more information.
+### Demos
 
-#### Concept
+#### Generate / Autofill / Regenerate Recipes
 
-The concept behind Tablepilot is simple yet powerful. Suppose you want to generate 1,000 unique recipes using AI. A straightforward approach might be to ask ChatGPT for 10 recipes at a time, then continue requesting more while using previously generated content as context, until you reach 1,000 recipes. However, this method has two major drawbacks: the growing context consumes a large number of tokens, and as the context expands, ChatGPT struggles to ensure uniqueness across recipes.
+<div align="start">
+    <img alt="tablepilot" width="950px" src="demo.gif">
+</div>
 
-Instead of relying on context, suppose we add two columns to the table: cuisine and meal type, and assign random values to them (e.g., Chinese and Lunch) for each of the 1,000 recipes. These values then serve as context for generation, naturally increases diversity in the results without needing previous generations as context. The key question is: How do we get random values for columns like cuisine and meal type? This is where Tablepilot excels. You can source data from other tables, local CSV or Parquet files, AI-generated options, or remote datasets from Kaggle and Hugging Face.
+---
+
+#### Workflow
+
+A workflow that extracts dishes from a menu image, adds an image column, autofills missing images, and exports the generated data as a CSV file
+
+<div align="start">
+    <img alt="tablepilot" width="950px" src="workflow.gif">
+</div>
+
+---
+
+Tablepilot uses a declarative schema format to create tables. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation.
 
 #### Capabilities and Model Requirements
 
@@ -30,6 +47,7 @@ Instead of relying on context, suppose we add two columns to the table: cuisine 
 | generate(text + image generation/edit) | Generate rows (text or image) for the table, with image context | CLI, API, WebUI, App      | The provider type must be `gemini`, and only `gemini-2.0-flash-exp-image-generation/gemini-2.0-flash-exp` is currently supported                     |
 | autofill(text + image generation/edit) | Autofill columns (text or image) for existing rows, with image context | CLI, API, WebUI, App | The provider type must be `gemini`, and only `gemini-2.0-flash-exp-image-generation/gemini-2.0-flash-exp` is currently supported                       |
 | image to table     | Extract structured data from an image into a table              | CLI, API, WebUI, App      | OpenAI Chat Completion API with support for Structured Output and Vision |
+| workflow                      | Automate multi-step content generation tasks                  | CLI, API, WebUI, App                  | Depend on the steps of the workflow       |
 
 > OpenAI Chat Completion API refers to any API compatible with OpenAI, such as Gemini, vLLM, Ollama, and xAI.
 
@@ -54,6 +72,7 @@ Tablepilot provides a full set of CLI commands, including `builder`, `create`, `
 
 - For a complete list of CLI commands, see [this doc](CLI.md).
 - For all available API endpoints, see [this doc](API.md).
+- For workflow schema and CLI, see [this doc](Workflow.md).
 
 ## Guide
 
@@ -180,3 +199,31 @@ Example: autofill `ingredients` and `steps` using `name` and `meal` as context:
 ```console
 tablepilot autofill recipes columns=ingredients columns=steps context_columns=name context_columns=meal -c=30 -b=5
 ```
+
+---
+
+### Workflow
+Workflows let you automate a series of tasks with ease. For example, you might want to:
+
+1. Import images into a table
+2. Add a new column
+3. Autofill data
+4. Generate content into a new table using the current table as a source
+5. Export the final result as a CSV
+
+Workflows also support variables, so users can input or select values at runtime—making your automation more flexible and reusable.
+
+If you're using the **CLI**, see [CLI workflow reference](Workflow.md) for details. If you're using the **UI**, simply build your workflow step-by-step using the visual editor.
+
+Currently, workflows support the following step types:
+
+* `Create Table`
+* `Import`
+* `Create Column`
+* `Delete Column`
+* `Generate`
+* `Autofill`
+* `Export Table`
+* `Delete Table`
+
+Check out [workflow examples](examples/workflows) to see how to build powerful workflows in practice.
