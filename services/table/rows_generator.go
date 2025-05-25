@@ -318,6 +318,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 						// don't actually read the image data, if the column is not in context columns
 						if _, ok := contextColumns[col.Nanoid]; !ok {
 							if _, ok := contextColumns[col.Name]; !ok {
+								row[col.Nanoid] = &schema.CellValue{Value: vk}
 								continue
 							}
 						}
@@ -734,6 +735,7 @@ func (g *AIRowsGenerator) Next(ctx context.Context) ([]map[string]*schema.CellVa
 	if err != nil {
 		return nil, err
 	}
+
 	if len(g.missingColumns) > 0 {
 		rows, err = g.generate(ctx, batchSize)
 		if err != nil {

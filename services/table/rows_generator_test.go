@@ -569,7 +569,16 @@ func TestRowsGenerator_AutofillSelf(t *testing.T) {
 		SetTablemeta(tb).
 		SetType(tablecolumn.TypeString).Save(ctx)
 	require.NoError(t, err)
-	row, err := db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{{Value: "foo"}}).Save(ctx)
+	c2, err := db.TableColumn.Create().
+		SetName("c2").
+		SetFillMode(tablecolumn.FillModeAi).
+		SetTablemeta(tb).
+		SetType(tablecolumn.TypeImage).Save(ctx)
+	require.NoError(t, err)
+	row, err := db.TableRow.Create().SetTablemeta(tb).SetCells([]*schema.CellValue{
+		{Value: "foo"},
+		{Value: "test.png"},
+	}).Save(ctx)
 	require.NoError(t, err)
 	promptContent := ""
 	aiService := &ai.AiServiceMock{
@@ -599,11 +608,16 @@ func TestRowsGenerator_AutofillSelf(t *testing.T) {
 	v, err := generator.Next(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(v))
+	require.Equal(t, map[string]*schema.CellValue{
+		c1.Nanoid: {Value: "foo"},
+		c2.Nanoid: {Value: "test.png"},
+		"__id__":  {Value: row.Nanoid},
+	}, v[0])
 	require.Equal(t, 1, len(aiService.ChatCalls()))
 	builder := promptbuilder.NewRowsBuilder(1)
 	builder.AddDescription("")
 	builder.AddUserPrompt("baz")
-	builder.AddTableColumns([]*ent.TableColumn{c1}, true)
+	builder.AddTableColumns([]*ent.TableColumn{c1, c2}, true)
 	missing := []*ent.TableColumn{c1}
 	builder.AddMissingColumns(missing, true)
 	rows := []map[string]any{
