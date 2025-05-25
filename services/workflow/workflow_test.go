@@ -119,20 +119,20 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 		{
 			name: "create table", step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"request":{"name": "foo"}}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo_{{.foo}}"}}`),
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
-				require.Equal(t, "foo", req.Name)
+				require.Equal(t, "foo_bar", req.Name)
 				require.Equal(t, &WorkflowStepResult{
 					Action:  WorkflowActionShowMessage,
-					Message: "Table created: id tb, name foo",
+					Message: "Table created: id tb, name foo_bar",
 				}, result)
 			},
 		},
 		{
 			name: "create table invalid name", step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"request":{"name": "foo bar"}}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo {{.foo}}"}}`),
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
 				require.Equal(t, "foo_bar", req.Name)
@@ -146,11 +146,11 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 			name: "create table exists stop (default)",
 			step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"request":{"name": "foo","description": "bar"}}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo_{{.foo}}","description": "bar"}}`),
 			},
 			err: true,
 			prepare: func(db *ent.Client) {
-				err := db.TableMeta.Create().SetName("foo").Exec(t.Context())
+				err := db.TableMeta.Create().SetName("foo_bar").Exec(t.Context())
 				require.NoError(t, err)
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
@@ -161,18 +161,18 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 			name: "create table exists recreate",
 			step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"request":{"name": "foo","description":"xyz"},"on_exists":"Recreate"}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo_{{.foo}}","description":"xyz"},"on_exists":"Recreate"}`),
 			},
 			prepare: func(db *ent.Client) {
 				err := db.TableMeta.Create().SetName("foo").Exec(t.Context())
 				require.NoError(t, err)
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
-				require.Equal(t, "foo", req.Name)
+				require.Equal(t, "foo_bar", req.Name)
 				require.Equal(t, "xyz", req.Description)
 				require.Equal(t, &WorkflowStepResult{
 					Action:  WorkflowActionShowMessage,
-					Message: "Table created: id tb, name foo",
+					Message: "Table created: id tb, name foo_bar",
 				}, result)
 			},
 		},
@@ -180,17 +180,17 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 			name: "create table exists skip",
 			step: schema.WorkflowStep{
 				Type:    schema.WorkflowStepTypeCreateTable,
-				Payload: json.RawMessage(`{"request":{"name": "foo","description":"xyz"},"on_exists":"Skip"}`),
+				Payload: json.RawMessage(`{"request":{"name": "foo_{{.foo}}","description":"xyz"},"on_exists":"Skip"}`),
 			},
 			prepare: func(db *ent.Client) {
-				err := db.TableMeta.Create().SetName("foo").Exec(t.Context())
+				err := db.TableMeta.Create().SetName("foo_bar").Exec(t.Context())
 				require.NoError(t, err)
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
 				require.Nil(t, req)
 				require.Equal(t, &WorkflowStepResult{
 					Action:  WorkflowActionShowMessage,
-					Message: "Table foo already exists, skip creating.",
+					Message: "Table foo_bar already exists, skip creating.",
 				}, result)
 			},
 		},
@@ -204,15 +204,15 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 				require.NoError(t, err)
 				defer f.Close()
 				require.NoError(t, err)
-				_, err = f.WriteString(`{"name": "foo"}`)
+				_, err = f.WriteString(`{"name": "foo_{{.foo}}"}`)
 				require.NoError(t, err)
 			},
 			assert: func(db *ent.Client, req *table.TableGenRequest, result *WorkflowStepResult) {
 				defer os.Remove("wf.json")
-				require.Equal(t, "foo", req.Name)
+				require.Equal(t, "foo_bar", req.Name)
 				require.Equal(t, &WorkflowStepResult{
 					Action:  WorkflowActionShowMessage,
-					Message: "Table created: id tb, name foo",
+					Message: "Table created: id tb, name foo_bar",
 				}, result)
 			},
 		},
@@ -240,7 +240,7 @@ func TestWorkflowRunner_CreateTable(t *testing.T) {
 			})
 			require.NoError(t, err)
 			runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
-				Variables:   map[string]any{},
+				Variables:   map[string]any{"foo": "bar"},
 				Model:       "m1",
 				Temperature: 0.5,
 			})

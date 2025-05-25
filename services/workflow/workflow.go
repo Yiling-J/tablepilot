@@ -194,6 +194,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: executing schema template: %w", err)
 			}
+			cb = buffer.Bytes()
 			err = json.Unmarshal(cb, &payload.Request)
 			if err != nil {
 				return nil, fmt.Errorf("workflow.Next: unmarshaling table request: %w", err)
