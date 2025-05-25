@@ -1,0 +1,27 @@
+{
+  "name": "raw_customer_feedback",
+  "description": "Schema for raw customer feedback data imported from CSV.",
+  "sources": [],
+  "columns": [
+    {
+      "name": "CustomerID",
+      "description": "Unique identifier for the customer",
+      "type": "string"
+    },
+    {
+      "name": "ProductName",
+      "description": "Name of the product being reviewed",
+      "type": "string"
+    },
+    {
+      "name": "FeedbackText",
+      "description": "The raw text of the customer's feedback",
+      "type": "string"
+    },
+    {
+      "name": "Region",
+      "description": "Geographical region of the customer (may have inconsistencies)",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "{{.product_category}}_products",
+  "description": "Table of products for the {{.product_category}} category.",
+  "sources": [],
+  "columns": [
+    {
+      "name": "Name",
+      "description": "Name of the product",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Description",
+      "description": "AI-generated description of the product based on its name and the category '{{.product_category}}'",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Price",
+      "description": "AI-generated price for the product",
+      "type": "number",
+      "fill_mode": "ai"
+    }
+  ]
+}

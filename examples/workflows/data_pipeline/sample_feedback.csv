@@ -1,0 +1,16 @@
+CustomerID,ProductName,FeedbackText,Region
+CUST001,Laptop X1,The battery life is amazing!,US
+CUST002,Smartphone Z,The camera quality is not as expected.,United States of America
+CUST003,Wireless Headphones,Excellent sound and very comfortable.,Ca
+CUST004,Smartwatch Pro,The interface is a bit laggy sometimes.,CALIFORNIA
+CUST005,Laptop X1,I love the sleek design and performance.,U.S.A
+CUST006,Smartphone Z,Customer service was very helpful with my issue.,GB
+CUST007,Wireless Headphones,Connectivity drops occasionally.,UK
+CUST008,Smartwatch Pro,Battery drains faster than advertised.,United Kingdom
+CUST009,Product A,This is a fantastic product, highly recommend.,us
+CUST010,Product B,It's okay, does the job but nothing special.,Canada
+CUST011,Product C,Terrible experience, broke after one day.,CAN
+CUST012,Product A,Met my expectations perfectly.,New York
+CUST013,Product B,Could be better, the material feels cheap.,NY
+CUST014,Product C,The user manual is very confusing.,TX
+CUST015,Product A,Five stars! Works flawlessly.,Texas

@@ -1,0 +1,45 @@
+{
+  "name": "Product Catalog Generator",
+  "description": "Generates a product catalog for a given category.",
+  "variables": [
+    {
+      "name": "product_category",
+      "type": "string",
+      "description": "The category of products to generate (e.g., 'fantasy creatures', 'sci-fi gadgets').",
+      "default_value": "fantasy creatures"
+    }
+  ],
+  "steps": [
+    {
+      "type": "CreateTable",
+      "payload": {
+        "name": "{{.product_category}}_products",
+        "schema_file": "products.json",
+        "on_exists": "Recreate"
+      }
+    },
+    {
+      "type": "CreateColumn",
+      "payload": {
+        "table": "{{.product_category}}_products",
+        "name": "Image",
+        "type": "image",
+        "description": "Generated image of the product"
+      }
+    },
+    {
+      "type": "Generate",
+      "payload": {
+        "table": "{{.product_category}}_products",
+        "count": 3
+      }
+    },
+    {
+      "type": "ExportTable",
+      "payload": {
+        "table": "{{.product_category}}_products",
+        "path": "{{.product_category}}_catalog.csv"
+      }
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "name": "Customer Feedback Data Pipeline",
+  "description": "Cleans and enriches customer feedback data from a CSV file.",
+  "variables": [
+    {
+      "name": "input_csv_file",
+      "type": "file",
+      "description": "The input CSV file containing raw customer feedback.",
+      "default_value": "sample_feedback.csv"
+    }
+  ],
+  "steps": [
+    {
+      "type": "CreateTable",
+      "payload": {
+        "name": "raw_customer_feedback",
+        "schema_file": "raw_customer_feedback_schema.json",
+        "on_exists": "Recreate"
+      }
+    },
+    {
+      "type": "Import",
+      "payload": {
+        "table": "raw_customer_feedback",
+        "file": "{{.input_csv_file}}",
+        "truncate": true
+      }
+    },
+    {
+      "type": "CreateColumn",
+      "payload": {
+        "table": "raw_customer_feedback",
+        "name": "CleanedRegion",
+        "type": "string",
+        "description": "Standardized region code"
+      }
+    },
+    {
+      "type": "Autofill",
+      "payload": {
+        "table": "raw_customer_feedback",
+        "columns": ["CleanedRegion"],
+        "count": 0,
+        "batch": 10
+      }
+    },
+    {
+      "type": "CreateColumn",
+      "payload": {
+        "table": "raw_customer_feedback",
+        "name": "Sentiment",
+        "type": "string",
+        "options": ["Positive", "Neutral", "Negative"],
+        "description": "Sentiment classification of feedback"
+      }
+    },
+    {
+      "type": "Autofill",
+      "payload": {
+        "table": "raw_customer_feedback",
+        "columns": ["Sentiment"],
+        "count": 0,
+        "batch": 10
+      }
+    },
+    {
+      "type": "ExportTable",
+      "payload": {
+        "table": "raw_customer_feedback",
+        "path": "cleaned_customer_feedback.csv"
+      }
+    }
+  ]
+}
