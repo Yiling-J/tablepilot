@@ -239,9 +239,6 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling import file params: %w", err)
 		}
-		for k := range r.context {
-			fmt.Println("xxxxx", k, req.File)
-		}
 		fileInfo, ok := r.context[fmt.Sprintf("%s__data", req.File)]
 		if !ok {
 			return nil, fmt.Errorf("workflow.Next: file %s not found", req.File)
