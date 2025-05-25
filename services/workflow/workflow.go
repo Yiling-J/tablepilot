@@ -17,6 +17,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/ent/workflow"
 	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/spf13/cast"
 )
 
 //go:generate moq -rm -out workflow_moq.go . WorkflowService Runner
@@ -252,7 +253,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			fileName := filepath.Base(req.File)
 			fileName = strings.TrimSuffix(fileName, filepath.Ext(req.File))
 			id, err := r.tableService.Import(ctx, table.ImportRequest{
-				Table:    req.Table,
+				Table:    SanitizeString(req.Table),
 				Truncate: req.Truncate,
 				Reader:   bf,
 				Filename: fileName,
@@ -270,7 +271,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			fileName := filepath.Base(req.File)
 			fileName = strings.TrimSuffix(fileName, filepath.Ext(req.File))
 			id, err := r.tableService.ImportImage(ctx, table.ImportRequest{
-				Table:    req.Table,
+				Table:    SanitizeString(req.Table),
 				Truncate: req.Truncate,
 				Name:     req.Name,
 				Data:     cb.Data,
@@ -290,20 +291,24 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, fmt.Errorf("unsupported file ext %s", filepath.Ext(req.File))
 		}
 	case schema.WorkflowStepTypeGenerate:
-		var req table.GenerateRowsRequest
+		var req WorkflowGeneratePayload
 		err := json.Unmarshal(step.Payload, &req)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling generate rows request: %w", err)
 		}
-		req.Model = r.model
-		req.ImageModel = r.imageModel
-		req.Temperature = r.temperature
-		generator, err := r.tableService.Genetate(ctx, req)
+		generator, err := r.tableService.Genetate(ctx, table.GenerateRowsRequest{
+			Table:       SanitizeString(req.Table),
+			Model:       r.model,
+			ImageModel:  r.imageModel,
+			Temperature: r.temperature,
+			Count:       cast.ToInt(req.Count),
+			Batch:       cast.ToInt(req.Batch),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: generating rows: %w", err)
 		}
 		return &WorkflowStepResult{
-			Message:   fmt.Sprintf("Start generating rows for table %s...", req.Table),
+			Message:   fmt.Sprintf("Start generating rows for table %s...", SanitizeString(req.Table)),
 			Generator: generator, Action: WorkflowActionGenerate}, nil
 	case schema.WorkflowStepTypeAutofill:
 		var req WorkflowAutofillPayload
@@ -312,12 +317,12 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling autofill request: %w", err)
 		}
 		genreq := table.GenerateRowsRequest{
-			Table:       req.Table,
+			Table:       SanitizeString(req.Table),
 			Model:       r.model,
 			ImageModel:  r.imageModel,
 			Temperature: r.temperature,
-			Count:       req.Count,
-			Batch:       req.Batch,
+			Count:       cast.ToInt(req.Count),
+			Batch:       cast.ToInt(req.Batch),
 		}
 		genreq.Autofill = table.AutofillRequest{Enable: true, Columns: req.Columns, ContextColumns: []string{}}
 		generator, err := r.tableService.Genetate(ctx, genreq)
@@ -326,7 +331,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		}
 		return &WorkflowStepResult{
 			Action:    WorkflowActionGenerate,
-			Message:   fmt.Sprintf("Start autofilling rows for table %s...", req.Table),
+			Message:   fmt.Sprintf("Start autofilling rows for table %s...", SanitizeString(req.Table)),
 			Generator: generator}, nil
 	case schema.WorkflowStepTypeDeleteTable:
 		var req WorkflowDeleteTableParams
@@ -334,12 +339,12 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling delete table params: %w", err)
 		}
-		_, err = r.tableService.Delete(ctx, req.Table)
+		_, err = r.tableService.Delete(ctx, SanitizeString(req.Table))
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: deleting table: %w", err)
 		}
 		return &WorkflowStepResult{
-			Message: fmt.Sprintf("Table %s deleted", req.Table),
+			Message: fmt.Sprintf("Table %s deleted", SanitizeString(req.Table)),
 			Action:  WorkflowActionShowMessage,
 		}, nil
 	case schema.WorkflowStepTypeExportTable:
@@ -348,12 +353,12 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling export table params: %w", err)
 		}
-		data, err := r.tableService.CSV(ctx, req.Table)
+		data, err := r.tableService.CSV(ctx, SanitizeString(req.Table))
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: exporting table to CSV: %w", err)
 		}
 		return &WorkflowStepResult{
-			Message:    fmt.Sprintf("Table %s exported", req.Table),
+			Message:    fmt.Sprintf("Table %s exported", SanitizeString(req.Table)),
 			ExportData: string(data),
 			ExportPath: req.Path,
 			Action:     WorkflowActionExport,
@@ -370,7 +375,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 			Type:        req.Type,
 			FillMode:    "ai",
 		}
-		id, err := r.tableService.CreateColumn(ctx, req.Table, col)
+		id, err := r.tableService.CreateColumn(ctx, SanitizeString(req.Table), col)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: creating column: %w", err)
 		}
@@ -385,7 +390,7 @@ func (r *RunnerImpl) Next(ctx context.Context) (*WorkflowStepResult, error) {
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: unmarshaling delete column params: %w", err)
 		}
-		_, err = r.tableService.DeleteColumn(ctx, req.Table, req.Column)
+		_, err = r.tableService.DeleteColumn(ctx, SanitizeString(req.Table), req.Column)
 		if err != nil {
 			return nil, fmt.Errorf("workflow.Next: deleting column: %w", err)
 		}

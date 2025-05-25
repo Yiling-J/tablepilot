@@ -7,7 +7,8 @@
       "name": "Name",
       "description": "Name of the product",
       "type": "string",
-      "fill_mode": "ai"
+      "fill_mode": "ai",
+      "context_length": 3
     },
     {
       "name": "Description",

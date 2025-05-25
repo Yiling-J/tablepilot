@@ -6,15 +6,14 @@
       "name": "input_csv_file",
       "type": "file",
       "description": "The input CSV file containing raw customer feedback.",
-      "default_value": "sample_feedback.csv"
+      "default_value": "examples/workflows/data_pipeline/sample_feedback.csv"
     }
   ],
   "steps": [
     {
       "type": "CreateTable",
       "payload": {
-        "name": "raw_customer_feedback",
-        "schema_file": "raw_customer_feedback_schema.json",
+        "schema_file": "examples/workflows/data_pipeline/raw_customer_feedback_schema.json",
         "on_exists": "Recreate"
       }
     },
@@ -40,7 +39,7 @@
       "payload": {
         "table": "raw_customer_feedback",
         "columns": ["CleanedRegion"],
-        "count": 0,
+        "count": 10,
         "batch": 10
       }
     },
@@ -59,7 +58,7 @@
       "payload": {
         "table": "raw_customer_feedback",
         "columns": ["Sentiment"],
-        "count": 0,
+        "count": 10,
         "batch": 10
       }
     },

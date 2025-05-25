@@ -20,7 +20,7 @@
       "type": "CreateTable",
       "payload": {
         "name": "{{.story_theme}}_characters",
-        "schema_file": "characters.json",
+        "schema_file": "examples/workflows/story_generation/characters.json",
         "on_exists": "Recreate"
       }
     },
@@ -28,14 +28,15 @@
       "type": "Generate",
       "payload": {
         "table": "{{.story_theme}}_characters",
-        "count": "{{.num_characters}}"
+        "count": "{{.num_characters}}",
+        "batch": 5
       }
     },
     {
       "type": "CreateTable",
       "payload": {
         "name": "{{.story_theme}}_outline",
-        "schema_file": "story_outline.json",
+        "schema_file": "examples/workflows/story_generation/story_outline.json",
         "on_exists": "Recreate"
       }
     },
@@ -43,7 +44,8 @@
       "type": "Generate",
       "payload": {
         "table": "{{.story_theme}}_outline",
-        "count": 5
+        "count": 3,
+        "batch": 5
       }
     },
     {

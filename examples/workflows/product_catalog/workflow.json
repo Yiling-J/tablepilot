@@ -13,8 +13,7 @@
     {
       "type": "CreateTable",
       "payload": {
-        "name": "{{.product_category}}_products",
-        "schema_file": "products.json",
+        "schema_file": "examples/workflows/product_catalog/products.json",
         "on_exists": "Recreate"
       }
     },
@@ -31,6 +30,7 @@
       "type": "Generate",
       "payload": {
         "table": "{{.product_category}}_products",
+        "batch": 1,
         "count": 3
       }
     },

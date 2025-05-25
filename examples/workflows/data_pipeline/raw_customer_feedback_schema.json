@@ -6,22 +6,26 @@
     {
       "name": "CustomerID",
       "description": "Unique identifier for the customer",
-      "type": "string"
+      "type": "string",
+      "fill_mode": "ai"
     },
     {
       "name": "ProductName",
       "description": "Name of the product being reviewed",
-      "type": "string"
+      "type": "string",
+      "fill_mode": "ai"
     },
     {
       "name": "FeedbackText",
       "description": "The raw text of the customer's feedback",
-      "type": "string"
+      "type": "string",
+      "fill_mode": "ai"
     },
     {
       "name": "Region",
       "description": "Geographical region of the customer (may have inconsistencies)",
-      "type": "string"
+      "type": "string",
+      "fill_mode": "ai"
     }
   ]
 }
