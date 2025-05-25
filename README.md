@@ -4,14 +4,15 @@
 
 # Tablepilot
 
-Tablepilot is a simple yet powerful AI-native platform for tabular data generation and automation.
+Tablepilot is a simple yet powerful AI-native platform for tabular data generation.
 
 ### Key Features
 
-* Generate, Autofill, or Regenerate Rows in any table
+* Generate, autofill, or regenerate rows
+* Create diverse and creative content using customizable sources
 * Available on CLI, Web UI, and App
-* Supports Vision, Image Generation, and Image Editing
-* Create Workflows to automate repetitive content generation tasks
+* Supports vision, image generation, and image editing
+* Create workflows to automate repetitive content generation tasks
 
 ### Demos
 
@@ -66,7 +67,7 @@ Ensure that Go is installed on your system. Then, clone the repository and run `
 
 To build the Desktop App, you'll need everything required for the WebUI, plus Rust and Tauri. Once set up, run  `make tauri-dev`, this will build and launch the Tauri app in development mode.
 
-#### CLI and API Documentation
+#### CLI, API and Workflow Documentation
 
 Tablepilot provides a full set of CLI commands, including `builder`, `create`, `update`, `autofill` and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI or App. Use `tablepilot serve` command to start API server and WebUI.
 
