@@ -262,7 +262,7 @@ describe("Workflow Builder", () => {
     const importStep = wf.steps[0];
     expect(importStep.type).toBe("Import");
     const payload = importStep.payload as ImportDataStepPayload;
-    expect(payload.file).toBe("importFileVar");
+    expect(payload.file).toBe("{{.importFileVar}}");
     expect(payload.name).toBe("ImportedTable");
     expect(payload.table).toBe("");
     expect(payload.truncate).toBe(false);
@@ -322,7 +322,7 @@ describe("Workflow Builder", () => {
     const importStep = wf.steps[0];
     expect(importStep.type).toBe("Import");
     const payload = importStep.payload as ImportDataStepPayload;
-    expect(payload.file).toBe("importFileVar");
+    expect(payload.file).toBe("{{.importFileVar}}");
     expect(payload.name).toBe("");
     expect(payload.table).toBe("abd");
     expect(payload.truncate).toBe(false);

@@ -93,6 +93,9 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 	if params.sourceDataDir == "" {
 		params.sourceDataDir = "./"
 	}
+	if generator.batchSize == 0 {
+		generator.batchSize = 1
+	}
 	generator.sourceDataDir = params.sourceDataDir
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))

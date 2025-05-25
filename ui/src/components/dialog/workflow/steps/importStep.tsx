@@ -1,16 +1,14 @@
-import {
-  ImportDataStepPayload,
-} from "@/actions";
+import { ImportDataStepPayload } from "@/actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
-import { MentionInput, ContextVariable } from "@/components/ui/var-input";
+import { ContextVariable, MentionInput } from "@/components/ui/var-input";
 import { StepContext } from "../builder";
 
 interface ImportStepProps {
@@ -34,7 +32,8 @@ export function ImportStep({
       newPayload.table = ""; // Reset existing table selection
       newPayload.truncate = false; // Not applicable for new table
       // newPayload.name = step.name; // Keep existing name or clear it: ""
-    } else { // "Import into existing table"
+    } else {
+      // "Import into existing table"
       newPayload.name = ""; // Reset new table name
       // Set to first available table if one exists, otherwise empty.
       // User should ideally select one.
@@ -50,7 +49,6 @@ export function ImportStep({
   } else if (step.name && step.name !== "") {
     currentImportOption = "Create new table";
   }
-
 
   return (
     <div className="space-y-4">
@@ -73,14 +71,15 @@ export function ImportStep({
             {allUserInputVariables // Use dedicated prop for UserInput variables
               .filter((v) => v.type === "file")
               .map((v, idx) => (
-                <SelectItem key={idx} value={v.path}>
+                <SelectItem key={idx} value={`{{.${v.display}}}`}>
                   {v.display}
                 </SelectItem>
               ))}
           </SelectContent>
         </Select>
         <p className="text-xs text-primary/80">
-          You can select any file-type variable defined in the UserInput step here.
+          You can select any file-type variable defined in the UserInput step
+          here.
         </p>
       </div>
 
