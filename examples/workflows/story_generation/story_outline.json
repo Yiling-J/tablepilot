@@ -1,0 +1,25 @@
+{
+  "name": "{{.story_theme}}_outline",
+  "description": "Story outline for the {{.story_theme}} story.",
+  "sources": [],
+  "columns": [
+    {
+      "name": "Chapter",
+      "description": "Chapter number",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Location",
+      "description": "AI-generated location for this chapter of the {{.story_theme}} story",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "PlotSummary",
+      "description": "AI-generated plot summary for this chapter, incorporating characters from '{{.story_theme}}_characters' and fitting the {{.story_theme}} theme",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}

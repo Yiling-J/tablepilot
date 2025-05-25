@@ -313,8 +313,10 @@ func TestWorkflowRunner_Import(t *testing.T) {
 			require.NoError(t, err)
 			runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
 				Variables: map[string]any{
-					"test.csv": FileInfo{Name: "test.csv", Data: []byte("csv")},
-					"test.png": FileInfo{Name: "test.png", Data: []byte("png")},
+					"test.csv":       FileInfo{Name: "test.csv", Data: []byte("test.csv")},
+					"test.png":       FileInfo{Name: "test.png", Data: []byte("test.png")},
+					"test.csv__data": FileInfo{Name: "test.csv", Data: []byte("csv")},
+					"test.png__data": FileInfo{Name: "test.png", Data: []byte("png")},
 				}, Model: "m1", Temperature: 0.5})
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())
@@ -382,6 +384,8 @@ func TestWorkflowRunner_Autofill(t *testing.T) {
 			require.Equal(t, "foo", params.Table)
 			require.Equal(t, 5, params.Count)
 			require.Equal(t, 2, params.Batch)
+			require.Equal(t, []string{"foo"}, params.Autofill.Columns)
+			require.Equal(t, []string{"foo", "bar"}, params.Autofill.ContextColumns)
 			return nil, nil
 		},
 	}
@@ -391,7 +395,7 @@ func TestWorkflowRunner_Autofill(t *testing.T) {
 		Variables: []schema.WorkflowVariable{},
 		Steps: []schema.WorkflowStep{{
 			Type:    schema.WorkflowStepTypeAutofill,
-			Payload: json.RawMessage(`{"table": "foo","count":5,"batch":2}`),
+			Payload: json.RawMessage(`{"table": "foo","count":5,"batch":2, "columns": ["foo"], "context_columns": ["foo", "bar"]}`),
 		}},
 	})
 	require.NoError(t, err)

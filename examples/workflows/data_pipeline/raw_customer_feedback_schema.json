@@ -1,0 +1,31 @@
+{
+  "name": "raw_customer_feedback",
+  "description": "Schema for raw customer feedback data imported from CSV.",
+  "sources": [],
+  "columns": [
+    {
+      "name": "CustomerID",
+      "description": "Unique identifier for the customer",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "ProductName",
+      "description": "Name of the product being reviewed",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "FeedbackText",
+      "description": "The raw text of the customer's feedback",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Region",
+      "description": "Geographical region of the customer (may have inconsistencies)",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}

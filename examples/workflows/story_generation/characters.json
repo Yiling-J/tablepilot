@@ -1,0 +1,25 @@
+{
+  "name": "{{.story_theme}}_characters",
+  "description": "Table of characters for a {{.story_theme}} story.",
+  "sources": [],
+  "columns": [
+    {
+      "name": "Name",
+      "description": "Name of the character",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Archetype",
+      "description": "Archetype of the character (e.g., Hero, Mentor, Villain) for the {{.story_theme}} story",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Backstory",
+      "description": "AI-generated backstory for the character, fitting the {{.story_theme}} theme",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}

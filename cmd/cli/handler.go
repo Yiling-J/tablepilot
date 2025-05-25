@@ -882,13 +882,16 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 				}
 			} else {
 				fmt.Println("Please input variable value (leave empty to use default one), press Enter to finish.")
-				fmt.Printf("Variable Name: %s, Variable Type: %s, Default Value: %s\n", v.Name, v.Type, v.DefaultValue)
+				fmt.Printf("Variable Name: %s, Variable Type: %s, Default Value: %s\n", v.Name, v.Type, cast.ToString(v.DefaultValue))
 				fmt.Print("> ")
 				input, err = readLine(reader)
 				if err != nil {
 					return fmt.Errorf("failed to read prompt: %w", err)
 				}
 				input = strings.TrimSpace(input)
+				if input == "" {
+					input = cast.ToString(v.DefaultValue)
+				}
 			}
 			var iv any = input
 			switch v.Type {
@@ -908,7 +911,12 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 				if err != nil {
 					return fmt.Errorf("failed to read file: %w", err)
 				}
-				iv = b
+				// assign data to another var
+				vars[fmt.Sprintf("%s__data", cast.ToString(iv))] = workflow.FileInfo{
+					Name: cast.ToString(iv),
+					Data: b,
+				}
+				iv = cast.ToString(iv)
 			}
 			vars[v.Name] = iv
 		}

@@ -1,0 +1,66 @@
+{
+  "name": "Story Generation Workflow",
+  "description": "Generates characters and a story outline based on a theme.",
+  "variables": [
+    {
+      "name": "story_theme",
+      "type": "string",
+      "description": "The theme of the story (e.g., 'mystery', 'adventure', 'sci-fi').",
+      "default_value": "mystery"
+    },
+    {
+      "name": "num_characters",
+      "type": "integer",
+      "description": "The number of characters to generate for the story.",
+      "default_value": 2
+    }
+  ],
+  "steps": [
+    {
+      "type": "CreateTable",
+      "payload": {
+        "name": "{{.story_theme}}_characters",
+        "schema_file": "examples/workflows/story_generation/characters.json",
+        "on_exists": "Recreate"
+      }
+    },
+    {
+      "type": "Generate",
+      "payload": {
+        "table": "{{.story_theme}}_characters",
+        "count": "{{.num_characters}}",
+        "batch": 5
+      }
+    },
+    {
+      "type": "CreateTable",
+      "payload": {
+        "name": "{{.story_theme}}_outline",
+        "schema_file": "examples/workflows/story_generation/story_outline.json",
+        "on_exists": "Recreate"
+      }
+    },
+    {
+      "type": "Generate",
+      "payload": {
+        "table": "{{.story_theme}}_outline",
+        "count": 3,
+        "batch": 5
+      }
+    },
+    {
+      "type": "ExportTable",
+      "payload": {
+        "table": "{{.story_theme}}_characters",
+        "path": "{{.story_theme}}_characters.csv"
+      }
+    },
+    {
+      "type": "ExportTable",
+      "payload": {
+        "table": "{{.story_theme}}_outline",
+        "path": "{{.story_theme}}_outline.csv"
+      }
+    }
+  ]
+}
