@@ -92,7 +92,7 @@ export function UserInputStep({
                   value={variable.name}
                   onChange={(e) => {
                     const newName = e.target.value;
-                    const isValid = /^[a-zA-Z0-9]*$/.test(newName);
+                    const isValid = /^[a-zA-Z0-9_]*$/.test(newName);
                     if (isValid) {
                       handleUpdateVariable(idx, {
                         ...variable,
