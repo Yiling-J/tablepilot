@@ -313,8 +313,10 @@ func TestWorkflowRunner_Import(t *testing.T) {
 			require.NoError(t, err)
 			runner, err := wf.Start(t.Context(), id, StartWorklfowRequest{
 				Variables: map[string]any{
-					"test.csv": FileInfo{Name: "test.csv", Data: []byte("csv")},
-					"test.png": FileInfo{Name: "test.png", Data: []byte("png")},
+					"test.csv":       FileInfo{Name: "test.csv", Data: []byte("test.csv")},
+					"test.png":       FileInfo{Name: "test.png", Data: []byte("test.png")},
+					"test.csv__data": FileInfo{Name: "test.csv", Data: []byte("csv")},
+					"test.png__data": FileInfo{Name: "test.png", Data: []byte("png")},
 				}, Model: "m1", Temperature: 0.5})
 			require.NoError(t, err)
 			r, err := runner.Next(t.Context())

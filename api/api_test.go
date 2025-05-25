@@ -834,7 +834,8 @@ func TestAPI_RunWorkflowFileVar(t *testing.T) {
 		StartFunc: func(ctx context.Context, id string, request workflow.StartWorklfowRequest) (workflow.Runner, error) {
 			require.Equal(t, request, workflow.StartWorklfowRequest{
 				Variables: map[string]any{
-					"image": workflow.FileInfo{
+					"image": "go.csv",
+					"go.csv__data": workflow.FileInfo{
 						Name: "go.csv",
 						Data: []byte("Hello, World!"),
 					},

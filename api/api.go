@@ -375,10 +375,11 @@ func (hs *HTTPServer) RunWorkflow(ctx *gin.Context) {
 					errorResponse(ctx, 500, err)
 					return
 				}
-				request.Variables[va.Name] = workflow.FileInfo{
+				request.Variables[name+"__data"] = workflow.FileInfo{
 					Data: content,
 					Name: name,
 				}
+				request.Variables[va.Name] = name
 			}
 		}
 	}

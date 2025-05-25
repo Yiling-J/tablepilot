@@ -911,7 +911,12 @@ func (h *Handler) RunWorkflow(cmd *cobra.Command, args []string) error {
 				if err != nil {
 					return fmt.Errorf("failed to read file: %w", err)
 				}
-				iv = b
+				// assign data to another var
+				vars[fmt.Sprintf("%s__data", cast.ToString(iv))] = workflow.FileInfo{
+					Name: cast.ToString(iv),
+					Data: b,
+				}
+				iv = cast.ToString(iv)
 			}
 			vars[v.Name] = iv
 		}
