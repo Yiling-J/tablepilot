@@ -1,5 +1,6 @@
 {
   "name": "fruit recipe",
+  "description": "Creates a fruit recipe table, adds an image column, and generates a few recipes. Uses explicit table name.",
   "variables": [
     {
       "name": "fruit",
@@ -19,18 +20,16 @@
     {
       "type": "CreateColumn",
       "payload": {
-        "table": "{{.step1.table}}",
-        "column": {
-          "name": "Image",
-          "type": "image",
-          "description": "image of the recipe"
-        }
+        "table": "{{.fruit}}_recipes",
+        "name": "Image",
+        "type": "image",
+        "description": "image of the recipe"
       }
     },
     {
       "type": "Generate",
       "payload": {
-        "table": "{{.step1.table}}",
+        "table": "{{.fruit}}_recipes",
         "count": 2,
         "batch": 1
       }

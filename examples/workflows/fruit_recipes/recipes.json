@@ -1,5 +1,5 @@
 {
-  "name": "fruit_recipes_{{.fruit}}_{{.datetime}}",
+  "name": "{{.fruit}}_recipes",
   "description": "table of recipes, all recipes **must include {{.fruit}}** in ingredients",
   "columns": [
     {

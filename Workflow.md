@@ -25,28 +25,28 @@ tablepilot workflow create my_workflow.json
 ### Running a Workflow
 To execute a defined workflow:
 ```bash
-tablepilot workflow run <workflow_name_or_id> [flags]
+tablepilot workflow run <id> [flags]
 ```
-Replace `<workflow_name_or_id>` with the actual name (as defined in its JSON file) or the ID of the workflow.
+Replace `<id>` with the actual ID of the workflow.
 
 **Flags:**
 *   `-t, --temperature <float>`: Specifies the sampling temperature for AI generation steps (default: 0.6). Higher values (e.g., 0.8) make the output more random, while lower values (e.g., 0.2) make it more focused and deterministic.
 *   `-m, --model <string>`: Specifies the primary AI model to use for generation tasks within the workflow. If not provided, the default model configured in Tablepilot will be used.
-*   `-i, --image_model <string>`: Specifies the AI model to use for image-related tasks (like importing data from images) within the workflow. If not provided, the default image model will be used.
+*   `-i, --image_model <string>`: Specifies the AI model to use for image-generation tasks within the workflow. If not provided, the default image model will be used.
 
 Example:
 ```bash
-tablepilot workflow run my_data_pipeline --temperature 0.7 --model "gemini-pro"
+tablepilot workflow run ed6l8w --temperature 0.7 --model "gemini-pro"
 ```
 
 ### Deleting a Workflow
 To remove a workflow:
 ```bash
-tablepilot workflow delete <workflow_name_or_id>
+tablepilot workflow delete <id>
 ```
 Example:
 ```bash
-tablepilot workflow delete old_workflow
+tablepilot workflow delete ed6l8w
 ```
 
 ## Workflow JSON Schema Definition
@@ -67,9 +67,9 @@ Variables allow you to define parameters that can be reused or easily changed wi
     *   `"string"`: A text string.
     *   `"number"`: A floating-point number.
     *   `"integer"`: A whole number.
-    *   `"file"`: Represents a file path. When the workflow runs, it may prompt the user for a file if a default value isn't provided or if the file type is used in a step expecting a file input (e.g., `Import` step).
+    *   `"file"`: Represents a file path. When the workflow starts, Tablepilot will prompt the user to input the file path, this type of variable will be used as input in Import step.
 *   `default_value` (any, optional): A default value for the variable. This value will be used if no other value is provided at runtime. The type of `default_value` should match the specified `type`.
-*   `options` (array, optional): A list of predefined options for the variable. This can be useful for "string" or "number" types to suggest or restrict possible values, often used by UI integrations.
+*   `options` (array, optional): A list of predefined options for the variable. This can be useful for "string" or "number" types to suggest or restrict possible values, user will be asked to select value from the list when workflow started.
 
 **Using Variables in Steps:**
 Variables can be referenced within the `payload` of workflow steps using Go's template syntax: `{{.your_variable_name}}`.
@@ -110,11 +110,6 @@ The `steps` array defines the actual operations the workflow will perform, in se
 *   `type` (string, required): Specifies the type of operation for this step.
 *   `payload` (object, required): An object containing parameters specific to the `type` of this step.
 
-**Referencing Entities from Previous Steps:**
-When a step depends on an entity (like a table) created or modified by a previous step, you must provide the explicit name or identifier of that entity in the payload. The workflow system does not automatically pipe outputs like table names using special templates. You need to ensure the names used in subsequent steps match the names defined or generated in prior steps.
-
-For example, if step 1 creates a table named "customer_data" (defined in its schema file or request payload), a subsequent step that modifies this table must refer to it by the exact name "customer_data" in its `table` parameter.
-
 ### Step Types and their `payload`
 
 Here are the available `WorkflowStepType` values and the expected structure for their `payload`:
@@ -132,20 +127,19 @@ Here are the available `WorkflowStepType` values and the expected structure for 
 2.  **`Import`**
     Imports data into a table from a file (e.g., CSV, image).
     *   `payload`:
-        *   `table` (string, optional): The name or ID of an existing table to import data into. If not provided, a new table will be created (see `name`).
-        *   `name` (string, optional): The name for the new table if `table` is not specified or refers to a non-existent table. If `name` is also not set, the new table name might be derived from the filename.
+        *   `table` (string, optional): The name or ID of an existing table to import data into.
+        *   `name` (string, optional): The name for the new table if `table` is not specified. If `name` is also not set, the new table name might be derived from the filename.
         *   `file` (string, required): Path to the file to import. Can be a direct path or use a variable: `{{.my_import_file}}`.
         *   `prompt` (string, optional): An AI prompt used when importing data from images, to guide the extraction process.
-        *   `truncate` (boolean, optional, defaults to `false`): If `true`, all existing rows in the target table will be deleted before new data is imported.
+        *   `truncate` (boolean, optional, defaults to `false`): Used together with `table`, if `true`, all existing rows in the target table will be deleted before new data is imported.
 
 3.  **`CreateColumn`**
-    Adds a new column to an existing table.
+    Adds a new ai type column to an existing table.
     *   `payload`:
         *   `table` (string, required): The name or ID of the table to add the column to (e.g., `"my_target_table"`).
-        *   `column` (object, required): Defines the new column:
-            *   `name` (string, required): Name of the new column.
-            *   `type` (string, required): Data type of the new column (e.g., "string", "number", "integer", "image", "boolean").
-            *   `description` (string, optional): A description for the new column.
+		*   `name` (string, required): Name of the new column.
+        *   `type` (string, required): Data type of the new column (e.g., "string", "number", "integer", "image", "boolean").
+        *   `description` (string, optional): A description for the new column.
 
 4.  **`DeleteColumn`**
     Removes a column from a table.
@@ -165,8 +159,8 @@ Here are the available `WorkflowStepType` values and the expected structure for 
     *   `payload`:
         *   `table` (string, required): The name or ID of the table.
         *   `columns` (array of strings, required): A list of column names that need to be autofilled.
-        *   `count` (integer, optional): The total number of rows to process for autofilling. If 0 or not provided, all existing rows (or a default limit) might be processed.
-        *   `batch` (integer, optional, defaults to 10): The number of rows to process in a single batch.
+        *   `count` (integer, required): The total number of rows to process for autofilling. If 0 or not provided, all existing rows (or a default limit) might be processed.
+        *   `batch` (integer, required): The number of rows to process in a single batch.
 
 7.  **`ExportTable`**
     Exports a table's data to a file (typically CSV).
@@ -181,27 +175,18 @@ Here are the available `WorkflowStepType` values and the expected structure for 
 
 ## Example Workflow JSON
 
-Here is an example of a complete `workflow.json` file. This workflow first creates a table for fruit recipes, then adds an "Image" column to this table, and finally generates two recipes for it. It assumes that the `schema_file` (`recipes_v2.json`) defines the table name, potentially using variables, and that the `target_table_name` variable in the workflow is set to match this resulting table name.
+Here is an example of a complete `workflow.json` file. This workflow first creates a table for fruit recipes, then adds an "Image" column to this table, and finally generates two recipes for it. It assumes that the `schema_file` (`recipes.json`) defines the table name, potentially using variables, and that the `target_table_name` variable in the workflow is set to match this resulting table name.
 
 ```json
 {
-  "name": "fruit_recipe_generator_v2",
+  "name": "fruit recipe",
   "description": "Creates a fruit recipe table, adds an image column, and generates a few recipes. Uses explicit table name.",
   "variables": [
     {
-      "name": "fruit_type_for_schema",
+      "name": "fruit",
       "type": "string",
-      "default_value": "generic_fruit"
-    },
-    {
-      "name": "recipes_to_generate",
-      "type": "integer",
-      "default_value": 2
-    },
-    {
-      "name": "target_table_name",
-      "type": "string",
-      "default_value": "FruitRecipes_From_generic_fruit"
+      "default_value": "orange",
+      "options": ["apple", "orange", "banana", "strawberry", "mango"]
     }
   ],
   "steps": [
@@ -209,72 +194,26 @@ Here is an example of a complete `workflow.json` file. This workflow first creat
       "type": "CreateTable",
       "payload": {
         "on_exists": "Recreate",
-        "schema_file": "examples/workflows/fruit_recipes/recipes_v2.json"
+        "schema_file": "examples/workflows/fruit_recipes/recipes.json"
       }
     },
     {
       "type": "CreateColumn",
       "payload": {
-        "table": "{{.target_table_name}}",
-        "column": {
-          "name": "Image",
-          "type": "image",
-          "description": "Generated image of the recipe based on its name and ingredients."
-        }
+        "table": "{{.fruit}}_recipes",
+        "name": "Image",
+        "type": "image",
+        "description": "image of the recipe"
       }
     },
     {
       "type": "Generate",
       "payload": {
-        "table": "{{.target_table_name}}",
-        "count": "{{.recipes_to_generate}}",
+        "table": "{{.fruit}}_recipes",
+        "count": 2,
         "batch": 1
       }
-    },
-    {
-      "type": "ExportTable",
-      "payload": {
-          "table": "{{.target_table_name}}",
-          "path": "output/{{.fruit_type_for_schema}}_recipes_export.csv"
-      }
     }
   ]
 }
 ```
-
-**Note on `examples/workflows/fruit_recipes/recipes_v2.json` (referenced in `CreateTable` step):**
-
-This path is relative to the root of the Tablepilot application when the CLI is run. For the `CreateTable` step, you would need a JSON file at that path defining the table schema. The `name` field within this JSON schema file determines the name of the table created. Variables (like `{{.fruit_type_for_schema}}`) can be used in this schema file, and their values will be substituted from the workflow's variables.
-
-For instance, if `recipes_v2.json` looks like this:
-```json
-{
-  "name": "FruitRecipes_From_{{.fruit_type_for_schema}}",
-  "description": "A table to store delicious fruit-based recipes.",
-  "columns": [
-    {
-      "name": "RecipeName",
-      "type": "string",
-      "description": "The name of the fruit recipe."
-    },
-    {
-      "name": "PrimaryFruit",
-      "type": "string",
-      "description": "The main fruit used in the recipe. Default: {{.fruit_type_for_schema}}"
-    },
-    {
-      "name": "Ingredients",
-      "type": "list_string",
-      "description": "A list of ingredients for the recipe."
-    },
-    {
-      "name": "Instructions",
-      "type": "string",
-      "description": "Step-by-step instructions to prepare the recipe."
-    }
-  ]
-}
-```
-And if the workflow's `fruit_type_for_schema` variable is "apple", the table created by the `CreateTable` step will be named "FruitRecipes_From_apple". The `target_table_name` variable in the workflow should then be set to "FruitRecipes_From_apple" for subsequent steps to correctly reference this table.
-
-This `Workflow.md` should provide a comprehensive guide to understanding and using workflows in Tablepilot.
