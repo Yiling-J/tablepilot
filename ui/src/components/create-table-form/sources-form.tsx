@@ -37,6 +37,7 @@ interface SourcesFormProps {
   formData: TableCreateRequest;
   updateFormData: (data: Partial<TableCreateRequest>) => void;
   variables?: ContextVariable[];
+  tables?: TableInfo[];
 }
 
 type SourceType = "ai" | "list" | "linked";
@@ -45,6 +46,7 @@ export function SourcesForm({
   formData,
   updateFormData,
   variables,
+  tables: tablesProp,
 }: SourcesFormProps) {
   const [sourceName, setSourceName] = useState("");
   const [sourceType, setSourceType] = useState<SourceType>("ai");
@@ -69,8 +71,12 @@ export function SourcesForm({
   const fetchTables = async () => {
     setIsLoadingTables(true);
     try {
-      const resp = await getTables();
-      setTables(resp.tables);
+      if (tablesProp) {
+        setTables(tablesProp);
+      } else {
+        const resp = await getTables();
+        setTables(resp.tables);
+      }
       setIsLoadingTables(false);
     } catch (error) {
       console.error("Error fetching tables:", error);

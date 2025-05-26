@@ -165,6 +165,7 @@ export default function CreateTableForm({
                   variables={variables}
                   formData={formData}
                   updateFormData={updateFormData}
+                  tables={tables}
                 />
               </TabsContent>
               <TabsContent value="step3">

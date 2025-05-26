@@ -55,6 +55,7 @@ export function CreateTableStep({
         variables={context.variables}
         isOpen={createTableDialogOpen}
         setIsOpen={setCreateTableDialogOpen}
+        tables={context.tables}
         close={() => {}} // Assuming close can be a no-op if handled by setIsOpen
         form={step.request}
         onSave={(v) => {
