@@ -3,23 +3,22 @@
   "description": "Generates characters and a story outline based on a theme.",
   "variables": [
     {
-      "name": "story_theme",
+      "name": "country",
       "type": "string",
-      "description": "The theme of the story (e.g., 'mystery', 'adventure', 'sci-fi').",
-      "default_value": "mystery"
-    },
-    {
-      "name": "num_characters",
-      "type": "integer",
-      "description": "The number of characters to generate for the story.",
-      "default_value": 2
+      "description": "The country where the  story happen and characters live.",
+      "default_value": "Velmora: A lush, ancient kingdom where magic flows through the land itself. Wizards govern with wisdom, and enchanted forests whisper secrets of forgotten spells.",
+      "options": [
+        "Velmora: A lush, ancient kingdom where magic flows through the land itself. Wizards govern with wisdom, and enchanted forests whisper secrets of forgotten spells.",
+        "Drakthar Dominion: A mountainous empire ruled by dragonlords. Its people bond with dragons from birth, forging a society built on fire, flight, and fierce honor.",
+        "Gearhollow: A gritty, soot-stained steampunk nation powered by steam, gears, and innovation. Skyships patrol brass cities while rebels tinker in hidden workshops.",
+        "Xerathuun: A cryptic desert land scattered with alien monoliths and glowing artifacts. Its people wield incomprehensible technology and speak in riddles older than time."
+      ]
     }
   ],
   "steps": [
     {
       "type": "CreateTable",
       "payload": {
-        "name": "{{.story_theme}}_characters",
         "schema_file": "examples/workflows/story_generation/characters.json",
         "on_exists": "Recreate"
       }
@@ -27,15 +26,14 @@
     {
       "type": "Generate",
       "payload": {
-        "table": "{{.story_theme}}_characters",
-        "count": "{{.num_characters}}",
-        "batch": 5
+        "table": "game_characters",
+        "batch": 1,
+        "count": 3
       }
     },
     {
       "type": "CreateTable",
       "payload": {
-        "name": "{{.story_theme}}_outline",
         "schema_file": "examples/workflows/story_generation/story_outline.json",
         "on_exists": "Recreate"
       }
@@ -43,23 +41,23 @@
     {
       "type": "Generate",
       "payload": {
-        "table": "{{.story_theme}}_outline",
+        "table": "game_story_outline",
         "count": 3,
-        "batch": 5
+        "batch": 3
       }
     },
     {
       "type": "ExportTable",
       "payload": {
-        "table": "{{.story_theme}}_characters",
-        "path": "{{.story_theme}}_characters.csv"
+        "table": "game_characters",
+        "path": "game_characters.csv"
       }
     },
     {
       "type": "ExportTable",
       "payload": {
-        "table": "{{.story_theme}}_outline",
-        "path": "{{.story_theme}}_outline.csv"
+        "table": "game_story_outline",
+        "path": "game_outline.csv"
       }
     }
   ]

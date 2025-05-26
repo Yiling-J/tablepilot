@@ -1,23 +1,35 @@
 {
-  "name": "{{.story_theme}}_outline",
-  "description": "Story outline for the {{.story_theme}} story.",
-  "sources": [],
+  "name": "game_story_outline",
+  "description": "Story outline for the game, the story happen in the country: {{.country}}.",
+  "sources": [
+    { "name": "characters", "type": "linked", "table": "game_characters" }
+  ],
   "columns": [
     {
-      "name": "Chapter",
-      "description": "Chapter number",
-      "type": "integer",
+      "name": "Chapter Name",
+      "description": "Chapter name",
+      "type": "string",
       "fill_mode": "ai"
     },
     {
+      "name": "Character",
+      "description": "Main character in the story",
+      "type": "string",
+      "fill_mode": "pick",
+      "source": "characters",
+      "random": false,
+      "linked_column": "Name",
+      "linked_context_columns": ["Name", "Archetype", "Backstory"]
+    },
+    {
       "name": "Location",
-      "description": "AI-generated location for this chapter of the {{.story_theme}} story",
+      "description": "AI-generated location for this chapter of the country",
       "type": "string",
       "fill_mode": "ai"
     },
     {
       "name": "PlotSummary",
-      "description": "AI-generated plot summary for this chapter, incorporating characters from '{{.story_theme}}_characters' and fitting the {{.story_theme}} theme",
+      "description": "AI-generated plot summary for this chapter, fitting the country and characters theme",
       "type": "string",
       "fill_mode": "ai"
     }

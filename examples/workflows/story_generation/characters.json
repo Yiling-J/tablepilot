@@ -1,13 +1,14 @@
 {
-  "name": "{{.story_theme}}_characters",
-  "description": "Table of characters for a {{.story_theme}} story.",
+  "name": "game_characters",
+  "description": "Table of characters for the story. The characters live in the country: {{.country}}",
   "sources": [],
   "columns": [
     {
       "name": "Name",
       "description": "Name of the character",
       "type": "string",
-      "fill_mode": "ai"
+      "fill_mode": "ai",
+      "context_length": 3
     },
     {
       "name": "Archetype",
@@ -17,8 +18,15 @@
     },
     {
       "name": "Backstory",
-      "description": "AI-generated backstory for the character, fitting the {{.story_theme}} theme",
+      "description": "AI-generated backstory for the character, fitting the {{.country}} theme",
       "type": "string",
+      "fill_mode": "ai",
+      "context_length": 3
+    },
+    {
+      "name": "Image",
+      "description": "Image of the character.",
+      "type": "image",
       "fill_mode": "ai"
     }
   ]
