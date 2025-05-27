@@ -54,9 +54,6 @@ function TableList() {
 
   useEffect(() => {
     fetchTables();
-    // refreshTables() from context was removed as fetchTables handles local data.
-    // If global context needs refresh, it should be handled more explicitly if needed,
-    // or the component consuming global context should use refreshTables itself.
   }, [fetchTables]);
 
   return (

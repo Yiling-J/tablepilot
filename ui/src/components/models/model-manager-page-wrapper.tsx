@@ -21,10 +21,9 @@ export function ModelManagerPageWrapper() {
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="models" />
       <ScrollArea className="h-[calc(100vh-120px)]">
-        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full tab-content-container">
           <div className="space-y-8">
             <ModelManager
-              searchTerm=""
               shouldOpenAddProviderDialog={isAddProviderDialogOpen}
               onAddProviderDialogDismiss={handleAddProviderDialogDismiss}
             />

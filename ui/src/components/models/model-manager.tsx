@@ -1,32 +1,29 @@
 "use client";
 
 import {
-    getProviders,
     createProvider,
-    updateProvider,
     deleteProvider,
+    getProviders,
     Model as ModelDataFromActionModel,
     Provider as ProviderDataFromAction,
+    updateProvider,
 } from "@/actions";
-import { Skeleton } from "@/components/ui/skeleton"; // Added
-import { Card, CardHeader, CardContent } from "@/components/ui/card"; // Added for Skeleton
 import { ConfirmationDialog } from "@/components/models/confirmation-dialog";
 import { ModelFormDialog } from "@/components/models/model-form-dialog";
 import { ProviderCard } from "@/components/models/provider-card";
 import { ProviderFormDialog } from "@/components/models/provider-form-dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card"; // Added for Skeleton
+import { Skeleton } from "@/components/ui/skeleton"; // Added
 import { useToast } from "@/hooks/use-toast";
 import type { ModelData, ProviderData } from "@/types.ts";
-import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ModelManagerProps {
-  searchTerm: string;
   shouldOpenAddProviderDialog?: boolean;
   onAddProviderDialogDismiss?: () => void;
 }
 
 export function ModelManager({
-  searchTerm,
   shouldOpenAddProviderDialog,
   onAddProviderDialogDismiss,
 }: ModelManagerProps) {
@@ -62,17 +59,17 @@ export function ModelManager({
         type: p.type,
         apiKey: p.key,
         baseUrl: p.base_url,
-        models: p.models.map((m: ModelDataFromActionModel) => ({ // Removed index i
-          id: m.id.toString(), // Use actual model ID
+        models: p.models.map((m: ModelDataFromActionModel, i) => ({
+          id: i.toString(),
           model: m.model,
           alias: m.alias,
           max_tokens: m.max_tokens,
           rpm: m.rpm,
           imageSupport: m.image,
-          isDefault: false, // Default status might need to be fetched or managed
+          isDefault: false,
           client: p.name,
         })),
-        enabled: true, // Assuming enabled by default, or fetch this status
+        enabled: true,
         editable: p.editable,
       }));
       setProviders(mappedProviders);
@@ -103,21 +100,28 @@ export function ModelManager({
   }, [shouldOpenAddProviderDialog, onAddProviderDialogDismiss]);
 
   // CRUD Operations for Providers
-  const mapProviderDataToApiParams = (providerData: ProviderData, isUpdate: boolean = false): ProviderDataFromAction => {
+  const mapProviderDataToApiParams = (
+    providerData: ProviderData,
+    isUpdate: boolean = false,
+  ): ProviderDataFromAction => {
     // Ensure this returns a full Provider object as expected by actions.ts
     // ProviderDataFromAction is an alias for Provider from actions.ts
     return {
-      id: isUpdate && providerData.id !== "new" ? parseInt(providerData.id, 10) : 0, // API Provider.id is number. Default to 0 for create.
+      id:
+        isUpdate && providerData.id !== "new"
+          ? parseInt(providerData.id, 10)
+          : 0, // API Provider.id is number. Default to 0 for create.
       name: providerData.name,
       type: providerData.type,
       key: providerData.apiKey ?? "", // Ensure non-nullable string
       base_url: providerData.baseUrl ?? "", // Ensure non-nullable string
-      models: providerData.models.map(model => ({ // Map UI ModelData to API Model
+      models: providerData.models.map((model) => ({
+        // Map UI ModelData to API Model
         id: parseInt(model.id, 10), // API Model.id is number
         model: model.model,
         alias: model.alias,
         max_tokens: model.max_tokens ?? 0, // Default if undefined
-        rpm: model.rpm ?? 0,             // Default if undefined
+        rpm: model.rpm ?? 0, // Default if undefined
         image: model.imageSupport ?? false, // Default if undefined
       })),
       editable: providerData.editable ?? true, // Default 'editable' if not present in UI data
@@ -128,16 +132,18 @@ export function ModelManager({
 
   const handleProviderSubmit = async (providerData: ProviderData) => {
     try {
-      if (editingProvider && editingProvider.id !== "new") { // Update existing provider
-        const providerIdToUpdate = editingProvider.id; 
+      if (editingProvider && editingProvider.id !== "new") {
+        // Update existing provider
+        const providerIdToUpdate = editingProvider.id;
         const apiParams = mapProviderDataToApiParams(providerData, true);
         // updateProvider returns TableInfo, not Provider. Rely on fetchData to update state.
-        await updateProvider(providerIdToUpdate, apiParams); 
+        await updateProvider(providerIdToUpdate, apiParams);
         toast({
           title: "Provider Updated",
           description: `${providerData.name} has been successfully updated.`, // Use providerData for name
         });
-      } else { // Create new provider
+      } else {
+        // Create new provider
         const apiParams = mapProviderDataToApiParams(providerData, false);
         // createProvider returns TableInfo, not Provider. Rely on fetchData to update state.
         await createProvider(apiParams);
@@ -147,15 +153,15 @@ export function ModelManager({
         });
       }
       setEditingProvider(null);
-      await fetchData(); 
+      await fetchData();
     } catch (error) {
       console.error("Failed to save provider:", error);
-      // It's good practice to also call fetchData() in catch blocks if a refresh might resolve/clarify UI state
-      // await fetchData(); // Or not, depending on desired UX for errors.
       toast({
         variant: "destructive",
         title: `Error ${editingProvider ? "Updating" : "Creating"} Provider`,
-        description: (error as Error).message || "Could not save provider. Please try again.",
+        description:
+          (error as Error).message ||
+          "Could not save provider. Please try again.",
       });
     }
   };
@@ -169,14 +175,16 @@ export function ModelManager({
         title: "Provider Deleted",
         description: "The provider has been removed.", // Simplified message
       });
-      await fetchData(); 
+      await fetchData();
     } catch (error) {
       console.error("Failed to delete provider:", error);
       // await fetchData(); // Again, consider if refresh is needed on error
       toast({
         variant: "destructive",
         title: "Error Deleting Provider",
-        description: (error as Error).message || "Could not delete provider. Please try again.",
+        description:
+          (error as Error).message ||
+          "Could not delete provider. Please try again.",
       });
     }
   };
@@ -349,32 +357,6 @@ export function ModelManager({
     setIsConfirmDeleteDialogOpen(false);
   };
 
-  const filteredProviders = useMemo(() => {
-    if (!searchTerm.trim()) return providers;
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    return providers
-      .filter(
-        (provider) =>
-          provider.name.toLowerCase().includes(lowerSearchTerm) ||
-          provider.type.toLowerCase().includes(lowerSearchTerm) ||
-          provider.models.some(
-            (model: ModelData) =>
-              model.model.toLowerCase().includes(lowerSearchTerm) ||
-              model.alias.toLowerCase().includes(lowerSearchTerm),
-          ),
-      )
-      .map((provider) => ({
-        ...provider,
-        models: provider.models.filter(
-          (model: ModelData) =>
-            provider.name.toLowerCase().includes(lowerSearchTerm) ||
-            provider.type.toLowerCase().includes(lowerSearchTerm) ||
-            model.model.toLowerCase().includes(lowerSearchTerm) ||
-            model.alias.toLowerCase().includes(lowerSearchTerm),
-        ),
-      }));
-  }, [providers, searchTerm]);
-
   // Function to open the "Add Provider" dialog internally, used by parent via prop
   const openAddProviderDialogInternal = () => {
     setEditingProvider(null);
@@ -389,35 +371,49 @@ export function ModelManager({
     }
   }, [shouldOpenAddProviderDialog, onAddProviderDialogDismiss]);
 
-
   // Skeleton Component for ProviderCard
   const ProviderCardSkeleton = () => (
     <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center justify-between py-4 px-6"> {/* Adjusted padding */}
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-6">
+        {" "}
+        {/* Adjusted padding */}
         <div>
-          <Skeleton className="h-6 w-32 mb-2" /> {/* Provider Name - increased margin */}
-          <Skeleton className="h-4 w-24" />      {/* Provider Type */}
+          <Skeleton className="h-6 w-32 mb-2" />{" "}
+          {/* Provider Name - increased margin */}
+          <Skeleton className="h-4 w-24" /> {/* Provider Type */}
         </div>
         <div className="flex space-x-2">
           <Skeleton className="h-9 w-20 rounded-md" /> {/* Edit button */}
-          <Skeleton className="h-9 w-9 rounded-md" /> {/* More actions button */}
+          <Skeleton className="h-9 w-9 rounded-md" />{" "}
+          {/* More actions button */}
         </div>
       </CardHeader>
-      <CardContent className="px-6 pb-6"> {/* Adjusted padding */}
-        <div className="flex justify-between items-center mb-3"> {/* Adjusted margin */}
+      <CardContent className="px-6 pb-6">
+        {" "}
+        {/* Adjusted padding */}
+        <div className="flex justify-between items-center mb-3">
+          {" "}
+          {/* Adjusted margin */}
           <Skeleton className="h-5 w-28" /> {/* "Models" title */}
           <Skeleton className="h-9 w-32 rounded-md" /> {/* Add Model button */}
         </div>
         {/* Placeholder for a few models */}
         {[1, 2].map((i) => (
-          <div key={i} className="p-3 border rounded-md mb-3 bg-background"> {/* Use theme background */}
-            <div className="flex justify-between items-center mb-2"> {/* Increased margin */}
+          <div key={i} className="p-3 border rounded-md mb-3 bg-background">
+            {" "}
+            {/* Use theme background */}
+            <div className="flex justify-between items-center mb-2">
+              {" "}
+              {/* Increased margin */}
               <Skeleton className="h-5 w-4/12" /> {/* Model Name/Alias */}
-              <Skeleton className="h-8 w-8 rounded-md" /> {/* Edit model button */}
+              <Skeleton className="h-8 w-8 rounded-md" />{" "}
+              {/* Edit model button */}
             </div>
-            <div className="space-y-1.5"> {/* Adjusted for spacing between lines */}
-              <Skeleton className="h-3 w-10/12" />   {/* Model property line 1 */}
-              <Skeleton className="h-3 w-8/12" />    {/* Model property line 2 */}
+            <div className="space-y-1.5">
+              {" "}
+              {/* Adjusted for spacing between lines */}
+              <Skeleton className="h-3 w-10/12" /> {/* Model property line 1 */}
+              <Skeleton className="h-3 w-8/12" /> {/* Model property line 2 */}
             </div>
           </div>
         ))}
@@ -437,39 +433,24 @@ export function ModelManager({
 
   return (
     <>
-      {filteredProviders.length > 0 ? (
-        <div>
-          {filteredProviders.map((provider) => (
-            <ProviderCard
-              key={provider.id}
-              provider={provider}
-              onAddModel={openAddModelDialog}
-              onEditModel={openEditModelDialog}
-              onDeleteModel={(providerId, modelId) =>
-                openConfirmDeleteDialog("model", modelId, providerId)
-              }
-              onEditProvider={openEditProviderDialog}
-              onDeleteProvider={(providerId) =>
-                openConfirmDeleteDialog("provider", providerId)
-              }
-              onToggleEnabled={handleToggleProviderEnabled}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center text-center py-16 text-muted-foreground min-h-[calc(100vh-200px)]">
-          <Search className="h-24 w-24 mb-6 text-primary/30" />
-          <h2 className="text-3xl font-semibold text-primary-foreground mb-2">
-            No Providers Found
-          </h2>
-          <p className="mb-6 max-w-md">
-            {searchTerm
-              ? `Your search for "${searchTerm}" did not match any providers or models. Try a different search term.`
-              : "You don't have any providers configured yet. If you expect to see some, try refreshing or check your import."}
-          </p>
-        </div>
-      )}
-
+      <div>
+        {providers.map((provider, i) => (
+          <ProviderCard
+            key={provider.id === "0" ? i.toString() : provider.id}
+            provider={provider}
+            onAddModel={openAddModelDialog}
+            onEditModel={openEditModelDialog}
+            onDeleteModel={(providerId, modelId) =>
+              openConfirmDeleteDialog("model", modelId, providerId)
+            }
+            onEditProvider={openEditProviderDialog}
+            onDeleteProvider={(providerId) =>
+              openConfirmDeleteDialog("provider", providerId)
+            }
+            onToggleEnabled={handleToggleProviderEnabled}
+          />
+        ))}
+      </div>
       <ProviderFormDialog
         isOpen={isProviderFormOpen}
         onOpenChange={setIsProviderFormOpen}
