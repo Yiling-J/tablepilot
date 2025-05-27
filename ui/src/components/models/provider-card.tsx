@@ -35,10 +35,10 @@ export function ProviderCard({
   return (
     <div className={`w-full py-6 border-b border-border/50 ${interactionsDisabled && provider.editable ? 'opacity-60' : ''}`}>
       {/* Header Section */}
-      <div className="flex justify-between items-start gap-2 mb-4 px-2"> {/* Added px-2 for slight horizontal padding */}
+      <div className="flex justify-between items-center gap-2 mb-4 px-2"> {/* Added px-2 for slight horizontal padding, items-center */}
         {/* Left part: Name, Type, URL */}
         <div className="flex-grow min-w-0">
-          <h2 className="inline-block bg-neutral-800 text-yellow-400 px-4 py-2 text-xl font-bold border-l-4 border-blue-500 shadow-lg shadow-yellow-500/40">
+          <h2 className="text-xl font-bold text-foreground border-l-4 border-blue-500 pl-3">
             {provider.name}
           </h2>
           <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
