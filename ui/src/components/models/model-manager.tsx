@@ -46,28 +46,27 @@ export function ModelManager({
     providerId?: string;
   } | null>(null);
 
-  // Fetch providers from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         const fetchedProviders: ProviderDataFromAction[] = await getProviders();
         const mappedProviders: ProviderData[] = fetchedProviders.map((p) => ({
-          id: String(p.id), // Convert number to string
+          id: p.id.toString(),
           name: p.name,
-          type: p.type, // Assuming ProviderType and string are compatible
-          apiKey: p.key, // Store API key if needed, or omit if not used directly by UI
-          baseUrl: p.base_url, // Store baseUrl if needed
-          models: p.models.map((m: ModelDataFromActionModel) => ({
-            id: "", // Generate unique ID for UI model
+          type: p.type,
+          apiKey: p.key,
+          baseUrl: p.base_url,
+          models: p.models.map((m: ModelDataFromActionModel, i) => ({
+            id: i.toString(),
             model: m.model,
-            alias: m.alias || m.model, // Use model name as alias if alias is not provided
+            alias: m.alias,
             max_tokens: m.max_tokens,
             rpm: m.rpm,
-            imageSupport: m.image, // Map 'image' to 'imageSupport'
-            isDefault: false, // Default to false, adjust if API provides this
-            client: p.name, // Set client to provider name
+            imageSupport: m.image,
+            isDefault: false,
+            client: p.name,
           })),
-          enabled: true, // Default to true as API doesn't provide this
+          enabled: true,
           editable: p.editable,
         }));
         setProviders(mappedProviders);

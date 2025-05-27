@@ -46,7 +46,7 @@ export function ProviderCard({
           <h2 className="text-xl font-bold text-foreground border-l-4 border-blue-500 pl-3">
             {provider.name}
           </h2>
-          <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
+          <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               type: {provider.type}
             </span>
