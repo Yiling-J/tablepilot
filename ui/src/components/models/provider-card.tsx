@@ -38,7 +38,7 @@ export function ProviderCard({
       <div className="flex justify-between items-start gap-2 mb-4 px-2"> {/* Added px-2 for slight horizontal padding */}
         {/* Left part: Name, Type, URL */}
         <div className="flex-grow min-w-0">
-          <h2 className="text-xl font-bold text-foreground"> {/* Changed CardTitle to h2 and adjusted classes */}
+          <h2 className="inline-block bg-neutral-800 text-cyan-400 px-4 py-2 text-xl font-bold skew-y-[-3deg] border-l-4 border-pink-500 shadow-lg shadow-cyan-500/40">
             {provider.name}
           </h2>
           <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
