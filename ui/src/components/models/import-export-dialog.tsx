@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import type { ProviderData } from '@/types';
+import type { ProviderData } from '@/types.ts';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -78,7 +78,7 @@ export function ImportExportDialog({ isOpen, onOpenChange, currentConfig, onImpo
               Export your current provider and model configurations as a JSON file.
               You can use this file to backup your settings or transfer them to another instance.
             </p>
-            <Button onClick={handleExport} className="w-full" variant="primary">Export Configuration</Button>
+            <Button onClick={handleExport} className="w-full" variant="default">Export Configuration</Button>
           </TabsContent>
           <TabsContent value="import" className="py-4 space-y-4">
             <div>
@@ -91,7 +91,7 @@ export function ImportExportDialog({ isOpen, onOpenChange, currentConfig, onImpo
                 className="min-h-[200px] bg-input border-border"
               />
             </div>
-             <Button onClick={handleImport} className="w-full" variant="primary">Import Configuration</Button>
+             <Button onClick={handleImport} className="w-full" variant="default">Import Configuration</Button>
           </TabsContent>
         </Tabs>
         <DialogFooter className="sm:justify-start pt-4">

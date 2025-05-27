@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getProviders, Provider as ProviderDataFromAction } from '@/actions'; // Added
-import type { ProviderData, ModelData } from '@/types';
+import { getProviders, Provider as ProviderDataFromAction, Model as ModelDataFromActionModel } from '@/actions'; // Added Model
+import type { ProviderData, ModelData } from '@/types.ts';
 import { ProviderCard } from '@/components/models/provider-card';
 import { ProviderFormDialog } from '@/components/models/provider-form-dialog';
 import { ModelFormDialog } from '@/components/models/model-form-dialog';
@@ -45,7 +45,7 @@ export function ModelManager({
   const [currentProviderForModel, setCurrentProviderForModel] = useState<ProviderData | null>(null);
 
   const [isOptimizeDialogOpen, setIsOptimizeDialogOpen] = useState(false);
-  const [optimizingModelInfo, setOptimizingModelInfo] = useState<{ provider: ProviderData, model: ModelData } | null>(null);
+  const [optimizingModelInfo, /* setOptimizingModelInfo */] = useState<{ provider: ProviderData, model: ModelData } | null>(null); // setOptimizingModelInfo removed
   
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
 
@@ -63,7 +63,7 @@ export function ModelManager({
           type: p.type, // Assuming ProviderType and string are compatible
           apiKey: p.key, // Store API key if needed, or omit if not used directly by UI
           baseUrl: p.base_url, // Store baseUrl if needed
-          models: p.models.map(m => ({
+          models: p.models.map((m: ModelDataFromActionModel) => ({
             id: uuidv4(), // Generate unique ID for UI model
             model: m.model,
             alias: m.alias || m.model, // Use model name as alias if alias is not provided
@@ -147,7 +147,7 @@ export function ModelManager({
     if (!currentProviderForModel) return;
     setProviders(prev => prev.map(p => {
       if (p.id === currentProviderForModel.id) {
-        const existingModelIndex = p.models.findIndex(m => m.id === model.id);
+        const existingModelIndex = p.models.findIndex((m: ModelData) => m.id === model.id);
         let newModels;
         if (existingModelIndex > -1) {
           newModels = [...p.models];
@@ -156,7 +156,7 @@ export function ModelManager({
           newModels = [...p.models, model];
         }
         if (model.isDefault) {
-          newModels = newModels.map(m => ({ ...m, isDefault: m.id === model.id }));
+          newModels = newModels.map((m: ModelData) => ({ ...m, isDefault: m.id === model.id }));
         }
         return { ...p, models: newModels };
       }
@@ -169,7 +169,7 @@ export function ModelManager({
   const handleDeleteModel = (providerId: string, modelId: string) => {
     setProviders(prev => prev.map(p => {
       if (p.id === providerId) {
-        return { ...p, models: p.models.filter(m => m.id !== modelId) };
+        return { ...p, models: p.models.filter((m: ModelData) => m.id !== modelId) };
       }
       return p;
     }));
@@ -210,23 +210,23 @@ export function ModelManager({
   
   // openOptimizeDialog function removed as it was unused
 
-  const handleApplyOptimization = (optimizedValues: { max_tokens: number; rpm: number }) => {
-    if (!optimizingModelInfo) return;
-    const { provider, model } = optimizingModelInfo;
+  // const handleApplyOptimization = (optimizedValues: { max_tokens: number; rpm: number }) => { // Unused function removed
+  //   if (!optimizingModelInfo) return;
+  //   const { provider, model } = optimizingModelInfo;
     
-    const updatedModel = { ...model, ...optimizedValues };
+  //   const updatedModel = { ...model, ...optimizedValues };
     
-    setProviders(prev => prev.map(p => {
-      if (p.id === provider.id) {
-        return {
-          ...p,
-          models: p.models.map(m => m.id === model.id ? updatedModel : m)
-        };
-      }
-      return p;
-    }));
-    setOptimizingModelInfo(null);
-  };
+  //   setProviders(prev => prev.map(p => {
+  //     if (p.id === provider.id) {
+  //       return {
+  //         ...p,
+  //         models: p.models.map((m: ModelData) => m.id === model.id ? updatedModel : m)
+  //       };
+  //     }
+  //     return p;
+  //   }));
+  //   setOptimizingModelInfo(null);
+  // };
 
   const openConfirmDeleteDialog = (type: 'provider' | 'model', id: string, providerId?: string) => {
     const provider = providerId ? providers.find(p => p.id === providerId) : providers.find(p => p.id === id);
@@ -278,13 +278,13 @@ export function ModelManager({
     return providers.filter(provider =>
       provider.name.toLowerCase().includes(lowerSearchTerm) ||
       provider.type.toLowerCase().includes(lowerSearchTerm) ||
-      provider.models.some(model =>
+      provider.models.some((model: ModelData) =>
         model.model.toLowerCase().includes(lowerSearchTerm) ||
         model.alias.toLowerCase().includes(lowerSearchTerm)
       )
     ).map(provider => ({
         ...provider,
-        models: provider.models.filter(model =>
+        models: provider.models.filter((model: ModelData) =>
             provider.name.toLowerCase().includes(lowerSearchTerm) || 
             provider.type.toLowerCase().includes(lowerSearchTerm) || 
             model.model.toLowerCase().includes(lowerSearchTerm) ||
@@ -363,7 +363,7 @@ export function ModelManager({
         <OptimizeConfigDialog
             isOpen={isOptimizeDialogOpen}
             onOpenChange={setIsOptimizeDialogOpen}
-            onApplyOptimization={handleApplyOptimization}
+            // onApplyOptimization={handleApplyOptimization} // Prop removed
             providerType={optimizingModelInfo.provider.type}
             model={optimizingModelInfo.model}
         />

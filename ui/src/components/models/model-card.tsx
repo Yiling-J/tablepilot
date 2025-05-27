@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import type { ModelData } from "@/types";
+import type { ModelData } from "@/types.ts";
 import { Edit3, Trash2, XCircle, CheckCircle2 } from "lucide-react"; 
-import Balancer from "react-wrap-balancer";
+// import Balancer from "react-wrap-balancer"; // Removed
 
 
 interface ModelCardProps {
@@ -25,7 +25,7 @@ export function ModelCard({ model, onEdit, onDelete, isProviderEditable, isProvi
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg font-semibold text-card-foreground">
-              <Balancer>{model.alias || model.model}</Balancer>
+              {model.alias || model.model}
             </CardTitle>
             {model.alias && model.alias !== model.model && (
               <CardDescription className="text-xs text-muted-foreground">{model.model}</CardDescription>
@@ -37,11 +37,11 @@ export function ModelCard({ model, onEdit, onDelete, isProviderEditable, isProvi
       <CardContent className="flex-grow space-y-3 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Max Tokens:</span>
-          <span className="font-medium text-card-foreground">{model.max_tokens > 0 ? model.max_tokens.toLocaleString() : 'N/A'}</span>
+          <span className="font-medium text-card-foreground">{(model.max_tokens ?? 0) > 0 ? (model.max_tokens ?? 0).toLocaleString() : 'N/A'}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">RPM Limit:</span>
-          <span className="font-medium text-card-foreground">{model.rpm > 0 ? model.rpm.toLocaleString() : 'N/A'}</span>
+          <span className="font-medium text-card-foreground">{(model.rpm ?? 0) > 0 ? (model.rpm ?? 0).toLocaleString() : 'N/A'}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Image Generation Support:</span>

@@ -47,7 +47,7 @@ const router = createBrowserRouter([
         children: [
           // Routes that WILL have the Sidebar
           { path: "/tables/:id", element: <TablePage /> },
-          { path: "/models", element: <ModelManager /> }, // Added new route
+          { path: "/models", element: <ModelManager searchTerm="" /> }, // Added searchTerm prop
           // Add other routes that need the sidebar here
         ],
       },

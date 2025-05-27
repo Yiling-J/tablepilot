@@ -1,10 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useEffect } from 'react'; // Removed: useState, useForm, SubmitHandler, zodResolver, z
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,25 +15,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import type { ModelData, ModelFormData, ProviderType } from '@/types';
-import { predefinedModels } from '@/lib/mock-data';
+// Unused Select imports removed
+import type { ModelData, ModelFormData, ProviderType } from '@/types.ts';
+// import { predefinedModels } from '@/lib/mock-data'; // Removed
 import { useToast } from '@/hooks/use-toast';
 
-const modelFormSchema = z.object({
-  model: z.string().min(1, 'Model name is required.'),
-  alias: z.string().optional(),
-  max_tokens: z.coerce.number().int().min(0, 'Max tokens must be a non-negative integer.'),
-  rpm: z.coerce.number().int().min(0, 'RPM must be a non-negative integer.'),
-  isDefault: z.boolean().optional(),
-  imageSupport: z.boolean(),
-});
+// const modelFormSchema = z.object({ // Schema removed
+//   model: z.string().min(1, 'Model name is required.'),
+//   alias: z.string().optional(),
+//   max_tokens: z.coerce.number().int().min(0, 'Max tokens must be a non-negative integer.'),
+//   rpm: z.coerce.number().int().min(0, 'RPM must be a non-negative integer.'),
+//   isDefault: z.boolean().optional(),
+//   imageSupport: z.boolean(),
+// });
 
 interface ModelFormDialogProps {
   isOpen: boolean;
@@ -56,62 +47,67 @@ export function ModelFormDialog({
   initialData,
 }: ModelFormDialogProps) {
   const { toast } = useToast();
-  const isKnownProviderWithPredefinedModels = providerType !== 'Generic' && predefinedModels[providerType]?.length > 0;
-  const [useCustomModelName, setUseCustomModelName] = useState(false);
+  // Logic related to predefinedModels has been simplified or removed
+  // const isKnownProviderWithPredefinedModels = false; // Simplified: always false
+  // const [useCustomModelName, setUseCustomModelName] = useState(true); // Unused state variable removed
 
-  const form = useForm<ModelFormData>({
-    resolver: zodResolver(modelFormSchema),
-    // Default values are set in the useEffect hook based on initialData and useCustomModelName
-  });
+  // TODO: Restore form handling if react-hook-form and zod are added to package.json
+  // const form = useForm<ModelFormData>({
+  //   resolver: zodResolver(modelFormSchema),
+  //   // Default values are set in the useEffect hook based on initialData and useCustomModelName
+  // });
 
   useEffect(() => {
-    if (!isOpen) return; // Only run when dialog is open
+    if (!isOpen) return; 
 
-    let defaultModelValue = '';
-    let initialCustomNameState = false;
+    // let defaultModelValue = ''; // Unused variable removed
+    // let initialCustomNameState = true; 
 
     if (initialData) {
-      const isPredefined = isKnownProviderWithPredefinedModels && predefinedModels[providerType].includes(initialData.model);
-      initialCustomNameState = !isPredefined;
-      defaultModelValue = initialData.model;
-      form.reset({
-        ...initialData,
-        alias: initialData.alias || '',
-      });
+      // initialCustomNameState = true; 
+      // defaultModelValue = initialData.model; // Unused assignment
+      // form.reset({ // Form logic removed
+      //   ...initialData,
+      //   alias: initialData.alias || '',
+      // });
     } else {
-      // For new models, default to selecting from list if available
-      initialCustomNameState = false; 
-      if (isKnownProviderWithPredefinedModels && predefinedModels[providerType]?.length > 0) {
-        defaultModelValue = predefinedModels[providerType][0];
-      }
-      form.reset({
-        model: defaultModelValue,
-        alias: '',
-        max_tokens: 6000, // Updated default
-        rpm: 10,         // Updated default
-        isDefault: false,
-        imageSupport: false,
-      });
+      // initialCustomNameState = true; 
+      // defaultModelValue = '';  // Unused assignment
+      // form.reset({ // Form logic removed
+      //   model: defaultModelValue,
+      //   alias: '',
+      //   max_tokens: 6000, 
+      //   rpm: 10,         
+      //   isDefault: false,
+      //   imageSupport: false,
+      // });
     }
     
-    setUseCustomModelName(initialCustomNameState);
-    // Ensure model field is correctly set after state update for custom name
-    form.setValue('model', defaultModelValue, { shouldValidate: initialData ? true : false });
+    // setUseCustomModelName(initialCustomNameState); // Unused state setter removed
+    // form.setValue('model', defaultModelValue, { shouldValidate: initialData ? true : false }); // Form logic removed
+
+  }, [initialData, isOpen, providerType]); // Removed form and isKnownProviderWithPredefinedModels from dependencies
 
 
-  }, [initialData, isOpen, providerType, isKnownProviderWithPredefinedModels, form]);
+  // const handleToggleCustomModelName = (checked: boolean) => { // Unused function removed
+  //   setUseCustomModelName(checked);
+  // };
 
+  // TODO: Restore form handling if react-hook-form and zod are added to package.json
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Prevent default form submission
+    // This is a placeholder. Actual data submission logic needs to be restored.
+    // Example: Manually construct data from form inputs if not using react-hook-form
+    const formData = new FormData(event.currentTarget);
+    const data: ModelFormData = {
+      model: formData.get('model') as string || '',
+      alias: formData.get('alias') as string || undefined,
+      max_tokens: parseInt(formData.get('max_tokens') as string || '0', 10),
+      rpm: parseInt(formData.get('rpm') as string || '0', 10),
+      isDefault: (formData.get('isDefault') === 'on'),
+      imageSupport: (formData.get('imageSupport') === 'on'),
+    };
 
-  const handleToggleCustomModelName = (checked: boolean) => {
-    setUseCustomModelName(checked);
-    if (!checked && isKnownProviderWithPredefinedModels && predefinedModels[providerType]?.length > 0) {
-      // Switching from manual to select: set to first predefined model
-      form.setValue('model', predefinedModels[providerType][0], { shouldValidate: true });
-    }
-    // If switching to manual, current value (either selected or previously manual) remains
-  };
-
-  const handleSubmit: SubmitHandler<ModelFormData> = (data) => {
     const modelData: ModelData = {
       id: initialData?.id || uuidv4(),
       client: providerName,
@@ -130,11 +126,12 @@ export function ModelFormDialog({
           <DialogTitle>{initialData ? 'Edit Model' : 'Add New Model'}</DialogTitle>
           <DialogDescription>
             {initialData ? `Update details for model ${initialData.model}.` : `Add a new model to ${providerName} (${providerType}).`}
+            {/* TODO: Restore form handling if react-hook-form and zod are added to package.json - Form validation messages will be missing */}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="grid gap-4 py-4">
+        <form onSubmit={handleSubmit} className="grid gap-4 py-4"> {/* Changed to placeholder handleSubmit */}
           
-          {isKnownProviderWithPredefinedModels && (
+          {/* {isKnownProviderWithPredefinedModels && ( // This section is removed as predefinedModels logic is gone
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="useCustomModelNameSwitch" className="text-right col-span-3">
                 Enter model name manually
@@ -147,47 +144,31 @@ export function ModelFormDialog({
                 />
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="model" className="text-right">Model Name</Label>
             <div className="col-span-3">
-              {(isKnownProviderWithPredefinedModels && !useCustomModelName) ? (
-                <Select
-                  value={form.watch('model')}
-                  onValueChange={(value) => form.setValue('model', value, { shouldValidate: true })}
-                >
-                  <SelectTrigger className="w-full bg-input border-border">
-                    <SelectValue placeholder="Select a model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {predefinedModels[providerType].map(modelName => (
-                      <SelectItem key={modelName} value={modelName}>{modelName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input id="model" {...form.register('model')} className="w-full bg-input border-border" />
-              )}
+              <Input id="model" name="model" className="w-full bg-input border-border" defaultValue={initialData?.model || ''} />
             </div>
-            {form.formState.errors.model && <p className="col-span-4 text-sm text-destructive text-right">{form.formState.errors.model.message}</p>}
+            {/* {form.formState.errors.model && <p className="col-span-4 text-sm text-destructive text-right">{form.formState.errors.model.message}</p>} */} {/* Form error display removed */}
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="alias" className="text-right">Alias</Label>
-            <Input id="alias" {...form.register('alias')} className="col-span-3 bg-input border-border" placeholder="Optional display name" />
+            <Input id="alias" name="alias" className="col-span-3 bg-input border-border" placeholder="Optional display name" defaultValue={initialData?.alias || ''} />
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="max_tokens" className="text-right">Max Tokens</Label>
-            <Input id="max_tokens" type="number" {...form.register('max_tokens')} className="col-span-3 bg-input border-border" />
-            {form.formState.errors.max_tokens && <p className="col-span-4 text-sm text-destructive text-right">{form.formState.errors.max_tokens.message}</p>}
+            <Input id="max_tokens" name="max_tokens" type="number" className="col-span-3 bg-input border-border" defaultValue={initialData?.max_tokens || 6000} />
+            {/* {form.formState.errors.max_tokens && <p className="col-span-4 text-sm text-destructive text-right">{form.formState.errors.max_tokens.message}</p>} */} {/* Form error display removed */}
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="rpm" className="text-right">RPM</Label>
-            <Input id="rpm" type="number" {...form.register('rpm')} className="col-span-3 bg-input border-border" />
-            {form.formState.errors.rpm && <p className="col-span-4 text-sm text-destructive text-right">{form.formState.errors.rpm.message}</p>}
+            <Input id="rpm" name="rpm" type="number" className="col-span-3 bg-input border-border" defaultValue={initialData?.rpm || 10} />
+            {/* {form.formState.errors.rpm && <p className="col-span-4 text-sm text-destructive text-right">{form.formState.errors.rpm.message}</p>} */} {/* Form error display removed */}
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
@@ -195,8 +176,10 @@ export function ModelFormDialog({
             <div className="col-span-3 flex items-center">
               <Switch
                 id="imageSupport"
-                checked={form.watch('imageSupport')}
-                onCheckedChange={(checked) => form.setValue('imageSupport', checked)}
+                name="imageSupport"
+                defaultChecked={initialData?.imageSupport || false}
+                // checked={form.watch('imageSupport')} // Form logic removed
+                // onCheckedChange={(checked) => form.setValue('imageSupport', checked)} // Form logic removed
               />
             </div>
           </div>
@@ -206,15 +189,18 @@ export function ModelFormDialog({
              <div className="col-span-3 flex items-center">
               <Switch
                 id="isDefault"
-                checked={form.watch('isDefault')}
-                onCheckedChange={(checked) => form.setValue('isDefault', checked)}
+                name="isDefault"
+                defaultChecked={initialData?.isDefault || false}
+                // checked={form.watch('isDefault')} // Form logic removed
+                // onCheckedChange={(checked) => form.setValue('isDefault', checked)} // Form logic removed
               />
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">{initialData ? 'Save Changes' : 'Add Model'}</Button>
+            {/* TODO: Restore form handling if react-hook-form and zod are added to package.json - Button type might change */}
+            <Button type="submit" variant="default">{initialData ? 'Save Changes' : 'Add Model'}</Button> 
           </DialogFooter>
         </form>
       </DialogContent>

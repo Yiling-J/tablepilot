@@ -2,12 +2,12 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { ProviderData } from "@/types";
+import type { ProviderData, ModelData } from "@/types.ts"; // Added ModelData
 import { ModelCard } from "./model-card";
 import { AddModelCard } from "./add-model-card";
 import { Edit3, Trash2, Settings2, EyeOff, Power, PowerOff } from "lucide-react";
 
-import Balancer from "react-wrap-balancer";
+// import Balancer from "react-wrap-balancer"; // Removed
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -39,7 +39,7 @@ export function ProviderCard({
           {/* Left part: Name, Type, URL */}
           <div className="flex-grow min-w-0">
             <CardTitle className="text-xl font-bold text-card-foreground">
-              <Balancer>{provider.name}</Balancer>
+              {provider.name}
             </CardTitle>
             <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
               <span className="text-sm text-muted-foreground whitespace-nowrap">
@@ -76,7 +76,7 @@ export function ProviderCard({
       <CardContent className="p-4">
         {(provider.models.length > 0 || provider.editable) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {provider.models.map((model) => (
+            {provider.models.map((model: ModelData) => (
               <ModelCard
                 key={model.id}
                 model={model}
