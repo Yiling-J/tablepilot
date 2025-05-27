@@ -2,9 +2,14 @@
 
 import {
     getProviders,
+    createProvider,
+    updateProvider,
+    deleteProvider,
     Model as ModelDataFromActionModel,
     Provider as ProviderDataFromAction,
 } from "@/actions";
+import { Skeleton } from "@/components/ui/skeleton"; // Added
+import { Card, CardHeader, CardContent } from "@/components/ui/card"; // Added for Skeleton
 import { ConfirmationDialog } from "@/components/models/confirmation-dialog";
 import { ModelFormDialog } from "@/components/models/model-form-dialog";
 import { ProviderCard } from "@/components/models/provider-card";
@@ -27,6 +32,7 @@ export function ModelManager({
 }: ModelManagerProps) {
   const { toast } = useToast();
   const [providers, setProviders] = useState<ProviderData[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Added loading state
 
   // Dialog states
   const [isProviderFormOpen, setIsProviderFormOpen] = useState(false);
@@ -46,42 +52,46 @@ export function ModelManager({
     providerId?: string;
   } | null>(null);
 
+  const fetchData = async () => {
+    setIsLoading(true); // Set loading true at the start
+    try {
+      const fetchedProviders: ProviderDataFromAction[] = await getProviders();
+      const mappedProviders: ProviderData[] = fetchedProviders.map((p) => ({
+        id: p.id.toString(),
+        name: p.name,
+        type: p.type,
+        apiKey: p.key,
+        baseUrl: p.base_url,
+        models: p.models.map((m: ModelDataFromActionModel) => ({ // Removed index i
+          id: m.id.toString(), // Use actual model ID
+          model: m.model,
+          alias: m.alias,
+          max_tokens: m.max_tokens,
+          rpm: m.rpm,
+          imageSupport: m.image,
+          isDefault: false, // Default status might need to be fetched or managed
+          client: p.name,
+        })),
+        enabled: true, // Assuming enabled by default, or fetch this status
+        editable: p.editable,
+      }));
+      setProviders(mappedProviders);
+    } catch (error) {
+      console.error("Failed to fetch providers:", error);
+      toast({
+        variant: "destructive",
+        title: "Error Fetching Providers",
+        description:
+          "Could not load provider configurations. Please try again later.",
+      });
+    } finally {
+      setIsLoading(false); // Set loading false in finally block
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const fetchedProviders: ProviderDataFromAction[] = await getProviders();
-        const mappedProviders: ProviderData[] = fetchedProviders.map((p) => ({
-          id: p.id.toString(),
-          name: p.name,
-          type: p.type,
-          apiKey: p.key,
-          baseUrl: p.base_url,
-          models: p.models.map((m: ModelDataFromActionModel, i) => ({
-            id: i.toString(),
-            model: m.model,
-            alias: m.alias,
-            max_tokens: m.max_tokens,
-            rpm: m.rpm,
-            imageSupport: m.image,
-            isDefault: false,
-            client: p.name,
-          })),
-          enabled: true,
-          editable: p.editable,
-        }));
-        setProviders(mappedProviders);
-      } catch (error) {
-        console.error("Failed to fetch providers:", error);
-        toast({
-          variant: "destructive",
-          title: "Error Fetching Providers",
-          description:
-            "Could not load provider configurations. Please try again later.",
-        });
-      }
-    };
     fetchData();
-  }, [toast]); // Added toast to dependency array
+  }, []); // Removed toast from dependency array, fetchData will call it.
 
   // Handle externally triggered dialogs
   useEffect(() => {
@@ -93,31 +103,82 @@ export function ModelManager({
   }, [shouldOpenAddProviderDialog, onAddProviderDialogDismiss]);
 
   // CRUD Operations for Providers
-  const handleProviderSubmit = (provider: ProviderData) => {
-    let updatedProvidersList: ProviderData[];
-    setProviders((prev) => {
-      const existingIndex = prev.findIndex((p) => p.id === provider.id);
-      if (existingIndex > -1) {
-        const updated = [...prev];
-        updated[existingIndex] = provider;
-        updatedProvidersList = updated;
-        return updated;
-      }
-      updatedProvidersList = [
-        ...prev,
-        { ...provider, enabled: true, editable: true },
-      ];
-      return updatedProvidersList;
-    });
-    setEditingProvider(null);
+  const mapProviderDataToApiParams = (providerData: ProviderData, isUpdate: boolean = false): ProviderDataFromAction => {
+    // Ensure this returns a full Provider object as expected by actions.ts
+    // ProviderDataFromAction is an alias for Provider from actions.ts
+    return {
+      id: isUpdate && providerData.id !== "new" ? parseInt(providerData.id, 10) : 0, // API Provider.id is number. Default to 0 for create.
+      name: providerData.name,
+      type: providerData.type,
+      key: providerData.apiKey ?? "", // Ensure non-nullable string
+      base_url: providerData.baseUrl ?? "", // Ensure non-nullable string
+      models: providerData.models.map(model => ({ // Map UI ModelData to API Model
+        id: parseInt(model.id, 10), // API Model.id is number
+        model: model.model,
+        alias: model.alias,
+        max_tokens: model.max_tokens ?? 0, // Default if undefined
+        rpm: model.rpm ?? 0,             // Default if undefined
+        image: model.imageSupport ?? false, // Default if undefined
+      })),
+      editable: providerData.editable ?? true, // Default 'editable' if not present in UI data
+    };
   };
 
-  const handleDeleteProvider = (providerId: string) => {
-    setProviders((prev) => prev.filter((p) => p.id !== providerId));
-    toast({
-      title: "Provider Deleted",
-      description: "The provider and its models have been removed.",
-    });
+  // mapApiProviderToActionProvider was removed as it's no longer used after changes to handleProviderSubmit
+
+  const handleProviderSubmit = async (providerData: ProviderData) => {
+    try {
+      if (editingProvider && editingProvider.id !== "new") { // Update existing provider
+        const providerIdToUpdate = editingProvider.id; 
+        const apiParams = mapProviderDataToApiParams(providerData, true);
+        // updateProvider returns TableInfo, not Provider. Rely on fetchData to update state.
+        await updateProvider(providerIdToUpdate, apiParams); 
+        toast({
+          title: "Provider Updated",
+          description: `${providerData.name} has been successfully updated.`, // Use providerData for name
+        });
+      } else { // Create new provider
+        const apiParams = mapProviderDataToApiParams(providerData, false);
+        // createProvider returns TableInfo, not Provider. Rely on fetchData to update state.
+        await createProvider(apiParams);
+        toast({
+          title: "Provider Created",
+          description: `${providerData.name} has been successfully created.`, // Use providerData for name
+        });
+      }
+      setEditingProvider(null);
+      await fetchData(); 
+    } catch (error) {
+      console.error("Failed to save provider:", error);
+      // It's good practice to also call fetchData() in catch blocks if a refresh might resolve/clarify UI state
+      // await fetchData(); // Or not, depending on desired UX for errors.
+      toast({
+        variant: "destructive",
+        title: `Error ${editingProvider ? "Updating" : "Creating"} Provider`,
+        description: (error as Error).message || "Could not save provider. Please try again.",
+      });
+    }
+  };
+
+  const handleDeleteProvider = async (providerId: string) => {
+    try {
+      await deleteProvider(providerId); // Pass ID as string
+      // Optimistically update UI, then refresh from server
+      setProviders((prev) => prev.filter((p) => p.id !== providerId));
+      toast({
+        title: "Provider Deleted",
+        description: "The provider has been removed.", // Simplified message
+      });
+      await fetchData(); 
+    } catch (error) {
+      console.error("Failed to delete provider:", error);
+      // await fetchData(); // Again, consider if refresh is needed on error
+      toast({
+        variant: "destructive",
+        title: "Error Deleting Provider",
+        description: (error as Error).message || "Could not delete provider. Please try again.",
+      });
+    }
   };
 
   const handleToggleProviderEnabled = (providerId: string) => {
@@ -327,6 +388,52 @@ export function ModelManager({
       onAddProviderDialogDismiss?.();
     }
   }, [shouldOpenAddProviderDialog, onAddProviderDialogDismiss]);
+
+
+  // Skeleton Component for ProviderCard
+  const ProviderCardSkeleton = () => (
+    <Card className="mb-6">
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-6"> {/* Adjusted padding */}
+        <div>
+          <Skeleton className="h-6 w-32 mb-2" /> {/* Provider Name - increased margin */}
+          <Skeleton className="h-4 w-24" />      {/* Provider Type */}
+        </div>
+        <div className="flex space-x-2">
+          <Skeleton className="h-9 w-20 rounded-md" /> {/* Edit button */}
+          <Skeleton className="h-9 w-9 rounded-md" /> {/* More actions button */}
+        </div>
+      </CardHeader>
+      <CardContent className="px-6 pb-6"> {/* Adjusted padding */}
+        <div className="flex justify-between items-center mb-3"> {/* Adjusted margin */}
+          <Skeleton className="h-5 w-28" /> {/* "Models" title */}
+          <Skeleton className="h-9 w-32 rounded-md" /> {/* Add Model button */}
+        </div>
+        {/* Placeholder for a few models */}
+        {[1, 2].map((i) => (
+          <div key={i} className="p-3 border rounded-md mb-3 bg-background"> {/* Use theme background */}
+            <div className="flex justify-between items-center mb-2"> {/* Increased margin */}
+              <Skeleton className="h-5 w-4/12" /> {/* Model Name/Alias */}
+              <Skeleton className="h-8 w-8 rounded-md" /> {/* Edit model button */}
+            </div>
+            <div className="space-y-1.5"> {/* Adjusted for spacing between lines */}
+              <Skeleton className="h-3 w-10/12" />   {/* Model property line 1 */}
+              <Skeleton className="h-3 w-8/12" />    {/* Model property line 2 */}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+
+  if (isLoading) {
+    return (
+      <div>
+        <ProviderCardSkeleton />
+        <ProviderCardSkeleton />
+        <ProviderCardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <>

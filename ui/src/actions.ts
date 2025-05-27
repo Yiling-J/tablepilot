@@ -394,6 +394,7 @@ export async function getTableSchema(
 }
 
 export interface Model {
+  id: number; // Added field
   model: string;
   alias: string;
   max_tokens: number;

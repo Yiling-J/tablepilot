@@ -64,6 +64,7 @@ export function ProviderDialog({
 
   const handleAddModel = () => {
     const newModel: Model = {
+      id: 0, // Default ID for new model
       model: "",
       alias: "",
       max_tokens: 6000,
