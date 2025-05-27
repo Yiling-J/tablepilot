@@ -1,13 +1,12 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  // DialogClose, // Removed as it's unused
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
@@ -37,8 +36,12 @@ export function ConfirmationDialog({
         </DialogHeader>
         <DialogFooter>
           {/* Using a Button for cancel for consistency, DialogClose could be an alternative */}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{cancelText}</Button>
-          <Button variant="destructive" onClick={onConfirm}>{confirmText}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {cancelText}
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            {confirmText}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
