@@ -1,3 +1,4 @@
+import { Provider, ProviderType, ProviderTypeOptions } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -17,16 +18,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import type { ProviderData, ProviderFormData, ProviderType } from "@/types.ts";
-import { ProviderTypeOptions } from "@/types.ts";
 import { useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 
 interface ProviderFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (provider: ProviderData) => void;
-  initialData?: ProviderData | null;
+  onSubmit: (provider: Provider) => void;
+  initialData?: Provider | null;
 }
 
 export function ProviderFormDialog({
@@ -41,39 +39,36 @@ export function ProviderFormDialog({
   );
   // Local state for input fields if not using react-hook-form
   const [name, setName] = useState(initialData?.name || "");
-  const [apiKey, setApiKey] = useState(initialData?.apiKey || "");
-  const [baseUrl, setBaseUrl] = useState(initialData?.baseUrl || "");
+  const [apiKey, setApiKey] = useState(initialData?.key || "");
+  const [baseUrl, setBaseUrl] = useState(initialData?.base_url || "");
 
   useEffect(() => {
     if (initialData) {
       setName(initialData.name);
       setSelectedType(initialData.type);
-      setApiKey(initialData.apiKey || "");
-      setBaseUrl(initialData.baseUrl || "");
+      setApiKey(initialData.key || "");
+      setBaseUrl(initialData.base_url || "");
     } else {
       setName("");
       setSelectedType("OpenAI");
       setApiKey("");
       setBaseUrl("");
     }
-  }, [initialData, isOpen]); // Removed form from dependencies
+  }, [initialData, isOpen]);
 
   const handleSubmitInternal = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent default form submission
-    const data: ProviderFormData = {
-      name: name,
-      type: selectedType || "Generic", // Ensure selectedType has a default
-      apiKey: apiKey,
-      baseUrl: selectedType === "Generic" ? baseUrl : undefined,
-    };
-    const providerData: ProviderData = {
-      id: initialData?.id || uuidv4(),
-      ...data,
+    event.preventDefault();
+    const data: Provider = {
+      id: initialData?.id || 0,
       models: initialData?.models || [],
+      name: name,
+      type: selectedType || "OpenAI-Compatible",
+      key: apiKey,
+      base_url: selectedType === "OpenAI-Compatible" ? baseUrl : "",
       editable: initialData?.editable ?? true,
       enabled: initialData?.enabled ?? true,
     };
-    onSubmit(providerData);
+    onSubmit(data);
     toast({
       title: initialData ? "Provider Updated" : "Provider Created",
       description: `${data.name} has been successfully ${initialData ? "updated" : "created"}.`,
@@ -91,8 +86,7 @@ export function ProviderFormDialog({
           <DialogDescription>
             {initialData
               ? "Update the details of your AI provider."
-              : "Add a new AI provider to manage models."}{" "}
-            For 'Generic' type, ensure the models are OpenAI-compatible.
+              : "Add a new AI provider to manage models."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmitInternal} className="grid gap-4 py-4">
@@ -149,7 +143,7 @@ export function ProviderFormDialog({
               onChange={(e) => setApiKey(e.target.value)}
             />
           </div>
-          {selectedType === "Generic" && (
+          {selectedType === "OpenAI-compatible" && (
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="baseUrl" className="text-right">
                 Base URL

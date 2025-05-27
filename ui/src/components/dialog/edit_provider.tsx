@@ -48,11 +48,12 @@ export function ProviderDialog({
       setFormData({
         id: 0,
         name: "",
-        type: "openai",
+        type: "OpenAI",
         key: "",
         base_url: "https://api.openai.com/v1",
         models: [],
         editable: true,
+        enabled: true,
       });
     }
   }, [provider, open]);
@@ -64,7 +65,6 @@ export function ProviderDialog({
 
   const handleAddModel = () => {
     const newModel: Model = {
-      id: 0, // Default ID for new model
       model: "",
       alias: "",
       max_tokens: 6000,

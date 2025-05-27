@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { ModelData, ProviderData } from "@/types.ts";
 import {
     Edit3,
     PenOff,
@@ -12,11 +11,12 @@ import {
 import { AddModelCard } from "./add-model-card";
 import { ModelCard } from "./model-card";
 
+import { Model, Provider } from "@/actions";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 interface ProviderCardProps {
-  provider: ProviderData;
+  provider: Provider;
   onAddModel: (providerId: string) => void;
   onEditModel: (providerId: string, modelId: string) => void;
   onDeleteModel: (providerId: string, modelId: string) => void;
@@ -50,9 +50,9 @@ export function ProviderCard({
             <span className="text-sm text-muted-foreground whitespace-nowrap">
               type: {provider.type}
             </span>
-            {provider.type === "Generic" && provider.baseUrl && (
+            {provider.type === "OpenAI-compatible" && provider.base_url && (
               <span className="text-sm text-muted-foreground break-all ml-1">
-                base_url: {provider.baseUrl}
+                base_url: {provider.base_url}
               </span>
             )}
           </div>
@@ -83,7 +83,7 @@ export function ProviderCard({
               <Switch
                 id={`enable-provider-${provider.id}`}
                 checked={provider.enabled}
-                onCheckedChange={() => onToggleEnabled(provider.id)}
+                onCheckedChange={() => onToggleEnabled(provider.id.toString())}
                 aria-label={`${provider.enabled ? "Disable" : "Enable"} provider ${provider.name}`}
               />
             </div>
@@ -91,25 +91,24 @@ export function ProviderCard({
         </div>
       </div>
 
-      {/* Models Section (previously CardContent) */}
       <div className="px-2 mb-4">
-        {" "}
-        {/* Added px-2 for slight horizontal padding */}
         {provider.models.length > 0 || provider.editable ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {provider.models.map((model: ModelData) => (
+            {provider.models.map((model: Model) => (
               <ModelCard
-                key={model.id}
+                key={model.model}
                 model={model}
-                onEdit={() => onEditModel(provider.id, model.id)}
-                onDelete={() => onDeleteModel(provider.id, model.id)}
+                onEdit={() => onEditModel(provider.id.toString(), model.model)}
+                onDelete={() =>
+                  onDeleteModel(provider.id.toString(), model.model)
+                }
                 isProviderEditable={provider.editable}
                 isProviderEnabled={provider.enabled}
               />
             ))}
             {provider.editable && (
               <AddModelCard
-                onClick={() => onAddModel(provider.id)}
+                onClick={() => onAddModel(provider.id.toString())}
                 disabled={!provider.enabled}
               />
             )}
@@ -130,11 +129,9 @@ export function ProviderCard({
       {/* Footer Section (Buttons) */}
       {provider.editable && (
         <div className="px-2 flex flex-col sm:flex-row justify-end items-center gap-2">
-          {" "}
-          {/* Added px-2, removed bg, border-t */}
           <div className="flex gap-2">
             <Button
-              onClick={() => onEditProvider(provider.id)}
+              onClick={() => onEditProvider(provider.id.toString())}
               variant="outline"
               size="sm"
               disabled={interactionsDisabled}
@@ -142,7 +139,7 @@ export function ProviderCard({
               <Edit3 className="mr-2 h-4 w-4" /> Edit Provider
             </Button>
             <Button
-              onClick={() => onDeleteProvider(provider.id)}
+              onClick={() => onDeleteProvider(provider.id.toString())}
               variant="destructive"
               size="sm"
               disabled={interactionsDisabled}

@@ -1,3 +1,4 @@
+import { Model, ProviderType } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -11,15 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import type { ModelData, ModelFormData, ProviderType } from "@/types.ts";
 
 interface ModelFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (model: ModelData) => void;
+  onSubmit: (model: Model) => void;
   providerType: ProviderType;
   providerName: string; // To link model.client field
-  initialData?: ModelData | null;
+  initialData?: Model | null;
 }
 
 export function ModelFormDialog({
@@ -35,22 +35,15 @@ export function ModelFormDialog({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Prevent default form submission
     const formData = new FormData(event.currentTarget);
-    const data: ModelFormData = {
+    const data: Model = {
       model: (formData.get("model") as string) || "",
-      alias: (formData.get("alias") as string) || undefined,
+      alias: (formData.get("alias") as string) || "",
       max_tokens: parseInt((formData.get("max_tokens") as string) || "0", 10),
       rpm: parseInt((formData.get("rpm") as string) || "0", 10),
-      isDefault: formData.get("isDefault") === "on",
-      imageSupport: formData.get("imageSupport") === "on",
+      image: formData.get("imageSupport") === "on",
     };
 
-    const modelData: ModelData = {
-      id: initialData?.id || "",
-      client: providerName,
-      ...data,
-      alias: data.alias || data.model, // Default alias to model name if empty
-    };
-    onSubmit(modelData);
+    onSubmit(data);
     toast({
       title: initialData ? "Model Updated" : "Model Added",
       description: `${data.model} has been successfully ${initialData ? "updated" : "added"}.`,
@@ -129,19 +122,7 @@ export function ModelFormDialog({
               <Switch
                 id="imageSupport"
                 name="imageSupport"
-                defaultChecked={initialData?.imageSupport || false}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="isDefault" className="text-right">
-              Set as Default
-            </Label>
-            <div className="col-span-3 flex items-center">
-              <Switch
-                id="isDefault"
-                name="isDefault"
-                defaultChecked={initialData?.isDefault || false}
+                defaultChecked={initialData?.image || false}
               />
             </div>
           </div>

@@ -394,7 +394,6 @@ export async function getTableSchema(
 }
 
 export interface Model {
-  id: number; // Added field
   model: string;
   alias: string;
   max_tokens: number;
@@ -402,14 +401,29 @@ export interface Model {
   image: boolean;
 }
 
+export type ProviderType =
+  | "OpenAI"
+  | "Gemini"
+  | "Anthropic"
+  | "OpenAI-Compatible"
+  | string;
+
+export const ProviderTypeOptions = [
+  "OpenAI",
+  "Gemini",
+  "Anthropic",
+  "OpenAI-Compatible",
+];
+
 export interface Provider {
   id: number;
   name: string;
   type: string;
-  key: string;
+  key: ProviderType;
   base_url: string;
   models: Model[];
   editable: boolean;
+  enabled: boolean;
 }
 
 export async function getProviders(): Promise<Provider[]> {

@@ -1,3 +1,4 @@
+import { Model } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -8,12 +9,10 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { ModelData } from "@/types.ts";
 import { CheckCircle2, Edit3, Trash2, XCircle } from "lucide-react";
-// import Balancer from "react-wrap-balancer"; // Removed
 
 interface ModelCardProps {
-  model: ModelData;
+  model: Model;
   onEdit: () => void;
   onDelete: () => void;
   isProviderEditable: boolean;
@@ -64,7 +63,7 @@ export function ModelCard({
           <span className="text-muted-foreground">
             Image Generation Support:
           </span>
-          {model.imageSupport ? (
+          {model.image ? (
             <CheckCircle2 className="h-5 w-5 text-green-500" />
           ) : (
             <XCircle className="h-5 w-5 text-red-500" />
