@@ -1,5 +1,5 @@
 
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"; // Removed card imports
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ProviderData, ModelData } from "@/types.ts"; // Added ModelData
@@ -33,47 +33,48 @@ export function ProviderCard({
   const interactionsDisabled = provider.editable && !provider.enabled;
 
   return (
-    <Card className={`bg-card shadow-xl rounded-lg overflow-hidden transition-all duration-300 hover:shadow-primary/20 ${interactionsDisabled && provider.editable ? 'opacity-60' : ''}`}>
-      <CardHeader className="bg-card/80 p-4 border-b border-border/50">
-        <div className="flex justify-between items-start gap-2">
-          {/* Left part: Name, Type, URL */}
-          <div className="flex-grow min-w-0">
-            <CardTitle className="text-xl font-bold text-card-foreground">
-              {provider.name}
-            </CardTitle>
-            <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                ({provider.type} Provider)
+    <div className={`w-full py-6 border-b border-border/50 ${interactionsDisabled && provider.editable ? 'opacity-60' : ''}`}>
+      {/* Header Section */}
+      <div className="flex justify-between items-start gap-2 mb-4 px-2"> {/* Added px-2 for slight horizontal padding */}
+        {/* Left part: Name, Type, URL */}
+        <div className="flex-grow min-w-0">
+          <h2 className="text-xl font-bold text-foreground"> {/* Changed CardTitle to h2 and adjusted classes */}
+            {provider.name}
+          </h2>
+          <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              ({provider.type} Provider)
+            </span>
+            {provider.type === 'Generic' && provider.baseUrl && (
+              <span className="text-xs text-muted-foreground break-all ml-1">
+                [{provider.baseUrl}]
               </span>
-              {provider.type === 'Generic' && provider.baseUrl && (
-                <span className="text-xs text-muted-foreground break-all ml-1">
-                  [{provider.baseUrl}]
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Right part: Read-only badge and Enable/Disable Switch */}
-          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            {!provider.editable && <Badge variant="outline" className="text-xs flex items-center gap-1"><EyeOff className="h-3 w-3" /> Read-only</Badge>}
-            {provider.editable && (
-              <div className="flex items-center space-x-2">
-                {provider.enabled ? <Power className="h-4 w-4 text-green-500" /> : <PowerOff className="h-4 w-4 text-red-500" />}
-                <Label htmlFor={`enable-provider-${provider.id}`} className="text-xs sr-only">
-                  {provider.enabled ? 'Disable' : 'Enable'} Provider
-                </Label>
-                <Switch
-                  id={`enable-provider-${provider.id}`}
-                  checked={provider.enabled}
-                  onCheckedChange={() => onToggleEnabled(provider.id)}
-                  aria-label={`${provider.enabled ? 'Disable' : 'Enable'} provider ${provider.name}`}
-                />
-              </div>
             )}
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="p-4">
+
+        {/* Right part: Read-only badge and Enable/Disable Switch */}
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+          {!provider.editable && <Badge variant="outline" className="text-xs flex items-center gap-1"><EyeOff className="h-3 w-3" /> Read-only</Badge>}
+          {provider.editable && (
+            <div className="flex items-center space-x-2">
+              {provider.enabled ? <Power className="h-4 w-4 text-green-500" /> : <PowerOff className="h-4 w-4 text-red-500" />}
+              <Label htmlFor={`enable-provider-${provider.id}`} className="text-xs sr-only">
+                {provider.enabled ? 'Disable' : 'Enable'} Provider
+              </Label>
+              <Switch
+                id={`enable-provider-${provider.id}`}
+                checked={provider.enabled}
+                onCheckedChange={() => onToggleEnabled(provider.id)}
+                aria-label={`${provider.enabled ? 'Disable' : 'Enable'} provider ${provider.name}`}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Models Section (previously CardContent) */}
+      <div className="px-2 mb-4"> {/* Added px-2 for slight horizontal padding */}
         {(provider.models.length > 0 || provider.editable) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {provider.models.map((model: ModelData) => (
@@ -100,9 +101,11 @@ export function ProviderCard({
             {!provider.editable && <p className="text-sm">This provider is read-only and has no models.</p>}
           </div>
         )}
-      </CardContent>
+      </div>
+
+      {/* Footer Section (Buttons) */}
       {provider.editable && (
-        <CardFooter className="bg-card/50 p-4 border-t border-border/50 flex flex-col sm:flex-row justify-end items-center gap-2">
+        <div className="px-2 flex flex-col sm:flex-row justify-end items-center gap-2"> {/* Added px-2, removed bg, border-t */}
           <div className="flex gap-2">
             <Button 
               onClick={() => onEditProvider(provider.id)} 
@@ -121,8 +124,8 @@ export function ProviderCard({
               <Trash2 className="mr-2 h-4 w-4" /> Delete Provider
             </Button>
           </div>
-        </CardFooter>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

@@ -318,7 +318,7 @@ export function ModelManager({
   return (
     <>
       {filteredProviders.length > 0 ? (
-        <div className="space-y-8">
+        <div> {/* Removed space-y-8, ProviderCard now handles its own spacing/separation */}
           {filteredProviders.map((provider) => (
             <ProviderCard
               key={provider.id}
