@@ -48,11 +48,11 @@ export function ProviderCard({
           </h2>
           <div className="flex flex-row flex-wrap items-baseline gap-x-1.5 gap-y-0 mt-1">
             <span className="text-sm text-muted-foreground whitespace-nowrap">
-              ({provider.type} Provider)
+              type: {provider.type}
             </span>
             {provider.type === "Generic" && provider.baseUrl && (
-              <span className="text-xs text-muted-foreground break-all ml-1">
-                [{provider.baseUrl}]
+              <span className="text-sm text-muted-foreground break-all ml-1">
+                base_url: {provider.baseUrl}
               </span>
             )}
           </div>

@@ -79,8 +79,6 @@ export function ModelManager({
           description:
             "Could not load provider configurations. Please try again later.",
         });
-        // Optionally, set providers to an empty array or mock data on error
-        // setProviders(mockProviders.map(p => ({...p, enabled: p.enabled === undefined ? true : p.enabled })));
       }
     };
     fetchData();
@@ -131,7 +129,6 @@ export function ModelManager({
     );
     const provider = providers.find((p) => p.id === providerId); // Find from current state before update
     if (provider) {
-      // Check if provider exists before accessing !provider.enabled
       toast({
         title: `Provider ${!provider.enabled ? "Enabled" : "Disabled"}`,
         description: `${provider.name} has been ${!provider.enabled ? "enabled" : "disabled"}.`,
@@ -139,7 +136,6 @@ export function ModelManager({
     }
   };
 
-  // CRUD Operations for Models
   const handleModelSubmit = (model: ModelData) => {
     if (!currentProviderForModel) return;
     setProviders((prev) =>

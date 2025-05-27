@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -32,7 +31,7 @@ export function ModelCard({
 
   return (
     <Card
-      className={`bg-card/80 hover:bg-muted-foreground/5 transition-all duration-300 flex flex-col h-full ${!isProviderEnabled && isProviderEditable ? "opacity-60" : ""}`}
+      className={`bg-card/80 hover:bg-muted-foreground/5 transition-all duration-300 flex flex-col h-[280px] w-[350px] ${!isProviderEnabled && isProviderEditable ? "opacity-60" : ""}`}
     >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
@@ -46,20 +45,13 @@ export function ModelCard({
               </CardDescription>
             )}
           </div>
-          {model.isDefault && (
-            <Badge variant="secondary" className="text-xs shrink-0">
-              Default
-            </Badge>
-          )}
         </div>
       </CardHeader>
       <CardContent className="flex-grow space-y-3 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Max Tokens:</span>
           <span className="font-medium text-card-foreground">
-            {(model.max_tokens ?? 0) > 0
-              ? (model.max_tokens ?? 0).toLocaleString()
-              : "N/A"}
+            {(model.max_tokens ?? 6000) > 0 ? (model.max_tokens ?? 0) : 6000}
           </span>
         </div>
         <div className="flex items-center justify-between">

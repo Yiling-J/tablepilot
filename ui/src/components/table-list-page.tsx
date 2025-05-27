@@ -16,17 +16,20 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header.tsx";
+import { ScrollArea } from "./ui/scroll-area.tsx";
 
 export function TableListPage() {
   return (
     <div className="grow overflow-auto h-full flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="tables" />
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
-        <div className="tab-content-container">
-          <TableList />
+      <ScrollArea className="h-[calc(100vh-120px)]">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
+          <div className="tab-content-container">
+            <TableList />
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
