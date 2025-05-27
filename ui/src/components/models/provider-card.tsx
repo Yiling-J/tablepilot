@@ -36,6 +36,10 @@ export function ProviderCard({
 }: ProviderCardProps) {
   const interactionsDisabled = provider.editable && !provider.enabled;
 
+  if (!provider.models) {
+    provider.models = [];
+  }
+
   return (
     <div
       className={`w-full py-6 border-b border-border/50 ${interactionsDisabled && provider.editable ? "opacity-60" : ""}`}

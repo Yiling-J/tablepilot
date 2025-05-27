@@ -24,11 +24,13 @@ type Provider struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Type holds the value of the "type" field.
-	Type provider.Type `json:"type,omitempty"`
+	Type string `json:"type,omitempty"`
 	// Key holds the value of the "key" field.
 	Key string `json:"key,omitempty"`
 	// BaseURL holds the value of the "base_url" field.
 	BaseURL string `json:"base_url,omitempty"`
+	// Enabled holds the value of the "enabled" field.
+	Enabled bool `json:"enabled,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProviderQuery when eager-loading is set.
 	Edges        ProviderEdges `json:"edges"`
@@ -58,6 +60,8 @@ func (*Provider) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case provider.FieldEnabled:
+			values[i] = new(sql.NullBool)
 		case provider.FieldID:
 			values[i] = new(sql.NullInt64)
 		case provider.FieldName, provider.FieldType, provider.FieldKey, provider.FieldBaseURL:
@@ -107,7 +111,7 @@ func (pr *Provider) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
-				pr.Type = provider.Type(value.String)
+				pr.Type = value.String
 			}
 		case provider.FieldKey:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -120,6 +124,12 @@ func (pr *Provider) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field base_url", values[i])
 			} else if value.Valid {
 				pr.BaseURL = value.String
+			}
+		case provider.FieldEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field enabled", values[i])
+			} else if value.Valid {
+				pr.Enabled = value.Bool
 			}
 		default:
 			pr.selectValues.Set(columns[i], values[i])
@@ -172,13 +182,16 @@ func (pr *Provider) String() string {
 	builder.WriteString(pr.Name)
 	builder.WriteString(", ")
 	builder.WriteString("type=")
-	builder.WriteString(fmt.Sprintf("%v", pr.Type))
+	builder.WriteString(pr.Type)
 	builder.WriteString(", ")
 	builder.WriteString("key=")
 	builder.WriteString(pr.Key)
 	builder.WriteString(", ")
 	builder.WriteString("base_url=")
 	builder.WriteString(pr.BaseURL)
+	builder.WriteString(", ")
+	builder.WriteString("enabled=")
+	builder.WriteString(fmt.Sprintf("%v", pr.Enabled))
 	builder.WriteByte(')')
 	return builder.String()
 }

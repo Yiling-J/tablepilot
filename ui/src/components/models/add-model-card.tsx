@@ -9,7 +9,7 @@ interface AddModelCardProps {
 export function AddModelCard({ onClick, disabled }: AddModelCardProps) {
   return (
     <Card
-      className={`bg-card/60 backdrop-blur-sm shadow-md hover:shadow-accent/50 transition-all duration-300 flex flex-col items-center justify-center text-center p-6 h-[280px] w-[350px] ${
+      className={`bg-card/60 backdrop-blur-sm shadow-md hover:shadow-accent/50 transition-all duration-300 flex flex-col items-center justify-center text-center p-6 ${
         disabled
           ? "opacity-50 cursor-not-allowed"
           : "cursor-pointer hover:border-primary/70 border border-dashed border-input hover:border-primary/50"

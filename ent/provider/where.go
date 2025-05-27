@@ -70,6 +70,11 @@ func Name(v string) predicate.Provider {
 	return predicate.Provider(sql.FieldEQ(FieldName, v))
 }
 
+// Type applies equality check predicate on the "type" field. It's identical to TypeEQ.
+func Type(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldEQ(FieldType, v))
+}
+
 // Key applies equality check predicate on the "key" field. It's identical to KeyEQ.
 func Key(v string) predicate.Provider {
 	return predicate.Provider(sql.FieldEQ(FieldKey, v))
@@ -78,6 +83,11 @@ func Key(v string) predicate.Provider {
 // BaseURL applies equality check predicate on the "base_url" field. It's identical to BaseURLEQ.
 func BaseURL(v string) predicate.Provider {
 	return predicate.Provider(sql.FieldEQ(FieldBaseURL, v))
+}
+
+// Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
+func Enabled(v bool) predicate.Provider {
+	return predicate.Provider(sql.FieldEQ(FieldEnabled, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -246,23 +256,68 @@ func NameContainsFold(v string) predicate.Provider {
 }
 
 // TypeEQ applies the EQ predicate on the "type" field.
-func TypeEQ(v Type) predicate.Provider {
+func TypeEQ(v string) predicate.Provider {
 	return predicate.Provider(sql.FieldEQ(FieldType, v))
 }
 
 // TypeNEQ applies the NEQ predicate on the "type" field.
-func TypeNEQ(v Type) predicate.Provider {
+func TypeNEQ(v string) predicate.Provider {
 	return predicate.Provider(sql.FieldNEQ(FieldType, v))
 }
 
 // TypeIn applies the In predicate on the "type" field.
-func TypeIn(vs ...Type) predicate.Provider {
+func TypeIn(vs ...string) predicate.Provider {
 	return predicate.Provider(sql.FieldIn(FieldType, vs...))
 }
 
 // TypeNotIn applies the NotIn predicate on the "type" field.
-func TypeNotIn(vs ...Type) predicate.Provider {
+func TypeNotIn(vs ...string) predicate.Provider {
 	return predicate.Provider(sql.FieldNotIn(FieldType, vs...))
+}
+
+// TypeGT applies the GT predicate on the "type" field.
+func TypeGT(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldGT(FieldType, v))
+}
+
+// TypeGTE applies the GTE predicate on the "type" field.
+func TypeGTE(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldGTE(FieldType, v))
+}
+
+// TypeLT applies the LT predicate on the "type" field.
+func TypeLT(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldLT(FieldType, v))
+}
+
+// TypeLTE applies the LTE predicate on the "type" field.
+func TypeLTE(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldLTE(FieldType, v))
+}
+
+// TypeContains applies the Contains predicate on the "type" field.
+func TypeContains(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldContains(FieldType, v))
+}
+
+// TypeHasPrefix applies the HasPrefix predicate on the "type" field.
+func TypeHasPrefix(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldHasPrefix(FieldType, v))
+}
+
+// TypeHasSuffix applies the HasSuffix predicate on the "type" field.
+func TypeHasSuffix(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldHasSuffix(FieldType, v))
+}
+
+// TypeEqualFold applies the EqualFold predicate on the "type" field.
+func TypeEqualFold(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldEqualFold(FieldType, v))
+}
+
+// TypeContainsFold applies the ContainsFold predicate on the "type" field.
+func TypeContainsFold(v string) predicate.Provider {
+	return predicate.Provider(sql.FieldContainsFold(FieldType, v))
 }
 
 // KeyEQ applies the EQ predicate on the "key" field.
@@ -413,6 +468,16 @@ func BaseURLEqualFold(v string) predicate.Provider {
 // BaseURLContainsFold applies the ContainsFold predicate on the "base_url" field.
 func BaseURLContainsFold(v string) predicate.Provider {
 	return predicate.Provider(sql.FieldContainsFold(FieldBaseURL, v))
+}
+
+// EnabledEQ applies the EQ predicate on the "enabled" field.
+func EnabledEQ(v bool) predicate.Provider {
+	return predicate.Provider(sql.FieldEQ(FieldEnabled, v))
+}
+
+// EnabledNEQ applies the NEQ predicate on the "enabled" field.
+func EnabledNEQ(v bool) predicate.Provider {
+	return predicate.Provider(sql.FieldNEQ(FieldEnabled, v))
 }
 
 // HasModels applies the HasEdge predicate on the "models" edge.

@@ -3,6 +3,8 @@ package provider
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/Yiling-J/tablepilot/config"
@@ -57,7 +59,7 @@ func (p *ProviderServiceImpl) CreateProvider(ctx context.Context, provider Provi
 	if err != nil {
 		return fmt.Errorf("provider.CreateProvider: starting transaction: %w", err)
 	}
-	pv, err := tx.Provider.Create().SetName(provider.Name).SetBaseURL(provider.BaseURL).SetKey(provider.Key).SetType(db_provider.Type(provider.Type)).Save(ctx)
+	pv, err := tx.Provider.Create().SetName(provider.Name).SetEnabled(provider.Enabled).SetBaseURL(provider.BaseURL).SetKey(provider.Key).SetType(provider.Type).Save(ctx)
 	if err != nil {
 		return ent.Rollback(tx, fmt.Errorf("provider.CreateProvider: creating provider: %w", err))
 	}
@@ -92,7 +94,7 @@ func (p *ProviderServiceImpl) UpdateProvider(ctx context.Context, id int, provid
 	if err != nil {
 		return ent.Rollback(tx, fmt.Errorf("provider.UpdateProvider: querying provider: %w", err))
 	}
-	err = pv.Update().SetBaseURL(provider.BaseURL).SetKey(provider.Key).SetType(db_provider.Type(provider.Type)).Exec(ctx)
+	err = pv.Update().SetBaseURL(provider.BaseURL).SetEnabled(provider.Enabled).SetKey(provider.Key).SetType(provider.Type).Exec(ctx)
 	if err != nil {
 		return ent.Rollback(tx, fmt.Errorf("provider.UpdateProvider: updating provider: %w", err))
 	}
@@ -147,6 +149,63 @@ func (p *ProviderServiceImpl) BuildProviders(ctx context.Context) error {
 	return nil
 }
 
+var baseUrlMapping = map[ProviderType]string{
+	ProviderTypeOpenAI:     "https://api.openai.com/v1",
+	ProviderOpenRouter:     "https://openrouter.ai/api/v1",
+	ProviderTypeAnthropic:  "https://api.anthropic.com/v1/",
+	ProviderTypeOpenGemini: "https://generativelanguage.googleapis.com/v1beta/openai/",
+}
+
+func sameDomain(u1, u2 string) (bool, error) {
+	get := func(raw string) (string, error) {
+		parsed, err := url.Parse(raw)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimPrefix(strings.ToLower(parsed.Hostname()), "www."), nil
+	}
+
+	d1, err1 := get(u1)
+	if err1 != nil {
+		return false, err1
+	}
+	d2, err2 := get(u2)
+	if err2 != nil {
+		return false, err2
+	}
+	return d1 == d2, nil
+}
+
+func addProviderBaseURL(p Provider) Provider {
+	// backward compatible fix
+	switch p.Type {
+	case "openai": // openai or openai-compatible
+		p.Type = string(ProviderTypeOpenAIcompatible)
+		for pt, url := range baseUrlMapping {
+			match, err := sameDomain(url, p.BaseURL)
+			if err != nil || !match {
+				continue
+			}
+			p.Type = string(pt)
+			break
+		}
+	case "gemini":
+		p.Type = string(ProviderTypeOpenGemini)
+	}
+
+	switch p.Type {
+	case string(ProviderTypeOpenAI):
+		p.BaseURL = "https://api.openai.com/v1"
+	case string(ProviderTypeOpenGemini):
+		p.BaseURL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+	case string(ProviderTypeAnthropic):
+		p.BaseURL = "https://api.anthropic.com/v1/"
+	case string(ProviderOpenRouter):
+		p.BaseURL = "https://openrouter.ai/api/v1"
+	}
+	return p
+}
+
 func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, error) {
 	// add providers from config file
 	providers := []Provider{}
@@ -160,6 +219,7 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 				Type:     v.Type,
 				Key:      v.Key,
 				BaseURL:  v.BaseURL,
+				Enabled:  true,
 			})
 			pm[v.Name] = i
 		case *config.Gemini:
@@ -168,6 +228,7 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 				Editable: false,
 				Type:     v.Type,
 				Key:      v.Key,
+				Enabled:  true,
 			})
 			pm[v.Name] = i
 		default:
@@ -190,7 +251,7 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 	}
 
 	// add providers from database
-	dbProviders, err := p.db.Provider.Query().Order(ent.Asc(db_provider.FieldName)).WithModels(
+	dbProviders, err := p.db.Provider.Query().Order(ent.Asc(db_provider.FieldID)).WithModels(
 		func(mq *ent.ModelQuery) {
 			mq.Order(ent.Asc(model.FieldModel))
 		}).All(ctx)
@@ -201,10 +262,11 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 		pv := Provider{
 			ID:       p.ID,
 			Name:     p.Name,
-			Type:     p.Type.String(),
+			Type:     p.Type,
 			Editable: true,
 			Key:      p.Key,
 			BaseURL:  p.BaseURL,
+			Enabled:  p.Enabled,
 		}
 		for _, model := range p.Edges.Models {
 			pv.Models = append(pv.Models, Model{
@@ -218,6 +280,9 @@ func (p *ProviderServiceImpl) genProviders(ctx context.Context) ([]Provider, err
 			})
 		}
 		providers = append(providers, pv)
+	}
+	for i, p := range providers {
+		providers[i] = addProviderBaseURL(p)
 	}
 	return providers, nil
 }

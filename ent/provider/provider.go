@@ -3,7 +3,6 @@
 package provider
 
 import (
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -27,6 +26,8 @@ const (
 	FieldKey = "key"
 	// FieldBaseURL holds the string denoting the base_url field in the database.
 	FieldBaseURL = "base_url"
+	// FieldEnabled holds the string denoting the enabled field in the database.
+	FieldEnabled = "enabled"
 	// EdgeModels holds the string denoting the models edge name in mutations.
 	EdgeModels = "models"
 	// Table holds the table name of the provider in the database.
@@ -49,6 +50,7 @@ var Columns = []string{
 	FieldType,
 	FieldKey,
 	FieldBaseURL,
+	FieldEnabled,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -68,30 +70,9 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultEnabled holds the default value on creation for the "enabled" field.
+	DefaultEnabled bool
 )
-
-// Type defines the type for the "type" enum field.
-type Type string
-
-// Type values.
-const (
-	TypeOpenai Type = "openai"
-	TypeGemini Type = "gemini"
-)
-
-func (_type Type) String() string {
-	return string(_type)
-}
-
-// TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
-func TypeValidator(_type Type) error {
-	switch _type {
-	case TypeOpenai, TypeGemini:
-		return nil
-	default:
-		return fmt.Errorf("provider: invalid enum value for type field: %q", _type)
-	}
-}
 
 // OrderOption defines the ordering options for the Provider queries.
 type OrderOption func(*sql.Selector)
@@ -129,6 +110,11 @@ func ByKey(opts ...sql.OrderTermOption) OrderOption {
 // ByBaseURL orders the results by the base_url field.
 func ByBaseURL(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBaseURL, opts...).ToFunc()
+}
+
+// ByEnabled orders the results by the enabled field.
+func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
 }
 
 // ByModelsCount orders the results by models count.

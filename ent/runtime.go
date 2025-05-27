@@ -60,6 +60,10 @@ func init() {
 	provider.DefaultUpdatedAt = providerDescUpdatedAt.Default.(func() time.Time)
 	// provider.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	provider.UpdateDefaultUpdatedAt = providerDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// providerDescEnabled is the schema descriptor for enabled field.
+	providerDescEnabled := providerFields[4].Descriptor()
+	// provider.DefaultEnabled holds the default value on creation for the enabled field.
+	provider.DefaultEnabled = providerDescEnabled.Default.(bool)
 	tablecolumnMixin := schema.TableColumn{}.Mixin()
 	tablecolumnMixinFields0 := tablecolumnMixin[0].Fields()
 	_ = tablecolumnMixinFields0

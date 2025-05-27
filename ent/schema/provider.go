@@ -22,9 +22,10 @@ func (Provider) Mixin() []ent.Mixin {
 func (Provider) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name"),
-		field.Enum("type").Values("openai", "gemini"),
+		field.String("type"),
 		field.String("key").Optional(),
 		field.String("base_url").Optional(),
+		field.Bool("enabled").Default(true),
 	}
 }
 
