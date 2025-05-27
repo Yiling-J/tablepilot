@@ -1,6 +1,7 @@
 import "@material-symbols/font-400/rounded.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { ModelManager } from "./components/models/model-manager.tsx"; // Added
 import { TableListPage } from "./components/table-list-page.tsx";
 import { TablePage } from "./components/table.tsx";
 import { WorkflowListPage } from "./components/workflow-list-page.tsx";
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
         children: [
           // Routes that WILL have the Sidebar
           { path: "/tables/:id", element: <TablePage /> },
+          { path: "/models", element: <ModelManager /> }, // Added new route
           // Add other routes that need the sidebar here
         ],
       },

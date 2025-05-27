@@ -33,7 +33,7 @@ export function ImportExportDialog({ isOpen, onOpenChange, currentConfig, onImpo
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'modelverse_config.json';
+    a.download = 'model_config.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -65,7 +65,7 @@ export function ImportExportDialog({ isOpen, onOpenChange, currentConfig, onImpo
         <DialogHeader>
           <DialogTitle>Import / Export Configuration</DialogTitle>
           <DialogDescription>
-            Manage your ModelVerse configurations by importing or exporting them as JSON.
+            Manage your Model configurations by importing or exporting them as JSON.
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="export" className="w-full">

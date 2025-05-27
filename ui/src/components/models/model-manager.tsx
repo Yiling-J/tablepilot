@@ -2,39 +2,39 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { mockProviders } from '@/lib/mock-data';
+import { getProviders, Provider as ProviderDataFromAction } from '@/actions'; // Added
 import type { ProviderData, ModelData } from '@/types';
-import { ProviderCard } from '@/components/model-verse/provider-card';
-import { ProviderFormDialog } from '@/components/model-verse/provider-form-dialog';
-import { ModelFormDialog } from '@/components/model-verse/model-form-dialog';
-import { OptimizeConfigDialog } from '@/components/model-verse/optimize-config-dialog';
-import { ImportExportDialog } from '@/components/model-verse/import-export-dialog';
-import { ConfirmationDialog } from '@/components/model-verse/confirmation-dialog';
-import { Button } from '@/components/ui/button';
-import { PlusCircle, Search } from 'lucide-react';
+import { ProviderCard } from '@/components/models/provider-card';
+import { ProviderFormDialog } from '@/components/models/provider-form-dialog';
+import { ModelFormDialog } from '@/components/models/model-form-dialog';
+import { OptimizeConfigDialog } from '@/components/models/optimize-config-dialog';
+import { ImportExportDialog } from '@/components/models/import-export-dialog';
+import { ConfirmationDialog } from '@/components/models/confirmation-dialog';
+// Button removed as it's unused
+import { Search } from 'lucide-react'; // PlusCircle removed as it's unused
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 
-interface ModelVerseManagerProps {
+interface ModelManagerProps {
   searchTerm: string;
-  onProvidersChange?: (providers: ProviderData[]) => void;
+  // onProvidersChange?: (providers: ProviderData[]) => void; // Removed
   shouldOpenAddProviderDialog?: boolean;
   onAddProviderDialogDismiss?: () => void;
   shouldOpenImportExportDialog?: boolean;
   onImportExportDialogDismiss?: () => void;
 }
 
-export function ModelVerseManager({
+export function ModelManager({
   searchTerm,
-  onProvidersChange,
+  // onProvidersChange, // Removed
   shouldOpenAddProviderDialog,
   onAddProviderDialogDismiss,
   shouldOpenImportExportDialog,
   onImportExportDialogDismiss,
-}: ModelVerseManagerProps) {
+}: ModelManagerProps) {
   const { toast } = useToast();
   const [providers, setProviders] = useState<ProviderData[]>([]);
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  // const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false); // Removed
 
   // Dialog states
   const [isProviderFormOpen, setIsProviderFormOpen] = useState(false);
@@ -52,36 +52,44 @@ export function ModelVerseManager({
   const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
   const [deleteAction, setDeleteAction] = useState<{ type: 'provider' | 'model', id: string, providerId?: string } | null>(null);
   
-  // Initial load from localStorage
+  // Fetch providers from API
   useEffect(() => {
-    const storedProviders = localStorage.getItem('modelVerseProviders');
-    let initialData: ProviderData[];
-    if (storedProviders) {
+    const fetchData = async () => {
       try {
-        const parsedProviders: ProviderData[] = JSON.parse(storedProviders);
-        initialData = parsedProviders.map(p => ({
-          ...p,
-          enabled: p.enabled === undefined ? true : p.enabled,
-          editable: p.editable === undefined ? true : p.editable,
+        const fetchedProviders: ProviderDataFromAction[] = await getProviders();
+        const mappedProviders: ProviderData[] = fetchedProviders.map((p) => ({
+          id: String(p.id), // Convert number to string
+          name: p.name,
+          type: p.type, // Assuming ProviderType and string are compatible
+          apiKey: p.key, // Store API key if needed, or omit if not used directly by UI
+          baseUrl: p.base_url, // Store baseUrl if needed
+          models: p.models.map(m => ({
+            id: uuidv4(), // Generate unique ID for UI model
+            model: m.model,
+            alias: m.alias || m.model, // Use model name as alias if alias is not provided
+            max_tokens: m.max_tokens,
+            rpm: m.rpm,
+            imageSupport: m.image, // Map 'image' to 'imageSupport'
+            isDefault: false, // Default to false, adjust if API provides this
+            client: p.name, // Set client to provider name
+          })),
+          enabled: true, // Default to true as API doesn't provide this
+          editable: p.editable,
         }));
-      } catch (e) {
-        console.error("Failed to parse stored providers, using mock data.", e);
-        initialData = mockProviders.map(p => ({...p, enabled: p.enabled === undefined ? true : p.enabled }));
+        setProviders(mappedProviders);
+      } catch (error) {
+        console.error("Failed to fetch providers:", error);
+        toast({
+          variant: "destructive",
+          title: "Error Fetching Providers",
+          description: "Could not load provider configurations. Please try again later.",
+        });
+        // Optionally, set providers to an empty array or mock data on error
+        // setProviders(mockProviders.map(p => ({...p, enabled: p.enabled === undefined ? true : p.enabled })));
       }
-    } else {
-      initialData = mockProviders.map(p => ({...p, enabled: p.enabled === undefined ? true : p.enabled }));
-    }
-    setProviders(initialData);
-    setIsInitialLoadComplete(true);
-  }, []);
-
-  // Save to localStorage and call onProvidersChange when providers array changes
-  useEffect(() => {
-    if (isInitialLoadComplete) {
-      localStorage.setItem('modelVerseProviders', JSON.stringify(providers));
-      onProvidersChange?.(providers);
-    }
-  }, [providers, isInitialLoadComplete, onProvidersChange]);
+    };
+    fetchData();
+  }, [toast]); // Added toast to dependency array
 
   // Handle externally triggered dialogs
   useEffect(() => {
@@ -200,16 +208,7 @@ export function ModelVerseManager({
     }
   };
   
-  const openOptimizeDialog = (providerId: string, modelId: string) => {
-    const provider = providers.find(p => p.id === providerId);
-    const model = provider?.models.find(m => m.id === modelId);
-    if (provider && model && provider.enabled) { 
-      setOptimizingModelInfo({ provider, model });
-      setIsOptimizeDialogOpen(true);
-    } else if (provider && !provider.enabled) {
-        toast({ variant: "destructive", title: "Provider Disabled", description: "Cannot optimize models of a disabled provider." });
-    }
-  };
+  // openOptimizeDialog function removed as it was unused
 
   const handleApplyOptimization = (optimizedValues: { max_tokens: number; rpm: number }) => {
     if (!optimizingModelInfo) return;

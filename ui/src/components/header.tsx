@@ -140,6 +140,22 @@ export function TablepilotHeader({
                   Workflows
                 </h1>
               </div>
+              {/* Models Tab */}
+              <div
+                onClick={() => navigate("/models")}
+                className="ml-4 cursor-pointer"
+              >
+                <h1
+                  className={cn(
+                    "text-base font-medium py-2 px-3 border-b-2",
+                    currentTab === "models"
+                      ? "border-primary text-primary"
+                      : "text-muted-foreground hover:text-primary hover:border-primary border-transparent",
+                  )}
+                >
+                  Models
+                </h1>
+              </div>
             </div>
           )}
         </div>
