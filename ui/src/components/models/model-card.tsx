@@ -30,12 +30,12 @@ export function ModelCard({
 
   return (
     <Card
-      className={`bg-card/80 hover:bg-muted-foreground/5 transition-all duration-300 flex flex-col h-[280px] w-[350px] ${!isProviderEnabled && isProviderEditable ? "opacity-60" : ""}`}
+      className={`bg-card/80 hover:bg-muted-foreground/5 transition-all duration-300 flex flex-col ${!isProviderEnabled && isProviderEditable ? "opacity-60" : ""}`}
     >
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg font-semibold text-card-foreground">
+            <CardTitle className="text-lg font-semibold text-card-foreground h-[2lh]">
               {model.alias || model.model}
             </CardTitle>
             {model.alias && model.alias !== model.model && (
@@ -72,7 +72,7 @@ export function ModelCard({
       </CardContent>
       {/* Separator and Footer are now always rendered */}
       <>
-        <Separator className="my-2 bg-border/50" />
+        <Separator className="my-1 bg-border/50" />
         <CardFooter className="flex justify-end gap-2 pt-3 pb-3 px-4">
           <Button
             variant="ghost"
