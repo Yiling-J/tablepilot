@@ -226,6 +226,40 @@ describe("ModelManager", () => {
     ).toBeInTheDocument();
   });
 
+  it("should allow adding a new OpenAI-Compatible provider with baseurl", async () => {
+    mockedGetProviders.mockResolvedValue([]);
+
+    render(
+      <TestProvider>
+        <ModelManagerPageWrapper />
+      </TestProvider>,
+    );
+
+    expect(
+      await screen.findByText("Create a new provider"),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByText("Create a new provider"));
+    await screen.findByText("Create New Provider");
+    await userEvent.type(screen.getByLabelText(/Name/i), "foo");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox").nextElementSibling!,
+      "OpenAI-Compatible",
+    );
+    await userEvent.type(screen.getByLabelText("Base URL"), "https://zzz.com");
+    fireEvent.submit(screen.getByRole("button", { name: "Create Provider" }));
+
+    expect(mockedCreateProvider).toHaveBeenCalledWith({
+      id: 0,
+      name: "foo",
+      key: "",
+      type: "OpenAI-Compatible",
+      base_url: "https://zzz.com",
+      editable: true,
+      enabled: true,
+      models: [],
+    });
+  });
+
   it("should allow editing an existing provider", async () => {
     const providerToEdit = sampleProviders[0];
     const updatedName = "Updated OpenAI Provider";

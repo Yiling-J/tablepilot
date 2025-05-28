@@ -80,7 +80,7 @@ export function ProviderFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-card text-card-foreground">
+      <DialogContent className="provider-form sm:max-w-[425px] bg-card text-card-foreground">
         <DialogHeader>
           <DialogTitle>
             {initialData ? "Edit Provider" : "Create New Provider"}
@@ -145,7 +145,7 @@ export function ProviderFormDialog({
               onChange={(e) => setApiKey(e.target.value)}
             />
           </div>
-          {selectedType === "OpenAI-compatible" && (
+          {selectedType === "OpenAI-Compatible" && (
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="baseUrl" className="text-right">
                 Base URL
