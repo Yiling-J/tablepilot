@@ -988,9 +988,10 @@ type ProviderMutation struct {
 	created_at    *time.Time
 	updated_at    *time.Time
 	name          *string
-	_type         *provider.Type
+	_type         *string
 	key           *string
 	base_url      *string
+	enabled       *bool
 	clearedFields map[string]struct{}
 	models        map[int]struct{}
 	removedmodels map[int]struct{}
@@ -1233,12 +1234,12 @@ func (m *ProviderMutation) ResetName() {
 }
 
 // SetType sets the "type" field.
-func (m *ProviderMutation) SetType(pr provider.Type) {
-	m._type = &pr
+func (m *ProviderMutation) SetType(s string) {
+	m._type = &s
 }
 
 // GetType returns the value of the "type" field in the mutation.
-func (m *ProviderMutation) GetType() (r provider.Type, exists bool) {
+func (m *ProviderMutation) GetType() (r string, exists bool) {
 	v := m._type
 	if v == nil {
 		return
@@ -1249,7 +1250,7 @@ func (m *ProviderMutation) GetType() (r provider.Type, exists bool) {
 // OldType returns the old "type" field's value of the Provider entity.
 // If the Provider object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProviderMutation) OldType(ctx context.Context) (v provider.Type, err error) {
+func (m *ProviderMutation) OldType(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldType is only allowed on UpdateOne operations")
 	}
@@ -1366,6 +1367,42 @@ func (m *ProviderMutation) ResetBaseURL() {
 	delete(m.clearedFields, provider.FieldBaseURL)
 }
 
+// SetEnabled sets the "enabled" field.
+func (m *ProviderMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *ProviderMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the Provider entity.
+// If the Provider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProviderMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *ProviderMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
 // AddModelIDs adds the "models" edge to the Model entity by ids.
 func (m *ProviderMutation) AddModelIDs(ids ...int) {
 	if m.models == nil {
@@ -1454,7 +1491,7 @@ func (m *ProviderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProviderMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, provider.FieldCreatedAt)
 	}
@@ -1472,6 +1509,9 @@ func (m *ProviderMutation) Fields() []string {
 	}
 	if m.base_url != nil {
 		fields = append(fields, provider.FieldBaseURL)
+	}
+	if m.enabled != nil {
+		fields = append(fields, provider.FieldEnabled)
 	}
 	return fields
 }
@@ -1493,6 +1533,8 @@ func (m *ProviderMutation) Field(name string) (ent.Value, bool) {
 		return m.Key()
 	case provider.FieldBaseURL:
 		return m.BaseURL()
+	case provider.FieldEnabled:
+		return m.Enabled()
 	}
 	return nil, false
 }
@@ -1514,6 +1556,8 @@ func (m *ProviderMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldKey(ctx)
 	case provider.FieldBaseURL:
 		return m.OldBaseURL(ctx)
+	case provider.FieldEnabled:
+		return m.OldEnabled(ctx)
 	}
 	return nil, fmt.Errorf("unknown Provider field %s", name)
 }
@@ -1545,7 +1589,7 @@ func (m *ProviderMutation) SetField(name string, value ent.Value) error {
 		m.SetName(v)
 		return nil
 	case provider.FieldType:
-		v, ok := value.(provider.Type)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1564,6 +1608,13 @@ func (m *ProviderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBaseURL(v)
+		return nil
+	case provider.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Provider field %s", name)
@@ -1658,6 +1709,9 @@ func (m *ProviderMutation) ResetField(name string) error {
 		return nil
 	case provider.FieldBaseURL:
 		m.ResetBaseURL()
+		return nil
+	case provider.FieldEnabled:
+		m.ResetEnabled()
 		return nil
 	}
 	return fmt.Errorf("unknown Provider field %s", name)

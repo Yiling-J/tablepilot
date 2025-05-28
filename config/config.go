@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -75,14 +74,7 @@ func NewConfig(name string) (config *Config, err error) {
 	for i, client := range bc {
 		key := fmt.Sprintf("providers.%d", i)
 		switch client.Type {
-		case "openai":
-			var oai OpenAI
-			err = viper.UnmarshalKey(key, &oai)
-			if err != nil {
-				return config, err
-			}
-			providers = append(providers, &oai)
-		case "gemini":
+		case "gemini", "Gemini":
 			var genai Gemini
 			err = viper.UnmarshalKey(key, &genai)
 			if err != nil {
@@ -90,7 +82,12 @@ func NewConfig(name string) (config *Config, err error) {
 			}
 			providers = append(providers, &genai)
 		default:
-			return nil, errors.New("unknown client")
+			var oai OpenAI
+			err = viper.UnmarshalKey(key, &oai)
+			if err != nil {
+				return config, err
+			}
+			providers = append(providers, &oai)
 		}
 	}
 	config = &Config{}

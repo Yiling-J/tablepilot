@@ -19,18 +19,7 @@ type ChatClient interface {
 
 func NewClient(p provider.Provider, logger *zap.SugaredLogger) (ChatClient, error) {
 	switch p.Type {
-	case "openai":
-		logger.Debugw("creating new openai client", "name", p.Name)
-		completion := NewOpenAIChatCompletionService(&config.OpenAI{
-			Name:    p.Name,
-			Type:    p.Type,
-			Key:     p.Key,
-			BaseURL: p.BaseURL,
-		})
-		oai := NewOpenAIClient(completion, logger)
-		logger.Debug("openai client created")
-		return oai, nil
-	case "gemini":
+	case "Gemini":
 		logger.Debugw("creating new gemini client", "name", p.Name)
 		genai, err := NewGeminiClient(&config.Gemini{
 			Name: p.Name,
@@ -43,6 +32,15 @@ func NewClient(p provider.Provider, logger *zap.SugaredLogger) (ChatClient, erro
 		logger.Debug("gemini client created")
 		return genai, nil
 	default:
-		return nil, fmt.Errorf("client.NewClient: unknown config type: %s", p.Type)
+		logger.Debugw("creating new openai client", "name", p.Name)
+		completion := NewOpenAIChatCompletionService(&config.OpenAI{
+			Name:    p.Name,
+			Type:    p.Type,
+			Key:     p.Key,
+			BaseURL: p.BaseURL,
+		})
+		oai := NewOpenAIClient(completion, logger)
+		logger.Debug("openai client created")
+		return oai, nil
 	}
 }

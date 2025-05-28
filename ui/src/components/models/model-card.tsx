@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardFooter,
     CardHeader,
     CardTitle,
@@ -38,11 +37,6 @@ export function ModelCard({
             <CardTitle className="text-lg font-semibold text-card-foreground h-[2lh]">
               {model.alias || model.model}
             </CardTitle>
-            {model.alias && model.alias !== model.model && (
-              <CardDescription className="text-xs text-muted-foreground">
-                {model.model}
-              </CardDescription>
-            )}
           </div>
         </div>
       </CardHeader>

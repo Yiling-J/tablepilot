@@ -405,6 +405,7 @@ export type ProviderType =
   | "OpenAI"
   | "Gemini"
   | "Anthropic"
+  | "OpenRouter"
   | "OpenAI-Compatible"
   | string;
 
@@ -412,6 +413,7 @@ export const ProviderTypeOptions = [
   "OpenAI",
   "Gemini",
   "Anthropic",
+  "OpenRouter",
   "OpenAI-Compatible",
 ];
 

@@ -43,7 +43,7 @@ func TestAIService_Chat(t *testing.T) {
 						{Name: "chat", Type: "openai", Models: []provider.Model{
 							{Model: "default", Client: "chat"},
 							{Model: "exists", Alias: "alias", Client: "chat"},
-						}},
+						}, Enabled: true},
 					}, nil
 				},
 				WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
@@ -86,7 +86,7 @@ func TestAIService_ListModels(t *testing.T) {
 				{Name: "chat", Type: "openai", Models: []provider.Model{
 					{Model: "m1", Client: "chat"},
 					{Model: "m2", Client: "chat", Alias: "m2a"},
-				}},
+				}, Enabled: true},
 			}, nil
 		},
 		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
@@ -108,7 +108,7 @@ func TestAIService_ListModels(t *testing.T) {
 				{Name: "chat", Type: "openai", Models: []provider.Model{
 					{Model: "m2", Client: "chat", Alias: "m2a"},
 					{Model: "m1", Client: "chat"},
-				}},
+				}, Enabled: true},
 			}, nil
 		},
 		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
@@ -130,7 +130,7 @@ func TestAIService_ListModels(t *testing.T) {
 				{Name: "chat", Type: "openai", Models: []provider.Model{
 					{Model: "m1", Client: "chat"},
 					{Model: "m2", Client: "chat", Default: true},
-				}},
+				}, Enabled: true},
 			}, nil
 		},
 		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
@@ -159,7 +159,7 @@ func TestAIService_ChatModelLimiter(t *testing.T) {
 				{Name: "chat", Type: "openai", Models: []provider.Model{
 					{Model: "default", Client: "chat", Rpm: 20},
 					{Model: "default2", Client: "chat"},
-				}},
+				}, Enabled: true},
 			}, nil
 		},
 		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
@@ -210,7 +210,7 @@ func TestAIService_syncProviders(t *testing.T) {
 			return []provider.Provider{
 				{Name: "chat", Type: "openai", Models: []provider.Model{
 					{Model: "default", Client: "chat"},
-				}},
+				}, Enabled: true},
 			}, nil
 		},
 		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
@@ -224,10 +224,10 @@ func TestAIService_syncProviders(t *testing.T) {
 		[]provider.Provider{
 			{Name: "chat", Type: "openai", Models: []provider.Model{
 				{Model: "default", Client: "chat"},
-			}},
+			}, Enabled: true},
 			{Name: "c2", Type: "openai", Models: []provider.Model{
 				{Model: "c2m", Client: "c2"},
-			}},
+			}, Enabled: true},
 		})
 	models := srv.ListModels(ctx)
 	require.Equal(t, []ModelListItem{{Name: "c2m", Image: false}, {Name: "default", Image: false}}, models.Models)
@@ -236,10 +236,10 @@ func TestAIService_syncProviders(t *testing.T) {
 		[]provider.Provider{
 			{Name: "chat", Type: "openai", Models: []provider.Model{
 				{Model: "default", Client: "chat"},
-			}},
+			}, Enabled: true},
 			{Name: "c2", Type: "openai", Models: []provider.Model{
 				{Model: "c2mm", Client: "c2"},
-			}},
+			}, Enabled: true},
 		})
 	models = srv.ListModels(ctx)
 	require.Equal(t, []ModelListItem{{Name: "c2mm", Image: false}, {Name: "default", Image: false}}, models.Models)
@@ -248,11 +248,11 @@ func TestAIService_syncProviders(t *testing.T) {
 		[]provider.Provider{
 			{Name: "chat", Type: "openai", Models: []provider.Model{
 				{Model: "default", Client: "chat"},
-			}},
+			}, Enabled: true},
 			{Name: "c2", Type: "openai", Models: []provider.Model{
 				{Model: "c2mm", Client: "c2"},
 				{Model: "c2mt", Alias: "ct", Client: "c2"},
-			}},
+			}, Enabled: true},
 		})
 	models = srv.ListModels(ctx)
 	require.Equal(t, []ModelListItem{{Name: "c2mm", Image: false}, {Name: "ct", Image: false}, {Name: "default", Image: false}}, models.Models)
@@ -261,10 +261,10 @@ func TestAIService_syncProviders(t *testing.T) {
 		[]provider.Provider{
 			{Name: "chat", Type: "openai", Models: []provider.Model{
 				{Model: "default", Client: "chat"},
-			}},
+			}, Enabled: true},
 			{Name: "c2", Type: "openai", Models: []provider.Model{
 				{Model: "c2mm", Client: "c2"},
-			}},
+			}, Enabled: true},
 		})
 	models = srv.ListModels(ctx)
 	require.Equal(t, []ModelListItem{{Name: "c2mm", Image: false}, {Name: "default", Image: false}}, models.Models)
@@ -273,8 +273,17 @@ func TestAIService_syncProviders(t *testing.T) {
 		[]provider.Provider{
 			{Name: "chat", Type: "openai", Models: []provider.Model{
 				{Model: "default", Client: "chat"},
-			}},
+			}, Enabled: true},
 		})
 	models = srv.ListModels(ctx)
 	require.Equal(t, []ModelListItem{{Name: "default", Image: false}}, models.Models)
+
+	srv.syncProviders(ctx,
+		[]provider.Provider{
+			{Name: "chat", Type: "openai", Models: []provider.Model{
+				{Model: "default", Client: "chat"},
+			}, Enabled: false},
+		})
+	models = srv.ListModels(ctx)
+	require.Empty(t, models.Models)
 }

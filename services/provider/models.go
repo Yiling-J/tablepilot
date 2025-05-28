@@ -7,8 +7,18 @@ type Model struct {
 	MaxTokens int64  `json:"max_tokens"`
 	Rpm       int    `json:"rpm"`
 	Default   bool   `json:"default"`
-	Image     bool   `bool:"image"`
+	Image     bool   `json:"image"`
 }
+
+type ProviderType string
+
+const (
+	ProviderTypeOpenAI           ProviderType = "OpenAI"
+	ProviderTypeGemini           ProviderType = "Gemini"
+	ProviderTypeOpenAIcompatible ProviderType = "OpenAI-Compatible"
+	ProviderTypeAnthropic        ProviderType = "Anthropic"
+	ProviderOpenRouter           ProviderType = "OpenRouter"
+)
 
 type Provider struct {
 	ID       int     `json:"id"`
@@ -18,4 +28,5 @@ type Provider struct {
 	BaseURL  string  `json:"base_url"`
 	Models   []Model `json:"models"`
 	Editable bool    `json:"editable"`
+	Enabled  bool    `json:"enabled"`
 }

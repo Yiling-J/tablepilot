@@ -114,25 +114,36 @@ export function ModelManager({
     }
   };
 
-  const handleToggleProviderEnabled = (providerId: string) => {
-    setProviders((prev) =>
-      prev.map((p) =>
-        p.id.toString() === providerId ? { ...p, enabled: !p.enabled } : p,
-      ),
+  const handleToggleProviderEnabled = async (providerId: string) => {
+    const updatedProviders = await Promise.all(
+      providers.map(async (p) => {
+        if (p.id.toString() === providerId) {
+          const updated = { ...p, enabled: !p.enabled };
+          await updateProvider(updated.id.toString(), updated);
+          return updated;
+        }
+        return p;
+      }),
     );
-    const provider = providers.find((p) => p.id.toString() === providerId);
-    if (provider) {
+
+    setProviders(updatedProviders);
+
+    const updatedProvider = updatedProviders.find(
+      (p) => p.id.toString() === providerId,
+    );
+    if (updatedProvider) {
       toast({
-        title: `Provider ${!provider.enabled ? "Enabled" : "Disabled"}`,
-        description: `${provider.name} has been ${!provider.enabled ? "enabled" : "disabled"}.`,
+        title: `Provider ${updatedProvider.enabled ? "Enabled" : "Disabled"}`,
+        description: `${updatedProvider.name} has been ${updatedProvider.enabled ? "enabled" : "disabled"}.`,
       });
     }
   };
 
-  const handleModelSubmit = (model: Model) => {
+  const handleModelSubmit = async (model: Model) => {
     if (!currentProviderForModel) return;
-    setProviders((prev) =>
-      prev.map((p) => {
+
+    const updatedProviders = await Promise.all(
+      providers.map(async (p) => {
         if (p.id === currentProviderForModel.id) {
           const existingModelIndex = p.models.findIndex(
             (m: Model) => m.model === model.model,
@@ -144,27 +155,36 @@ export function ModelManager({
           } else {
             newModels = [...p.models, model];
           }
-          return { ...p, models: newModels };
+          const updated = { ...p, models: newModels };
+          await updateProvider(updated.id.toString(), updated);
+          return updated;
         }
         return p;
       }),
     );
+
+    setProviders(updatedProviders);
     setEditingModel(null);
     setCurrentProviderForModel(null);
   };
 
-  const handleDeleteModel = (providerId: string, modelId: string) => {
-    setProviders((prev) =>
-      prev.map((p) => {
+  const handleDeleteModel = async (providerId: string, modelId: string) => {
+    const updatedProviders = await Promise.all(
+      providers.map(async (p) => {
         if (p.id.toString() === providerId) {
-          return {
+          const updated = {
             ...p,
             models: p.models.filter((m: Model) => m.model !== modelId),
           };
+          await updateProvider(updated.id.toString(), updated);
+          return updated;
         }
         return p;
       }),
     );
+
+    setProviders(updatedProviders);
+
     toast({
       title: "Model Deleted",
       description: "The model has been removed from the provider.",
@@ -340,7 +360,7 @@ export function ModelManager({
       <div>
         {providers.map((provider, i) => (
           <ProviderCard
-            key={provider.id === 0 ? i.toString() : provider.id}
+            key={provider.id === 0 ? `pv_${i.toString()}` : provider.id}
             provider={provider}
             onAddModel={openAddModelDialog}
             onEditModel={openEditModelDialog}

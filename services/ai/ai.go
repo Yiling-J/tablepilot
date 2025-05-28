@@ -39,6 +39,9 @@ func (ai *AiServiceImpl) syncProviders(ctx context.Context, providers []provider
 	defaultModel := ""
 	defaultImageModel := ""
 	for _, p := range providers {
+		if !p.Enabled {
+			continue
+		}
 		if ac, ok := ai.clients[p.Name]; !ok {
 			c, err := client.NewClient(p, ai.logger)
 			if err != nil {
