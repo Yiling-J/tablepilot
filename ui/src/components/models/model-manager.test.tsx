@@ -418,6 +418,7 @@ describe("ModelManager", () => {
     const providerToEdit = sampleProviders[0];
     const modelToEdit = providerToEdit.models[0];
     const updatedAlias = "GPT-3.5 Updated Alias";
+    const updatedName = "GPT-x";
     render(
       <TestProvider>
         <ModelManagerPageWrapper />
@@ -438,6 +439,8 @@ describe("ModelManager", () => {
       within(modelContainer).getByRole("button", { name: "Edit Model" }),
     );
     await screen.findByText("Edit Model");
+    await userEvent.clear(screen.getByLabelText("Name"));
+    await userEvent.type(screen.getByLabelText("Name"), updatedName);
     await userEvent.clear(screen.getByLabelText("Alias"));
     await userEvent.type(screen.getByLabelText("Alias"), updatedAlias);
     fireEvent.submit(screen.getByRole("button", { name: "Save Changes" }));
@@ -453,6 +456,7 @@ describe("ModelManager", () => {
         {
           ...sampleProviders[0].models[0],
           alias: updatedAlias,
+          model: updatedName,
           rpm: 10,
         },
         sampleProviders[0].models[1],

@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, PlusIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 
 export function ModelManager() {
@@ -37,6 +37,7 @@ export function ModelManager() {
     id: string;
     providerId?: string;
   } | null>(null);
+  const currentModelIndex = useRef<number | null>(null);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -131,16 +132,14 @@ export function ModelManager() {
     const updatedProviders = await Promise.all(
       providers.map(async (p) => {
         if (p.id === currentProviderForModel.id) {
-          const existingModelIndex = p.models.findIndex(
-            (m: Model) => m.model === model.model,
-          );
           let newModels;
-          if (existingModelIndex > -1) {
+          if (currentModelIndex.current !== null) {
             newModels = [...p.models];
-            newModels[existingModelIndex] = model;
+            newModels[currentModelIndex.current] = model;
           } else {
             newModels = [...p.models, model];
           }
+          currentModelIndex.current = null;
           const updated = { ...p, models: newModels };
           await updateProvider(updated.id.toString(), updated);
           return updated;
@@ -202,7 +201,12 @@ export function ModelManager() {
 
   const openEditModelDialog = (providerId: string, modelId: string) => {
     const provider = providers.find((p) => p.id.toString() === providerId);
-    const model = provider?.models.find((m) => m.model === modelId);
+    const model = provider?.models.find((m, i) => {
+      if (m.model === modelId) {
+        currentModelIndex.current = i;
+      }
+      return m.model === modelId;
+    });
     if (provider && model && provider.enabled) {
       setCurrentProviderForModel(provider);
       setEditingModel(model);
