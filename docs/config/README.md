@@ -32,22 +32,26 @@ dsn = "data.db?_pragma=foreign_keys(1)"
 You can define multiple providers, and different models can use different providers.
 
 - **name**: The name of the provider. This name is referenced in the `models` section to select which provider the model uses.
-- **type**: The provider type. Currently, `"openai"` and `"gemini"`(experimental and only usable for image generation) is supported. `openai` type should includes all OpenAI-compatible APIs.
+- **type**: The provider type. Currently supported values are OpenAI, Gemini, Anthropic, OpenRouter and OpenAI-Compatible.
 - **key**: The API key used to authenticate requests.
-- **base_url**: The base URL of the API.
+- **base_url**: The base URL of the API. only required for OpenAI-Compatible type provider.
 
 ```toml
 [[providers]]
 name = "gemini"
-type = "openai"
+type = "Gemini"
 key = "your_api_key"
-base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 [[providers]]
 name = "openai"
-type = "openai"
+type = "Openai"
 key = "your_api_key"
-base_url = "https://api.openai.com/v1/"
+
+[[providers]]
+name = "open-router"
+type = "OpenAI-Compatible"
+key = "your_api_key"
+base_url = "https://openrouter.ai/api/v1"
 ```
 
 ### Server (Optional)

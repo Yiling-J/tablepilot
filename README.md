@@ -77,7 +77,7 @@ Tablepilot provides a full set of CLI commands, including `builder`, `create`, `
 
 ## Guide
 
-If you're using Tablepilot in CLI or WebUI mode, the first step is to prepare a TOML config file. Below is an example `config.toml` file using an SQLite3 database (`data.db`) and use `gemini-2.0-flash-001`(openai compatible API mode). Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
+If you're using Tablepilot in CLI or WebUI mode, the first step is to prepare a TOML config file. Below is an example `config.toml` file using an SQLite3 database (`data.db`) and use `gemini-2.0-flash-001`. Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
 
 ```toml
 [database]
@@ -86,9 +86,8 @@ dsn = "data.db?_pragma=foreign_keys(1)"
 
 [[providers]]
 name = "gemini"
-type = "openai"
+type = "Gemini"
 key = "your_api_key"
-base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 [[models]]
 model = "gemini-2.0-flash-001"

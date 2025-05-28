@@ -32,13 +32,7 @@ address = ":8080"
 
 [[providers]]
 name = "gemini"
-type = "openai"
-key = ""
-base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
-
-[[providers]]
-name = "gemini-image"
-type = "gemini"
+type = "Gemini"
 key = ""
 
 [[models]]
@@ -48,7 +42,7 @@ rpm = 10
 
 [[models]]
 model = "gemini-2.0-flash-exp-image-generation"
-provider = "gemini-image"
+provider = "gemini"
 rpm = 10
 image = true
 ```
