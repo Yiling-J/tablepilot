@@ -511,7 +511,7 @@ export function Table({ id }: TableProps) {
       />
 
       <div className="pb-3 px-4 pt-5">
-        <div className="flex">
+        <div className="flex items-center">
           <Button
             className={cn("mr-3 text-white rounded-sm", button.color)}
             onClick={() => {

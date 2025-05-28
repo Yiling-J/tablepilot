@@ -1,9 +1,6 @@
 import { ModelList, getModels } from "@/actions";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { ProvidersListDialog } from "./dialog/providers.tsx";
-import { Button } from "./ui/button";
 
 import {
     Select,
@@ -12,9 +9,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { GearIcon } from "@radix-ui/react-icons";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { BookTypeIcon, Check, ImageIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "./ui/button";
 
 interface ModelSelectorProps {
   hasImageColumn: boolean;
@@ -32,9 +30,9 @@ export function ModelSelector({
   const [models, setModels] = useState<ModelList | undefined>(undefined);
   const [model, setModel] = useState("");
   const [modelSelectOpen, setModelSelectOpen] = useState(false);
-  const [providerListOpen, setProviderListOpen] = useState(false);
   const [imageModel, setImageModel] = useState("");
   const [imageModelSelectOpen, setImageModelSelectOpen] = useState(false);
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     const models = await getModels();
@@ -51,27 +49,12 @@ export function ModelSelector({
 
   return (
     <div className="flex">
-      <ProvidersListDialog
-        isOpen={providerListOpen}
-        setIsOpen={async (v) => {
-          const models = await getModels();
-          setModels(models);
-          setProviderListOpen(v);
-        }}
-      />
       {(models === undefined ||
         models?.models === null ||
         models.models.length === 0) && (
-        <div className="flex border rounded-sm">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setProviderListOpen(true);
-            }}
-          >
-            Add Models
-          </Button>
-        </div>
+        <Button onClick={() => navigate("/models")} variant="outline">
+          Create a provider first
+        </Button>
       )}
       {models && models.models && models.models.length > 0 && (
         <div className="flex rounded-sm items-center">
@@ -114,20 +97,6 @@ export function ModelSelector({
                   </SelectPrimitive.Item>
                 ))}
               </SelectGroup>
-              <Separator className="my-1" />
-
-              <div>
-                <div
-                  className="flex pt-2 pl-2 pb-2 text-sm items-center cursor-pointer"
-                  onClick={() => {
-                    setModelSelectOpen(false);
-                    setProviderListOpen(true);
-                  }}
-                >
-                  <GearIcon className="mr-1" />
-                  <p>Model Settings</p>
-                </div>
-              </div>
             </SelectContent>
           </Select>
         </div>
@@ -179,20 +148,6 @@ export function ModelSelector({
                       </SelectPrimitive.Item>
                     ))}
                 </SelectGroup>
-                <Separator className="my-1" />
-
-                <div>
-                  <div
-                    className="flex pt-2 pl-2 pb-2 text-sm items-center cursor-pointer"
-                    onClick={() => {
-                      setModelSelectOpen(false);
-                      setProviderListOpen(true);
-                    }}
-                  >
-                    <GearIcon className="mr-1" />
-                    <p>Model Settings</p>
-                  </div>
-                </div>
               </SelectContent>
             </Select>
           </div>

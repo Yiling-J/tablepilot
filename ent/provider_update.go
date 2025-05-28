@@ -57,15 +57,15 @@ func (pu *ProviderUpdate) SetNillableName(s *string) *ProviderUpdate {
 }
 
 // SetType sets the "type" field.
-func (pu *ProviderUpdate) SetType(pr provider.Type) *ProviderUpdate {
-	pu.mutation.SetType(pr)
+func (pu *ProviderUpdate) SetType(s string) *ProviderUpdate {
+	pu.mutation.SetType(s)
 	return pu
 }
 
 // SetNillableType sets the "type" field if the given value is not nil.
-func (pu *ProviderUpdate) SetNillableType(pr *provider.Type) *ProviderUpdate {
-	if pr != nil {
-		pu.SetType(*pr)
+func (pu *ProviderUpdate) SetNillableType(s *string) *ProviderUpdate {
+	if s != nil {
+		pu.SetType(*s)
 	}
 	return pu
 }
@@ -107,6 +107,20 @@ func (pu *ProviderUpdate) SetNillableBaseURL(s *string) *ProviderUpdate {
 // ClearBaseURL clears the value of the "base_url" field.
 func (pu *ProviderUpdate) ClearBaseURL() *ProviderUpdate {
 	pu.mutation.ClearBaseURL()
+	return pu
+}
+
+// SetEnabled sets the "enabled" field.
+func (pu *ProviderUpdate) SetEnabled(b bool) *ProviderUpdate {
+	pu.mutation.SetEnabled(b)
+	return pu
+}
+
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (pu *ProviderUpdate) SetNillableEnabled(b *bool) *ProviderUpdate {
+	if b != nil {
+		pu.SetEnabled(*b)
+	}
 	return pu
 }
 
@@ -187,16 +201,6 @@ func (pu *ProviderUpdate) defaults() {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (pu *ProviderUpdate) check() error {
-	if v, ok := pu.mutation.GetType(); ok {
-		if err := provider.TypeValidator(v); err != nil {
-			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Provider.type": %w`, err)}
-		}
-	}
-	return nil
-}
-
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (pu *ProviderUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ProviderUpdate {
 	pu.modifiers = append(pu.modifiers, modifiers...)
@@ -204,9 +208,6 @@ func (pu *ProviderUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *Provi
 }
 
 func (pu *ProviderUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := pu.check(); err != nil {
-		return n, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(provider.Table, provider.Columns, sqlgraph.NewFieldSpec(provider.FieldID, field.TypeInt))
 	if ps := pu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -228,7 +229,7 @@ func (pu *ProviderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.SetField(provider.FieldName, field.TypeString, value)
 	}
 	if value, ok := pu.mutation.GetType(); ok {
-		_spec.SetField(provider.FieldType, field.TypeEnum, value)
+		_spec.SetField(provider.FieldType, field.TypeString, value)
 	}
 	if value, ok := pu.mutation.Key(); ok {
 		_spec.SetField(provider.FieldKey, field.TypeString, value)
@@ -241,6 +242,9 @@ func (pu *ProviderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if pu.mutation.BaseURLCleared() {
 		_spec.ClearField(provider.FieldBaseURL, field.TypeString)
+	}
+	if value, ok := pu.mutation.Enabled(); ok {
+		_spec.SetField(provider.FieldEnabled, field.TypeBool, value)
 	}
 	if pu.mutation.ModelsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -336,15 +340,15 @@ func (puo *ProviderUpdateOne) SetNillableName(s *string) *ProviderUpdateOne {
 }
 
 // SetType sets the "type" field.
-func (puo *ProviderUpdateOne) SetType(pr provider.Type) *ProviderUpdateOne {
-	puo.mutation.SetType(pr)
+func (puo *ProviderUpdateOne) SetType(s string) *ProviderUpdateOne {
+	puo.mutation.SetType(s)
 	return puo
 }
 
 // SetNillableType sets the "type" field if the given value is not nil.
-func (puo *ProviderUpdateOne) SetNillableType(pr *provider.Type) *ProviderUpdateOne {
-	if pr != nil {
-		puo.SetType(*pr)
+func (puo *ProviderUpdateOne) SetNillableType(s *string) *ProviderUpdateOne {
+	if s != nil {
+		puo.SetType(*s)
 	}
 	return puo
 }
@@ -386,6 +390,20 @@ func (puo *ProviderUpdateOne) SetNillableBaseURL(s *string) *ProviderUpdateOne {
 // ClearBaseURL clears the value of the "base_url" field.
 func (puo *ProviderUpdateOne) ClearBaseURL() *ProviderUpdateOne {
 	puo.mutation.ClearBaseURL()
+	return puo
+}
+
+// SetEnabled sets the "enabled" field.
+func (puo *ProviderUpdateOne) SetEnabled(b bool) *ProviderUpdateOne {
+	puo.mutation.SetEnabled(b)
+	return puo
+}
+
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (puo *ProviderUpdateOne) SetNillableEnabled(b *bool) *ProviderUpdateOne {
+	if b != nil {
+		puo.SetEnabled(*b)
+	}
 	return puo
 }
 
@@ -479,16 +497,6 @@ func (puo *ProviderUpdateOne) defaults() {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (puo *ProviderUpdateOne) check() error {
-	if v, ok := puo.mutation.GetType(); ok {
-		if err := provider.TypeValidator(v); err != nil {
-			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Provider.type": %w`, err)}
-		}
-	}
-	return nil
-}
-
 // Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
 func (puo *ProviderUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ProviderUpdateOne {
 	puo.modifiers = append(puo.modifiers, modifiers...)
@@ -496,9 +504,6 @@ func (puo *ProviderUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *P
 }
 
 func (puo *ProviderUpdateOne) sqlSave(ctx context.Context) (_node *Provider, err error) {
-	if err := puo.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(provider.Table, provider.Columns, sqlgraph.NewFieldSpec(provider.FieldID, field.TypeInt))
 	id, ok := puo.mutation.ID()
 	if !ok {
@@ -537,7 +542,7 @@ func (puo *ProviderUpdateOne) sqlSave(ctx context.Context) (_node *Provider, err
 		_spec.SetField(provider.FieldName, field.TypeString, value)
 	}
 	if value, ok := puo.mutation.GetType(); ok {
-		_spec.SetField(provider.FieldType, field.TypeEnum, value)
+		_spec.SetField(provider.FieldType, field.TypeString, value)
 	}
 	if value, ok := puo.mutation.Key(); ok {
 		_spec.SetField(provider.FieldKey, field.TypeString, value)
@@ -550,6 +555,9 @@ func (puo *ProviderUpdateOne) sqlSave(ctx context.Context) (_node *Provider, err
 	}
 	if puo.mutation.BaseURLCleared() {
 		_spec.ClearField(provider.FieldBaseURL, field.TypeString)
+	}
+	if value, ok := puo.mutation.Enabled(); ok {
+		_spec.SetField(provider.FieldEnabled, field.TypeBool, value)
 	}
 	if puo.mutation.ModelsCleared() {
 		edge := &sqlgraph.EdgeSpec{

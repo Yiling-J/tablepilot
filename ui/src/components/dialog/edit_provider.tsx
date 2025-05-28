@@ -48,11 +48,12 @@ export function ProviderDialog({
       setFormData({
         id: 0,
         name: "",
-        type: "openai",
+        type: "OpenAI",
         key: "",
         base_url: "https://api.openai.com/v1",
         models: [],
         editable: true,
+        enabled: true,
       });
     }
   }, [provider, open]);

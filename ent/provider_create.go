@@ -58,8 +58,8 @@ func (pc *ProviderCreate) SetName(s string) *ProviderCreate {
 }
 
 // SetType sets the "type" field.
-func (pc *ProviderCreate) SetType(pr provider.Type) *ProviderCreate {
-	pc.mutation.SetType(pr)
+func (pc *ProviderCreate) SetType(s string) *ProviderCreate {
+	pc.mutation.SetType(s)
 	return pc
 }
 
@@ -87,6 +87,20 @@ func (pc *ProviderCreate) SetBaseURL(s string) *ProviderCreate {
 func (pc *ProviderCreate) SetNillableBaseURL(s *string) *ProviderCreate {
 	if s != nil {
 		pc.SetBaseURL(*s)
+	}
+	return pc
+}
+
+// SetEnabled sets the "enabled" field.
+func (pc *ProviderCreate) SetEnabled(b bool) *ProviderCreate {
+	pc.mutation.SetEnabled(b)
+	return pc
+}
+
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (pc *ProviderCreate) SetNillableEnabled(b *bool) *ProviderCreate {
+	if b != nil {
+		pc.SetEnabled(*b)
 	}
 	return pc
 }
@@ -149,6 +163,10 @@ func (pc *ProviderCreate) defaults() {
 		v := provider.DefaultUpdatedAt()
 		pc.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := pc.mutation.Enabled(); !ok {
+		v := provider.DefaultEnabled
+		pc.mutation.SetEnabled(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -159,10 +177,8 @@ func (pc *ProviderCreate) check() error {
 	if _, ok := pc.mutation.GetType(); !ok {
 		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "Provider.type"`)}
 	}
-	if v, ok := pc.mutation.GetType(); ok {
-		if err := provider.TypeValidator(v); err != nil {
-			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Provider.type": %w`, err)}
-		}
+	if _, ok := pc.mutation.Enabled(); !ok {
+		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "Provider.enabled"`)}
 	}
 	return nil
 }
@@ -204,7 +220,7 @@ func (pc *ProviderCreate) createSpec() (*Provider, *sqlgraph.CreateSpec) {
 		_node.Name = value
 	}
 	if value, ok := pc.mutation.GetType(); ok {
-		_spec.SetField(provider.FieldType, field.TypeEnum, value)
+		_spec.SetField(provider.FieldType, field.TypeString, value)
 		_node.Type = value
 	}
 	if value, ok := pc.mutation.Key(); ok {
@@ -214,6 +230,10 @@ func (pc *ProviderCreate) createSpec() (*Provider, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.BaseURL(); ok {
 		_spec.SetField(provider.FieldBaseURL, field.TypeString, value)
 		_node.BaseURL = value
+	}
+	if value, ok := pc.mutation.Enabled(); ok {
+		_spec.SetField(provider.FieldEnabled, field.TypeBool, value)
+		_node.Enabled = value
 	}
 	if nodes := pc.mutation.ModelsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -314,7 +334,7 @@ func (u *ProviderUpsert) UpdateName() *ProviderUpsert {
 }
 
 // SetType sets the "type" field.
-func (u *ProviderUpsert) SetType(v provider.Type) *ProviderUpsert {
+func (u *ProviderUpsert) SetType(v string) *ProviderUpsert {
 	u.Set(provider.FieldType, v)
 	return u
 }
@@ -358,6 +378,18 @@ func (u *ProviderUpsert) UpdateBaseURL() *ProviderUpsert {
 // ClearBaseURL clears the value of the "base_url" field.
 func (u *ProviderUpsert) ClearBaseURL() *ProviderUpsert {
 	u.SetNull(provider.FieldBaseURL)
+	return u
+}
+
+// SetEnabled sets the "enabled" field.
+func (u *ProviderUpsert) SetEnabled(v bool) *ProviderUpsert {
+	u.Set(provider.FieldEnabled, v)
+	return u
+}
+
+// UpdateEnabled sets the "enabled" field to the value that was provided on create.
+func (u *ProviderUpsert) UpdateEnabled() *ProviderUpsert {
+	u.SetExcluded(provider.FieldEnabled)
 	return u
 }
 
@@ -442,7 +474,7 @@ func (u *ProviderUpsertOne) UpdateName() *ProviderUpsertOne {
 }
 
 // SetType sets the "type" field.
-func (u *ProviderUpsertOne) SetType(v provider.Type) *ProviderUpsertOne {
+func (u *ProviderUpsertOne) SetType(v string) *ProviderUpsertOne {
 	return u.Update(func(s *ProviderUpsert) {
 		s.SetType(v)
 	})
@@ -494,6 +526,20 @@ func (u *ProviderUpsertOne) UpdateBaseURL() *ProviderUpsertOne {
 func (u *ProviderUpsertOne) ClearBaseURL() *ProviderUpsertOne {
 	return u.Update(func(s *ProviderUpsert) {
 		s.ClearBaseURL()
+	})
+}
+
+// SetEnabled sets the "enabled" field.
+func (u *ProviderUpsertOne) SetEnabled(v bool) *ProviderUpsertOne {
+	return u.Update(func(s *ProviderUpsert) {
+		s.SetEnabled(v)
+	})
+}
+
+// UpdateEnabled sets the "enabled" field to the value that was provided on create.
+func (u *ProviderUpsertOne) UpdateEnabled() *ProviderUpsertOne {
+	return u.Update(func(s *ProviderUpsert) {
+		s.UpdateEnabled()
 	})
 }
 
@@ -744,7 +790,7 @@ func (u *ProviderUpsertBulk) UpdateName() *ProviderUpsertBulk {
 }
 
 // SetType sets the "type" field.
-func (u *ProviderUpsertBulk) SetType(v provider.Type) *ProviderUpsertBulk {
+func (u *ProviderUpsertBulk) SetType(v string) *ProviderUpsertBulk {
 	return u.Update(func(s *ProviderUpsert) {
 		s.SetType(v)
 	})
@@ -796,6 +842,20 @@ func (u *ProviderUpsertBulk) UpdateBaseURL() *ProviderUpsertBulk {
 func (u *ProviderUpsertBulk) ClearBaseURL() *ProviderUpsertBulk {
 	return u.Update(func(s *ProviderUpsert) {
 		s.ClearBaseURL()
+	})
+}
+
+// SetEnabled sets the "enabled" field.
+func (u *ProviderUpsertBulk) SetEnabled(v bool) *ProviderUpsertBulk {
+	return u.Update(func(s *ProviderUpsert) {
+		s.SetEnabled(v)
+	})
+}
+
+// UpdateEnabled sets the "enabled" field to the value that was provided on create.
+func (u *ProviderUpsertBulk) UpdateEnabled() *ProviderUpsertBulk {
+	return u.Update(func(s *ProviderUpsert) {
+		s.UpdateEnabled()
 	})
 }
 

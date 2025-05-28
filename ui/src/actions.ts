@@ -401,14 +401,31 @@ export interface Model {
   image: boolean;
 }
 
+export type ProviderType =
+  | "OpenAI"
+  | "Gemini"
+  | "Anthropic"
+  | "OpenRouter"
+  | "OpenAI-Compatible"
+  | string;
+
+export const ProviderTypeOptions = [
+  "OpenAI",
+  "Gemini",
+  "Anthropic",
+  "OpenRouter",
+  "OpenAI-Compatible",
+];
+
 export interface Provider {
   id: number;
   name: string;
   type: string;
-  key: string;
+  key: ProviderType;
   base_url: string;
   models: Model[];
   editable: boolean;
+  enabled: boolean;
 }
 
 export async function getProviders(): Promise<Provider[]> {

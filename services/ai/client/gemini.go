@@ -21,29 +21,38 @@ type GenaiModelService interface {
 
 type GeminiClient struct {
 	modelService GenaiModelService
+	oaiClient    *OpenAIClient
 	logger       *zap.SugaredLogger
 }
 
-func NewGeminiClient(config *config.Gemini, logger *zap.SugaredLogger) (*GeminiClient, error) {
+func NewGeminiClient(cfg *config.Gemini, logger *zap.SugaredLogger) (*GeminiClient, error) {
 	c, err := genai.NewClient(context.TODO(), &genai.ClientConfig{
-		APIKey:  config.Key,
+		APIKey:  cfg.Key,
 		Backend: genai.BackendGeminiAPI,
 	})
 	if err != nil {
 		return nil, err
 	}
+	completion := NewOpenAIChatCompletionService(&config.OpenAI{
+		Name:    cfg.Name,
+		Type:    cfg.Type,
+		Key:     cfg.Key,
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+	})
+	oai := NewOpenAIClient(completion, logger)
 	return &GeminiClient{
 		modelService: c.Models,
+		oaiClient:    oai,
 		logger:       logger,
 	}, nil
 }
 
 func (c *GeminiClient) Chat(ctx context.Context, request *ChatRequest) (*ChatResponse, error) {
-	return nil, errors.New("not implemented")
+	return c.oaiClient.Chat(ctx, request)
 }
 
 func (c *GeminiClient) FunctionCall(ctx context.Context, request *ChatRequest) (*FunctionCallResponse, error) {
-	return nil, errors.New("ot implemented")
+	return c.oaiClient.FunctionCall(ctx, request)
 }
 
 var imageIdRE = regexp.MustCompile(`<info\s+row_id="([0-9a-zA-Z]+)"\s+column_id="([0-9a-zA-Z]+)"\s*\/>`)
