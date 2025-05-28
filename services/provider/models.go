@@ -14,7 +14,7 @@ type ProviderType string
 
 const (
 	ProviderTypeOpenAI           ProviderType = "OpenAI"
-	ProviderTypeOpenGemini       ProviderType = "Gemini"
+	ProviderTypeGemini           ProviderType = "Gemini"
 	ProviderTypeOpenAIcompatible ProviderType = "OpenAI-Compatible"
 	ProviderTypeAnthropic        ProviderType = "Anthropic"
 	ProviderOpenRouter           ProviderType = "OpenRouter"

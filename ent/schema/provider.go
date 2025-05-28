@@ -21,7 +21,7 @@ func (Provider) Mixin() []ent.Mixin {
 // Fields of the Provider.
 func (Provider) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name"),
+		field.String("name").Unique(),
 		field.String("type"),
 		field.String("key").Optional(),
 		field.String("base_url").Optional(),

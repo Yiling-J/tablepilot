@@ -9,7 +9,7 @@ address = ":8080"
 
 [[providers]]
 name = "openai"
-type = "openai"
+type = "OpenAI-Compatible"
 key = "abc"
 base_url = "https://models.inference.ai.azure.com"
 

@@ -150,10 +150,10 @@ func (p *ProviderServiceImpl) BuildProviders(ctx context.Context) error {
 }
 
 var baseUrlMapping = map[ProviderType]string{
-	ProviderTypeOpenAI:     "https://api.openai.com/v1",
-	ProviderOpenRouter:     "https://openrouter.ai/api/v1",
-	ProviderTypeAnthropic:  "https://api.anthropic.com/v1/",
-	ProviderTypeOpenGemini: "https://generativelanguage.googleapis.com/v1beta/openai/",
+	ProviderTypeOpenAI:    "https://api.openai.com/v1",
+	ProviderOpenRouter:    "https://openrouter.ai/api/v1",
+	ProviderTypeAnthropic: "https://api.anthropic.com/v1/",
+	ProviderTypeGemini:    "https://generativelanguage.googleapis.com/v1beta/openai/",
 }
 
 func sameDomain(u1, u2 string) (bool, error) {
@@ -190,18 +190,12 @@ func addProviderBaseURL(p Provider) Provider {
 			break
 		}
 	case "gemini":
-		p.Type = string(ProviderTypeOpenGemini)
+		p.Type = string(ProviderTypeGemini)
 	}
 
-	switch p.Type {
-	case string(ProviderTypeOpenAI):
-		p.BaseURL = "https://api.openai.com/v1"
-	case string(ProviderTypeOpenGemini):
-		p.BaseURL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-	case string(ProviderTypeAnthropic):
-		p.BaseURL = "https://api.anthropic.com/v1/"
-	case string(ProviderOpenRouter):
-		p.BaseURL = "https://openrouter.ai/api/v1"
+	url, ok := baseUrlMapping[ProviderType(p.Type)]
+	if ok {
+		p.BaseURL = url
 	}
 	return p
 }

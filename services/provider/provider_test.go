@@ -54,7 +54,7 @@ func TestProviderService_CreateProvider(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "k", p.Key)
 	require.Equal(t, "b", p.BaseURL)
-	require.Equal(t, provider.TypeOpenai, p.Type)
+	require.Equal(t, "openai", p.Type)
 	models, err := p.QueryModels().All(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(models))
@@ -166,7 +166,7 @@ func TestProviderService_genProviders(t *testing.T) {
 		},
 	}, db, zap.NewNop().Sugar())
 	err := srv.CreateProvider(context.TODO(), Provider{
-		ID: 2, Name: "p2", Type: "gemini", Key: "k2", BaseURL: "b2",
+		ID: 2, Name: "p2", Type: "gemini", Key: "k2", BaseURL: "b2", Enabled: true,
 		Models: []Model{
 			{Model: "mg", Alias: "mga", MaxTokens: 100, Rpm: 5},
 			{Model: "mgi", Alias: "mgia", Client: "p2", MaxTokens: 1, Rpm: 1, Image: true},
@@ -178,7 +178,7 @@ func TestProviderService_genProviders(t *testing.T) {
 
 	expected := []Provider{
 		{
-			Name: "p1", Type: "openai", Key: "k", BaseURL: "b", Editable: false,
+			Name: "p1", Type: string(ProviderTypeOpenAIcompatible), Key: "k", BaseURL: "b", Editable: false, Enabled: true,
 			Models: []Model{
 				{Model: "m", Alias: "ma", MaxTokens: 100, Rpm: 5, Client: "p1"},
 				{Model: "m2", Alias: "ma2", MaxTokens: 200, Rpm: 25, Client: "p1"},
@@ -186,7 +186,7 @@ func TestProviderService_genProviders(t *testing.T) {
 			},
 		},
 		{
-			ID: p.ID, Name: "p2", Type: "gemini", Key: "k2", BaseURL: "b2", Editable: true,
+			ID: p.ID, Name: "p2", Type: string(ProviderTypeGemini), Key: "k2", BaseURL: baseUrlMapping[ProviderTypeGemini], Editable: true, Enabled: true,
 			Models: []Model{
 				{Model: "mg", Alias: "mga", MaxTokens: 100, Rpm: 5, Client: "p2"},
 				{Model: "mgi", Alias: "mgia", Client: "p2", MaxTokens: 1, Rpm: 1, Image: true},
@@ -197,4 +197,73 @@ func TestProviderService_genProviders(t *testing.T) {
 	providers, err := srv.genProviders(context.TODO())
 	require.NoError(t, err)
 	require.Equal(t, expected, providers)
+}
+
+func TestProviderService_providerBaseURL(t *testing.T) {
+	tests := []struct {
+		provider Provider
+		expected Provider
+	}{
+		{
+			provider: Provider{Name: "p1", Type: "openai", BaseURL: "https://foo.com"},
+			expected: Provider{
+				Name:    "p1",
+				Type:    string(ProviderTypeOpenAIcompatible),
+				BaseURL: "https://foo.com",
+			},
+		},
+		{
+			provider: Provider{Name: "p2", Type: "openai", BaseURL: "https://api.openai.com/v1"},
+			expected: Provider{
+				Name:    "p2",
+				Type:    string(ProviderTypeOpenAI),
+				BaseURL: baseUrlMapping[ProviderTypeOpenAI],
+			},
+		},
+		{
+			provider: Provider{Name: "p3", Type: string(ProviderTypeOpenAI), BaseURL: "https://bar.com"},
+			expected: Provider{
+				Name:    "p3",
+				Type:    string(ProviderTypeOpenAI),
+				BaseURL: baseUrlMapping[ProviderTypeOpenAI],
+			},
+		},
+		{
+			provider: Provider{Name: "p4", Type: "gemini", BaseURL: "https://foo.com"},
+			expected: Provider{
+				Name:    "p4",
+				Type:    string(ProviderTypeGemini),
+				BaseURL: baseUrlMapping[ProviderTypeGemini],
+			},
+		},
+		{
+			provider: Provider{Name: "p5", Type: "Gemini", BaseURL: "https://bar.com"},
+			expected: Provider{
+				Name:    "p5",
+				Type:    "Gemini",
+				BaseURL: baseUrlMapping[ProviderTypeGemini],
+			},
+		},
+		{
+			provider: Provider{Name: "p6", Type: "openai", BaseURL: "https://openrouter.ai/api/v1"},
+			expected: Provider{
+				Name:    "p6",
+				Type:    string(ProviderOpenRouter),
+				BaseURL: baseUrlMapping[ProviderOpenRouter],
+			},
+		},
+		{
+			provider: Provider{Name: "p7", Type: string(ProviderTypeAnthropic)},
+			expected: Provider{
+				Name:    "p7",
+				Type:    string(ProviderTypeAnthropic),
+				BaseURL: baseUrlMapping[ProviderTypeAnthropic],
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		result := addProviderBaseURL(tt.provider)
+		require.Equal(t, tt.expected, result)
+	}
 }

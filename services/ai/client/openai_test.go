@@ -109,3 +109,35 @@ func TestClient_OpenAIContentTypeImage(t *testing.T) {
 	expected := `{"messages":[{"content":"foo","role":"user"},{"content":"\nBelow is the image with ID: \u003ci1.png\u003e","role":"user"},{"content":[{"image_url":{"url":"i1"},"type":"image_url"}],"role":"user"},{"content":"\nBelow is the image with ID: \u003ci2.png\u003e","role":"user"},{"content":[{"image_url":{"url":"i2"},"type":"image_url"}],"role":"user"}],"max_completion_tokens":0,"presence_penalty":0,"temperature":0,"response_format":{"json_schema":{"name":"schema","description":"schema for table","schema":{"$schema":"v1","type":"string"}},"type":"json_schema"}}`
 	require.Equal(t, expected, string(b))
 }
+
+func TestClient_OpenAIFunctionCall(t *testing.T) {
+	m := &mockOpenAICompletionService{
+		new: func(ctx context.Context, body openai.ChatCompletionNewParams, opts ...option.RequestOption) (res *openai.ChatCompletion, err error) {
+			return &openai.ChatCompletion{
+				Choices: []openai.ChatCompletionChoice{{Message: openai.ChatCompletionMessage{
+					Content: "foobar",
+					ToolCalls: []openai.ChatCompletionMessageToolCall{
+						{Function: openai.ChatCompletionMessageToolCallFunction{
+							Name:      "t1",
+							Arguments: `{"p1": 12}`,
+						}},
+					},
+				}}},
+				Usage: openai.CompletionUsage{TotalTokens: 100},
+			}, nil
+		},
+	}
+	client := NewOpenAIClient(m, zap.NewNop().Sugar())
+	resp, err := client.FunctionCall(context.TODO(), &ChatRequest{
+		Messages: []*Message{UserMessage("abc")},
+		Tools: []ChatTool{
+			{Name: "t1", Description: "td1", Parameters: []ChatToolParam{{
+				Name: "p1",
+				Type: "int",
+			}}},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "foobar", resp.Text)
+	require.Equal(t, FunctionCall{Name: "t1", Arguments: map[string]any{"p1": 12.0}}, resp.FunctionCalls[0])
+}
