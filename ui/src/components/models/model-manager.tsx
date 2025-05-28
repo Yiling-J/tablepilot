@@ -13,17 +13,11 @@ import { ProviderFormDialog } from "@/components/models/provider-form-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { PlusCircle, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "../ui/button";
 
-interface ModelManagerProps {
-  shouldOpenAddProviderDialog?: boolean;
-  onAddProviderDialogDismiss?: () => void;
-}
-
-export function ModelManager({
-  shouldOpenAddProviderDialog,
-  onAddProviderDialogDismiss,
-}: ModelManagerProps) {
+export function ModelManager() {
   const { toast } = useToast();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,14 +53,6 @@ export function ModelManager({
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (shouldOpenAddProviderDialog) {
-      setEditingProvider(null);
-      setIsProviderFormOpen(true);
-      onAddProviderDialogDismiss?.();
-    }
-  }, [shouldOpenAddProviderDialog, onAddProviderDialogDismiss]);
 
   const handleProviderSubmit = async (providerData: Provider) => {
     try {
@@ -303,14 +289,6 @@ export function ModelManager({
     setIsProviderFormOpen(true);
   };
 
-  // Effect to handle prop changes for opening dialogs
-  useEffect(() => {
-    if (shouldOpenAddProviderDialog) {
-      openAddProviderDialogInternal();
-      onAddProviderDialogDismiss?.();
-    }
-  }, [shouldOpenAddProviderDialog, onAddProviderDialogDismiss]);
-
   // Skeleton Component for ProviderCard
   const ProviderCardSkeleton = () => (
     <Card className="mb-6">
@@ -351,6 +329,29 @@ export function ModelManager({
         <ProviderCardSkeleton />
         <ProviderCardSkeleton />
         <ProviderCardSkeleton />
+      </div>
+    );
+  }
+
+  if (providers.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+        <ProviderFormDialog
+          isOpen={isProviderFormOpen}
+          onOpenChange={setIsProviderFormOpen}
+          onSubmit={handleProviderSubmit}
+          initialData={editingProvider}
+        />
+        <div
+          className="border border-muted rounded-2xl p-12 bg-transparent text-muted-foreground flex flex-col items-center gap-3 hover:bg-muted-foreground/5 cursor-pointer"
+          onClick={() => {
+            openAddProviderDialogInternal();
+          }}
+          aria-label="Add provider"
+        >
+          <PlusCircle className="w-8 h-8 mb-4" />
+          <p>Create a new provider</p>
+        </div>
       </div>
     );
   }
@@ -398,6 +399,15 @@ export function ModelManager({
         title={`Confirm Deletion`}
         description={`Are you sure you want to delete this ${deleteAction?.type}? This action cannot be undone.`}
       />
+      <Button
+        onClick={() => {
+          openAddProviderDialogInternal();
+        }}
+        className="fixed h-15 w-15 bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg"
+        aria-label="Add provider"
+      >
+        <PlusIcon className="h-6 w-6" />
+      </Button>
     </>
   );
 }
