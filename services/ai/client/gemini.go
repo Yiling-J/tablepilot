@@ -34,9 +34,10 @@ func NewGeminiClient(cfg *config.Gemini, logger *zap.SugaredLogger) (*GeminiClie
 		return nil, err
 	}
 	completion := NewOpenAIChatCompletionService(&config.OpenAI{
-		Name: cfg.Name,
-		Type: cfg.Type,
-		Key:  cfg.Key,
+		Name:    cfg.Name,
+		Type:    cfg.Type,
+		Key:     cfg.Key,
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
 	})
 	oai := NewOpenAIClient(completion, logger)
 	return &GeminiClient{
