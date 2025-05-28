@@ -53,7 +53,7 @@ export function ModelFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-card text-card-foreground">
+      <DialogContent className="sm:max-w-[450px] bg-card text-card-foreground">
         <DialogHeader>
           <DialogTitle>
             {initialData ? "Edit Model" : "Add New Model"}
@@ -65,21 +65,19 @@ export function ModelFormDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="model" className="text-right">
+          <div className="flex flex-row items-center">
+            <Label htmlFor="model" className="w-[200px]">
               Name
             </Label>
-            <div className="col-span-3">
-              <Input
-                id="model"
-                name="model"
-                className="w-full bg-input border-border"
-                defaultValue={initialData?.model || ""}
-              />
-            </div>
+            <Input
+              id="model"
+              name="model"
+              className="w-full bg-input border-border"
+              defaultValue={initialData?.model || ""}
+            />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="alias" className="text-right">
+          <div className="flex flex-row items-center">
+            <Label htmlFor="alias" className="w-[200px]">
               Alias
             </Label>
             <Input
@@ -90,8 +88,8 @@ export function ModelFormDialog({
               defaultValue={initialData?.alias || ""}
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="max_tokens" className="text-right">
+          <div className="flex flex-row items-center">
+            <Label htmlFor="max_tokens" className="w-[200px]">
               Max Tokens
             </Label>
             <Input
@@ -102,8 +100,8 @@ export function ModelFormDialog({
               defaultValue={initialData?.max_tokens || 6000}
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="rpm" className="text-right">
+          <div className="flex flex-row items-center">
+            <Label htmlFor="rpm" className="w-[200px]">
               RPM
             </Label>
             <Input
@@ -114,17 +112,15 @@ export function ModelFormDialog({
               defaultValue={initialData?.rpm || 10}
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="imageSupport" className="text-right">
-              Image Support
+          <div className="flex flex-row items-center justify-between">
+            <Label htmlFor="imageSupport" className="w-[250px]">
+              Image Generation Support
             </Label>
-            <div className="col-span-3 flex items-center">
-              <Switch
-                id="imageSupport"
-                name="imageSupport"
-                defaultChecked={initialData?.image || false}
-              />
-            </div>
+            <Switch
+              id="imageSupport"
+              name="imageSupport"
+              defaultChecked={initialData?.image || false}
+            />
           </div>
           <DialogFooter>
             <Button
