@@ -9,8 +9,10 @@ import { WorkflowListPage } from "./components/workflow-list-page.tsx";
 import { CreateTableDialogProvider } from "./context/create-table.tsx";
 import "./index.css";
 
+import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import { ErrorBoundary } from "react-error-boundary";
 import { Toaster } from "react-hot-toast";
+
 import {
     Navigate,
     Outlet,
@@ -29,6 +31,7 @@ const router = createBrowserRouter([
           <TablesProvider>
             <CreateTableDialogProvider>
               <Toaster />
+              <ShadcnToaster />
               <Outlet />
             </CreateTableDialogProvider>
           </TablesProvider>
