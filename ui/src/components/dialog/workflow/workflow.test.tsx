@@ -3,10 +3,13 @@ import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 // Removed act import
+import { useNavigate } from "react-router-dom";
 import WorkflowExecutionDialog from "./workflow";
 
 describe("Workflow Run", () => {
   beforeEach(async () => {
+    vi.mock("react-router-dom");
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
     vi.mock("@/actions");
     const mockedGetModels = vi.mocked(getModels);
     mockedGetModels.mockResolvedValue({
