@@ -29,7 +29,7 @@ export function ModelCard({
 
   return (
     <Card
-      className={`bg-card/80 hover:bg-muted-foreground/5 transition-all duration-300 flex flex-col ${!isProviderEnabled && isProviderEditable ? "opacity-60" : ""}`}
+      className={`model-card bg-card/80 hover:bg-muted-foreground/5 transition-all duration-300 flex flex-col ${!isProviderEnabled && isProviderEditable ? "opacity-60" : ""}`}
     >
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">

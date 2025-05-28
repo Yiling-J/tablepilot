@@ -42,7 +42,7 @@ export function ProviderCard({
 
   return (
     <div
-      className={`w-full py-6 border-b border-border/50 ${interactionsDisabled && provider.editable ? "opacity-60" : ""}`}
+      className={`provider-card w-full py-6 border-b border-border/50 ${interactionsDisabled && provider.editable ? "opacity-60" : ""}`}
     >
       {/* Header Section */}
       <div className="flex justify-between items-center gap-2 mb-4 px-2">

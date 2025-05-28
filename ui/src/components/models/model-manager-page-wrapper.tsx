@@ -2,6 +2,7 @@ import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { ModeToggle } from "../darkmode";
 import { TablepilotHeader } from "../header";
+import { Button } from "../ui/button";
 import { ScrollArea } from "../ui/scroll-area";
 import { ModelManager } from "./model-manager";
 
@@ -30,13 +31,13 @@ export function ModelManagerPageWrapper() {
           </div>
         </div>
       </ScrollArea>
-      <button
+      <Button
         onClick={openAddProviderDialog}
-        className="fixed bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg"
+        className="fixed h-15 w-15 bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg"
         aria-label="Add provider"
       >
         <PlusIcon className="h-6 w-6" />
-      </button>
+      </Button>
     </div>
   );
 }

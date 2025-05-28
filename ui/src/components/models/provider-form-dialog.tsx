@@ -23,7 +23,7 @@ import { useEffect, useState } from "react";
 interface ProviderFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (provider: Provider) => void;
+  onSubmit: (provider: Provider) => Promise<void>;
   initialData?: Provider | null;
 }
 
@@ -56,7 +56,9 @@ export function ProviderFormDialog({
     }
   }, [initialData, isOpen]);
 
-  const handleSubmitInternal = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitInternal = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
     event.preventDefault();
     const data: Provider = {
       id: initialData?.id || 0,
@@ -68,7 +70,7 @@ export function ProviderFormDialog({
       editable: initialData?.editable ?? true,
       enabled: initialData?.enabled ?? true,
     };
-    onSubmit(data);
+    await onSubmit(data);
     toast({
       title: initialData ? "Provider Updated" : "Provider Created",
       description: `${data.name} has been successfully ${initialData ? "updated" : "created"}.`,
