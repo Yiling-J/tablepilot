@@ -23,11 +23,13 @@ type Backend struct {
 	TableService    table.TableService
 	ProviderService provider.ProviderService
 	WorkflowService workflow.WorkflowService
+	DatasetService  dataset.DatasetService
 }
 
 func NewBackend(
 	config *config.Config, db *ent.Client,
-	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService, providerService provider.ProviderService, workflowService workflow.WorkflowService,
+	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
+	providerService provider.ProviderService, workflowService workflow.WorkflowService, datasetService dataset.DatasetService,
 ) *Backend {
 	return &Backend{
 		Config:          config,
@@ -37,6 +39,7 @@ func NewBackend(
 		TableService:    tableService,
 		ProviderService: providerService,
 		WorkflowService: workflowService,
+		DatasetService:  datasetService,
 	}
 }
 
@@ -97,6 +100,11 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 	}
 
 	err = container.Provide(workflow.NewWorkflowService, dig.As(new((workflow.WorkflowService))))
+	if err != nil {
+		panic(err)
+	}
+
+	err = container.Provide(dataset.NewDatasetService, dig.As(new((dataset.DatasetService))))
 	if err != nil {
 		panic(err)
 	}

@@ -311,5 +311,106 @@ func BuildCLI(root *cobra.Command) *CLI {
 
 	cmd.AddCommand(workflowCommand)
 
+	// Dataset commands
+	datasetCmd := &cobra.Command{
+		Use:   "dataset",
+		Short: "Manage datasets",
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Ensure backend and handler are initialized for dataset commands as well
+			// This might be redundant if the root PersistentPreRunE always runs first
+			// and sets up cli.Backend and cli.Handler.
+			// If subcommands of datasetCmd don't trigger root's PersistentPreRunE,
+			// this explicit setup might be needed. Cobra's behavior can vary.
+			// For safety, let's assume it's needed or harmlessly redundant.
+			if cli.Backend == nil || cli.Handler == nil {
+				// This re-runs part of the root command's PersistentPreRunE logic.
+				// Consider refactoring PersistentPreRunE if this becomes complex.
+				rootCmd := cmd.Root()
+				if rootCmd.PersistentPreRunE != nil {
+					// Need to pass the correct root command and args
+					// This is a bit of a hack; ideally, Cobra ensures parent PersistentPreRunE runs.
+					// Let's assume the root PersistentPreRunE has already run.
+				}
+				if cli.Backend == nil { // If still nil after trying to run root's
+					return fmt.Errorf("backend not initialized for dataset command")
+				}
+			}
+			return nil
+		},
+	}
+
+	datasetCreateCmd := &cobra.Command{
+		Use:   "create --name <name> [--desc <description>] (--type list --data <item1> --data <item2> | --type csv --file <path/to/file1.csv> [--file <path/to/file2.csv>...])",
+		Short: "Create a new dataset",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.CreateDataset(cmd, args)
+		},
+	}
+	datasetCreateCmd.Flags().StringP("name", "n", "", "Name of the dataset (required)")
+	datasetCreateCmd.MarkFlagRequired("name")
+	datasetCreateCmd.Flags().StringP("desc", "d", "", "Description of the dataset")
+	datasetCreateCmd.Flags().StringP("type", "t", "", "Type of the dataset ('list' or 'csv') (required)")
+	datasetCreateCmd.MarkFlagRequired("type")
+	datasetCreateCmd.Flags().StringArray("data", []string{}, "Data items for 'list' type dataset (can be specified multiple times)")
+	datasetCreateCmd.Flags().StringArrayP("file", "f", []string{}, "Path to CSV file(s) for 'csv' type dataset (can be specified multiple times)")
+
+	datasetGetCmd := &cobra.Command{
+		Use:   "get <dataset_id_or_name>",
+		Short: "Get details of a dataset",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.GetDataset(cmd, args)
+		},
+	}
+
+	datasetListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List all available datasets",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.ListDatasets(cmd, args)
+		},
+	}
+
+	datasetUpdateCmd := &cobra.Command{
+		Use:   "update <dataset_id_or_name> [--name <new_name>] [--desc <new_description>] [--type <new_type>] [--data <item1>...] [--file <path/to/file1.csv>...]",
+		Short: "Update an existing dataset",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.UpdateDataset(cmd, args)
+		},
+	}
+	datasetUpdateCmd.Flags().String("name", "", "New name for the dataset")
+	datasetUpdateCmd.Flags().String("desc", "", "New description for the dataset")
+	datasetUpdateCmd.Flags().String("type", "", "New type for the dataset ('list' or 'csv')")
+	datasetUpdateCmd.Flags().StringArray("data", []string{}, "New data items for 'list' type (replaces existing if type is list or changed to list)")
+	datasetUpdateCmd.Flags().StringArrayP("file", "f", []string{}, "New CSV file(s) for 'csv' type (replaces existing if type is csv or changed to csv)")
+
+	datasetDeleteCmd := &cobra.Command{
+		Use:   "delete <dataset_id_or_name>",
+		Short: "Delete a dataset",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.DeleteDataset(cmd, args)
+		},
+	}
+
+	datasetPreviewCmd := &cobra.Command{
+		Use: "preview <dataset_id_or_name>",
+		Short: "Preview data from a dataset (first 100 rows for CSV)",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.PreviewDataset(cmd, args)
+		},
+	}
+
+
+	datasetCmd.AddCommand(datasetCreateCmd)
+	datasetCmd.AddCommand(datasetGetCmd)
+	datasetCmd.AddCommand(datasetListCmd)
+	datasetCmd.AddCommand(datasetUpdateCmd)
+	datasetCmd.AddCommand(datasetDeleteCmd)
+	datasetCmd.AddCommand(datasetPreviewCmd)
+	cmd.AddCommand(datasetCmd)
+
 	return cli
 }

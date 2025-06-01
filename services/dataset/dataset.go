@@ -15,10 +15,11 @@ import (
 )
 
 type DatasetService interface {
-	Get(ctx context.Context, source string)
-	List(ctx context.Context)
-	Create(ctx context.Context, req *CreateDatasetRequest)
-	Update(ctx context.Context, source string, req *CreateDatasetRequest)
+	Get(ctx context.Context, source string) (*DatasetInfo, error)
+	List(ctx context.Context) ([]*DatasetInfo, error)
+	Create(ctx context.Context, req *CreateDatasetRequest) (string, error)
+	Update(ctx context.Context, datasetID string, req *CreateDatasetRequest) error
+	Delete(ctx context.Context, datasetID string) error
 	Preview(ctx context.Context, source string) (*DatasetRows, error)
 	First(ctx context.Context)
 }
@@ -80,6 +81,124 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 	return sr.Nanoid, tx.Commit()
 }
 
+func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
+	datasets, err := s.db.Dataset.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("dataset.List: query all: %w", err)
+	}
+	var datasetInfos []*DatasetInfo
+	for _, ds := range datasets {
+		datasetInfos = append(datasetInfos, &DatasetInfo{
+			Name:        ds.Name,
+			Description: ds.Description,
+			Type:        string(ds.Type),
+			ColumnCount: len(ds.Indexer.ColumnNames),
+			ValueCount:  len(ds.Values),
+		})
+	}
+	return datasetInfos, nil
+}
+
+func (s *DatasetServiceImpl) Update(ctx context.Context, datasetID string, req *CreateDatasetRequest) error {
+	tx, err := s.db.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("dataset.Update: starting a transaction: %w", err)
+	}
+	ds, err := tx.Dataset.Query().Where(db_dataset.Or(
+		db_dataset.Name(datasetID),
+		db_dataset.Nanoid(datasetID),
+	)).Only(ctx)
+	if err != nil {
+		return ent.Rollback(tx, fmt.Errorf("dataset.Update: get from db: %w", err))
+	}
+
+	updater := ds.Update().
+		SetName(req.Name).
+		SetDescription(req.Description).
+		SetType(db_dataset.Type(req.Type))
+
+	switch req.Type {
+	case "csv":
+		// Remove old files and directory if they exist
+		if ds.Path != "" {
+			oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
+			if _, err := os.Stat(oldDirPath); !os.IsNotExist(err) {
+				if err := os.RemoveAll(oldDirPath); err != nil {
+					return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, err))
+				}
+			}
+		}
+
+		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, "shared", ds.Nanoid)
+		err := os.MkdirAll(dirPath, os.ModePerm)
+		if err != nil {
+			return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to create directory: %w", err))
+		}
+
+		files := []string{}
+		for i, file := range req.Files {
+			filePath := filepath.Join(dirPath, fmt.Sprintf("%d.csv", i))
+			files = append(files, filePath)
+			outFile, err := os.Create(filePath)
+			if err != nil {
+				return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to create file %s: %w", filePath, err))
+			}
+
+			_, err = io.Copy(outFile, file)
+			outFile.Close()
+			if err != nil {
+				return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to write to file %s: %w", filePath, err))
+			}
+		}
+		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), files)
+		if err != nil {
+			return ent.Rollback(tx, fmt.Errorf("dataset.Update: build csv index: %w", err))
+		}
+		updater.SetPath(fmt.Sprintf("shared/%s", ds.Nanoid)).SetIndexer(indexer.CSVIndexer).ClearValues()
+	case "list":
+		updater.SetValues(req.Data).ClearPath().ClearIndexer()
+	default:
+		return ent.Rollback(tx, fmt.Errorf("dataset.Update: unknown dataset type: %s", req.Type))
+	}
+
+	_, err = updater.Save(ctx)
+	if err != nil {
+		return ent.Rollback(tx, fmt.Errorf("dataset.Update: ent update: %w", err))
+	}
+
+	return tx.Commit()
+}
+
+func (s *DatasetServiceImpl) Delete(ctx context.Context, datasetID string) error {
+	tx, err := s.db.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("dataset.Delete: starting a transaction: %w", err)
+	}
+	ds, err := tx.Dataset.Query().Where(db_dataset.Or(
+		db_dataset.Name(datasetID),
+		db_dataset.Nanoid(datasetID),
+	)).Only(ctx)
+	if err != nil {
+		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: get from db: %w", err))
+	}
+
+	if ds.Type == db_dataset.TypeCSV && ds.Path != "" {
+		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
+		if _, err := os.Stat(dirPath); !os.IsNotExist(err) {
+			if err := os.RemoveAll(dirPath); err != nil {
+				return ent.Rollback(tx, fmt.Errorf("dataset.Delete: failed to remove directory %s: %w", dirPath, err))
+			}
+		}
+	}
+
+	err = tx.Dataset.DeleteOne(ds).Exec(ctx)
+	if err != nil {
+		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: ent delete: %w", err))
+	}
+
+	return tx.Commit()
+}
+
 func (s *DatasetServiceImpl) Get(ctx context.Context, source string) (*DatasetInfo, error) {
 	sr, err := s.db.Dataset.Query().Where(db_dataset.Or(
 		db_dataset.Name(source),
@@ -133,4 +252,11 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown source type: %s", sr.Type)
+}
+
+func NewDatasetService(db *ent.Client, cfg *config.Config) DatasetService {
+	return &DatasetServiceImpl{
+		db:  db,
+		cfg: cfg,
+	}
 }

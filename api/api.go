@@ -6,6 +6,16 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
+	"bytes" // For base64 decoding
+	"encoding/base64" // For base64 decoding
+	"fmt" // For error messages
+	"io"      // For io.Reader
+	"net/http" // For http status codes
+
+	"github.com/Yiling-J/tablepilot/ent" // For ent.IsNotFound
+	services_dataset "github.com/Yiling-J/tablepilot/services/dataset" // Alias for dataset service
+	"github.com/Yiling-J/tablepilot/services/provider"
+	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/google/uuid"
@@ -547,4 +557,168 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/workflows", hs.CreateWorkflow)
 	hs.apiv1.PATCH("/workflows/:id", hs.UpdateWorkflow)
 	hs.apiv1.DELETE("/workflows/:id", hs.DeleteWorkflow)
+
+	// Dataset routes
+	datasetRoutes := hs.apiv1.Group("/datasets")
+	{
+		datasetRoutes.POST("", hs.CreateDataset)
+		datasetRoutes.GET("", hs.ListDatasets)
+		datasetRoutes.GET("/:id", hs.GetDataset)
+		datasetRoutes.PATCH("/:id", hs.UpdateDataset)
+		datasetRoutes.DELETE("/:id", hs.DeleteDataset)
+		datasetRoutes.GET("/:id/preview", hs.PreviewDataset)
+	}
+}
+
+// --- Dataset Handlers ---
+
+func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
+	var apiReq services_dataset.DatasetAPIRequest
+	if err := ctx.ShouldBindJSON(&apiReq); err != nil {
+		errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err))
+		return
+	}
+
+	serviceReq := &services_dataset.CreateDatasetRequest{
+		Name:        apiReq.Name,
+		Description: apiReq.Description,
+		Type:        apiReq.Type,
+		Data:        apiReq.Data,
+	}
+
+	if apiReq.Type == "csv" {
+		if len(apiReq.Files) == 0 {
+			errorResponse(ctx, http.StatusBadRequest, errors.New("at least one file is required for CSV dataset type"))
+			return
+		}
+		var readers []io.Reader
+		for _, fileContentBase64 := range apiReq.Files {
+			decodedBytes, err := base64.StdEncoding.DecodeString(fileContentBase64)
+			if err != nil {
+				errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("failed to decode base64 file content: %w", err))
+				return
+			}
+			readers = append(readers, bytes.NewReader(decodedBytes))
+		}
+		serviceReq.Files = readers
+	}
+
+	nanoid, err := hs.DatasetService.Create(ctx.Request.Context(), serviceReq)
+	if err != nil {
+		// Consider checking for specific error types, e.g., validation errors vs. server errors
+		errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to create dataset: %w", err))
+		return
+	}
+	ctx.JSON(http.StatusCreated, gin.H{"id": nanoid, "name": serviceReq.Name})
+}
+
+func (hs *HTTPServer) GetDataset(ctx *gin.Context) {
+	datasetID := ctx.Param("id")
+	dsInfo, err := hs.DatasetService.Get(ctx.Request.Context(), datasetID)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			errorResponse(ctx, http.StatusNotFound, fmt.Errorf("dataset '%s' not found: %w", datasetID, err))
+		} else {
+			errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to get dataset '%s': %w", datasetID, err))
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK, dsInfo)
+}
+
+func (hs *HTTPServer) ListDatasets(ctx *gin.Context) {
+	datasets, err := hs.DatasetService.List(ctx.Request.Context())
+	if err != nil {
+		errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to list datasets: %w", err))
+		return
+	}
+	if datasets == nil {
+		ctx.JSON(http.StatusOK, []*services_dataset.DatasetInfo{})
+		return
+	}
+	ctx.JSON(http.StatusOK, datasets)
+}
+
+func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
+	datasetID := ctx.Param("id")
+	var apiReq services_dataset.DatasetAPIRequest
+
+	if err := ctx.ShouldBindJSON(&apiReq); err != nil {
+		errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err))
+		return
+	}
+
+	// It's crucial that the client sends ALL fields for the intended new state of the dataset,
+	// or only those fields it wishes to change if the service supports partial updates (PATCH).
+	// Given CreateDatasetRequest is reused, it implies a full update for provided fields.
+	// The service's Update method behavior for missing fields (e.g. nil Files for CSV) is important.
+	serviceReq := &services_dataset.CreateDatasetRequest{
+		Name:        apiReq.Name,
+		Description: apiReq.Description,
+		Type:        apiReq.Type,
+		Data:        apiReq.Data,
+	}
+
+	if apiReq.Type == "csv" {
+		// If apiReq.Files is nil (key not present in JSON), serviceReq.Files will be nil.
+		// If apiReq.Files is an empty slice `[]` (key present but empty), serviceReq.Files will be an empty slice.
+		// The service needs to distinguish these if "no change" is different from "set to empty".
+		// Current service seems to clear files if type is CSV and no new files are provided.
+		if apiReq.Files != nil {
+			var readers []io.Reader
+			for _, fileContentBase64 := range apiReq.Files {
+				decodedBytes, err := base64.StdEncoding.DecodeString(fileContentBase64)
+				if err != nil {
+					errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("failed to decode base64 file content: %w", err))
+					return
+				}
+				readers = append(readers, bytes.NewReader(decodedBytes))
+			}
+			serviceReq.Files = readers
+		} else {
+			// If type is CSV and 'files' is not in payload or is null, this will pass nil to service.
+			// If 'files' is `[]`, this will pass an empty slice.
+			// The service's Update method for CSV currently expects files; nil/empty slice will clear existing files.
+			serviceReq.Files = []io.Reader{} // Ensures it's an empty slice if not provided, matching service expectation of clearing.
+		}
+	}
+
+	err := hs.DatasetService.Update(ctx.Request.Context(), datasetID, serviceReq)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			errorResponse(ctx, http.StatusNotFound, fmt.Errorf("dataset '%s' not found for update: %w", datasetID, err))
+		} else {
+			errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to update dataset '%s': %w", datasetID, err))
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Dataset '%s' updated successfully.", datasetID)})
+}
+
+func (hs *HTTPServer) DeleteDataset(ctx *gin.Context) {
+	datasetID := ctx.Param("id")
+	err := hs.DatasetService.Delete(ctx.Request.Context(), datasetID)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			errorResponse(ctx, http.StatusNotFound, fmt.Errorf("dataset '%s' not found for deletion: %w", datasetID, err))
+		} else {
+			errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to delete dataset '%s': %w", datasetID, err))
+		}
+		return
+	}
+	ctx.Status(http.StatusNoContent)
+}
+
+func (hs *HTTPServer) PreviewDataset(ctx *gin.Context) {
+	datasetID := ctx.Param("id")
+	previewData, err := hs.DatasetService.Preview(ctx.Request.Context(), datasetID)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			errorResponse(ctx, http.StatusNotFound, fmt.Errorf("dataset '%s' not found for preview: %w", datasetID, err))
+		} else {
+			errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to preview dataset '%s': %w", datasetID, err))
+		}
+		return
+	}
+	ctx.JSON(http.StatusOK, previewData)
 }
