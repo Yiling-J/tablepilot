@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Yiling-J/tablepilot/services/table/source/parquet"
+	"github.com/Yiling-J/tablepilot/services/source/parquet"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 )

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +43,7 @@ func TestCSVIndexer_New(t *testing.T) {
 		name          string
 		fileContents  map[string][]string
 		wantTotal     int
-		wantPositions []FileOffset
+		wantPositions []schema.FileOffset
 		wantErr       bool
 	}{
 		{
@@ -51,7 +52,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": {"header1,header2", "value1,value2", "value3,value4"},
 			},
 			wantTotal:     2,
-			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 2}},
+			wantPositions: []schema.FileOffset{{File: 0, Offset: 16, Total: 2}},
 			wantErr:       false,
 		},
 		{
@@ -61,7 +62,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test2.csv": {"header1,header2", "value5,value6"},
 			},
 			wantTotal:     3,
-			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 2}, {File: 1, Offset: 16, Total: 1}},
+			wantPositions: []schema.FileOffset{{File: 0, Offset: 16, Total: 2}, {File: 1, Offset: 16, Total: 1}},
 			wantErr:       false,
 		},
 		{
@@ -70,7 +71,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": {"header1,header2"},
 			},
 			wantTotal:     0,
-			wantPositions: *new([]FileOffset),
+			wantPositions: *new([]schema.FileOffset),
 			wantErr:       false,
 		},
 		{
@@ -79,7 +80,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": append([]string{"header1,header2"}, strings.Split(strings.Repeat("value1,value2\n", chunkSize), "\n")...),
 			},
 			wantTotal:     chunkSize,
-			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: chunkSize}},
+			wantPositions: []schema.FileOffset{{File: 0, Offset: 16, Total: chunkSize}},
 			wantErr:       false,
 		},
 		{
@@ -88,7 +89,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test1.csv": append([]string{"header1,header2"}, strings.Split(strings.Repeat("value1,value2\n", chunkSize+1), "\n")...),
 			},
 			wantTotal:     chunkSize + 1,
-			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 50}, {File: 0, Offset: 716, Total: 1}},
+			wantPositions: []schema.FileOffset{{File: 0, Offset: 16, Total: 50}, {File: 0, Offset: 716, Total: 1}},
 			wantErr:       false,
 		},
 		{
@@ -98,7 +99,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test2.csv": {"header1,header2", "value5,value6", "value7,value8"},
 			},
 			wantTotal:     chunkSize + 1,
-			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 49}, {File: 1, Offset: 16, Total: 2}},
+			wantPositions: []schema.FileOffset{{File: 0, Offset: 16, Total: 49}, {File: 1, Offset: 16, Total: 2}},
 			wantErr:       false,
 		},
 		{
@@ -108,7 +109,7 @@ func TestCSVIndexer_New(t *testing.T) {
 				"test2.csv": {"header1,header2", "value5,value6"},
 			},
 			wantTotal:     chunkSize + 1,
-			wantPositions: []FileOffset{{File: 0, Offset: 16, Total: 50}, {File: 1, Offset: 16, Total: 1}},
+			wantPositions: []schema.FileOffset{{File: 0, Offset: 16, Total: 50}, {File: 1, Offset: 16, Total: 1}},
 			wantErr:       false,
 		},
 		{
@@ -135,7 +136,7 @@ func TestCSVIndexer_New(t *testing.T) {
 			if selector.Total() != tt.wantTotal {
 				require.FailNow(t, "NewCSVSelector() total = %v, want %v", selector.Total(), tt.wantTotal)
 			}
-			require.Equal(t, tt.wantPositions, selector.positions)
+			require.Equal(t, tt.wantPositions, selector.Positions)
 		})
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/model"
 	"github.com/Yiling-J/tablepilot/ent/provider"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
@@ -28,6 +29,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Dataset is the client for interacting with the Dataset builders.
+	Dataset *DatasetClient
 	// Model is the client for interacting with the Model builders.
 	Model *ModelClient
 	// Provider is the client for interacting with the Provider builders.
@@ -51,6 +54,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Dataset = NewDatasetClient(c.config)
 	c.Model = NewModelClient(c.config)
 	c.Provider = NewProviderClient(c.config)
 	c.TableColumn = NewTableColumnClient(c.config)
@@ -149,6 +153,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:         ctx,
 		config:      cfg,
+		Dataset:     NewDatasetClient(cfg),
 		Model:       NewModelClient(cfg),
 		Provider:    NewProviderClient(cfg),
 		TableColumn: NewTableColumnClient(cfg),
@@ -174,6 +179,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:         ctx,
 		config:      cfg,
+		Dataset:     NewDatasetClient(cfg),
 		Model:       NewModelClient(cfg),
 		Provider:    NewProviderClient(cfg),
 		TableColumn: NewTableColumnClient(cfg),
@@ -186,7 +192,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Model.
+//		Dataset.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -209,7 +215,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Model, c.Provider, c.TableColumn, c.TableMeta, c.TableRow, c.Workflow,
+		c.Dataset, c.Model, c.Provider, c.TableColumn, c.TableMeta, c.TableRow,
+		c.Workflow,
 	} {
 		n.Use(hooks...)
 	}
@@ -219,7 +226,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Model, c.Provider, c.TableColumn, c.TableMeta, c.TableRow, c.Workflow,
+		c.Dataset, c.Model, c.Provider, c.TableColumn, c.TableMeta, c.TableRow,
+		c.Workflow,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -228,6 +236,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *DatasetMutation:
+		return c.Dataset.mutate(ctx, m)
 	case *ModelMutation:
 		return c.Model.mutate(ctx, m)
 	case *ProviderMutation:
@@ -242,6 +252,139 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Workflow.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// DatasetClient is a client for the Dataset schema.
+type DatasetClient struct {
+	config
+}
+
+// NewDatasetClient returns a client for the Dataset from the given config.
+func NewDatasetClient(c config) *DatasetClient {
+	return &DatasetClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `dataset.Hooks(f(g(h())))`.
+func (c *DatasetClient) Use(hooks ...Hook) {
+	c.hooks.Dataset = append(c.hooks.Dataset, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `dataset.Intercept(f(g(h())))`.
+func (c *DatasetClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Dataset = append(c.inters.Dataset, interceptors...)
+}
+
+// Create returns a builder for creating a Dataset entity.
+func (c *DatasetClient) Create() *DatasetCreate {
+	mutation := newDatasetMutation(c.config, OpCreate)
+	return &DatasetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Dataset entities.
+func (c *DatasetClient) CreateBulk(builders ...*DatasetCreate) *DatasetCreateBulk {
+	return &DatasetCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DatasetClient) MapCreateBulk(slice any, setFunc func(*DatasetCreate, int)) *DatasetCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DatasetCreateBulk{err: fmt.Errorf("calling to DatasetClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DatasetCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DatasetCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Dataset.
+func (c *DatasetClient) Update() *DatasetUpdate {
+	mutation := newDatasetMutation(c.config, OpUpdate)
+	return &DatasetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DatasetClient) UpdateOne(d *Dataset) *DatasetUpdateOne {
+	mutation := newDatasetMutation(c.config, OpUpdateOne, withDataset(d))
+	return &DatasetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DatasetClient) UpdateOneID(id int) *DatasetUpdateOne {
+	mutation := newDatasetMutation(c.config, OpUpdateOne, withDatasetID(id))
+	return &DatasetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Dataset.
+func (c *DatasetClient) Delete() *DatasetDelete {
+	mutation := newDatasetMutation(c.config, OpDelete)
+	return &DatasetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DatasetClient) DeleteOne(d *Dataset) *DatasetDeleteOne {
+	return c.DeleteOneID(d.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DatasetClient) DeleteOneID(id int) *DatasetDeleteOne {
+	builder := c.Delete().Where(dataset.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DatasetDeleteOne{builder}
+}
+
+// Query returns a query builder for Dataset.
+func (c *DatasetClient) Query() *DatasetQuery {
+	return &DatasetQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDataset},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Dataset entity by its id.
+func (c *DatasetClient) Get(ctx context.Context, id int) (*Dataset, error) {
+	return c.Query().Where(dataset.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DatasetClient) GetX(ctx context.Context, id int) *Dataset {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DatasetClient) Hooks() []Hook {
+	return c.hooks.Dataset
+}
+
+// Interceptors returns the client interceptors.
+func (c *DatasetClient) Interceptors() []Interceptor {
+	return c.inters.Dataset
+}
+
+func (c *DatasetClient) mutate(ctx context.Context, m *DatasetMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DatasetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DatasetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DatasetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DatasetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Dataset mutation op: %q", m.Op())
 	}
 }
 
@@ -1142,9 +1285,10 @@ func (c *WorkflowClient) mutate(ctx context.Context, m *WorkflowMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Model, Provider, TableColumn, TableMeta, TableRow, Workflow []ent.Hook
+		Dataset, Model, Provider, TableColumn, TableMeta, TableRow, Workflow []ent.Hook
 	}
 	inters struct {
-		Model, Provider, TableColumn, TableMeta, TableRow, Workflow []ent.Interceptor
+		Dataset, Model, Provider, TableColumn, TableMeta, TableRow,
+		Workflow []ent.Interceptor
 	}
 )

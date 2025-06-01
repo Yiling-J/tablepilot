@@ -26,8 +26,8 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
-	"github.com/Yiling-J/tablepilot/services/table/source"
-	"github.com/Yiling-J/tablepilot/services/table/source/huggingface"
+	"github.com/Yiling-J/tablepilot/services/source"
+	"github.com/Yiling-J/tablepilot/services/source/huggingface"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/spf13/cast"
 

@@ -10,7 +10,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
-	"github.com/Yiling-J/tablepilot/services/table/source"
+	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )

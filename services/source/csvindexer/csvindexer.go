@@ -8,27 +8,19 @@ import (
 	"io/fs"
 	"reflect"
 
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/spf13/cast"
 )
 
 const chunkSize = 50
 
-type FileOffset struct {
-	File   uint16
-	Total  uint8 // each chunk has max 50 rows
-	Offset int64
-}
-
 type CSVIndexer struct {
-	fs        fs.FS
-	files     []string
-	total     int
-	positions []FileOffset
-	columns   []string
+	fs fs.FS
+	schema.CSVIndexer
 }
 
 func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
-	var positions []FileOffset
+	var positions []schema.FileOffset
 	var total int
 	var columns []string
 
@@ -51,7 +43,7 @@ func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
 			return nil, fmt.Errorf("headers in file %s do not match previous files. Expected: %v, Got: %v", file, columns, fileColumns)
 		}
 
-		currentPosition := FileOffset{File: cast.ToUint16(i), Offset: r.InputOffset()}
+		currentPosition := schema.FileOffset{File: cast.ToUint16(i), Offset: r.InputOffset()}
 		for {
 			_, err := r.Read()
 			if errors.Is(err, io.EOF) {
@@ -67,26 +59,28 @@ func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
 			// current chunk end
 			if currentPosition.Total%chunkSize == 0 {
 				positions = append(positions, currentPosition)
-				currentPosition = FileOffset{File: cast.ToUint16(i), Offset: r.InputOffset()}
+				currentPosition = schema.FileOffset{File: cast.ToUint16(i), Offset: r.InputOffset()}
 			}
 		}
 	}
 
 	return &CSVIndexer{
-		fs:        fs,
-		files:     files,
-		total:     total,
-		positions: positions,
-		columns:   columns,
+		fs: fs,
+		CSVIndexer: schema.CSVIndexer{
+			Files:       files,
+			Count:       total,
+			Positions:   positions,
+			ColumnNames: columns,
+		},
 	}, nil
 }
 
 func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 	start := 0
-	var pos *FileOffset
+	var pos *schema.FileOffset
 	// the offset position relative to the chunk, used to get row data from chunk
 	offset := 0
-	for _, p := range r.positions {
+	for _, p := range r.Positions {
 		if idx >= start && idx < start+int(p.Total) {
 			pos = &p
 			offset = idx - start
@@ -97,7 +91,7 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 	if pos == nil {
 		return nil, errors.New("position for index not found")
 	}
-	file := r.files[pos.File]
+	file := r.Files[pos.File]
 	f, err := r.fs.Open(file)
 	if err != nil {
 		return nil, err
@@ -113,7 +107,7 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 	}
 	reader := csv.NewReader(f)
 	for i := 0; ; i++ {
-		if i >= r.total {
+		if i >= r.Count {
 			break
 		}
 		record, err := reader.Read()
@@ -128,15 +122,15 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 }
 
 func (r *CSVIndexer) Total() int {
-	return r.total
+	return r.Count
 }
 
 func (r *CSVIndexer) Columns() []string {
-	return r.columns
+	return r.ColumnNames
 }
 
 func (r *CSVIndexer) Range(fn func(row []string) bool) error {
-	for _, file := range r.files {
+	for _, file := range r.Files {
 		f, err := r.fs.Open(file)
 		if err != nil {
 			return err

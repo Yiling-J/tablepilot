@@ -63,6 +63,9 @@ func NanoIDHook() ent.Hook {
 			case *ent.Workflow:
 				vt.Nanoid = nanoid
 				updater = vt.Update().SetNanoid(nanoid)
+			case *ent.Dataset:
+				vt.Nanoid = nanoid
+				updater = vt.Update().SetNanoid(nanoid)
 			default:
 				return v, err
 			}

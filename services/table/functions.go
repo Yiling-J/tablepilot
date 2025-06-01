@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/Yiling-J/tablepilot/services/table/source"
+	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/spf13/cast"
 	"github.com/tidwall/gjson"
 )

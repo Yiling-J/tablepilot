@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Yiling-J/tablepilot/ent"
-	"github.com/Yiling-J/tablepilot/services/table/source/huggingface"
+	"github.com/Yiling-J/tablepilot/services/source/huggingface"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"

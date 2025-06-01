@@ -7,8 +7,8 @@ import (
 	"slices"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
-	"github.com/Yiling-J/tablepilot/services/table/source/huggingface"
-	"github.com/Yiling-J/tablepilot/services/table/source/parquet"
+	"github.com/Yiling-J/tablepilot/services/source/huggingface"
+	"github.com/Yiling-J/tablepilot/services/source/parquet"
 	"go.uber.org/zap"
 )
 

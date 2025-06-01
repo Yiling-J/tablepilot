@@ -8,15 +8,15 @@ import (
 	"slices"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
-	"github.com/Yiling-J/tablepilot/services/table/source/csvindexer"
-	"github.com/Yiling-J/tablepilot/services/table/source/kaggle"
+	"github.com/Yiling-J/tablepilot/services/source/csvindexer"
+	"github.com/Yiling-J/tablepilot/services/source/kaggle"
 	"github.com/bmatcuk/doublestar/v4"
 	"go.uber.org/zap"
 )
 
 type CsvSource struct {
 	BasicSource
-	randomCSV      *csvindexer.CSVIndexer
+	RandomCSV      *csvindexer.CSVIndexer
 	Paths          []string `json:"paths"`
 	Kaggle         string   `json:"kaggle"`
 	Column         string   `json:"column"`
@@ -60,7 +60,7 @@ func (cs *CsvSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir st
 	if err != nil {
 		return err
 	}
-	cs.randomCSV = rs
+	cs.RandomCSV = rs
 
 	return nil
 }
@@ -79,12 +79,12 @@ func (cs *CsvSource) GetColumns(ctx context.Context, logger *zap.SugaredLogger, 
 }
 
 func (cs *CsvSource) NextLinked(ctx context.Context, idx int, column string, contextColumns []string) (*schema.CellValue, error) {
-	row, err := cs.randomCSV.Fetch(idx)
+	row, err := cs.RandomCSV.Fetch(idx)
 	if err != nil {
 		return nil, err
 	}
 	cv := &schema.CellValue{ContextValue: map[string]any{}}
-	for i, col := range cs.randomCSV.Columns() {
+	for i, col := range cs.RandomCSV.Columns() {
 		if col == column {
 			cv.Value = row[i]
 		}
@@ -99,9 +99,9 @@ func (cs *CsvSource) NextLinked(ctx context.Context, idx int, column string, con
 func (cs *CsvSource) GetLinkedCellValue(row []any, column string, contextColumns []string) *schema.CellValue {
 	cv := &schema.CellValue{ContextValue: map[string]any{}}
 	if len(contextColumns) == 0 {
-		contextColumns = cs.randomCSV.Columns()
+		contextColumns = cs.RandomCSV.Columns()
 	}
-	for i, col := range cs.randomCSV.Columns() {
+	for i, col := range cs.RandomCSV.Columns() {
 		if col == column {
 			cv.Value = row[i]
 		}
@@ -118,7 +118,7 @@ func (cs *CsvSource) Next(ctx context.Context, idx int) (*schema.CellValue, erro
 }
 
 func (cs *CsvSource) Total() int {
-	return cs.randomCSV.Total()
+	return cs.RandomCSV.Total()
 }
 
 func parsePaths(fileSystem fs.FS, paths []string) ([]string, error) {
@@ -140,7 +140,7 @@ func parsePaths(fileSystem fs.FS, paths []string) ([]string, error) {
 }
 
 func (cs *CsvSource) Range(fn func(row []any) bool) error {
-	return cs.randomCSV.Range(func(row []string) bool {
+	return cs.RandomCSV.Range(func(row []string) bool {
 		ar := []any{}
 		for _, cell := range row {
 			ar = append(ar, cell)

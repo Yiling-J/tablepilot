@@ -12,6 +12,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/model"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 	"github.com/Yiling-J/tablepilot/ent/provider"
@@ -31,6 +32,7 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeDataset     = "Dataset"
 	TypeModel       = "Model"
 	TypeProvider    = "Provider"
 	TypeTableColumn = "TableColumn"
@@ -38,6 +40,878 @@ const (
 	TypeTableRow    = "TableRow"
 	TypeWorkflow    = "Workflow"
 )
+
+// DatasetMutation represents an operation that mutates the Dataset nodes in the graph.
+type DatasetMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	created_at    *time.Time
+	updated_at    *time.Time
+	nanoid        *string
+	name          *string
+	_path         *string
+	description   *string
+	_type         *dataset.Type
+	indexer       *schema.CSVIndexer
+	values        *[]string
+	appendvalues  []string
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*Dataset, error)
+	predicates    []predicate.Dataset
+}
+
+var _ ent.Mutation = (*DatasetMutation)(nil)
+
+// datasetOption allows management of the mutation configuration using functional options.
+type datasetOption func(*DatasetMutation)
+
+// newDatasetMutation creates new mutation for the Dataset entity.
+func newDatasetMutation(c config, op Op, opts ...datasetOption) *DatasetMutation {
+	m := &DatasetMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDataset,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDatasetID sets the ID field of the mutation.
+func withDatasetID(id int) datasetOption {
+	return func(m *DatasetMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Dataset
+		)
+		m.oldValue = func(ctx context.Context) (*Dataset, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Dataset.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDataset sets the old Dataset of the mutation.
+func withDataset(node *Dataset) datasetOption {
+	return func(m *DatasetMutation) {
+		m.oldValue = func(context.Context) (*Dataset, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DatasetMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DatasetMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DatasetMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DatasetMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Dataset.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DatasetMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DatasetMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ClearCreatedAt clears the value of the "created_at" field.
+func (m *DatasetMutation) ClearCreatedAt() {
+	m.created_at = nil
+	m.clearedFields[dataset.FieldCreatedAt] = struct{}{}
+}
+
+// CreatedAtCleared returns if the "created_at" field was cleared in this mutation.
+func (m *DatasetMutation) CreatedAtCleared() bool {
+	_, ok := m.clearedFields[dataset.FieldCreatedAt]
+	return ok
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DatasetMutation) ResetCreatedAt() {
+	m.created_at = nil
+	delete(m.clearedFields, dataset.FieldCreatedAt)
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *DatasetMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *DatasetMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ClearUpdatedAt clears the value of the "updated_at" field.
+func (m *DatasetMutation) ClearUpdatedAt() {
+	m.updated_at = nil
+	m.clearedFields[dataset.FieldUpdatedAt] = struct{}{}
+}
+
+// UpdatedAtCleared returns if the "updated_at" field was cleared in this mutation.
+func (m *DatasetMutation) UpdatedAtCleared() bool {
+	_, ok := m.clearedFields[dataset.FieldUpdatedAt]
+	return ok
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *DatasetMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+	delete(m.clearedFields, dataset.FieldUpdatedAt)
+}
+
+// SetNanoid sets the "nanoid" field.
+func (m *DatasetMutation) SetNanoid(s string) {
+	m.nanoid = &s
+}
+
+// Nanoid returns the value of the "nanoid" field in the mutation.
+func (m *DatasetMutation) Nanoid() (r string, exists bool) {
+	v := m.nanoid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNanoid returns the old "nanoid" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldNanoid(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNanoid is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNanoid requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNanoid: %w", err)
+	}
+	return oldValue.Nanoid, nil
+}
+
+// ClearNanoid clears the value of the "nanoid" field.
+func (m *DatasetMutation) ClearNanoid() {
+	m.nanoid = nil
+	m.clearedFields[dataset.FieldNanoid] = struct{}{}
+}
+
+// NanoidCleared returns if the "nanoid" field was cleared in this mutation.
+func (m *DatasetMutation) NanoidCleared() bool {
+	_, ok := m.clearedFields[dataset.FieldNanoid]
+	return ok
+}
+
+// ResetNanoid resets all changes to the "nanoid" field.
+func (m *DatasetMutation) ResetNanoid() {
+	m.nanoid = nil
+	delete(m.clearedFields, dataset.FieldNanoid)
+}
+
+// SetName sets the "name" field.
+func (m *DatasetMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *DatasetMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *DatasetMutation) ResetName() {
+	m.name = nil
+}
+
+// SetPath sets the "path" field.
+func (m *DatasetMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *DatasetMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ClearPath clears the value of the "path" field.
+func (m *DatasetMutation) ClearPath() {
+	m._path = nil
+	m.clearedFields[dataset.FieldPath] = struct{}{}
+}
+
+// PathCleared returns if the "path" field was cleared in this mutation.
+func (m *DatasetMutation) PathCleared() bool {
+	_, ok := m.clearedFields[dataset.FieldPath]
+	return ok
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *DatasetMutation) ResetPath() {
+	m._path = nil
+	delete(m.clearedFields, dataset.FieldPath)
+}
+
+// SetDescription sets the "description" field.
+func (m *DatasetMutation) SetDescription(s string) {
+	m.description = &s
+}
+
+// Description returns the value of the "description" field in the mutation.
+func (m *DatasetMutation) Description() (r string, exists bool) {
+	v := m.description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescription returns the old "description" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescription: %w", err)
+	}
+	return oldValue.Description, nil
+}
+
+// ResetDescription resets all changes to the "description" field.
+func (m *DatasetMutation) ResetDescription() {
+	m.description = nil
+}
+
+// SetType sets the "type" field.
+func (m *DatasetMutation) SetType(d dataset.Type) {
+	m._type = &d
+}
+
+// GetType returns the value of the "type" field in the mutation.
+func (m *DatasetMutation) GetType() (r dataset.Type, exists bool) {
+	v := m._type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldType returns the old "type" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldType(ctx context.Context) (v dataset.Type, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldType: %w", err)
+	}
+	return oldValue.Type, nil
+}
+
+// ResetType resets all changes to the "type" field.
+func (m *DatasetMutation) ResetType() {
+	m._type = nil
+}
+
+// SetIndexer sets the "indexer" field.
+func (m *DatasetMutation) SetIndexer(si schema.CSVIndexer) {
+	m.indexer = &si
+}
+
+// Indexer returns the value of the "indexer" field in the mutation.
+func (m *DatasetMutation) Indexer() (r schema.CSVIndexer, exists bool) {
+	v := m.indexer
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIndexer returns the old "indexer" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldIndexer(ctx context.Context) (v schema.CSVIndexer, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIndexer is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIndexer requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIndexer: %w", err)
+	}
+	return oldValue.Indexer, nil
+}
+
+// ClearIndexer clears the value of the "indexer" field.
+func (m *DatasetMutation) ClearIndexer() {
+	m.indexer = nil
+	m.clearedFields[dataset.FieldIndexer] = struct{}{}
+}
+
+// IndexerCleared returns if the "indexer" field was cleared in this mutation.
+func (m *DatasetMutation) IndexerCleared() bool {
+	_, ok := m.clearedFields[dataset.FieldIndexer]
+	return ok
+}
+
+// ResetIndexer resets all changes to the "indexer" field.
+func (m *DatasetMutation) ResetIndexer() {
+	m.indexer = nil
+	delete(m.clearedFields, dataset.FieldIndexer)
+}
+
+// SetValues sets the "values" field.
+func (m *DatasetMutation) SetValues(s []string) {
+	m.values = &s
+	m.appendvalues = nil
+}
+
+// Values returns the value of the "values" field in the mutation.
+func (m *DatasetMutation) Values() (r []string, exists bool) {
+	v := m.values
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValues returns the old "values" field's value of the Dataset entity.
+// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DatasetMutation) OldValues(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValues is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValues requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValues: %w", err)
+	}
+	return oldValue.Values, nil
+}
+
+// AppendValues adds s to the "values" field.
+func (m *DatasetMutation) AppendValues(s []string) {
+	m.appendvalues = append(m.appendvalues, s...)
+}
+
+// AppendedValues returns the list of values that were appended to the "values" field in this mutation.
+func (m *DatasetMutation) AppendedValues() ([]string, bool) {
+	if len(m.appendvalues) == 0 {
+		return nil, false
+	}
+	return m.appendvalues, true
+}
+
+// ResetValues resets all changes to the "values" field.
+func (m *DatasetMutation) ResetValues() {
+	m.values = nil
+	m.appendvalues = nil
+}
+
+// Where appends a list predicates to the DatasetMutation builder.
+func (m *DatasetMutation) Where(ps ...predicate.Dataset) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the DatasetMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DatasetMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Dataset, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *DatasetMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DatasetMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Dataset).
+func (m *DatasetMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DatasetMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, dataset.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, dataset.FieldUpdatedAt)
+	}
+	if m.nanoid != nil {
+		fields = append(fields, dataset.FieldNanoid)
+	}
+	if m.name != nil {
+		fields = append(fields, dataset.FieldName)
+	}
+	if m._path != nil {
+		fields = append(fields, dataset.FieldPath)
+	}
+	if m.description != nil {
+		fields = append(fields, dataset.FieldDescription)
+	}
+	if m._type != nil {
+		fields = append(fields, dataset.FieldType)
+	}
+	if m.indexer != nil {
+		fields = append(fields, dataset.FieldIndexer)
+	}
+	if m.values != nil {
+		fields = append(fields, dataset.FieldValues)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DatasetMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case dataset.FieldCreatedAt:
+		return m.CreatedAt()
+	case dataset.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case dataset.FieldNanoid:
+		return m.Nanoid()
+	case dataset.FieldName:
+		return m.Name()
+	case dataset.FieldPath:
+		return m.Path()
+	case dataset.FieldDescription:
+		return m.Description()
+	case dataset.FieldType:
+		return m.GetType()
+	case dataset.FieldIndexer:
+		return m.Indexer()
+	case dataset.FieldValues:
+		return m.Values()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DatasetMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case dataset.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case dataset.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case dataset.FieldNanoid:
+		return m.OldNanoid(ctx)
+	case dataset.FieldName:
+		return m.OldName(ctx)
+	case dataset.FieldPath:
+		return m.OldPath(ctx)
+	case dataset.FieldDescription:
+		return m.OldDescription(ctx)
+	case dataset.FieldType:
+		return m.OldType(ctx)
+	case dataset.FieldIndexer:
+		return m.OldIndexer(ctx)
+	case dataset.FieldValues:
+		return m.OldValues(ctx)
+	}
+	return nil, fmt.Errorf("unknown Dataset field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DatasetMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case dataset.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case dataset.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case dataset.FieldNanoid:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNanoid(v)
+		return nil
+	case dataset.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case dataset.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	case dataset.FieldDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescription(v)
+		return nil
+	case dataset.FieldType:
+		v, ok := value.(dataset.Type)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetType(v)
+		return nil
+	case dataset.FieldIndexer:
+		v, ok := value.(schema.CSVIndexer)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIndexer(v)
+		return nil
+	case dataset.FieldValues:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValues(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Dataset field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DatasetMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DatasetMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DatasetMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Dataset numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DatasetMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(dataset.FieldCreatedAt) {
+		fields = append(fields, dataset.FieldCreatedAt)
+	}
+	if m.FieldCleared(dataset.FieldUpdatedAt) {
+		fields = append(fields, dataset.FieldUpdatedAt)
+	}
+	if m.FieldCleared(dataset.FieldNanoid) {
+		fields = append(fields, dataset.FieldNanoid)
+	}
+	if m.FieldCleared(dataset.FieldPath) {
+		fields = append(fields, dataset.FieldPath)
+	}
+	if m.FieldCleared(dataset.FieldIndexer) {
+		fields = append(fields, dataset.FieldIndexer)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DatasetMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DatasetMutation) ClearField(name string) error {
+	switch name {
+	case dataset.FieldCreatedAt:
+		m.ClearCreatedAt()
+		return nil
+	case dataset.FieldUpdatedAt:
+		m.ClearUpdatedAt()
+		return nil
+	case dataset.FieldNanoid:
+		m.ClearNanoid()
+		return nil
+	case dataset.FieldPath:
+		m.ClearPath()
+		return nil
+	case dataset.FieldIndexer:
+		m.ClearIndexer()
+		return nil
+	}
+	return fmt.Errorf("unknown Dataset nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DatasetMutation) ResetField(name string) error {
+	switch name {
+	case dataset.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case dataset.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case dataset.FieldNanoid:
+		m.ResetNanoid()
+		return nil
+	case dataset.FieldName:
+		m.ResetName()
+		return nil
+	case dataset.FieldPath:
+		m.ResetPath()
+		return nil
+	case dataset.FieldDescription:
+		m.ResetDescription()
+		return nil
+	case dataset.FieldType:
+		m.ResetType()
+		return nil
+	case dataset.FieldIndexer:
+		m.ResetIndexer()
+		return nil
+	case dataset.FieldValues:
+		m.ResetValues()
+		return nil
+	}
+	return fmt.Errorf("unknown Dataset field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DatasetMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DatasetMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DatasetMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DatasetMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DatasetMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DatasetMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DatasetMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown Dataset unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DatasetMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown Dataset edge %s", name)
+}
 
 // ModelMutation represents an operation that mutates the Model nodes in the graph.
 type ModelMutation struct {

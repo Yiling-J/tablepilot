@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/model"
 	"github.com/Yiling-J/tablepilot/ent/provider"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -18,6 +19,29 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	datasetMixin := schema.Dataset{}.Mixin()
+	datasetMixinFields0 := datasetMixin[0].Fields()
+	_ = datasetMixinFields0
+	datasetFields := schema.Dataset{}.Fields()
+	_ = datasetFields
+	// datasetDescCreatedAt is the schema descriptor for created_at field.
+	datasetDescCreatedAt := datasetMixinFields0[0].Descriptor()
+	// dataset.DefaultCreatedAt holds the default value on creation for the created_at field.
+	dataset.DefaultCreatedAt = datasetDescCreatedAt.Default.(func() time.Time)
+	// datasetDescUpdatedAt is the schema descriptor for updated_at field.
+	datasetDescUpdatedAt := datasetMixinFields0[1].Descriptor()
+	// dataset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	dataset.DefaultUpdatedAt = datasetDescUpdatedAt.Default.(func() time.Time)
+	// dataset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	dataset.UpdateDefaultUpdatedAt = datasetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// datasetDescName is the schema descriptor for name field.
+	datasetDescName := datasetFields[0].Descriptor()
+	// dataset.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	dataset.NameValidator = datasetDescName.Validators[0].(func(string) error)
+	// datasetDescDescription is the schema descriptor for description field.
+	datasetDescDescription := datasetFields[2].Descriptor()
+	// dataset.DefaultDescription holds the default value on creation for the description field.
+	dataset.DefaultDescription = datasetDescDescription.Default.(string)
 	modelMixin := schema.Model{}.Mixin()
 	modelMixinFields0 := modelMixin[0].Fields()
 	_ = modelMixinFields0
