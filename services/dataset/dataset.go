@@ -82,12 +82,12 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 		}
 		err = sr.Update().SetPath(fmt.Sprintf("datasets/shared/%s", sr.Nanoid)).SetIndexer(indexer.CSVIndexer).Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("table.Create: ent update dataset: %w", err)
+			return fmt.Errorf("table.Create: update dataset metadata: %w", err) // Clarified error
 		}
 	case "list":
 		err := sr.Update().SetValues(req.Data).Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("table.Create: ent update dataset: %w", err)
+			return fmt.Errorf("table.Create: update dataset values: %w", err) // Clarified error
 		}
 	}
 	return nil
@@ -102,7 +102,7 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 		db_dataset.Type(req.Type),
 	).Save(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: ent create: %w", err))
+		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err)) // Clarified error
 	}
 	err = s.buildCreateDatasetReq(ctx, req, sr)
 	if err != nil {
@@ -139,45 +139,58 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 		db_dataset.Nanoid(dataset),
 	)).Only(ctx)
 	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Update: get from db: %w", err))
+		return ent.Rollback(tx, fmt.Errorf("dataset.Update: query dataset: %w", err)) // Clarified error
 	}
 
+	// Early check for type change attempt: If req.Type is specified and differs from ds.Type, reject.
+	if req.Type != "" && req.Type != string(ds.Type) {
+		return ent.Rollback(tx, errors.New("dataset type cannot be changed via update"))
+	}
+
+	originalPath := ds.Path // Store original path for potential cleanup if it's a CSV and data changes
 	updater := ds.Update()
-	updateData := false
+	processDataRebuild := false
+
 	for _, f := range req.Fields {
 		switch f {
 		case "name":
 			updater.SetName(req.Name)
 		case "description":
 			updater.SetDescription(req.Description)
+		// "type" case is removed as type changes are disallowed by the check above.
 		case "data", "files":
-			updateData = true
+			processDataRebuild = true
+			// Clear fields that will be repopulated by buildCreateDatasetReq
 			updater.ClearIndexer().ClearPath().SetValues(nil)
 		}
 	}
-	if !updateData {
-		_, err = updater.Save(ctx)
-		if err != nil {
-			return ent.Rollback(tx, fmt.Errorf("dataset.Update: ent update: %w", err))
-		}
-		return tx.Commit()
+
+	// Save all accumulated changes (metadata, cleared fields)
+	updatedDsEntity, err := updater.Save(ctx)
+	if err != nil {
+		return ent.Rollback(tx, fmt.Errorf("dataset.Update: save changes: %w", err)) // Clarified error
 	}
 
-	if ds.Path != "" {
-		oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
-		if _, err := os.Stat(oldDirPath); !os.IsNotExist(err) {
-			if err := os.RemoveAll(oldDirPath); err != nil {
-				return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, err))
+	if processDataRebuild {
+		// If the original dataset had a path (was a CSV) and its data is being rebuilt, remove the old directory.
+		if originalPath != "" {
+			oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, originalPath)
+			if _, statErr := os.Stat(oldDirPath); !os.IsNotExist(statErr) {
+				if removeErr := os.RemoveAll(oldDirPath); removeErr != nil {
+					return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, removeErr))
+				}
 			}
 		}
-	}
-	ds, err = updater.Save(ctx)
-	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err))
-	}
-	err = s.buildCreateDatasetReq(ctx, &req.CreateDatasetRequest, ds)
-	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Create: buildCreateDatasetReq: %w", err))
+
+		// Prepare the request for buildCreateDatasetReq.
+		// Ensure Type in buildReq is the dataset's actual (original) type, as type changes are disallowed.
+		buildReq := req.CreateDatasetRequest         // Copy the request
+		buildReq.Type = string(updatedDsEntity.Type) // This is ds.Type, as type cannot change.
+
+		err = s.buildCreateDatasetReq(ctx, &buildReq, updatedDsEntity)
+		if err != nil {
+			return ent.Rollback(tx, fmt.Errorf("dataset.Update: buildCreateDatasetReq: %w", err))
+		}
 	}
 
 	return tx.Commit()
@@ -193,7 +206,7 @@ func (s *DatasetServiceImpl) Delete(ctx context.Context, dataset string) error {
 		db_dataset.Nanoid(dataset),
 	)).Only(ctx)
 	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: get from db: %w", err))
+		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: query dataset: %w", err)) // Clarified error
 	}
 
 	if ds.Type == db_dataset.TypeCsv && ds.Path != "" {
@@ -207,7 +220,7 @@ func (s *DatasetServiceImpl) Delete(ctx context.Context, dataset string) error {
 
 	err = tx.Dataset.DeleteOne(ds).Exec(ctx)
 	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: ent delete: %w", err))
+		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: execute delete: %w", err)) // Clarified error
 	}
 
 	return tx.Commit()
@@ -219,11 +232,12 @@ func (s *DatasetServiceImpl) Get(ctx context.Context, source string) (*DatasetIn
 		db_dataset.Nanoid(source),
 	)).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("dataset.Get: get from db: %w", err)
+		return nil, fmt.Errorf("dataset.Get: query dataset: %w", err) // Clarified error
 	}
 	return &DatasetInfo{
 		Name:        sr.Name,
 		Description: sr.Description,
+		Type:        string(sr.Type),
 		ColumnCount: len(sr.Indexer.ColumnNames),
 		ValueCount:  len(sr.Values),
 	}, nil
@@ -236,7 +250,7 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		db_dataset.Nanoid(dataset),
 	)).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("dataset.Preview: get from db: %w", err)
+		return nil, fmt.Errorf("dataset.Preview: query dataset: %w", err) // Clarified error
 	}
 	switch sr.Type {
 	case "csv":
