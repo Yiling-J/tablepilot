@@ -14,19 +14,26 @@ import (
 	"github.com/Yiling-J/tablepilot/services/source/csvindexer"
 )
 
+//go:generate moq -rm -out dataset_moq.go . DatasetService
 type DatasetService interface {
 	Get(ctx context.Context, source string) (*DatasetInfo, error)
 	List(ctx context.Context) ([]*DatasetInfo, error)
 	Create(ctx context.Context, req *CreateDatasetRequest) (string, error)
-	Update(ctx context.Context, datasetID string, req *CreateDatasetRequest) error
-	Delete(ctx context.Context, datasetID string) error
+	Update(ctx context.Context, dataset string, req *UpdateDatasetRequest) error
+	Delete(ctx context.Context, dataset string) error
 	Preview(ctx context.Context, source string) (*DatasetRows, error)
-	First(ctx context.Context)
 }
 
 type DatasetServiceImpl struct {
 	db  *ent.Client
 	cfg *config.Config
+}
+
+func NewDatasetService(db *ent.Client, cfg *config.Config) *DatasetServiceImpl {
+	return &DatasetServiceImpl{
+		db:  db,
+		cfg: cfg,
+	}
 }
 
 func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetRequest) (string, error) {
@@ -99,36 +106,51 @@ func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 	return datasetInfos, nil
 }
 
-func (s *DatasetServiceImpl) Update(ctx context.Context, datasetID string, req *CreateDatasetRequest) error {
+func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *UpdateDatasetRequest) error {
 	tx, err := s.db.Tx(ctx)
 	if err != nil {
 		return fmt.Errorf("dataset.Update: starting a transaction: %w", err)
 	}
 	ds, err := tx.Dataset.Query().Where(db_dataset.Or(
-		db_dataset.Name(datasetID),
-		db_dataset.Nanoid(datasetID),
+		db_dataset.Name(dataset),
+		db_dataset.Nanoid(dataset),
 	)).Only(ctx)
 	if err != nil {
 		return ent.Rollback(tx, fmt.Errorf("dataset.Update: get from db: %w", err))
 	}
 
-	updater := ds.Update().
-		SetName(req.Name).
-		SetDescription(req.Description).
-		SetType(db_dataset.Type(req.Type))
+	updater := ds.Update()
+	updateData := false
+	for _, f := range req.Fields {
+		switch f {
+		case "name":
+			updater.SetName(req.Name)
+		case "description":
+			updater.SetDescription(req.Description)
+		case "data", "files":
+			updateData = true
+			updater.ClearIndexer().ClearPath().SetValues(nil)
+		}
+	}
+	if !updateData {
+		_, err = updater.Save(ctx)
+		if err != nil {
+			return ent.Rollback(tx, fmt.Errorf("dataset.Update: ent update: %w", err))
+		}
+		return tx.Commit()
+	}
+
+	if ds.Path != "" {
+		oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
+		if _, err := os.Stat(oldDirPath); !os.IsNotExist(err) {
+			if err := os.RemoveAll(oldDirPath); err != nil {
+				return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, err))
+			}
+		}
+	}
 
 	switch req.Type {
 	case "csv":
-		// Remove old files and directory if they exist
-		if ds.Path != "" {
-			oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
-			if _, err := os.Stat(oldDirPath); !os.IsNotExist(err) {
-				if err := os.RemoveAll(oldDirPath); err != nil {
-					return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, err))
-				}
-			}
-		}
-
 		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, "shared", ds.Nanoid)
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {
@@ -154,9 +176,9 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, datasetID string, req *
 		if err != nil {
 			return ent.Rollback(tx, fmt.Errorf("dataset.Update: build csv index: %w", err))
 		}
-		updater.SetPath(fmt.Sprintf("shared/%s", ds.Nanoid)).SetIndexer(indexer.CSVIndexer).ClearValues()
+		updater.SetPath(fmt.Sprintf("shared/%s", ds.Nanoid)).SetIndexer(indexer.CSVIndexer)
 	case "list":
-		updater.SetValues(req.Data).ClearPath().ClearIndexer()
+		updater.SetValues(req.Data)
 	default:
 		return ent.Rollback(tx, fmt.Errorf("dataset.Update: unknown dataset type: %s", req.Type))
 	}
@@ -169,20 +191,20 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, datasetID string, req *
 	return tx.Commit()
 }
 
-func (s *DatasetServiceImpl) Delete(ctx context.Context, datasetID string) error {
+func (s *DatasetServiceImpl) Delete(ctx context.Context, dataset string) error {
 	tx, err := s.db.Tx(ctx)
 	if err != nil {
 		return fmt.Errorf("dataset.Delete: starting a transaction: %w", err)
 	}
 	ds, err := tx.Dataset.Query().Where(db_dataset.Or(
-		db_dataset.Name(datasetID),
-		db_dataset.Nanoid(datasetID),
+		db_dataset.Name(dataset),
+		db_dataset.Nanoid(dataset),
 	)).Only(ctx)
 	if err != nil {
 		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: get from db: %w", err))
 	}
 
-	if ds.Type == db_dataset.TypeCSV && ds.Path != "" {
+	if ds.Type == db_dataset.TypeCsv && ds.Path != "" {
 		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
 		if _, err := os.Stat(dirPath); !os.IsNotExist(err) {
 			if err := os.RemoveAll(dirPath); err != nil {
@@ -252,11 +274,4 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown source type: %s", sr.Type)
-}
-
-func NewDatasetService(db *ent.Client, cfg *config.Config) DatasetService {
-	return &DatasetServiceImpl{
-		db:  db,
-		cfg: cfg,
-	}
 }

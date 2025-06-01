@@ -14,6 +14,11 @@ type CreateDatasetRequest struct {
 	Files       []io.Reader `json:"files"` // for csv type
 }
 
+type UpdateDatasetRequest struct {
+	CreateDatasetRequest
+	Fields []string `json:"fields"`
+}
+
 type DatasetInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -33,7 +38,7 @@ type DatasetAPIRequest struct {
 	Name        string   `json:"name" binding:"required"`
 	Description string   `json:"description"`
 	Type        string   `json:"type" binding:"required,oneof=list csv"`
-	Data        []string `json:"data"` // For list type
+	Data        []string `json:"data"`       // For list type
 	Files       []string `json:"files"`      // For csv type, array of base64 encoded file contents
 	FileNames   []string `json:"file_names"` // Optional corresponding file names for CSV type
 }

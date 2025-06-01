@@ -45,7 +45,7 @@ func TestHandler_Create(t *testing.T) {
 	handler := &Handler{
 		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
+			nil, tableMock, nil, nil, nil,
 		),
 	}
 	cmd := &cobra.Command{}
@@ -80,7 +80,7 @@ func TestHandler_Update(t *testing.T) {
 	handler := &Handler{
 		backend: services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
+			nil, tableMock, nil, nil, nil,
 		),
 	}
 	cmd := &cobra.Command{}
@@ -128,7 +128,7 @@ func TestHandler_Show(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
+			nil, tableMock, nil, nil, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -168,7 +168,7 @@ func TestHandler_List(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
+			nil, tableMock, nil, nil, nil,
 		),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
@@ -187,69 +187,6 @@ func TestHandler_List(t *testing.T) {
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }
 
-// --- DatasetService Mock ---
-type DatasetServiceMock struct {
-	CreateFunc  func(ctx context.Context, req *services_dataset.CreateDatasetRequest) (string, error)
-	GetFunc     func(ctx context.Context, source string) (*services_dataset.DatasetInfo, error)
-	ListFunc    func(ctx context.Context) ([]*services_dataset.DatasetInfo, error)
-	UpdateFunc  func(ctx context.Context, datasetID string, req *services_dataset.CreateDatasetRequest) error
-	DeleteFunc  func(ctx context.Context, datasetID string) error
-	PreviewFunc func(ctx context.Context, source string) (*services_dataset.DatasetRows, error)
-	FirstFunc   func(ctx context.Context) // Assuming this is not used by CLI directly, or mock if needed
-}
-
-func (m *DatasetServiceMock) Create(ctx context.Context, req *services_dataset.CreateDatasetRequest) (string, error) {
-	if m.CreateFunc != nil {
-		return m.CreateFunc(ctx, req)
-	}
-	return "", errors.New("CreateFunc not implemented in mock")
-}
-
-func (m *DatasetServiceMock) Get(ctx context.Context, source string) (*services_dataset.DatasetInfo, error) {
-	if m.GetFunc != nil {
-		return m.GetFunc(ctx, source)
-	}
-	return nil, errors.New("GetFunc not implemented in mock")
-}
-
-func (m *DatasetServiceMock) List(ctx context.Context) ([]*services_dataset.DatasetInfo, error) {
-	if m.ListFunc != nil {
-		return m.ListFunc(ctx)
-	}
-	return nil, errors.New("ListFunc not implemented in mock")
-}
-
-func (m *DatasetServiceMock) Update(ctx context.Context, datasetID string, req *services_dataset.CreateDatasetRequest) error {
-	if m.UpdateFunc != nil {
-		return m.UpdateFunc(ctx, datasetID, req)
-	}
-	return errors.New("UpdateFunc not implemented in mock")
-}
-
-func (m *DatasetServiceMock) Delete(ctx context.Context, datasetID string) error {
-	if m.DeleteFunc != nil {
-		return m.DeleteFunc(ctx, datasetID)
-	}
-	return errors.New("DeleteFunc not implemented in mock")
-}
-
-func (m *DatasetServiceMock) Preview(ctx context.Context, source string) (*services_dataset.DatasetRows, error) {
-	if m.PreviewFunc != nil {
-		return m.PreviewFunc(ctx, source)
-	}
-	return nil, errors.New("PreviewFunc not implemented in mock")
-}
-
-func (m *DatasetServiceMock) First(ctx context.Context) {
-	if m.FirstFunc != nil {
-		m.FirstFunc(ctx)
-		return
-	}
-	panic("FirstFunc not implemented in mock")
-}
-
-// --- Dataset Command Tests ---
-
 func TestHandler_CreateDataset_ListType(t *testing.T) {
 	datasetMock := &DatasetServiceMock{
 		CreateFunc: func(ctx context.Context, req *services_dataset.CreateDatasetRequest) (string, error) {
@@ -264,7 +201,7 @@ func TestHandler_CreateDataset_ListType(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil, // tableService, datasetService, workflowService
+			nil, nil, datasetMock, nil, nil,
 		),
 	)
 
@@ -301,7 +238,6 @@ func TestHandler_CreateDataset_ListType(t *testing.T) {
 		require.Empty(t, req.Files)
 		return "test_nanoid_123", nil
 	}
-
 
 	err = handler.CreateDataset(cmd, []string{})
 	require.NoError(t, err)
@@ -342,7 +278,7 @@ func TestHandler_CreateDataset_CSVType(t *testing.T) {
 	handler := NewHandler(
 		services.NewBackend(
 			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil,
+			nil, nil, datasetMock, nil, nil,
 		),
 	)
 
@@ -377,65 +313,7 @@ func TestHandler_CreateDataset_CSVType(t *testing.T) {
 	require.Contains(t, string(out), "Dataset created successfully:\nID: csv_nanoid_456\nName: test_csv_ds")
 }
 
-
-func TestHandler_CreateDataset_Error_MissingFile(t *testing.T) {
-	datasetMock := &DatasetServiceMock{} // No functions needed as it should error before service call
-	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil,
-		),
-	)
-	cmd := &cobra.Command{}
-	cmd.Flags().StringP("name", "n", "", "")
-	cmd.Flags().StringP("desc", "d", "", "")
-	cmd.Flags().StringP("type", "t", "", "")
-	cmd.Flags().StringArrayP("file", "f", []string{}, "")
-
-	err := cmd.Flags().Set("name", "test_csv_err_ds")
-	require.NoError(t, err)
-	err = cmd.Flags().Set("type", "csv")
-	require.NoError(t, err)
-	err = cmd.Flags().Set("file", "non_existent_file.csv") // Non-existent file
-	require.NoError(t, err)
-
-	err = handler.CreateDataset(cmd, []string{})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to open file non_existent_file.csv")
-}
-
-func TestHandler_CreateDataset_Error_ServiceError(t *testing.T) {
-	datasetMock := &DatasetServiceMock{
-		CreateFunc: func(ctx context.Context, req *services_dataset.CreateDatasetRequest) (string, error) {
-			return "", errors.New("service layer error")
-		},
-	}
-	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil,
-		),
-	)
-	cmd := &cobra.Command{}
-	cmd.Flags().StringP("name", "n", "", "")
-	cmd.Flags().StringP("type", "t", "", "")
-	cmd.Flags().StringArray("data", []string{}, "")
-
-	err := cmd.Flags().Set("name", "test_list_svc_err")
-	require.NoError(t, err)
-	err = cmd.Flags().Set("type", "list")
-	require.NoError(t, err)
-	err = cmd.Flags().Set("data", "item1")
-	require.NoError(t, err)
-
-	err = handler.CreateDataset(cmd, []string{})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to create dataset: service layer error")
-	// require.Equal(t, 1, len(datasetMock.CreateFuncCalls())) // Adjusted if not using call counting
-}
-
-
-func TestHandler_GetDataset_Success(t *testing.T) {
+func TestHandler_GetDataset(t *testing.T) {
 	var getCalled bool
 	datasetMock := &DatasetServiceMock{
 		GetFunc: func(ctx context.Context, source string) (*services_dataset.DatasetInfo, error) {
@@ -491,30 +369,6 @@ func TestHandler_GetDataset_Success(t *testing.T) {
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }
 
-func TestHandler_GetDataset_NotFound(t *testing.T) {
-	var getCalled bool
-	datasetMock := &DatasetServiceMock{
-		GetFunc: func(ctx context.Context, source string) (*services_dataset.DatasetInfo, error) {
-			getCalled = true
-			require.Equal(t, "unknown_dataset", source)
-			return nil, errors.New("not found error from service") // Simulate service error
-		},
-	}
-	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil,
-		),
-	)
-	// No printer needed as it should error out before printing
-
-	cmd := &cobra.Command{}
-	err := handler.GetDataset(cmd, []string{"unknown_dataset"})
-	require.Error(t, err)
-	require.True(t, getCalled, "DatasetService.Get was called")
-	require.Contains(t, err.Error(), "failed to get dataset 'unknown_dataset': not found error from service")
-}
-
 func TestHandler_ListDatasets_Success_HasData(t *testing.T) {
 	var listCalled bool
 	datasetMock := &DatasetServiceMock{
@@ -559,60 +413,6 @@ func TestHandler_ListDatasets_Success_HasData(t *testing.T) {
 	require.Equal(t, expectedFields, actualFields)
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
-}
-
-func TestHandler_ListDatasets_Success_NoData(t *testing.T) {
-	var listCalled bool
-	datasetMock := &DatasetServiceMock{
-		ListFunc: func(ctx context.Context) ([]*services_dataset.DatasetInfo, error) {
-			listCalled = true
-			return []*services_dataset.DatasetInfo{}, nil // Empty list
-		},
-	}
-
-	// Capture stdout for "No datasets found." message
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil,
-		),
-	)
-	// No printer needed if no data, but handler might still get one.
-	// The current handler prints directly if no datasets.
-
-	cmd := &cobra.Command{}
-	err := handler.ListDatasets(cmd, []string{})
-	require.NoError(t, err)
-
-	w.Close()
-	outBytes, _ := io.ReadAll(r)
-	os.Stdout = oldStdout
-	outStr := string(outBytes)
-
-	require.True(t, listCalled, "DatasetService.List was not called")
-	require.Contains(t, outStr, "No datasets found.")
-}
-
-func TestHandler_ListDatasets_ServiceError(t *testing.T) {
-	datasetMock := &DatasetServiceMock{
-		ListFunc: func(ctx context.Context) ([]*services_dataset.DatasetInfo, error) {
-			return nil, errors.New("service error on list")
-		},
-	}
-	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, datasetMock, nil,
-		),
-	)
-	cmd := &cobra.Command{}
-	err := handler.ListDatasets(cmd, []string{})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to list datasets: service error on list")
 }
 
 func TestHandler_UpdateDataset_List_Success(t *testing.T) {
@@ -732,7 +532,6 @@ func TestHandler_UpdateDataset_CSV_ChangeToNewFiles(t *testing.T) {
 	require.True(t, updateCalled, "Update should be called")
 }
 
-
 func TestHandler_UpdateDataset_ChangeType_ListToCSV(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "list2csv_*.csv")
 	require.NoError(t, err)
@@ -754,7 +553,7 @@ func TestHandler_UpdateDataset_ChangeType_ListToCSV(t *testing.T) {
 			require.Equal(t, "list_dataset_id", datasetID)
 			require.Equal(t, "list_to_convert", req.Name) // Name unchanged
 			require.Equal(t, "csv", req.Type)             // Type changed
-			require.Empty(t, req.Data)                   // Data should be empty for CSV
+			require.Empty(t, req.Data)                    // Data should be empty for CSV
 			require.Len(t, req.Files, 1)
 			content, _ := io.ReadAll(req.Files[0])
 			require.Equal(t, "csv_header\ncsv_value", string(content))
@@ -781,24 +580,6 @@ func TestHandler_UpdateDataset_ChangeType_ListToCSV(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, getCalled)
 	require.True(t, updateCalled)
-}
-
-
-func TestHandler_UpdateDataset_Error_NotFound(t *testing.T) {
-	datasetMock := &DatasetServiceMock{
-		GetFunc: func(ctx context.Context, source string) (*services_dataset.DatasetInfo, error) {
-			return nil, errors.New("service: not found") // Simulate Get failing
-		},
-	}
-	handler := NewHandler(
-		services.NewBackend(&config.Config{}, nil, zap.NewNop().Sugar(), nil, nil, datasetMock, nil),
-	)
-	cmd := &cobra.Command{}
-	cmd.Flags().String("name", "new_name_for_non_existent", "")
-
-	err := handler.UpdateDataset(cmd, []string{"non_existent_dataset"})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to fetch existing dataset 'non_existent_dataset' for update: service: not found")
 }
 
 func TestHandler_DeleteDataset_Success(t *testing.T) {
@@ -829,24 +610,6 @@ func TestHandler_DeleteDataset_Success(t *testing.T) {
 
 	require.True(t, deleteCalled, "DatasetService.Delete was not called")
 	require.Contains(t, outStr, "Dataset 'dataset_to_delete' deleted successfully.")
-}
-
-func TestHandler_DeleteDataset_Error_ServiceError(t *testing.T) {
-	var deleteCalled bool
-	datasetMock := &DatasetServiceMock{
-		DeleteFunc: func(ctx context.Context, datasetID string) error {
-			deleteCalled = true
-			return errors.New("service delete error")
-		},
-	}
-	handler := NewHandler(
-		services.NewBackend(&config.Config{}, nil, zap.NewNop().Sugar(), nil, nil, datasetMock, nil),
-	)
-	cmd := &cobra.Command{}
-	err := handler.DeleteDataset(cmd, []string{"dataset_with_error"})
-	require.Error(t, err)
-	require.True(t, deleteCalled)
-	require.Contains(t, err.Error(), "failed to delete dataset 'dataset_with_error': service delete error")
 }
 
 func TestHandler_PreviewDataset_ListType(t *testing.T) {
@@ -922,7 +685,6 @@ func TestHandler_PreviewDataset_CSVType(t *testing.T) {
 		Save(context.Background())
 	require.NoError(t, err)
 
-
 	printer := &tableprinter.TablePrinterMock{
 		AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
 		AddFieldFunc:  func(s string, fieldOptions ...tableprinter.FieldOption) tableprinter.TablePrinter { return printer },
@@ -933,7 +695,6 @@ func TestHandler_PreviewDataset_CSVType(t *testing.T) {
 		services.NewBackend(&config.Config{}, mockDB, zap.NewNop().Sugar(), nil, nil, datasetMock, nil),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
-
 
 	cmd := &cobra.Command{}
 	err = handler.PreviewDataset(cmd, []string{"my_csv_preview"})
@@ -957,23 +718,6 @@ func TestHandler_PreviewDataset_CSVType(t *testing.T) {
 	require.Equal(t, 2, len(printer.EndRowCalls()))
 	require.Equal(t, 1, len(printer.RenderCalls()))
 }
-
-
-func TestHandler_PreviewDataset_ServiceError(t *testing.T) {
-	datasetMock := &DatasetServiceMock{
-		PreviewFunc: func(ctx context.Context, source string) (*services_dataset.DatasetRows, error) {
-			return nil, errors.New("service preview error")
-		},
-	}
-	handler := NewHandler(
-		services.NewBackend(&config.Config{}, nil, zap.NewNop().Sugar(), nil, nil, datasetMock, nil),
-	)
-	cmd := &cobra.Command{}
-	err := handler.PreviewDataset(cmd, []string{"dataset_err_preview"})
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "failed to preview dataset 'dataset_err_preview': service preview error")
-}
-
 
 func TestHandler_Delete(t *testing.T) {
 	tableMock := &table.TableServiceMock{

@@ -3,19 +3,18 @@ package api
 import (
 	"errors"
 
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
-	"bytes" // For base64 decoding
-	"encoding/base64" // For base64 decoding
-	"fmt" // For error messages
-	"io"      // For io.Reader
-	"net/http" // For http status codes
 
-	"github.com/Yiling-J/tablepilot/ent" // For ent.IsNotFound
-	services_dataset "github.com/Yiling-J/tablepilot/services/dataset" // Alias for dataset service
-	"github.com/Yiling-J/tablepilot/services/provider"
-	"github.com/Yiling-J/tablepilot/services/table"
+	"github.com/Yiling-J/tablepilot/ent"
+	services_dataset "github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/google/uuid"
@@ -558,19 +557,15 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.PATCH("/workflows/:id", hs.UpdateWorkflow)
 	hs.apiv1.DELETE("/workflows/:id", hs.DeleteWorkflow)
 
-	// Dataset routes
+	// dataset
 	datasetRoutes := hs.apiv1.Group("/datasets")
-	{
-		datasetRoutes.POST("", hs.CreateDataset)
-		datasetRoutes.GET("", hs.ListDatasets)
-		datasetRoutes.GET("/:id", hs.GetDataset)
-		datasetRoutes.PATCH("/:id", hs.UpdateDataset)
-		datasetRoutes.DELETE("/:id", hs.DeleteDataset)
-		datasetRoutes.GET("/:id/preview", hs.PreviewDataset)
-	}
+	datasetRoutes.POST("", hs.CreateDataset)
+	datasetRoutes.GET("", hs.ListDatasets)
+	datasetRoutes.GET("/:id", hs.GetDataset)
+	datasetRoutes.PATCH("/:id", hs.UpdateDataset)
+	datasetRoutes.DELETE("/:id", hs.DeleteDataset)
+	datasetRoutes.GET("/:id/preview", hs.PreviewDataset)
 }
-
-// --- Dataset Handlers ---
 
 func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 	var apiReq services_dataset.DatasetAPIRequest
@@ -648,39 +643,29 @@ func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
 		return
 	}
 
-	// It's crucial that the client sends ALL fields for the intended new state of the dataset,
-	// or only those fields it wishes to change if the service supports partial updates (PATCH).
-	// Given CreateDatasetRequest is reused, it implies a full update for provided fields.
-	// The service's Update method behavior for missing fields (e.g. nil Files for CSV) is important.
-	serviceReq := &services_dataset.CreateDatasetRequest{
-		Name:        apiReq.Name,
-		Description: apiReq.Description,
-		Type:        apiReq.Type,
-		Data:        apiReq.Data,
+	serviceReq := &services_dataset.UpdateDatasetRequest{
+		CreateDatasetRequest: services_dataset.CreateDatasetRequest{
+			Name:        apiReq.Name,
+			Description: apiReq.Description,
+			Data:        apiReq.Data,
+		},
+		Fields: []string{"name", "description", "data"},
 	}
 
-	if apiReq.Type == "csv" {
-		// If apiReq.Files is nil (key not present in JSON), serviceReq.Files will be nil.
-		// If apiReq.Files is an empty slice `[]` (key present but empty), serviceReq.Files will be an empty slice.
-		// The service needs to distinguish these if "no change" is different from "set to empty".
-		// Current service seems to clear files if type is CSV and no new files are provided.
-		if apiReq.Files != nil {
-			var readers []io.Reader
-			for _, fileContentBase64 := range apiReq.Files {
-				decodedBytes, err := base64.StdEncoding.DecodeString(fileContentBase64)
-				if err != nil {
-					errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("failed to decode base64 file content: %w", err))
-					return
-				}
-				readers = append(readers, bytes.NewReader(decodedBytes))
+	if apiReq.Files != nil {
+		var readers []io.Reader
+		for _, fileContentBase64 := range apiReq.Files {
+			decodedBytes, err := base64.StdEncoding.DecodeString(fileContentBase64)
+			if err != nil {
+				errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("failed to decode base64 file content: %w", err))
+				return
 			}
-			serviceReq.Files = readers
-		} else {
-			// If type is CSV and 'files' is not in payload or is null, this will pass nil to service.
-			// If 'files' is `[]`, this will pass an empty slice.
-			// The service's Update method for CSV currently expects files; nil/empty slice will clear existing files.
-			serviceReq.Files = []io.Reader{} // Ensures it's an empty slice if not provided, matching service expectation of clearing.
+			readers = append(readers, bytes.NewReader(decodedBytes))
 		}
+		serviceReq.Files = readers
+		serviceReq.Fields = append(serviceReq.Fields, "files")
+	} else {
+		serviceReq.Files = []io.Reader{}
 	}
 
 	err := hs.DatasetService.Update(ctx.Request.Context(), datasetID, serviceReq)

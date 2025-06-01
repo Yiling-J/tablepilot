@@ -16,9 +16,11 @@ import (
 	"strings"
 	"time"
 
+	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services"
+	"github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/services/workflow"
@@ -107,8 +109,6 @@ func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 	return tp.Render()
 }
 
-// Dataset Handlers
-
 func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 	name, err := cmd.Flags().GetString("name")
 	if err != nil {
@@ -123,23 +123,28 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("error getting type flag: %w", err)
 	}
 
-	req := &services_dataset.CreateDatasetRequest{
+	req := &dataset.CreateDatasetRequest{
 		Name:        name,
 		Description: desc,
 		Type:        datasetType,
 	}
 
-	if datasetType == "list" {
-		dataItems, err := cmd.Flags().GetStringArray("data")
+	switch datasetType {
+	case "list":
+		filePaths, err := cmd.Flags().GetStringArray("file")
 		if err != nil {
 			return fmt.Errorf("error getting data flag for list type: %w", err)
 		}
-		if len(dataItems) == 0 {
-			// return fmt.Errorf("at least one --data item must be provided for type 'list'")
-			// Allow empty list dataset
+		options := []string{}
+		for _, fp := range filePaths {
+			o, err := ReadLines(fp)
+			if err != nil {
+				return fmt.Errorf("failed to read file %s: %w", fp, err)
+			}
+			options = append(options, o...)
 		}
-		req.Data = dataItems
-	} else if datasetType == "csv" {
+		req.Data = options
+	case "csv":
 		filePaths, err := cmd.Flags().GetStringArray("file")
 		if err != nil {
 			return fmt.Errorf("error getting file flag for csv type: %w", err)
@@ -159,18 +164,9 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 				}
 				return fmt.Errorf("failed to open file %s: %w", filePath, err)
 			}
-			// defer file.Close() // This defer will not work as expected in a loop. Files should be closed after the service call.
 			files = append(files, file)
 		}
 		req.Files = files
-		// Ensure files are closed after service call. This is tricky because the service consumes the reader.
-		// The service should be responsible for closing them if it reads them completely,
-		// or the handler needs to manage this carefully.
-		// For now, let's assume service call consumes and closes, or they are closed by GC if not fully read.
-		// A better approach is to have the service method signal when it's done with the readers.
-		// Or, read file contents into bytes here if service API changes.
-		// Given current service API (io.Reader), we pass them. The service must handle closing.
-		// Let's add a defer close mechanism here for after the service call.
 		defer func() {
 			for _, f := range files {
 				if c, ok := f.(io.Closer); ok {
@@ -178,8 +174,6 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 				}
 			}
 		}()
-	} else {
-		return fmt.Errorf("invalid dataset type '%s'. Must be 'list' or 'csv'", datasetType)
 	}
 
 	nanoid, err := h.backend.DatasetService.Create(cmd.Context(), req)
@@ -200,14 +194,11 @@ func (h *Handler) GetDataset(cmd *cobra.Command, args []string) error {
 	}
 
 	tp := h.getPrinter()
-	tp.AddHeader([]string{"Attribute", "Value"})
-	tp.AddField("Name").AddField(dsInfo.Name).EndRow()
-	tp.AddField("Description").AddField(dsInfo.Description).EndRow()
-	tp.AddField("Type").AddField(dsInfo.Type).EndRow()
-	tp.AddField("Column Count").AddField(fmt.Sprintf("%d", dsInfo.ColumnCount)).EndRow()
-	tp.AddField("Value Count").AddField(fmt.Sprintf("%d", dsInfo.ValueCount)).EndRow()
-	// Nanoid is not part of DatasetInfo, but useful to display if we fetch it separately or add it.
-	// For now, we only display what Get returns in DatasetInfo.
+	tp.AddHeader([]string{"Name", "Type", "Description"})
+	tp.AddField(dsInfo.Name)
+	tp.AddField(dsInfo.Type)
+	tp.AddField(dsInfo.Description)
+	tp.EndRow()
 	return tp.Render()
 }
 
@@ -236,170 +227,99 @@ func (h *Handler) ListDatasets(cmd *cobra.Command, args []string) error {
 }
 
 func (h *Handler) UpdateDataset(cmd *cobra.Command, args []string) error {
-	datasetIDOrName := args[0]
-
-	// Fetch current dataset to prefill if values are not provided
-	// This is important because Update method in service expects all fields in request to be the new state.
-	// However, the CLI allows partial updates.
-	// A better service API might be a PATCH-style update, or the handler reconstructs the full request.
-	// For now, let's assume user must provide all relevant fields for the type they are updating to,
-	// or the service handles nil/empty fields as "no change" (which it currently doesn't seem to).
-
-	// Let's try to fetch the existing dataset to make it easier for partial updates.
-	// This is not ideal as it makes two calls and mixes concerns.
-	// The service's Update method should ideally take an UpdateDatasetRequest with optional fields.
-	// Given the current CreateDatasetRequest is reused for update, we must provide all fields.
-
-	// Get the original dataset to fill in unchanged values if not provided in flags
-	originalDs, err := h.backend.DatasetService.Get(cmd.Context(), datasetIDOrName)
+	ds, err := h.backend.DatasetService.Get(cmd.Context(), args[0])
 	if err != nil {
-		// Check if it's a "not found" error; if so, the update cannot proceed.
-		// Otherwise, it might be a temporary issue.
-		return fmt.Errorf("failed to fetch existing dataset '%s' for update: %w", datasetIDOrName, err)
+		return err
 	}
-
-
+	fields := []string{}
+	for _, f := range []string{"name", "desc", "file"} {
+		if cmd.Flags().Changed(f) {
+			switch f {
+			case "name":
+				fields = append(fields, "name")
+			case "desc":
+				fields = append(fields, "description")
+			case "file":
+				fields = append(fields, "data")
+				fields = append(fields, "files")
+			}
+			fields = append(fields, f)
+		}
+	}
 	name, _ := cmd.Flags().GetString("name")
-	if name == "" && cmd.Flags().Changed("name") { // User explicitly set empty name
-		// Allow empty name if desired, though service might have constraints
-	} else if name == "" {
-		name = originalDs.Name // Keep original if not provided
-	}
-
-
 	desc, _ := cmd.Flags().GetString("desc")
-	if !cmd.Flags().Changed("desc") {
-		desc = originalDs.Description
+
+	req := &dataset.UpdateDatasetRequest{
+		CreateDatasetRequest: dataset.CreateDatasetRequest{
+			Name:        name,
+			Description: desc,
+		},
+		Fields: fields,
 	}
 
-
-	datasetType, _ := cmd.Flags().GetString("type")
-	if datasetType == "" {
-		datasetType = originalDs.Type // Keep original if not provided
-	}
-
-
-	req := &services_dataset.CreateDatasetRequest{
-		Name:        name,
-		Description: desc,
-		Type:        datasetType,
-	}
-
-	var filesToClose []io.Closer
-
-	if datasetType == "list" {
-		if cmd.Flags().Changed("data") {
-			dataItems, err := cmd.Flags().GetStringArray("data")
-			if err != nil {
-				return fmt.Errorf("error getting data flag for list type: %w", err)
-			}
-			req.Data = dataItems
-		} else if originalDs.Type == "list" {
-			// If type hasn't changed from list and no new data provided, we need to fetch original data.
-			// The Get method returns DatasetInfo which doesn't have the raw data.
-			// This highlights a limitation. The Update method should handle this more gracefully.
-			// For now, if user doesn't supply --data, and type is list, it will effectively clear the list data
-			// unless we fetch the full dataset content.
-			// This is a common CLI challenge: distinguishing between "not set" and "set to empty".
-			// The current model requires all data to be present.
-			// Let's assume for now: if --data is not passed, list data is cleared if type is 'list'.
-			// This is not great. A proper fix involves changing service update logic or request model.
-			// A temporary workaround: if type is 'list' and --data not changed, and original type was 'list',
-			// we'd ideally re-fetch the data. DatasetService.Preview could potentially get this for list type.
-			// This is getting complicated. For now, if --data is not specified, req.Data will be nil/empty.
-			// If type is list, this means it will be an empty list.
-			previewData, err := h.backend.DatasetService.Preview(cmd.Context(), datasetIDOrName)
-			if err == nil && previewData.Type == db_dataset.TypeList {
-				req.Data = previewData.Data
-			}
-			// If user explicitly provides --data, that will be used.
-			if cmd.Flags().Changed("data") {
-				dataItems, _ := cmd.Flags().GetStringArray("data")
-				req.Data = dataItems
-			}
+	switch ds.Type {
+	case "list":
+		filePaths, err := cmd.Flags().GetStringArray("file")
+		if err != nil {
+			return fmt.Errorf("error getting data flag for list type: %w", err)
 		}
-	} else if datasetType == "csv" {
-		if cmd.Flags().Changed("file") {
-			filePaths, err := cmd.Flags().GetStringArray("file")
+		options := []string{}
+		for _, fp := range filePaths {
+			o, err := ReadLines(fp)
 			if err != nil {
-				return fmt.Errorf("error getting file flag for csv type: %w", err)
+				return fmt.Errorf("failed to read file %s: %w", fp, err)
 			}
-			if len(filePaths) == 0 { // User explicitly provided --file but no paths, meaning clear files.
-				req.Files = []io.Reader{}
-			} else {
-				var files []io.Reader
-				for _, filePath := range filePaths {
-					file, err := os.Open(filePath)
-					if err != nil {
-						for _, f := range filesToClose {
-							f.Close()
-						}
-						return fmt.Errorf("failed to open file %s: %w", filePath, err)
+			options = append(options, o...)
+		}
+		req.Data = options
+	case "csv":
+		filePaths, err := cmd.Flags().GetStringArray("file")
+		if err != nil {
+			return fmt.Errorf("error getting file flag for csv type: %w", err)
+		}
+		if len(filePaths) == 0 {
+			return fmt.Errorf("at least one --file path must be provided for type 'csv'")
+		}
+		var files []io.Reader
+		for _, filePath := range filePaths {
+			file, err := os.Open(filePath)
+			if err != nil {
+				// Close already opened files if any
+				for _, f := range files {
+					if c, ok := f.(io.Closer); ok {
+						c.Close()
 					}
-					files = append(files, file)
-					filesToClose = append(filesToClose, file)
 				}
-				req.Files = files
+				return fmt.Errorf("failed to open file %s: %w", filePath, err)
 			}
-		} else if originalDs.Type == "csv" {
-			// If type is CSV, and --file not specified, it means "keep existing files".
-			// The service's Update method needs to be smart about this, or we need to pass a special signal.
-			// The current Update logic for CSV type always expects new files and removes old ones.
-			// This means to "keep" files, user must re-specify them, which is not user-friendly.
-			// Workaround: If --file is not changed AND type is still CSV, then do not set req.Files.
-			// The service would need to interpret nil Files as "no change to files".
-			// However, the current service's Update will try to create new files if type is CSV.
-			// This is a significant design issue for CLI usability vs service API.
-			// For now, if --file is not provided, it will effectively try to create a CSV dataset with no files,
-			// which might error or result in an empty CSV dataset.
-			// A better approach for service: if req.Files is nil, don't touch files. If empty slice, clear files.
-			// Let's assume if --file is not provided, we are not updating the files.
-			// This means we should not set req.Files. The service should handle this.
-			// The current service always re-processes files for CSV. This is a problem.
-			// Given the service implementation, if type is CSV, files MUST be provided or it clears them.
-			// This is a known limitation of this CLI/Service interaction for now.
-			// If user does not provide --file for a CSV update, it will be treated as an empty set of files.
-			if !cmd.Flags().Changed("file") {
-				// This signals to the service that files are not being updated.
-				// The service needs to be adapted to handle this.
-				// For now, this will likely clear the files in the service.
-				// This part is problematic and needs a service-side change for better CLI UX.
-				// Let's assume for now that if files are not passed, it should clear them.
-				req.Files = []io.Reader{} // Explicitly clear if not provided for CSV type.
+			files = append(files, file)
+		}
+		req.Files = files
+		defer func() {
+			for _, f := range files {
+				if c, ok := f.(io.Closer); ok {
+					c.Close()
+				}
 			}
-
-		}
-	} else {
-		for _, f := range filesToClose {
-			f.Close()
-		}
-		return fmt.Errorf("invalid dataset type '%s'. Must be 'list' or 'csv'", datasetType)
+		}()
 	}
-	defer func() {
-		for _, f := range filesToClose {
-			f.Close()
-		}
-	}()
 
-	err = h.backend.DatasetService.Update(cmd.Context(), datasetIDOrName, req)
+	err = h.backend.DatasetService.Update(cmd.Context(), args[0], req)
 	if err != nil {
-		return fmt.Errorf("failed to update dataset '%s': %w", datasetIDOrName, err)
+		return fmt.Errorf("failed to update dataset '%s': %w", args[0], err)
 	}
 
-	h.backend.Logger.Infow("Dataset updated successfully", "id_or_name", datasetIDOrName)
-	fmt.Printf("Dataset '%s' updated successfully.\n", datasetIDOrName)
+	h.backend.Logger.Infow("Dataset updated successfully", "id_or_name", args[0])
 	return nil
 }
 
 func (h *Handler) DeleteDataset(cmd *cobra.Command, args []string) error {
-	datasetIDOrName := args[0]
-	err := h.backend.DatasetService.Delete(cmd.Context(), datasetIDOrName)
+	datasetID := args[0]
+	err := h.backend.DatasetService.Delete(cmd.Context(), datasetID)
 	if err != nil {
-		// TODO: Check if ent.IsNotFound(err) and provide a nicer message
-		return fmt.Errorf("failed to delete dataset '%s': %w", datasetIDOrName, err)
+		return fmt.Errorf("failed to delete dataset '%s': %w", datasetID, err)
 	}
-	h.backend.Logger.Infow("Dataset deleted successfully", "id_or_name", datasetIDOrName)
-	fmt.Printf("Dataset '%s' deleted successfully.\n", datasetIDOrName)
+	h.backend.Logger.Infow("Dataset deleted successfully", "id_or_name", datasetID)
 	return nil
 }
 
@@ -410,8 +330,6 @@ func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to preview dataset '%s': %w", datasetIDOrName, err)
 	}
 
-	fmt.Printf("Preview for dataset: %s (Type: %s)\n\n", datasetIDOrName, previewData.Type)
-
 	if previewData.Type == db_dataset.TypeList {
 		if len(previewData.Data) == 0 {
 			fmt.Println("Dataset is empty.")
@@ -421,32 +339,18 @@ func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
 				fmt.Printf("%d: %s\n", i+1, item)
 			}
 		}
-	} else if previewData.Type == db_dataset.TypeCSV {
+	} else if previewData.Type == db_dataset.TypeCsv {
 		if len(previewData.Rows) == 0 {
 			fmt.Println("Dataset is empty or has no rows to preview.")
 		} else {
 			tp := h.getPrinter()
-			// Assuming all maps in Rows have the same keys for headers
-			// Get headers from the first row
 			var headers []string
 			if len(previewData.Rows) > 0 {
 				for key := range previewData.Rows[0] {
 					headers = append(headers, key)
 				}
-				// Sort headers for consistent order? For now, rely on map iteration order (not guaranteed).
-				// A better way would be if service.Preview returned headers explicitly.
-				// Or, if columns are known from DatasetInfo (but Preview doesn't give DatasetInfo directly).
-				// The service's Preview method for CSV uses sr.Indexer.ColumnNames. We don't have that here.
-				// Let's assume a simple alphabetical sort for now for predictability if not ideal.
-				// This is a cosmetic issue for CLI display.
-				// For now, let's just use the order from the first row.
-				// The service Preview method populates rows with columns in order from indexer.
-				// So, the order should be consistent.
 			}
 
-			// Get column names from one of the rows (assuming they are consistent)
-			// This is not ideal, service should return column names.
-			// For now, let's try to infer from the first row.
 			if len(previewData.Rows) > 0 {
 				tempHeadersMap := make(map[string]bool)
 				for _, row := range previewData.Rows {
@@ -457,32 +361,25 @@ func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
 				for k := range tempHeadersMap { // This will be random order
 					headers = append(headers, k)
 				}
-				// A better way: if the service guarantees order in the map, or returns ordered columns.
-				// The current service returns `map[string]any`, order is not guaranteed.
-				// This is a limitation of the current preview data structure for CSV.
-				// The actual service uses `sr.Indexer.ColumnNames` which are ordered.
-				// The CLI handler should ideally get these ordered columns.
-				// For now, this will print columns in a random order.
-				// Let's try to get the original dataset to get column order if possible.
+
 				originalDsFull, dsErr := h.backend.DB.Dataset.Query().Where(
 					db_dataset.Or(db_dataset.Name(datasetIDOrName), db_dataset.Nanoid(datasetIDOrName)),
 				).Only(cmd.Context())
 
-				if dsErr == nil && originalDsFull.Indexer != nil && len(originalDsFull.Indexer.ColumnNames) > 0 {
+				if dsErr == nil && len(originalDsFull.Indexer.ColumnNames) > 0 {
 					headers = originalDsFull.Indexer.ColumnNames
-				} else if len(previewData.Rows) > 0 { // Fallback to inferring from first row if indexer fails
+				} else if len(previewData.Rows) > 0 {
 					inferredHeaders := []string{}
-					for k := range previewData.Rows[0] { // Still random order
+					for k := range previewData.Rows[0] {
 						inferredHeaders = append(inferredHeaders, k)
 					}
 					headers = inferredHeaders
 				}
 			}
 
-
-			tp.AddHeader(headers) // This might be empty if no rows and no headers from indexer
+			tp.AddHeader(headers)
 			for _, rowMap := range previewData.Rows {
-				for _, hKey := range headers { // Print in the determined header order
+				for _, hKey := range headers {
 					tp.AddField(cellString(rowMap[hKey]))
 				}
 				tp.EndRow()
