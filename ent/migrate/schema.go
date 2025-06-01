@@ -19,7 +19,7 @@ var (
 		{Name: "description", Type: field.TypeString, Default: ""},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"list", "csv"}},
 		{Name: "indexer", Type: field.TypeJSON, Nullable: true},
-		{Name: "values", Type: field.TypeJSON},
+		{Name: "values", Type: field.TypeJSON, Nullable: true},
 	}
 	// DatasetsTable holds the schema information for the "datasets" table.
 	DatasetsTable = &schema.Table{

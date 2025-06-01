@@ -15,7 +15,7 @@ import (
 const chunkSize = 50
 
 type CSVIndexer struct {
-	fs fs.FS
+	FS fs.FS
 	schema.CSVIndexer
 }
 
@@ -65,7 +65,7 @@ func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
 	}
 
 	return &CSVIndexer{
-		fs: fs,
+		FS: fs,
 		CSVIndexer: schema.CSVIndexer{
 			Files:       files,
 			Count:       total,
@@ -92,7 +92,7 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 		return nil, errors.New("position for index not found")
 	}
 	file := r.Files[pos.File]
-	f, err := r.fs.Open(file)
+	f, err := r.FS.Open(file)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (r *CSVIndexer) Columns() []string {
 
 func (r *CSVIndexer) Range(fn func(row []string) bool) error {
 	for _, file := range r.Files {
-		f, err := r.fs.Open(file)
+		f, err := r.FS.Open(file)
 		if err != nil {
 			return err
 		}

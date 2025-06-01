@@ -494,6 +494,16 @@ func IndexerNotNil() predicate.Dataset {
 	return predicate.Dataset(sql.FieldNotNull(FieldIndexer))
 }
 
+// ValuesIsNil applies the IsNil predicate on the "values" field.
+func ValuesIsNil() predicate.Dataset {
+	return predicate.Dataset(sql.FieldIsNull(FieldValues))
+}
+
+// ValuesNotNil applies the NotNil predicate on the "values" field.
+func ValuesNotNil() predicate.Dataset {
+	return predicate.Dataset(sql.FieldNotNull(FieldValues))
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Dataset) predicate.Dataset {
 	return predicate.Dataset(sql.AndPredicates(predicates...))

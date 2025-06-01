@@ -38,7 +38,7 @@ func (Dataset) Fields() []ent.Field {
 		field.String("description").Default(""),
 		field.Enum("type").Values("list", "csv"),
 		field.JSON("indexer", CSVIndexer{}).Optional(),
-		field.Strings("values"),
+		field.Strings("values").Optional(),
 	}
 }
 

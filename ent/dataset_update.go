@@ -157,6 +157,12 @@ func (du *DatasetUpdate) AppendValues(s []string) *DatasetUpdate {
 	return du
 }
 
+// ClearValues clears the value of the "values" field.
+func (du *DatasetUpdate) ClearValues() *DatasetUpdate {
+	du.mutation.ClearValues()
+	return du
+}
+
 // Mutation returns the DatasetMutation object of the builder.
 func (du *DatasetUpdate) Mutation() *DatasetMutation {
 	return du.mutation
@@ -274,6 +280,9 @@ func (du *DatasetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, dataset.FieldValues, value)
 		})
+	}
+	if du.mutation.ValuesCleared() {
+		_spec.ClearField(dataset.FieldValues, field.TypeJSON)
 	}
 	_spec.AddModifiers(du.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
@@ -420,6 +429,12 @@ func (duo *DatasetUpdateOne) SetValues(s []string) *DatasetUpdateOne {
 // AppendValues appends s to the "values" field.
 func (duo *DatasetUpdateOne) AppendValues(s []string) *DatasetUpdateOne {
 	duo.mutation.AppendValues(s)
+	return duo
+}
+
+// ClearValues clears the value of the "values" field.
+func (duo *DatasetUpdateOne) ClearValues() *DatasetUpdateOne {
+	duo.mutation.ClearValues()
 	return duo
 }
 
@@ -570,6 +585,9 @@ func (duo *DatasetUpdateOne) sqlSave(ctx context.Context) (_node *Dataset, err e
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, dataset.FieldValues, value)
 		})
+	}
+	if duo.mutation.ValuesCleared() {
+		_spec.ClearField(dataset.FieldValues, field.TypeJSON)
 	}
 	_spec.AddModifiers(duo.modifiers...)
 	_node = &Dataset{config: duo.config}

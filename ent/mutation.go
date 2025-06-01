@@ -559,10 +559,24 @@ func (m *DatasetMutation) AppendedValues() ([]string, bool) {
 	return m.appendvalues, true
 }
 
+// ClearValues clears the value of the "values" field.
+func (m *DatasetMutation) ClearValues() {
+	m.values = nil
+	m.appendvalues = nil
+	m.clearedFields[dataset.FieldValues] = struct{}{}
+}
+
+// ValuesCleared returns if the "values" field was cleared in this mutation.
+func (m *DatasetMutation) ValuesCleared() bool {
+	_, ok := m.clearedFields[dataset.FieldValues]
+	return ok
+}
+
 // ResetValues resets all changes to the "values" field.
 func (m *DatasetMutation) ResetValues() {
 	m.values = nil
 	m.appendvalues = nil
+	delete(m.clearedFields, dataset.FieldValues)
 }
 
 // Where appends a list predicates to the DatasetMutation builder.
@@ -797,6 +811,9 @@ func (m *DatasetMutation) ClearedFields() []string {
 	if m.FieldCleared(dataset.FieldIndexer) {
 		fields = append(fields, dataset.FieldIndexer)
 	}
+	if m.FieldCleared(dataset.FieldValues) {
+		fields = append(fields, dataset.FieldValues)
+	}
 	return fields
 }
 
@@ -825,6 +842,9 @@ func (m *DatasetMutation) ClearField(name string) error {
 		return nil
 	case dataset.FieldIndexer:
 		m.ClearIndexer()
+		return nil
+	case dataset.FieldValues:
+		m.ClearValues()
 		return nil
 	}
 	return fmt.Errorf("unknown Dataset nullable field %s", name)

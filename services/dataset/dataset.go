@@ -2,6 +2,8 @@ package dataset
 
 import (
 	"context"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -36,6 +38,61 @@ func NewDatasetService(db *ent.Client, cfg *config.Config) *DatasetServiceImpl {
 	}
 }
 
+func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *CreateDatasetRequest, sr *ent.Dataset) error {
+	switch req.Type {
+	case "csv":
+		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, "datasets/shared", sr.Nanoid)
+		err := os.MkdirAll(dirPath, os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("failed to create directory: %w", err)
+		}
+
+		if len(req.Files) == 0 {
+			return errors.New("dataset.Create: files should not be empty")
+		}
+		filePath := filepath.Join(dirPath, "data.csv")
+		outFile, err := os.Create(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to create file %s: %w", filePath, err)
+		}
+		for i, file := range req.Files {
+			// skip csv headers
+			if i > 0 {
+				reader := csv.NewReader(file)
+				_, err = reader.Read()
+				if err != nil {
+					return fmt.Errorf("failed to read csv %w", err)
+				}
+				offset := reader.InputOffset()
+				_, err = file.(io.ReadSeeker).Seek(offset, io.SeekStart)
+				if err != nil {
+					return fmt.Errorf("failed to seek csv file %w", err)
+				}
+			}
+			_, err = io.Copy(outFile, file)
+			if err != nil {
+				return fmt.Errorf("failed to write to file %s: %w", filePath, err)
+			}
+		}
+		outFile.Close()
+		// build index
+		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), []string{"data.csv"})
+		if err != nil {
+			return fmt.Errorf("table.Create: build csv index: %w", err)
+		}
+		err = sr.Update().SetPath(fmt.Sprintf("datasets/shared/%s", sr.Nanoid)).SetIndexer(indexer.CSVIndexer).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("table.Create: ent update dataset: %w", err)
+		}
+	case "list":
+		err := sr.Update().SetValues(req.Data).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("table.Create: ent update dataset: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetRequest) (string, error) {
 	tx, err := s.db.Tx(ctx)
 	if err != nil {
@@ -47,43 +104,9 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: ent create: %w", err))
 	}
-	switch req.Type {
-	case "csv":
-		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, "shared", sr.Nanoid)
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			return "", fmt.Errorf("failed to create directory: %w", err)
-		}
-
-		files := []string{}
-		for i, file := range req.Files {
-			filePath := filepath.Join(dirPath, fmt.Sprintf("%d.csv", i))
-			files = append(files, filePath)
-			outFile, err := os.Create(filePath)
-			if err != nil {
-				return "", fmt.Errorf("failed to create file %s: %w", filePath, err)
-			}
-
-			_, err = io.Copy(outFile, file)
-			outFile.Close()
-			if err != nil {
-				return "", fmt.Errorf("failed to write to file %s: %w", filePath, err)
-			}
-		}
-		// build index
-		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), files)
-		if err != nil {
-			return "", ent.Rollback(tx, fmt.Errorf("table.Create: build csv index: %w", err))
-		}
-		err = sr.Update().SetPath(fmt.Sprintf("shared/%s", sr.Nanoid)).SetIndexer(indexer.CSVIndexer).Exec(ctx)
-		if err != nil {
-			return "", ent.Rollback(tx, fmt.Errorf("table.Create: ent update dataset: %w", err))
-		}
-	case "list":
-		err = sr.Update().SetValues(req.Data).Exec(ctx)
-		if err != nil {
-			return "", ent.Rollback(tx, fmt.Errorf("table.Create: ent update dataset: %w", err))
-		}
+	err = s.buildCreateDatasetReq(ctx, req, sr)
+	if err != nil {
+		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: buildCreateDatasetReq: %w", err))
 	}
 	return sr.Nanoid, tx.Commit()
 }
@@ -148,44 +171,13 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 			}
 		}
 	}
-
-	switch req.Type {
-	case "csv":
-		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, "shared", ds.Nanoid)
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to create directory: %w", err))
-		}
-
-		files := []string{}
-		for i, file := range req.Files {
-			filePath := filepath.Join(dirPath, fmt.Sprintf("%d.csv", i))
-			files = append(files, filePath)
-			outFile, err := os.Create(filePath)
-			if err != nil {
-				return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to create file %s: %w", filePath, err))
-			}
-
-			_, err = io.Copy(outFile, file)
-			outFile.Close()
-			if err != nil {
-				return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to write to file %s: %w", filePath, err))
-			}
-		}
-		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), files)
-		if err != nil {
-			return ent.Rollback(tx, fmt.Errorf("dataset.Update: build csv index: %w", err))
-		}
-		updater.SetPath(fmt.Sprintf("shared/%s", ds.Nanoid)).SetIndexer(indexer.CSVIndexer)
-	case "list":
-		updater.SetValues(req.Data)
-	default:
-		return ent.Rollback(tx, fmt.Errorf("dataset.Update: unknown dataset type: %s", req.Type))
-	}
-
-	_, err = updater.Save(ctx)
+	ds, err = updater.Save(ctx)
 	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Update: ent update: %w", err))
+		return ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err))
+	}
+	err = s.buildCreateDatasetReq(ctx, &req.CreateDatasetRequest, ds)
+	if err != nil {
+		return ent.Rollback(tx, fmt.Errorf("dataset.Create: buildCreateDatasetReq: %w", err))
 	}
 
 	return tx.Commit()
@@ -248,7 +240,9 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 	}
 	switch sr.Type {
 	case "csv":
+		dir := fmt.Sprintf("%s/datasets/shared/%s", s.cfg.Common.SourceDataDir, sr.Nanoid)
 		s := &source.CsvSource{RandomCSV: &csvindexer.CSVIndexer{
+			FS:         os.DirFS(dir),
 			CSVIndexer: sr.Indexer,
 		}}
 		counter := 0

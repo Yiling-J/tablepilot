@@ -33,7 +33,7 @@ var _ DatasetService = &DatasetServiceMock{}
 //			PreviewFunc: func(ctx context.Context, source string) (*DatasetRows, error) {
 //				panic("mock out the Preview method")
 //			},
-//			UpdateFunc: func(ctx context.Context, dataset string, req *CreateDatasetRequest) error {
+//			UpdateFunc: func(ctx context.Context, dataset string, req *UpdateDatasetRequest) error {
 //				panic("mock out the Update method")
 //			},
 //		}
@@ -59,7 +59,7 @@ type DatasetServiceMock struct {
 	PreviewFunc func(ctx context.Context, source string) (*DatasetRows, error)
 
 	// UpdateFunc mocks the Update method.
-	UpdateFunc func(ctx context.Context, dataset string, req *CreateDatasetRequest) error
+	UpdateFunc func(ctx context.Context, dataset string, req *UpdateDatasetRequest) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -103,7 +103,7 @@ type DatasetServiceMock struct {
 			// Dataset is the dataset argument value.
 			Dataset string
 			// Req is the req argument value.
-			Req *CreateDatasetRequest
+			Req *UpdateDatasetRequest
 		}
 	}
 	lockCreate  sync.RWMutex
@@ -291,14 +291,14 @@ func (mock *DatasetServiceMock) PreviewCalls() []struct {
 }
 
 // Update calls UpdateFunc.
-func (mock *DatasetServiceMock) Update(ctx context.Context, dataset string, req *CreateDatasetRequest) error {
+func (mock *DatasetServiceMock) Update(ctx context.Context, dataset string, req *UpdateDatasetRequest) error {
 	if mock.UpdateFunc == nil {
 		panic("DatasetServiceMock.UpdateFunc: method is nil but DatasetService.Update was just called")
 	}
 	callInfo := struct {
 		Ctx     context.Context
 		Dataset string
-		Req     *CreateDatasetRequest
+		Req     *UpdateDatasetRequest
 	}{
 		Ctx:     ctx,
 		Dataset: dataset,
@@ -317,12 +317,12 @@ func (mock *DatasetServiceMock) Update(ctx context.Context, dataset string, req 
 func (mock *DatasetServiceMock) UpdateCalls() []struct {
 	Ctx     context.Context
 	Dataset string
-	Req     *CreateDatasetRequest
+	Req     *UpdateDatasetRequest
 } {
 	var calls []struct {
 		Ctx     context.Context
 		Dataset string
-		Req     *CreateDatasetRequest
+		Req     *UpdateDatasetRequest
 	}
 	mock.lockUpdate.RLock()
 	calls = mock.calls.Update

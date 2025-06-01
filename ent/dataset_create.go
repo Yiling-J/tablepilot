@@ -195,9 +195,6 @@ func (dc *DatasetCreate) check() error {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Dataset.type": %w`, err)}
 		}
 	}
-	if _, ok := dc.mutation.Values(); !ok {
-		return &ValidationError{Name: "values", err: errors.New(`ent: missing required field "Dataset.values"`)}
-	}
 	return nil
 }
 
@@ -433,6 +430,12 @@ func (u *DatasetUpsert) UpdateValues() *DatasetUpsert {
 	return u
 }
 
+// ClearValues clears the value of the "values" field.
+func (u *DatasetUpsert) ClearValues() *DatasetUpsert {
+	u.SetNull(dataset.FieldValues)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create.
 // Using this option is equivalent to using:
 //
@@ -615,6 +618,13 @@ func (u *DatasetUpsertOne) SetValues(v []string) *DatasetUpsertOne {
 func (u *DatasetUpsertOne) UpdateValues() *DatasetUpsertOne {
 	return u.Update(func(s *DatasetUpsert) {
 		s.UpdateValues()
+	})
+}
+
+// ClearValues clears the value of the "values" field.
+func (u *DatasetUpsertOne) ClearValues() *DatasetUpsertOne {
+	return u.Update(func(s *DatasetUpsert) {
+		s.ClearValues()
 	})
 }
 
@@ -966,6 +976,13 @@ func (u *DatasetUpsertBulk) SetValues(v []string) *DatasetUpsertBulk {
 func (u *DatasetUpsertBulk) UpdateValues() *DatasetUpsertBulk {
 	return u.Update(func(s *DatasetUpsert) {
 		s.UpdateValues()
+	})
+}
+
+// ClearValues clears the value of the "values" field.
+func (u *DatasetUpsertBulk) ClearValues() *DatasetUpsertBulk {
+	return u.Update(func(s *DatasetUpsert) {
+		s.ClearValues()
 	})
 }
 
