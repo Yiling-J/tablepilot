@@ -10,6 +10,7 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/ai"
+	"github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/Yiling-J/tablepilot/services/provider"
 
 	"github.com/Yiling-J/tablepilot/services/table"
@@ -872,4 +873,24 @@ func TestAPI_RunWorkflowFileVar(t *testing.T) {
 	resp := server.Send(req)
 	require.Equal(t, 200, resp.response.Code)
 	require.Equal(t, 1, len(mockWorkflow.StartCalls()))
+}
+
+func TestAPI_GetDataset(t *testing.T) {
+	expected := &dataset.DatasetInfo{Name: "ds", Description: "bar"}
+	datasetMock := &dataset.DatasetServiceMock{
+		GetFunc: func(ctx context.Context, dataset string) (*dataset.DatasetInfo, error) {
+			require.Equal(t, "foo", dataset)
+			return expected, nil
+		},
+	}
+
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+	r, err := server.NewGetRequest("/api/v1/datasets/foo")
+	require.NoError(t, err)
+	resp := server.Send(r)
+	resp.ResponseEq(
+		t, 200, expected,
+	)
 }
