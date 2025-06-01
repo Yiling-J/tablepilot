@@ -3,18 +3,19 @@ package dataset
 import (
 	"bytes"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 	"testing"
 
 	"errors"
+	"path/filepath"
+
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"path/filepath"
-	"strings"
 )
 
 func TestDatasetService_Get(t *testing.T) {
@@ -304,7 +305,7 @@ func TestDatasetService_Update(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, updatedCsvName, retrieved.Name)
 		require.Equal(t, updatedCsvDesc, retrieved.Description)
-		require.Equal(t, len(initialHeaders), retrieved.ColumnCount) // ColumnCount should be original
+		require.Equal(t, len(initialHeaders), retrieved.ColumnCount)
 
 		var updatedCsvBuf bytes.Buffer
 		csvW = csv.NewWriter(&updatedCsvBuf)
@@ -337,7 +338,7 @@ func TestDatasetService_Update(t *testing.T) {
 		require.Error(t, err)
 	})
 
-	t.Run("convert list to csv", func(t *testing.T) {
+	t.Run("convert list to csv not allowed", func(t *testing.T) {
 		srv := newServiceForTest("list_to_csv")
 		listName := "list-to-convert"
 		listNanoid, err := srv.Create(ctx, &CreateDatasetRequest{
@@ -352,16 +353,14 @@ func TestDatasetService_Update(t *testing.T) {
 		_ = csvW.Write([]string{"d1", "d2"})
 		csvW.Flush()
 		err = srv.Update(ctx, listNanoid, &UpdateDatasetRequest{
-			CreateDatasetRequest: CreateDatasetRequest{Type: "csv", Files: []io.Reader{bytes.NewReader(csvBuf.Bytes())}, Data: nil}, // Explicitly nil Data
-			Fields:               []string{"type", "files", "data"},                                                                 // Indicate type, files, and data are changing
+			CreateDatasetRequest: CreateDatasetRequest{Type: "csv", Files: []io.Reader{bytes.NewReader(csvBuf.Bytes())}, Data: nil},
+			Fields:               []string{"type", "files", "data"},
 		})
 		require.Error(t, err)
 		require.EqualError(t, err, "dataset type cannot be changed via update")
 
 		// Verify that the dataset was NOT changed
-		retrieved, err := srv.Get(ctx, listNanoid) // Get by nanoid as name might have been part of a failed update
-		// Since the update failed due to type change attempt, the dataset should remain 'list'
-		// and its original data should be intact.
+		retrieved, err := srv.Get(ctx, listNanoid)
 		require.NoError(t, err)
 		require.Equal(t, "list", retrieved.Type) // Should still be list
 		originalData, err := srv.Preview(ctx, listNanoid)
@@ -369,7 +368,7 @@ func TestDatasetService_Update(t *testing.T) {
 		require.Equal(t, []string{"q", "w", "e"}, originalData.Data)
 	})
 
-	t.Run("convert csv to list", func(t *testing.T) {
+	t.Run("convert csv to list not allowed", func(t *testing.T) {
 		srv := newServiceForTest("csv_to_list")
 		csvName := "csv-to-convert"
 		originalCsvHeaders := []string{"h_old1", "h_old2"}
@@ -387,8 +386,8 @@ func TestDatasetService_Update(t *testing.T) {
 
 		listData := []string{"new_list_item1", "new_list_item2"}
 		err = srv.Update(ctx, csvNanoid, &UpdateDatasetRequest{
-			CreateDatasetRequest: CreateDatasetRequest{Type: "list", Data: listData, Files: nil}, // Explicitly nil Files
-			Fields:               []string{"type", "data", "files"},                              // Indicate type, data, and files are changing
+			CreateDatasetRequest: CreateDatasetRequest{Type: "list", Data: listData, Files: nil},
+			Fields:               []string{"type", "data", "files"},
 		})
 		require.Error(t, err)
 		require.EqualError(t, err, "dataset type cannot be changed via update")
@@ -396,14 +395,14 @@ func TestDatasetService_Update(t *testing.T) {
 		// Verify that the dataset was NOT changed
 		retrieved, err := srv.Get(ctx, csvNanoid)
 		require.NoError(t, err)
-		require.Equal(t, "csv", retrieved.Type)                          // Should still be csv
-		require.Equal(t, len(originalCsvHeaders), retrieved.ColumnCount) // Original column count
-		require.Equal(t, 0, retrieved.ValueCount)                        // CSVs have 0 value count
+		require.Equal(t, "csv", retrieved.Type)
+		require.Equal(t, len(originalCsvHeaders), retrieved.ColumnCount)
+		require.Equal(t, 0, retrieved.ValueCount)
 
 		preview, err := srv.Preview(ctx, csvNanoid)
 		require.NoError(t, err)
-		require.Empty(t, preview.Data)  // Should have no list data
-		require.Len(t, preview.Rows, 1) // Should still have original CSV rows
+		require.Empty(t, preview.Data)
+		require.Len(t, preview.Rows, 1)
 		expectedRow := make(map[string]any)
 		for i, h := range originalCsvHeaders {
 			expectedRow[h] = originalCsvRow[i]
@@ -448,7 +447,7 @@ func TestDatasetService_Delete(t *testing.T) {
 
 		_, err = srv.Get(ctx, listNanoid)
 		require.Error(t, err)
-		require.True(t, ent.IsNotFound(err) || errors.Is(err, os.ErrNotExist) || содержитТекстОшибки(err, "not found"), "Error should indicate not found: %v", err)
+		require.True(t, ent.IsNotFound(err) || errors.Is(err, os.ErrNotExist), "Error should indicate not found: %v", err)
 
 		allDS, err := srv.List(ctx)
 		require.NoError(t, err)
@@ -483,7 +482,7 @@ func TestDatasetService_Delete(t *testing.T) {
 
 		_, err = srv.Get(ctx, csvName)
 		require.Error(t, err)
-		require.True(t, ent.IsNotFound(err) || errors.Is(err, os.ErrNotExist) || содержитТекстОшибки(err, "not found"), "Error should indicate not found: %v", err)
+		require.True(t, ent.IsNotFound(err) || errors.Is(err, os.ErrNotExist), "Error should indicate not found: %v", err)
 
 		allDS, err := srv.List(ctx)
 		require.NoError(t, err)
@@ -501,20 +500,63 @@ func TestDatasetService_Delete(t *testing.T) {
 		nonExistentName := "absolutely-does-not-exist-" + uuid.NewString()
 		err := srv.Delete(ctx, nonExistentName)
 		require.Error(t, err)
-		require.True(t, ent.IsNotFound(err) || содержитТекстОшибки(err, "not found"), "Expected a 'not found' error type, got: %v", err)
+		require.True(t, ent.IsNotFound(err), "Expected a 'not found' error type, got: %v", err)
 	})
 
 }
 
-// Helper function to check for "not found" text in error, as direct type assertion might be too brittle.
-// WARNING: This is a temporary workaround. Ideally, errors should be typed for robust checking.
-// The string "not found" is used because ent.NotFoundError.Error() returns "ent: <entity> not found".
-// and other potential errors from os might also contain "not found".
-func содержитТекстОшибки(err error, substring string) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(substring))
-}
+func TestDatasetService_Preview(t *testing.T) {
+	db := db.NewTestDB()
+	srv := NewDatasetService(db, &config.Config{
+		Common: config.Common{
+			SourceDataDir: "./dstest",
+		},
+	})
 
-func TestDatasetService_Preview(t *testing.T) {}
+	t.Run("list show all options", func(t *testing.T) {
+		data := []string{}
+		for i := 0; i < 120; i++ {
+			data = append(data, fmt.Sprintf("%d", i))
+		}
+		ds1, err := srv.Create(t.Context(), &CreateDatasetRequest{
+			Name:        "ds",
+			Description: "dataset",
+			Type:        "list",
+			Data:        data,
+		})
+		require.NoError(t, err)
+		rows, err := srv.Preview(t.Context(), ds1)
+		require.NoError(t, err)
+		require.Equal(t, data, rows.Data)
+	})
+
+	t.Run("csv show first 100 rows", func(t *testing.T) {
+		var buf bytes.Buffer
+		writer := csv.NewWriter(&buf)
+		_ = writer.Write([]string{"Name"})
+		for i := 0; i < 200; i++ {
+			_ = writer.Write([]string{fmt.Sprintf("%d", i)})
+		}
+		writer.Flush()
+
+		ds2, err := srv.Create(t.Context(), &CreateDatasetRequest{
+			Name:        "ds2",
+			Description: "dataset2",
+			Type:        "csv",
+			Files:       []io.Reader{bytes.NewReader(buf.Bytes())},
+		})
+		require.NoError(t, err)
+		defer func() {
+			_ = os.RemoveAll("./dstest")
+		}()
+
+		rows, err := srv.Preview(t.Context(), ds2)
+		require.NoError(t, err)
+		require.Equal(t, 100, len(rows.Rows))
+		expected := []map[string]any{}
+		for i := 0; i < 100; i++ {
+			expected = append(expected, map[string]any{"Name": fmt.Sprintf("%d", i)})
+		}
+		require.Equal(t, expected, rows.Rows)
+	})
+}
