@@ -826,6 +826,121 @@ func TestAPI_DeleteWorkflow(t *testing.T) {
 	)
 }
 
+func TestAPI_ListDatasets(t *testing.T) {
+	expectedResponse := &dataset.ListDatasetsResponse{
+		Total: 2,
+		Datasets: []dataset.DatasetInfo{
+			{ID: "1", Name: "d1", Description: "desc1"},
+			{ID: "2", Name: "d2", Description: "desc2"},
+		},
+	}
+	datasetMock := &dataset.DatasetServiceMock{
+		ListFunc: func(ctx context.Ctxt) (*dataset.ListDatasetsResponse, error) {
+			return expectedResponse, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+	req, err := server.NewGetRequest("/api/v1/datasets")
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, expectedResponse)
+}
+
+func TestAPI_CreateDataset(t *testing.T) {
+	expectedRequest := &dataset.DatasetInfo{
+		Name:        "new_dataset",
+		Description: "A new dataset for testing",
+		Provider:    "test_provider",
+		Config:      json.RawMessage(`{"key":"value"}`),
+	}
+	datasetMock := &dataset.DatasetServiceMock{
+		CreateFunc: func(ctx context.Context, req *dataset.DatasetInfo) (string, error) {
+			require.Equal(t, expectedRequest, req)
+			return "new_dataset_id", nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+	req, err := server.NewPostRequest("/api/v1/datasets", expectedRequest)
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, gin.H{"id": "new_dataset_id"})
+}
+
+func TestAPI_UpdateDataset(t *testing.T) {
+	datasetID := "existing_dataset_id"
+	expectedRequest := &dataset.DatasetInfo{
+		Name:        "updated_dataset_name",
+		Description: "Updated dataset description",
+		Config:      json.RawMessage(`{"new_key":"new_value"}`),
+	}
+
+	datasetMock := &dataset.DatasetServiceMock{
+		UpdateFunc: func(ctx context.Context, id string, req *dataset.DatasetInfo) (string, error) {
+			require.Equal(t, datasetID, id)
+			require.Equal(t, expectedRequest, req)
+			return datasetID, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+
+	req, err := server.NewPatchRequest(fmt.Sprintf("/api/v1/datasets/%s", datasetID), expectedRequest)
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, gin.H{"id": datasetID})
+}
+
+func TestAPI_DeleteDataset(t *testing.T) {
+	datasetID := "dataset_to_delete_id"
+
+	datasetMock := &dataset.DatasetServiceMock{
+		DeleteFunc: func(ctx context.Context, id string) error {
+			require.Equal(t, datasetID, id)
+			return nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+
+	req, err := server.NewDeleteRequest(fmt.Sprintf("/api/v1/datasets/%s", datasetID))
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, "")
+}
+
+func TestAPI_PreviewDataset(t *testing.T) {
+	datasetID := "dataset_preview_id"
+	expectedResponse := &dataset.DatasetRows{
+		Rows: []map[string]any{
+			{"col1": "val1_1", "col2": "val1_2"},
+			{"col1": "val2_1", "col2": "val2_2"},
+		},
+		Data: []string{"col1", "col2"},
+		Type: "CSV", // Assuming db_dataset.Type can be represented or mocked as a string.
+	}
+
+	datasetMock := &dataset.DatasetServiceMock{
+		PreviewFunc: func(ctx context.Context, id string) (*dataset.DatasetRows, error) {
+			require.Equal(t, datasetID, id)
+			return expectedResponse, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+
+	req, err := server.NewGetRequest(fmt.Sprintf("/api/v1/datasets/%s/preview", datasetID))
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, expectedResponse)
+}
+
 func TestAPI_RunWorkflowFileVar(t *testing.T) {
 	mockRunner := &workflow.RunnerMock{
 		NextFunc: func(ctx context.Context) (*workflow.WorkflowStepResult, error) {

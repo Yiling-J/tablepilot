@@ -1,6 +1,6 @@
 module github.com/Yiling-J/tablepilot
 
-go 1.24
+go 1.22
 
 require (
 	entgo.io/ent v0.14.2
