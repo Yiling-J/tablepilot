@@ -1,101 +1,108 @@
-import React, { useState, useRef } from 'react';
+import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ScrollArea } from "@/components/ui/scroll-area"; // For displaying multiple files
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import React, { useRef, useState } from "react";
 
 interface CreateDatasetDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  // Updated onCreate to handle different data types
-  onCreate: (data: { name: string; description: string; type: 'list' | 'csv'; options?: string[]; files?: File[] }) => void;
+  onCreate: (data: {
+    name: string;
+    description: string;
+    type: "list" | "csv";
+    options?: string[];
+    files?: File[];
+  }) => void;
 }
 
-type DatasetType = 'list' | 'csv';
+type DatasetType = "list" | "csv";
 
 export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
   isOpen,
   onClose,
   onCreate,
 }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<DatasetType>('list');
-  const [listOptions, setListOptions] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<DatasetType>("list");
+  const [listOptions, setListOptions] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  const [nameError, setNameError] = useState('');
-  const [listOptionsError, setListOptionsError] = useState('');
-  const [filesError, setFilesError] = useState('');
+  const [nameError, setNameError] = useState("");
+  const [listOptionsError, setListOptionsError] = useState("");
+  const [filesError, setFilesError] = useState("");
 
   const internalCloseInitiatedRef = useRef(false);
 
   const resetForm = () => {
-    setName('');
-    setDescription('');
-    setType('list');
-    setListOptions('');
+    setName("");
+    setDescription("");
+    setType("list");
+    setListOptions("");
     setSelectedFiles([]);
-    setNameError('');
-    setListOptionsError('');
-    setFilesError('');
+    setNameError("");
+    setListOptionsError("");
+    setFilesError("");
   };
 
-  // Renamed to clearly distinguish from onClose prop
   const handleDialogShouldClose = () => {
-    internalCloseInitiatedRef.current = true; // Mark that this close was triggered by a button/submit
+    internalCloseInitiatedRef.current = true;
     resetForm();
-    onClose(); // Call the onClose prop
+    onClose();
   };
 
   const validate = (): boolean => {
     let isValid = true;
     if (!name.trim()) {
-      setNameError('Name cannot be empty');
+      setNameError("Name cannot be empty");
       isValid = false;
     } else {
-      setNameError('');
+      setNameError("");
     }
 
-    if (type === 'list' && !listOptions.trim()) {
-      setListOptionsError('List options cannot be empty');
+    if (type === "list" && !listOptions.trim()) {
+      setListOptionsError("List options cannot be empty");
       isValid = false;
     } else {
-      setListOptionsError('');
+      setListOptionsError("");
     }
 
-    if (type === 'csv' && selectedFiles.length === 0) {
-      setFilesError('Please select at least one CSV file');
+    if (type === "csv" && selectedFiles.length === 0) {
+      setFilesError("Please select at least one CSV file");
       isValid = false;
     } else {
-      setFilesError('');
+      setFilesError("");
     }
     return isValid;
-  }
+  };
 
   const handleSubmit = () => {
     if (!validate()) {
       return;
     }
 
-    if (type === 'list') {
+    if (type === "list") {
       onCreate({
         name,
         description,
         type,
-        options: listOptions.split('\n').map(opt => opt.trim()).filter(opt => opt),
+        options: listOptions
+          .split("\n")
+          .map((opt) => opt.trim())
+          .filter((opt) => opt),
       });
-    } else if (type === 'csv') {
+    } else if (type === "csv") {
       onCreate({
         name,
         description,
@@ -109,36 +116,41 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      const csvFiles = filesArray.filter(file => file.type === 'text/csv' || file.name.endsWith('.csv'));
+      const csvFiles = filesArray.filter(
+        (file) => file.type === "text/csv" || file.name.endsWith(".csv"),
+      );
       if (csvFiles.length !== filesArray.length) {
-        setFilesError('Only CSV files are allowed.');
-        // Optionally, only add valid CSV files:
-        // setSelectedFiles(prev => [...prev, ...csvFiles]);
+        setFilesError("Only CSV files are allowed.");
       } else {
-        setFilesError('');
+        setFilesError("");
       }
-      setSelectedFiles(prev => [...prev, ...csvFiles].filter((f,i,self) => self.findIndex(t => t.name === f.name && t.size === f.size) === i)); // Add new files, prevent duplicates
+      setSelectedFiles((prev) =>
+        [...prev, ...csvFiles].filter(
+          (f, i, self) =>
+            self.findIndex((t) => t.name === f.name && t.size === f.size) === i,
+        ),
+      ); // Add new files, prevent duplicates
     }
   };
 
   const removeFile = (fileName: string) => {
-    setSelectedFiles(prev => prev.filter(file => file.name !== fileName));
+    setSelectedFiles((prev) => prev.filter((file) => file.name !== fileName));
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(newOpenState) => {
-      if (!newOpenState) { // Dialog is attempting to close
-        if (internalCloseInitiatedRef.current) {
-          // This close was handled by our buttons (via handleDialogShouldClose),
-          // which already called resetForm and onClose. Reset ref for next time.
-          internalCloseInitiatedRef.current = false;
-        } else {
-          // This close was external (Esc, overlay click), so we need to call reset and onClose.
-          resetForm();
-          onClose();
+    <Dialog
+      open={isOpen}
+      onOpenChange={(newOpenState) => {
+        if (!newOpenState) {
+          if (internalCloseInitiatedRef.current) {
+            internalCloseInitiatedRef.current = false;
+          } else {
+            resetForm();
+            onClose();
+          }
         }
-      }
-    }}>
+      }}
+    >
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Create New Dataset</DialogTitle>
@@ -149,14 +161,14 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
-              Name*
+              Name
             </Label>
             <div className="col-span-3">
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={nameError ? 'border-red-500' : ''}
+                className={nameError ? "border-red-500" : ""}
               />
               {nameError && (
                 <p className="text-xs text-red-500 mt-1">{nameError}</p>
@@ -177,11 +189,11 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type-list" className="text-right"> {/* Associated with the first radio item for testing */}
-              Type*
+            <Label htmlFor="type-list" className="text-right">
+              Type
             </Label>
             <RadioGroup
-              id="type-radio-group" // Added ID for potential direct targeting if needed
+              id="type-radio-group"
               value={type}
               onValueChange={(value: string) => setType(value as DatasetType)}
               className="col-span-3 flex gap-4"
@@ -197,10 +209,10 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
             </RadioGroup>
           </div>
 
-          {type === 'list' && (
+          {type === "list" && (
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="list-options" className="text-right pt-2">
-                Options*
+                Options
               </Label>
               <div className="col-span-3">
                 <Textarea
@@ -208,27 +220,31 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
                   value={listOptions}
                   onChange={(e) => setListOptions(e.target.value)}
                   placeholder="Enter each option on a new line"
-                  className={`min-h-[100px] ${listOptionsError ? 'border-red-500' : ''}`}
+                  className={`min-h-[100px] ${listOptionsError ? "border-red-500" : ""}`}
                 />
                 {listOptionsError && (
-                  <p className="text-xs text-red-500 mt-1">{listOptionsError}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {listOptionsError}
+                  </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">Each line will be treated as a separate option.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Each line will be treated as a separate option.
+                </p>
               </div>
             </div>
           )}
 
-          {type === 'csv' && (
+          {type === "csv" && (
             <div className="grid grid-cols-4 items-start gap-4">
               <Label htmlFor="csv-files" className="text-right pt-2">
-                CSV Files*
+                CSV Files
               </Label>
               <div className="col-span-3">
                 <Input
                   id="csv-files"
                   type="file"
                   multiple
-                  accept=".csv,text/csv"
+                  accept=".csv"
                   onChange={handleFileChange}
                   className="mb-2"
                 />
@@ -238,9 +254,14 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
                 {selectedFiles.length > 0 && (
                   <ScrollArea className="h-32 w-full rounded-md border p-2">
                     <div className="space-y-1">
-                      {selectedFiles.map(file => (
-                        <div key={file.name + file.size} className="flex justify-between items-center text-sm p-1 bg-muted/50 rounded">
-                          <span className="truncate max-w-[80%]">{file.name} ({(file.size / 1024).toFixed(2)} KB)</span>
+                      {selectedFiles.map((file) => (
+                        <div
+                          key={file.name + file.size}
+                          className="flex justify-between items-center text-sm pl-2 p-1 bg-muted/50 rounded"
+                        >
+                          <span className="truncate max-w-[80%]">
+                            {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -254,16 +275,20 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
                     </div>
                   </ScrollArea>
                 )}
-                 <p className="text-xs text-muted-foreground mt-1">Select one or more CSV files.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Select one or more CSV files.
+                </p>
               </div>
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleDialogShouldClose}> {/* Use the new handler */}
+          <Button variant="outline" onClick={handleDialogShouldClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Create</Button> {/* handleSubmit will call handleDialogShouldClose internally */}
+          <Button onClick={handleSubmit} disabled={name == ""}>
+            Create
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
