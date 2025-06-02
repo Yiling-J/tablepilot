@@ -4,11 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { vi } from "vitest";
 import { CreateDatasetDialog } from "./dataset";
 
+vi.mock("@/actions", () => ({
+  createDataset: vi.fn(),
+}));
+
 describe("Create Dataset", () => {
   beforeEach(async () => {
     vi.mock("react-router-dom");
     vi.mocked(useNavigate).mockReturnValue(vi.fn());
-    vi.mock("@/actions");
     render(
       <TestProvider>
         <CreateDatasetDialog
@@ -20,7 +23,4 @@ describe("Create Dataset", () => {
     );
     await screen.findByText("Steps");
   });
-
-  it("should create list type dataset", async () => {});
-  it("should create csv type dataset", async () => {});
 });
