@@ -125,6 +125,23 @@ export function TablepilotHeader({
                   Tables
                 </h1>
               </div>
+              {/* Datasets Tab */}
+              <div
+                onClick={() => navigate("/datasets")}
+                className="ml-4 cursor-pointer"
+              >
+                <h1
+                  className={cn(
+                    "text-base font-medium py-2 px-3 border-b-2",
+                    currentTab === "datasets"
+                      ? "border-primary text-primary"
+                      : "text-muted-foreground hover:text-primary hover:border-primary border-transparent",
+                  )}
+                >
+                  Datasets
+                </h1>
+              </div>
+              {/* Workflows Tab */}
               <div
                 onClick={() => navigate("/workflows")}
                 className="ml-4 cursor-pointer"

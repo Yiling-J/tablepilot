@@ -828,13 +828,13 @@ func TestAPI_DeleteWorkflow(t *testing.T) {
 }
 
 func TestAPI_ListDatasets(t *testing.T) {
-	expectedResponse := []*dataset.DatasetInfo{
+	ds := []*dataset.DatasetInfo{
 		{Name: "d1", Description: "desc1"},
 		{Name: "d2", Description: "desc2"},
 	}
 	datasetMock := &dataset.DatasetServiceMock{
 		ListFunc: func(ctx context.Context) ([]*dataset.DatasetInfo, error) {
-			return expectedResponse, nil
+			return ds, nil
 		},
 	}
 	server := NewTestServer(t, func(s *services.Backend) {
@@ -843,7 +843,10 @@ func TestAPI_ListDatasets(t *testing.T) {
 	req, err := server.NewGetRequest("/api/v1/datasets")
 	require.NoError(t, err)
 	resp := server.Send(req)
-	resp.ResponseEq(t, 200, expectedResponse)
+	resp.ResponseEq(t, 200, gin.H{
+		"total":    2,
+		"datasets": ds,
+	})
 }
 
 func TestAPI_CreateDataset(t *testing.T) {

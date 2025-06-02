@@ -627,11 +627,7 @@ func (hs *HTTPServer) ListDatasets(ctx *gin.Context) {
 		errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to list datasets: %w", err))
 		return
 	}
-	if datasets == nil {
-		ctx.JSON(http.StatusOK, []*services_dataset.DatasetInfo{})
-		return
-	}
-	ctx.JSON(http.StatusOK, datasets)
+	ctx.JSON(http.StatusOK, gin.H{"total": len(datasets), "datasets": datasets})
 }
 
 func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {

@@ -19,6 +19,7 @@ import {
     RouterProvider,
     createBrowserRouter,
 } from "react-router-dom";
+import { DatasetListPage } from "./components/dataset-list-page.tsx";
 import { Sidebar } from "./components/sidebar.tsx";
 import { SidebarProvider } from "./context/sidebar.tsx";
 import { TablesProvider } from "./context/tables.tsx";
@@ -48,19 +49,14 @@ const router = createBrowserRouter([
             </div>
           </div>
         ),
-        children: [
-          // Routes that WILL have the Sidebar
-          { path: "/tables/:id", element: <TablePage /> },
-          // { path: "/models", element: <ModelManager searchTerm="" /> }, // Route moved
-          // Add other routes that need the sidebar here
-        ],
+        children: [{ path: "/tables/:id", element: <TablePage /> }],
       },
-      // Routes that will NOT have the Sidebar (rendered directly into the root Outlet)
       { path: "/tables", element: <TableListPage /> },
       { path: "/workflows", element: <WorkflowListPage /> },
-      { path: "/models", element: <ModelManagerPageWrapper /> }, // Route added here
+      { path: "/models", element: <ModelManagerPageWrapper /> },
+      { path: "/datasets", element: <DatasetListPage /> },
       {
-        path: "/", // Root redirect
+        path: "/",
         element: <Navigate to="/tables" replace />,
       },
     ],

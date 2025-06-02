@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { JSONObject } from "./json";
 import {
     autofillUrl,
+    datasetsUrl,
     generateUrl,
     getWorkflowUrl,
     importImageUrl,
@@ -733,4 +734,32 @@ export async function deleteWorkflow(id: string) {
     toast.error("Failed to delete workflow");
     throw new Error("Failed to delete workflow");
   }
+}
+
+export type DatasetType = "list" | "csv";
+
+export interface DatasetInfo {
+  id: string;
+  name: string;
+  type: DatasetType;
+  description: string;
+}
+
+export interface GetDatasetsResponse {
+  datasets: DatasetInfo[];
+  total: number;
+}
+
+export async function getDatasets(): Promise<GetDatasetsResponse> {
+  const res = await fetch(datasetsUrl(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    toast.error("Failed to fetch workflows");
+    throw new Error("Failed to fetch workflows");
+  }
+  return res.json();
 }

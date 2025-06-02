@@ -67,3 +67,15 @@ export function getWorkflowUrl(id: string): string {
 export function runWorkflowUrl(id: string) {
   return `${address}/api/v1/workflows/${id}/run`;
 }
+
+export function datasetsUrl() {
+  return `${address}/api/v1/datasets`;
+}
+
+export function getDatasetUrl(id: string): string {
+  return `${address}/api/v1/datasets/${id}`;
+}
+
+export function previewDatasetUrl(id: string) {
+  return `${address}/api/v1/datasets/${id}/preview`;
+}
