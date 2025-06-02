@@ -8,15 +8,15 @@ import {
 import WorkflowBuilderDialog from "@/components/dialog/workflow/builder";
 import WorkflowExecutionDialog from "@/components/dialog/workflow/workflow";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlusIcon } from "@radix-ui/react-icons";
-import { SettingsIcon, Trash2 } from "lucide-react";
+import { Edit3, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header";
@@ -105,8 +105,12 @@ export function WorkflowListPage() {
                           setRunWorkflowOpen(true);
                         }}
                       >
-                        <CardHeader className="p-0 pb-2"> {/* Adjusted padding */}
-                          <div className="text-lg font-semibold truncate"> {/* Adjusted style */}
+                        <CardHeader className="p-0 pb-2">
+                          {" "}
+                          {/* Adjusted padding */}
+                          <div className="text-lg font-semibold truncate">
+                            {" "}
+                            {/* Adjusted style */}
                             {wf.name}
                           </div>
                         </CardHeader>
@@ -114,7 +118,9 @@ export function WorkflowListPage() {
                           <p className="line-clamp-4">{wf.description}</p>
                         </CardContent>
                       </div>
-                      <CardFooter className="px-4 py-3 border-t border-gray-400/30 flex justify-end gap-2"> {/* Adjusted padding */}
+                      <CardFooter className="px-4 py-3 border-t border-gray-400/30 flex justify-end gap-2">
+                        {" "}
+                        {/* Adjusted padding */}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -126,7 +132,7 @@ export function WorkflowListPage() {
                             setRunWorkflowBuilderOpen(true);
                           }}
                         >
-                          <SettingsIcon className="h-4 w-4" />
+                          <Edit3 className="h-4 w-4" />
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -134,17 +140,20 @@ export function WorkflowListPage() {
                               variant="ghost"
                               size="icon"
                               title="Delete Workflow"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              className="text-destructive hover:text-destructive"
                               onClick={(e) => e.stopPropagation()} // Prevent navigation
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogContent
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the workflow.
+                                This action cannot be undone. This will
+                                permanently delete the workflow.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

@@ -6,20 +6,20 @@ import {
     Provider,
     updateProvider,
 } from "@/actions";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ConfirmationDialog } from "@/components/models/confirmation-dialog";
 import { ModelFormDialog } from "@/components/models/model-form-dialog";
 import { ProviderCard } from "@/components/models/provider-card";
 import { ProviderFormDialog } from "@/components/models/provider-form-dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -42,18 +42,19 @@ export function ModelManager() {
     useState<Provider | null>(null);
 
   // State for Provider Delete Confirmation Dialog
-  const [isProviderDeleteConfirmOpen, setIsProviderDeleteConfirmOpen] = useState(false);
-  const [providerToDeleteId, setProviderToDeleteId] = useState<string | null>(null);
+  const [isProviderDeleteConfirmOpen, setIsProviderDeleteConfirmOpen] =
+    useState(false);
+  const [providerToDeleteId, setProviderToDeleteId] = useState<string | null>(
+    null,
+  );
 
   // State for Model Delete Alert Dialog
   const [isModelDeleteAlertOpen, setIsModelDeleteAlertOpen] = useState(false);
-  const [modelToDeleteDetails, setModelToDeleteDetails] = useState<{ providerId: string; modelId: string } | null>(null);
+  const [modelToDeleteDetails, setModelToDeleteDetails] = useState<{
+    providerId: string;
+    modelId: string;
+  } | null>(null);
 
-  // const [deleteAction, setDeleteAction] = useState<{ // This state is no longer used
-  //   type: "provider";
-  //   id: string;
-  //   providerId?: string;
-  // } | null>(null);
   const currentModelIndex = useRef<number | null>(null);
 
   const fetchData = async () => {
@@ -308,7 +309,9 @@ export function ModelManager() {
 
   // New function to trigger model deletion AlertDialog
   const openModelDeleteAlertDialog = (providerId: string, modelId: string) => {
-    const targetProvider = providers.find((p) => p.id.toString() === providerId);
+    const targetProvider = providers.find(
+      (p) => p.id.toString() === providerId,
+    );
     if (targetProvider && !targetProvider.enabled && targetProvider.editable) {
       toast({
         variant: "destructive",
@@ -405,8 +408,8 @@ export function ModelManager() {
             onEditModel={openEditModelDialog}
             onDeleteModel={openModelDeleteAlertDialog} // Changed to open new AlertDialog
             onEditProvider={openEditProviderDialog}
-            onDeleteProvider={(providerId) =>
-              openConfirmDeleteDialog("provider", providerId) // This remains for provider deletion
+            onDeleteProvider={
+              (providerId) => openConfirmDeleteDialog("provider", providerId) // This remains for provider deletion
             }
             onToggleEnabled={handleToggleProviderEnabled}
           />
@@ -445,19 +448,27 @@ export function ModelManager() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to delete this model?</AlertDialogTitle>
+              <AlertDialogTitle>
+                Are you sure you want to delete this model?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. The model will be permanently removed from the provider.
+                This action cannot be undone. The model will be permanently
+                removed from the provider.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsModelDeleteAlertOpen(false)}>
+              <AlertDialogCancel
+                onClick={() => setIsModelDeleteAlertOpen(false)}
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
                   if (modelToDeleteDetails) {
-                    handleDeleteModel(modelToDeleteDetails.providerId, modelToDeleteDetails.modelId);
+                    handleDeleteModel(
+                      modelToDeleteDetails.providerId,
+                      modelToDeleteDetails.modelId,
+                    );
                   }
                   setIsModelDeleteAlertOpen(false);
                   setModelToDeleteDetails(null);

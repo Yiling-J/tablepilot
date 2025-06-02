@@ -520,14 +520,9 @@ describe("ModelManager", () => {
     await userEvent.click(
       within(modelContainer).getByRole("button", { name: "Delete Model" }),
     );
-    // No separate confirmation dialog is expected from ModelManager's perspective anymore for model deletion,
-    // as ModelCard was reverted to not have its own AlertDialog, and ModelManager was
-    // No separate confirmation dialog is expected from ModelManager's perspective anymore for model deletion,
-    // as ModelCard was reverted to not have its own AlertDialog, and ModelManager was
-    // changed to call handleDeleteModel directly.
-
-    // New: Expect AlertDialog for model deletion
-    expect(await screen.findByText("Are you sure you want to delete this model?")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Are you sure you want to delete this model?"),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Delete" })); // Name of action button in AlertDialog
 
     expect(toastMock).toHaveBeenCalledWith(

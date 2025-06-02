@@ -1,15 +1,15 @@
 import { deleteTable, TableCreateRequest } from "@/actions";
 import { ImportFileDialog } from "@/components/dialog/import-file";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,22 +102,32 @@ function TableList() {
                 key={table.id}
                 className="h-60 flex flex-col rounded-lg bg-background border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer"
               >
-                <div onClick={() => navigate(`/tables/${table.id}`)} className="flex flex-col flex-grow p-4">
-                  <CardHeader className="p-0 pb-2"> {/* Adjusted padding */}
-                    <div className="text-lg font-semibold truncate">{table.name}</div> {/* Adjusted style */}
+                <div
+                  onClick={() => navigate(`/tables/${table.id}`)}
+                  className="flex flex-col flex-grow p-4"
+                >
+                  <CardHeader className="p-0 pb-2">
+                    {" "}
+                    {/* Adjusted padding */}
+                    <div className="text-lg font-semibold truncate">
+                      {table.name}
+                    </div>{" "}
+                    {/* Adjusted style */}
                   </CardHeader>
                   <CardContent className="grow mt-2 p-0">
                     <p className="line-clamp-4">{table.description}</p>
                   </CardContent>
                 </div>
-                <CardFooter className="px-4 py-3 border-t border-gray-400/30"> {/* Adjusted padding */}
+                <CardFooter className="px-4 py-3 border-t border-gray-400/30">
+                  {" "}
+                  {/* Adjusted padding */}
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
                         title="Delete Table"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+                        className="text-destructive hover:text-destructive ml-auto"
                         onClick={(e) => e.stopPropagation()} // Prevent navigation
                       >
                         <Trash2 className="h-4 w-4" />
@@ -127,7 +137,8 @@ function TableList() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the table.
+                          This action cannot be undone. This will permanently
+                          delete the table.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
