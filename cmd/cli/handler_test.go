@@ -30,7 +30,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewBackend(t *testing.T, option func(s *services.Backend)) *services.Backend {
+func NewTestBackend(t *testing.T, option func(s *services.Backend)) *services.Backend {
 	backend := &services.Backend{Config: &config.Config{}, Logger: zap.NewNop().Sugar()}
 	option(backend)
 	return backend
@@ -201,7 +201,7 @@ func TestHandler_Delete(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		NewBackend(t, func(s *services.Backend) {
+		NewTestBackend(t, func(s *services.Backend) {
 			s.TableService = tableMock
 		}),
 	)
