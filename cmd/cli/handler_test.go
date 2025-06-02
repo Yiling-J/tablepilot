@@ -49,10 +49,9 @@ func TestHandler_Create(t *testing.T) {
 		},
 	}
 	handler := &Handler{
-		backend: services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil, nil,
-		),
+		backend: NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	}
 	cmd := &cobra.Command{}
 	testFile := fmt.Sprintf("foo_%d.json", time.Now().UnixNano())
@@ -84,10 +83,9 @@ func TestHandler_Update(t *testing.T) {
 		},
 	}
 	handler := &Handler{
-		backend: services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil, nil,
-		),
+		backend: NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	}
 	cmd := &cobra.Command{}
 	cmd.Flags().String("table", "", "")
@@ -132,10 +130,9 @@ func TestHandler_Show(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 	cmd := &cobra.Command{}
@@ -172,10 +169,9 @@ func TestHandler_List(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 	cmd := &cobra.Command{}
@@ -236,10 +232,9 @@ func TestHandler_Export(t *testing.T) {
 				},
 			}
 			handler := NewHandler(
-				services.NewBackend(
-					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil, nil,
-				),
+				NewTestBackend(t, func(s *services.Backend) {
+					s.TableService = tableMock
+				}),
 			)
 			cmd := &cobra.Command{}
 			cmd.Flags().StringP("to", "", "", "")
@@ -333,10 +328,9 @@ func TestHandler_Generate(t *testing.T) {
 				RenderFunc:    func() error { return nil },
 			}
 			handler := NewHandler(
-				services.NewBackend(
-					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil, nil,
-				),
+				NewTestBackend(t, func(s *services.Backend) {
+					s.TableService = tableMock
+				}),
 			)
 			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 			cmd := &cobra.Command{}
@@ -433,10 +427,9 @@ func TestHandler_Import(t *testing.T) {
 				},
 			}
 			handler := NewHandler(
-				services.NewBackend(
-					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil, nil,
-				),
+				NewTestBackend(t, func(s *services.Backend) {
+					s.TableService = tableMock
+				}),
 			)
 			cmd := &cobra.Command{}
 			cmd.Flags().String("table", "", "")
@@ -480,10 +473,9 @@ func TestHandler_ImportImage(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	)
 	cmd := &cobra.Command{}
 	cmd.Flags().String("table", "", "")
@@ -509,10 +501,9 @@ func TestHandler_Truncate(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	)
 	cmd := &cobra.Command{}
 	err := handler.Truncate(cmd, []string{"foo"})
@@ -544,10 +535,9 @@ func TestHandler_Describe(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 	cmd := &cobra.Command{}
@@ -629,10 +619,9 @@ func TestHandler_Autofill(t *testing.T) {
 				RenderFunc:    func() error { return nil },
 			}
 			handler := NewHandler(
-				services.NewBackend(
-					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, tableMock, nil, nil,
-				),
+				NewTestBackend(t, func(s *services.Backend) {
+					s.TableService = tableMock
+				}),
 			)
 			handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 			cmd := &cobra.Command{}
@@ -780,10 +769,10 @@ func TestHandler_Builder(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, db.NewTestDB(), zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+			s.DB = db.NewTestDB()
+		}),
 	)
 	cmd := &cobra.Command{}
 	cmd.Flags().Float64P("temperature", "", 0.3, "")
@@ -954,10 +943,9 @@ func TestHandler_Regenerate(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, tableMock, nil, nil,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.TableService = tableMock
+		}),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 	cmd := &cobra.Command{}
@@ -1070,10 +1058,9 @@ func TestHandler_WorkflowRun(t *testing.T) {
 				},
 			}
 			handler := NewHandler(
-				services.NewBackend(
-					&config.Config{}, nil, zap.NewNop().Sugar(),
-					nil, nil, nil, workflowMock,
-				),
+				NewTestBackend(t, func(s *services.Backend) {
+					s.WorkflowService = workflowMock
+				}),
 			)
 			printer := &tableprinter.TablePrinterMock{
 				AddHeaderFunc: func(strings []string, fieldOptionMoqParams ...tableprinter.FieldOption) {},
@@ -1137,10 +1124,9 @@ func TestHandler_WorkflowCreate(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, nil, workflowMock,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.WorkflowService = workflowMock
+		}),
 	)
 	testFile := fmt.Sprintf("foo_%d.json", time.Now().UnixNano())
 	file, err := os.Create(testFile)
@@ -1164,10 +1150,9 @@ func TestHandler_WorkflowDelete(t *testing.T) {
 		},
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, nil, workflowMock,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.WorkflowService = workflowMock
+		}),
 	)
 	cmd := &cobra.Command{}
 	err := handler.DeleteWorkflow(cmd, []string{"foo"})
@@ -1191,10 +1176,9 @@ func TestHandler_WorkflowList(t *testing.T) {
 		RenderFunc:    func() error { return nil },
 	}
 	handler := NewHandler(
-		services.NewBackend(
-			&config.Config{}, nil, zap.NewNop().Sugar(),
-			nil, nil, nil, workflowMock,
-		),
+		NewTestBackend(t, func(s *services.Backend) {
+			s.WorkflowService = workflowMock
+		}),
 	)
 	handler.getPrinter = func() tableprinter.TablePrinter { return printer }
 	cmd := &cobra.Command{}
