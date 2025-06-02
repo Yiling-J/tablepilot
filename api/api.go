@@ -643,13 +643,24 @@ func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
 		return
 	}
 
+	fields := []string{}
+	if apiReq.Name != "" {
+		fields = append(fields, "name")
+	}
+	if apiReq.Description != "" {
+		fields = append(fields, "description")
+	}
+	if len(apiReq.Data) > 0 {
+		fields = append(fields, "data")
+	}
+
 	serviceReq := &services_dataset.UpdateDatasetRequest{
 		CreateDatasetRequest: services_dataset.CreateDatasetRequest{
 			Name:        apiReq.Name,
 			Description: apiReq.Description,
 			Data:        apiReq.Data,
 		},
-		Fields: []string{"name", "description", "data"},
+		Fields: fields,
 	}
 
 	if apiReq.Files != nil {
@@ -677,7 +688,7 @@ func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
 		}
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Dataset '%s' updated successfully.", datasetID)})
+	ctx.JSON(http.StatusOK, gin.H{"id": datasetID})
 }
 
 func (hs *HTTPServer) DeleteDataset(ctx *gin.Context) {
@@ -691,7 +702,7 @@ func (hs *HTTPServer) DeleteDataset(ctx *gin.Context) {
 		}
 		return
 	}
-	ctx.Status(http.StatusNoContent)
+	ctx.JSON(http.StatusOK, "")
 }
 
 func (hs *HTTPServer) PreviewDataset(ctx *gin.Context) {

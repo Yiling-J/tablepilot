@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/Yiling-J/tablepilot/ent"
@@ -827,15 +828,12 @@ func TestAPI_DeleteWorkflow(t *testing.T) {
 }
 
 func TestAPI_ListDatasets(t *testing.T) {
-	expectedResponse := &dataset.ListDatasetsResponse{
-		Total: 2,
-		Datasets: []dataset.DatasetInfo{
-			{ID: "1", Name: "d1", Description: "desc1"},
-			{ID: "2", Name: "d2", Description: "desc2"},
-		},
+	expectedResponse := []*dataset.DatasetInfo{
+		{Name: "d1", Description: "desc1"},
+		{Name: "d2", Description: "desc2"},
 	}
 	datasetMock := &dataset.DatasetServiceMock{
-		ListFunc: func(ctx context.Ctxt) (*dataset.ListDatasetsResponse, error) {
+		ListFunc: func(ctx context.Context) ([]*dataset.DatasetInfo, error) {
 			return expectedResponse, nil
 		},
 	}
@@ -849,14 +847,12 @@ func TestAPI_ListDatasets(t *testing.T) {
 }
 
 func TestAPI_CreateDataset(t *testing.T) {
-	expectedRequest := &dataset.DatasetInfo{
+	expectedRequest := &dataset.CreateDatasetRequest{
 		Name:        "new_dataset",
 		Description: "A new dataset for testing",
-		Provider:    "test_provider",
-		Config:      json.RawMessage(`{"key":"value"}`),
 	}
 	datasetMock := &dataset.DatasetServiceMock{
-		CreateFunc: func(ctx context.Context, req *dataset.DatasetInfo) (string, error) {
+		CreateFunc: func(ctx context.Context, req *dataset.CreateDatasetRequest) (string, error) {
 			require.Equal(t, expectedRequest, req)
 			return "new_dataset_id", nil
 		},
@@ -867,29 +863,36 @@ func TestAPI_CreateDataset(t *testing.T) {
 	req, err := server.NewPostRequest("/api/v1/datasets", expectedRequest)
 	require.NoError(t, err)
 	resp := server.Send(req)
-	resp.ResponseEq(t, 200, gin.H{"id": "new_dataset_id"})
+	resp.ResponseEq(t, 201, gin.H{"id": "new_dataset_id", "name": "new_dataset"})
 }
 
 func TestAPI_UpdateDataset(t *testing.T) {
 	datasetID := "existing_dataset_id"
-	expectedRequest := &dataset.DatasetInfo{
-		Name:        "updated_dataset_name",
-		Description: "Updated dataset description",
-		Config:      json.RawMessage(`{"new_key":"new_value"}`),
+	expectedRequest := &dataset.UpdateDatasetRequest{
+		CreateDatasetRequest: dataset.CreateDatasetRequest{
+			Name:  "xyz",
+			Files: []io.Reader{},
+		},
+		Fields: []string{"name"},
 	}
 
 	datasetMock := &dataset.DatasetServiceMock{
-		UpdateFunc: func(ctx context.Context, id string, req *dataset.DatasetInfo) (string, error) {
+		UpdateFunc: func(ctx context.Context, id string, req *dataset.UpdateDatasetRequest) error {
 			require.Equal(t, datasetID, id)
 			require.Equal(t, expectedRequest, req)
-			return datasetID, nil
+			return nil
 		},
 	}
 	server := NewTestServer(t, func(s *services.Backend) {
 		s.DatasetService = datasetMock
 	})
 
-	req, err := server.NewPatchRequest(fmt.Sprintf("/api/v1/datasets/%s", datasetID), expectedRequest)
+	req, err := server.NewPatchRequest(
+		fmt.Sprintf("/api/v1/datasets/%s", datasetID),
+		dataset.DatasetAPIRequest{
+			Name: "xyz",
+		},
+	)
 	require.NoError(t, err)
 	resp := server.Send(req)
 	resp.ResponseEq(t, 200, gin.H{"id": datasetID})

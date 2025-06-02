@@ -35,10 +35,10 @@ type DatasetRows struct {
 
 // DatasetAPIRequest is used for API calls where files are base64 encoded strings
 type DatasetAPIRequest struct {
-	Name        string   `json:"name" binding:"required"`
+	Name        string   `json:"name"`
 	Description string   `json:"description"`
-	Type        string   `json:"type" binding:"required,oneof=list csv"`
-	Data        []string `json:"data"`       // For list type
-	Files       []string `json:"files"`      // For csv type, array of base64 encoded file contents
-	FileNames   []string `json:"file_names"` // Optional corresponding file names for CSV type
+	Type        string   `json:"type"`
+	Data        []string `json:"data"`
+	Files       []string `json:"files"`
+	FileNames   []string `json:"file_names"`
 }
