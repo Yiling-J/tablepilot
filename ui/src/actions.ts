@@ -763,3 +763,34 @@ export async function getDatasets(): Promise<GetDatasetsResponse> {
   }
   return res.json();
 }
+
+export interface CreateDatasetRequest {
+  name: string;
+  description: string;
+  type: DatasetType;
+  data: string[];
+  files: File[];
+}
+
+export async function createDataset(
+  req: CreateDatasetRequest,
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("name", req.name);
+  formData.append("description", req.description);
+  formData.append("type", req.type);
+
+  for (let i = 0; i < req.files.length; i++) {
+    formData.append("files", req.files[i]);
+  }
+
+  const res = await fetch(datasetsUrl(), {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    toast.error("Failed to create dataset");
+    throw new Error("Failed to create dataset");
+  }
+  return res.json();
+}
