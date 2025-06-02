@@ -1,4 +1,4 @@
-import { deleteTable, TableCreateRequest } from "@/actions";
+import { deleteTable, getTableSchema, TableCreateRequest } from "@/actions";
 import { ImportFileDialog } from "@/components/dialog/import-file";
 import {
     AlertDialog,
@@ -23,7 +23,7 @@ import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
-import { Trash2 } from "lucide-react";
+import { Edit3, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
@@ -48,7 +48,13 @@ export function TableListPage() {
 
 function TableList() {
   const [loading, setLoading] = useState(true);
-  const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
+  const {
+    openNewTableDialog,
+    withForm,
+    withRows,
+    withTable,
+    withSubmitCallback,
+  } = useCreateTableDialog();
   const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { tables, refreshTables } = useTables();
   const navigate = useNavigate();
@@ -67,6 +73,20 @@ function TableList() {
   useEffect(() => {
     fetchTables();
   }, [fetchTables]);
+
+  const handleEditTableClick = async (tableId: string) => {
+    try {
+      const schema = await getTableSchema(tableId);
+      withForm(schema);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      withTable(tableId as any); // TODO: fix this type error
+      withSubmitCallback(fetchTables);
+      openNewTableDialog();
+    } catch (error) {
+      console.error("Failed to prepare table for editing:", error);
+      // Optionally, show a user-facing error message here
+    }
+  };
 
   return (
     <div className="grow overflow-auto h-full flex flex-col">
@@ -118,16 +138,27 @@ function TableList() {
                     <p className="line-clamp-4">{table.description}</p>
                   </CardContent>
                 </div>
-                <CardFooter className="px-4 py-3 border-t border-gray-400/30">
+                <CardFooter className="px-4 py-3 border-t border-gray-400/30 flex justify-end gap-2">
                   {" "}
-                  {/* Adjusted padding */}
+                  {/* Adjusted padding & added flex utilities */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Edit Table"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      await handleEditTableClick(table.id);
+                    }}
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
                         title="Delete Table"
-                        className="text-destructive hover:text-destructive ml-auto"
+                        className="text-destructive hover:text-destructive" // Removed ml-auto
                         onClick={(e) => e.stopPropagation()} // Prevent navigation
                       >
                         <Trash2 className="h-4 w-4" />

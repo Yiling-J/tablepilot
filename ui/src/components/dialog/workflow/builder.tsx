@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
+    // DialogDescription, // Removed as it's no longer used
     DialogFooter,
     DialogHeader,
 } from "@/components/ui/dialog";
@@ -68,6 +68,11 @@ export default function WorkflowBuilderDialog({
   // Workflow state
   const [workflowName, setWorkflowName] = useState<string>("New Workflow");
   const [isEditingName, setIsEditingName] = useState<boolean>(false);
+  const [workflowDescription, setWorkflowDescription] = useState<string>(
+    "Enter workflow description...",
+  );
+  const [isEditingDescription, setIsEditingDescription] =
+    useState<boolean>(false);
   const [steps, setSteps] = useState<TypedWorkflowStep[]>([]);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(
     null,
@@ -85,6 +90,9 @@ export default function WorkflowBuilderDialog({
     await fetchTables();
     if (workflow) {
       setWorkflowName(workflow.name);
+      setWorkflowDescription(
+        workflow.description || "Enter workflow description...",
+      );
       const wsteps: TypedWorkflowStep[] = [
         {
           type: "UserInput",
@@ -376,6 +384,7 @@ export default function WorkflowBuilderDialog({
       variables: [] as WorkflowVariable[],
       steps: [] as TypedWorkflowStep[],
       name: workflowName,
+      description: workflowDescription,
     } as Workflow;
     steps.forEach((s) => {
       switch (s.type) {
@@ -411,6 +420,8 @@ export default function WorkflowBuilderDialog({
 
   const clear = () => {
     setWorkflowName("New Workflow");
+    setWorkflowDescription("Enter workflow description...");
+    setIsEditingDescription(false);
     setSteps([]);
     setSelectedStepIndex(null);
     setStepContexts([]);
@@ -452,9 +463,32 @@ export default function WorkflowBuilderDialog({
               </div>
             )}
           </div>
-          <DialogDescription>
-            Create a workflow by adding steps and configuring their properties.
-          </DialogDescription>
+          {isEditingDescription ? (
+            <Input
+              value={workflowDescription}
+              onChange={(e) => setWorkflowDescription(e.target.value)}
+              onBlur={() => {
+                setIsEditingDescription(false);
+                if (!workflowDescription.trim()) {
+                  setWorkflowDescription("Enter workflow description...");
+                }
+              }}
+              autoFocus
+              className="text-sm h-9 focus-visible:ring-offset-0"
+              placeholder="Enter workflow description"
+            />
+          ) : (
+            <div
+              className="flex items-center gap-2 cursor-pointer group text-sm text-muted-foreground"
+              onClick={() => setIsEditingDescription(true)}
+            >
+              <span>{workflowDescription}</span>
+              <Pencil className="h-3 w-3" />
+              <div className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                Click to edit description
+              </div>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="flex flex-1 gap-4 overflow-hidden">

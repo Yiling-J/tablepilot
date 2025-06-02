@@ -3,7 +3,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mock } from "vitest";
-import { TableInfo, deleteTable, getModels, getTables } from "../actions";
+import {
+  TableInfo,
+  deleteTable,
+  getModels,
+  getTableSchema, // Added getTableSchema
+  getTables,
+} from "../actions";
 import { TableListPage } from "./table-list-page";
 
 describe("TableListPage", () => {
@@ -83,6 +89,7 @@ describe("TableListPage", () => {
     );
     await screen.findByText("users");
   });
+
   it("should show table list", async () => {
     expect(screen.getByText("users table")).toBeInTheDocument();
     expect(screen.getByText("recipes")).toBeInTheDocument();
@@ -136,5 +143,45 @@ describe("TableListPage", () => {
     expect(
       screen.getByText("Click to select a CSV or image file"),
     ).toBeInTheDocument();
+  });
+
+  it("should open edit table dialog when edit icon is clicked", async () => {
+    const mockedGetTableSchema = vi.mocked(getTableSchema);
+    mockedGetTableSchema.mockResolvedValue({
+      name: "users",
+      description: "users table",
+      sources: [], // Added sources
+      columns: [
+        {
+          name: "name", // id removed
+          description: "user name",
+          type: "string",
+          fill_mode: "ai",
+          random: false,
+          replacement: false,
+          repeat: 1,
+          linked_column: "",
+          linked_context_columns: [],
+        },
+        {
+          name: "job", // id removed
+          description: "user job",
+          type: "string",
+          fill_mode: "ai",
+          random: false,
+          replacement: false,
+          repeat: 1,
+          linked_column: "",
+          linked_context_columns: [],
+        },
+      ],
+      // model: "" // model removed
+    });
+
+    const editButtons = screen.getAllByTitle("Edit Table");
+    await userEvent.click(editButtons[0]);
+
+    expect(mockedGetTableSchema).toHaveBeenCalledWith("abc");
+    expect(await screen.findByText("Update Table")).toBeInTheDocument(); // Dialog title is "Update Table"
   });
 });

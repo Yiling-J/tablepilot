@@ -10,11 +10,21 @@ import {
     getTables,
     ImportDataStepPayload,
     TableInfo,
+    updateWorkflow, // Added updateWorkflow here
 } from "@/actions";
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import WorkflowBuilderDialog from "./builder";
+
+// Mock actions explicitly using a synchronous factory
+vi.mock("@/actions", () => ({
+  createWorkflow: vi.fn(),
+  updateWorkflow: vi.fn(),
+  getTables: vi.fn(),
+  // Based on imports, only these three functions from actions.ts seem to be directly used as values (mocked)
+  // The other imports like *StepPayload and TableInfo are types.
+}));
 
 vi.mock(import("@/components/ui/var-input"), () => ({
   MentionInput: (prop) => {
@@ -58,7 +68,7 @@ describe("Workflow Builder", () => {
       tables: [recipeTable],
       total: 1,
     });
-    vi.mock("@/actions");
+    // vi.mock("@/actions"); // Already mocked above
     render(
       <TestProvider>
         <WorkflowBuilderDialog
@@ -421,7 +431,7 @@ describe("Workflow Builder - UserInput Variable Name Validation", () => {
     // Common setup for these validation tests
     const mockedGetTables = vi.mocked(getTables);
     mockedGetTables.mockResolvedValue({ tables: [], total: 0 }); // No tables needed for these tests
-    vi.mock("@/actions"); // Reset mocks
+    // vi.mock("@/actions"); // Reset mocks // Already mocked above
 
     render(
       <TestProvider>
@@ -505,5 +515,163 @@ describe("Workflow Builder - UserInput Variable Name Validation", () => {
 
     const wf = vi.mocked(createWorkflow).mock.calls[0][0];
     expect(wf.variables[0].name).toBe("");
+  });
+});
+
+describe("Workflow Description", () => {
+  const mockOnOpenChange = vi.fn();
+  const mockOnSave = vi.fn();
+
+  beforeEach(() => {
+    vi.mocked(getTables).mockResolvedValue({ tables: [], total: 0 });
+    vi.mocked(createWorkflow).mockClear();
+    vi.mocked(updateWorkflow).mockClear(); // Removed console.log and if/else
+    mockOnOpenChange.mockClear();
+    mockOnSave.mockClear();
+  });
+
+  it("should display default description for a new workflow", async () => {
+    render(
+      <TestProvider>
+        <WorkflowBuilderDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSave={mockOnSave}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Workflow Steps"); // Wait for dialog to load
+
+    expect(
+      screen.getByText("Enter workflow description..."),
+    ).toBeInTheDocument();
+  });
+
+  it("should display existing description when a workflow is loaded", async () => {
+    const existingWorkflow = {
+      id: "wf-123",
+      name: "My Test Workflow",
+      description: "This is a test description.",
+      variables: [],
+      steps: [],
+    };
+    render(
+      <TestProvider>
+        <WorkflowBuilderDialog
+          workflow={existingWorkflow}
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSave={mockOnSave}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Workflow Steps"); // Wait for dialog to load
+
+    expect(
+      screen.getByText("This is a test description."),
+    ).toBeInTheDocument();
+  });
+
+  it("should switch to edit mode and update description", async () => {
+    render(
+      <TestProvider>
+        <WorkflowBuilderDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSave={mockOnSave}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Workflow Steps");
+
+    const descriptionDisplay = screen.getByText("Enter workflow description...");
+    await userEvent.click(descriptionDisplay);
+
+    const descriptionInput = screen.getByPlaceholderText(
+      "Enter workflow description",
+    );
+    expect(descriptionInput).toBeInTheDocument();
+    expect(descriptionInput).toHaveValue("Enter workflow description...");
+
+    await userEvent.clear(descriptionInput);
+    await userEvent.type(descriptionInput, "New fancy description");
+    await userEvent.tab(); // Simulate blur
+
+    expect(screen.getByText("New fancy description")).toBeInTheDocument();
+    expect(descriptionInput).not.toBeInTheDocument(); // Input should be gone
+  });
+
+  it("should save new workflow with the entered description", async () => {
+    render(
+      <TestProvider>
+        <WorkflowBuilderDialog
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSave={mockOnSave}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Workflow Steps");
+
+    const descriptionDisplay = screen.getByText("Enter workflow description...");
+    await userEvent.click(descriptionDisplay);
+    const descriptionInput = screen.getByPlaceholderText(
+      "Enter workflow description",
+    );
+    await userEvent.clear(descriptionInput);
+    await userEvent.type(descriptionInput, "Description for new workflow");
+    await userEvent.tab(); // Blur
+
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    expect(createWorkflow).toHaveBeenCalledTimes(1);
+    const savedWorkflow = vi.mocked(createWorkflow).mock.calls[0][0];
+    expect(savedWorkflow.description).toBe("Description for new workflow");
+    expect(savedWorkflow.name).toBe("New Workflow"); // Default name
+  });
+
+  it("should save existing workflow with updated description", async () => {
+    const existingWorkflow = {
+      id: "wf-xyz",
+      name: "Old Workflow Name",
+      description: "Old description",
+      variables: [],
+      steps: [],
+    };
+    vi.mocked(updateWorkflow).mockResolvedValue("wf-xyz"); // Mock updateWorkflow
+
+    render(
+      <TestProvider>
+        <WorkflowBuilderDialog
+          id={existingWorkflow.id}
+          workflow={existingWorkflow}
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onSave={mockOnSave}
+        />
+      </TestProvider>,
+    );
+    await screen.findByText("Workflow Steps");
+    // Ensure existing name and description are loaded
+    expect(screen.getByText("Old Workflow Name")).toBeInTheDocument();
+    expect(screen.getByText("Old description")).toBeInTheDocument();
+
+
+    const descriptionDisplay = screen.getByText("Old description");
+    await userEvent.click(descriptionDisplay);
+    const descriptionInput = screen.getByPlaceholderText(
+      "Enter workflow description",
+    );
+    await userEvent.clear(descriptionInput);
+    await userEvent.type(descriptionInput, "Updated super description");
+    await userEvent.tab(); // Blur
+
+    await userEvent.click(screen.getByText("Save Workflow"));
+
+    expect(updateWorkflow).toHaveBeenCalledTimes(1);
+    const [savedId, savedWorkflow] = vi.mocked(updateWorkflow).mock.calls[0];
+    expect(savedId).toBe("wf-xyz");
+    expect(savedWorkflow.description).toBe("Updated super description");
+    expect(savedWorkflow.name).toBe("Old Workflow Name"); // Name should remain
   });
 });
