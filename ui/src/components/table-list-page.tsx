@@ -1,5 +1,16 @@
 import { deleteTable, TableCreateRequest } from "@/actions";
 import { ImportFileDialog } from "@/components/dialog/import-file";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -12,6 +23,7 @@ import { useCreateTableDialog } from "@/context/create-table";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
@@ -86,30 +98,54 @@ function TableList() {
               </Card>
             ))
           : tables.map((table) => (
-              <div
+              <Card
                 key={table.id}
-                className="h-60 flex flex-col rounded-lg bg-background p-4 border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer"
-                onClick={() => navigate(`/tables/${table.id}`)}
+                className="h-60 flex flex-col rounded-lg bg-background border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer"
               >
-                <div className="text-xl font-bold truncate">{table.name}</div>
-                <div className="grow mt-2">
-                  <p className="line-clamp-4">{table.description}</p>
+                <div onClick={() => navigate(`/tables/${table.id}`)} className="flex flex-col flex-grow p-4">
+                  <CardHeader className="p-0 pb-2"> {/* Adjusted padding */}
+                    <div className="text-lg font-semibold truncate">{table.name}</div> {/* Adjusted style */}
+                  </CardHeader>
+                  <CardContent className="grow mt-2 p-0">
+                    <p className="line-clamp-4">{table.description}</p>
+                  </CardContent>
                 </div>
-
-                <div className="self-end">
-                  <Button
-                    variant="destructive"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await deleteTable(table.id);
-                      await fetchTables(); // Refetch after delete
-                      refreshTables(); // Context refresh
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
+                <CardFooter className="px-4 py-3 border-t border-gray-400/30"> {/* Adjusted padding */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Delete Table"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+                        onClick={(e) => e.stopPropagation()} // Prevent navigation
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the table.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            await deleteTable(table.id);
+                            await fetchTables(); // Refetch after delete
+                            refreshTables(); // Context refresh
+                          }}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardFooter>
+              </Card>
             ))}
         <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
           <div
