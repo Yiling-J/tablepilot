@@ -108,16 +108,13 @@ describe("WorkflowListPage", () => {
     // Find the card for "Workflow One"
     const workflowOneCard = screen
       .getByText("Workflow One")
-      .closest('div[class*="cursor-pointer"]');
+      .closest('div[class*="h-60"]'); // Target the parent Card element
     if (!workflowOneCard)
       throw new Error("Workflow card not found for 'Workflow One'");
 
-    const buttonsInCard = await within(
+    const settingsButton = await within(
       workflowOneCard as HTMLElement,
-    ).findAllByRole("button");
-    const settingsButton = buttonsInCard.find(
-      (button) => !button.textContent?.includes("Delete"),
-    );
+    ).findByTitle("Settings");
 
     if (!settingsButton)
       throw new Error("Settings button not found for Workflow One");
@@ -137,7 +134,7 @@ describe("WorkflowListPage", () => {
     // Find the card for "Workflow One"
     const workflowOneCard = screen
       .getByText("Workflow One")
-      .closest('div[class*="cursor-pointer"]');
+      .closest('div[class*="h-60"]'); // Target the parent Card element
     if (!workflowOneCard)
       throw new Error("Workflow card not found for 'Workflow One'");
 
@@ -147,13 +144,12 @@ describe("WorkflowListPage", () => {
       workflows: [],
       total: 0,
     });
-    const deleteButton = within(workflowOneCard as HTMLElement).getByRole(
-      "button",
-      {
-        name: /delete/i,
-      },
+    const deleteButton = within(workflowOneCard as HTMLElement).getByTitle(
+      "Delete Workflow",
     );
     await userEvent.click(deleteButton);
+    // Click the delete button in the confirmation dialog
+    await userEvent.click(screen.getByText("Delete"));
 
     expect(mockedDeleteWorkflow).toHaveBeenCalledWith("wf1");
 

@@ -120,7 +120,9 @@ describe("TableListPage", () => {
     });
     const mockedDeleteTable = vi.mocked(deleteTable);
     expect(screen.getByText("users table")).toBeInTheDocument();
-    await userEvent.click(screen.getAllByText("Delete")[0]);
+    await userEvent.click(screen.getAllByTitle("Delete Table")[0]);
+    // Click the delete button in the confirmation dialog
+    await userEvent.click(screen.getByText("Delete"));
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
     await screen.findByText("recipes table new");
     expect(screen.queryByText("users table")).toBe(null);

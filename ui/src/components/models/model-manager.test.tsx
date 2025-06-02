@@ -333,7 +333,7 @@ describe("ModelManager", () => {
     await userEvent.click(
       within(providerCard).getByRole("button", { name: "Delete Provider" }),
     );
-    await screen.findByText("Confirm Deletion");
+    await screen.findByText("Confirm Provider Deletion"); // Updated title
     await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
 
     expect(mockedDeleteProvider).toHaveBeenCalledWith(
@@ -520,8 +520,10 @@ describe("ModelManager", () => {
     await userEvent.click(
       within(modelContainer).getByRole("button", { name: "Delete Model" }),
     );
-    await screen.findByText("Confirm Deletion");
-    await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
+    expect(
+      await screen.findByText("Are you sure you want to delete this model?"),
+    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Delete" })); // Name of action button in AlertDialog
 
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Model Deleted" }),
