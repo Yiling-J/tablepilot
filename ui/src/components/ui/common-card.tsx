@@ -17,10 +17,12 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Edit3, Trash2 } from "lucide-react";
 import * as React from "react";
 
 interface CommonCardProps {
+  badgeText?: string;
   name: string;
   children: React.ReactNode;
   onClick?: () => void;
@@ -30,6 +32,7 @@ interface CommonCardProps {
 }
 
 export function CommonCard({
+  badgeText,
   name,
   children,
   onClick,
@@ -80,7 +83,7 @@ export function CommonCard({
 
   return (
     <Card
-      className={`h-60 flex flex-col rounded-lg bg-background border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer ${className}`}
+      className={`h-60 flex flex-col rounded-lg bg-background border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer relative ${className}`}
     >
       <div
         onClick={handleCardClick}
@@ -90,6 +93,14 @@ export function CommonCard({
           <CardTitle className="text-lg font-semibold truncate">
             {name}
           </CardTitle>
+          {badgeText && (
+            <Badge
+              variant="outline"
+              className="absolute top-2 right-2"
+            >
+              {badgeText}
+            </Badge>
+          )}
         </CardHeader>
         <CardContent className="grow mt-2 p-0 overflow-hidden">
           {children}

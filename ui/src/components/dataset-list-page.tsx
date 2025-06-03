@@ -93,12 +93,12 @@ function DatasetList() {
       });
       setIsCreateDialogOpen(false); // Close dialog on success
       fetchDatasets(); // Refresh the list, which will include the new dataset
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create dataset:", error);
       toast({
         title: "Error Creating Dataset",
         description:
-          error.message || "Failed to create dataset. Please try again.",
+          (error instanceof Error ? error.message : undefined) || "Failed to create dataset. Please try again.",
         variant: "destructive",
       });
       // Dialog remains open for user to correct or retry if needed, or close manually.
@@ -140,6 +140,7 @@ function DatasetList() {
                     description: `Dataset: ${dataset.name}`,
                   });
                 }}
+                badgeText="Dataset"
               >
                 <p className="line-clamp-4">{dataset.description}</p>
               </CommonCard>
