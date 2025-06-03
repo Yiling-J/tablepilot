@@ -1,4 +1,5 @@
 import { createDataset, DatasetInfo, getDatasets } from "@/actions"; // Added createDataset
+import { Button } from "@/components/ui/button"; // Import Button
 import {
     Card,
     CardContent,
@@ -7,7 +8,6 @@ import {
 } from "@/components/ui/card";
 import { CommonCard } from "@/components/ui/common-card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button"; // Import Button
 import { toast } from "@/hooks/use-toast"; // Import toast
 import { PlusIcon, QuestionMarkCircledIcon } from "@radix-ui/react-icons"; // Import QuestionMarkCircledIcon
 import { useCallback, useEffect, useState } from "react";
@@ -98,7 +98,8 @@ function DatasetList() {
       toast({
         title: "Error Creating Dataset",
         description:
-          (error instanceof Error ? error.message : undefined) || "Failed to create dataset. Please try again.",
+          (error instanceof Error ? error.message : undefined) ||
+          "Failed to create dataset. Please try again.",
         variant: "destructive",
       });
       // Dialog remains open for user to correct or retry if needed, or close manually.
@@ -140,7 +141,7 @@ function DatasetList() {
                     description: `Dataset: ${dataset.name}`,
                   });
                 }}
-                badgeText="Dataset"
+                badgeText={dataset.type}
               >
                 <p className="line-clamp-4">{dataset.description}</p>
               </CommonCard>
@@ -154,11 +155,7 @@ function DatasetList() {
             <span>Add New Dataset</span>
           </div>
           <div className="absolute bottom-2 right-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleOpenInfoDialog}
-            >
+            <Button variant="ghost" size="icon" onClick={handleOpenInfoDialog}>
               <QuestionMarkCircledIcon className="h-5 w-5" />
             </Button>
           </div>

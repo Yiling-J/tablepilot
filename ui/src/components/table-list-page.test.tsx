@@ -4,11 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mock } from "vitest";
 import {
-  TableInfo,
-  deleteTable,
-  getModels,
-  getTableSchema, // Added getTableSchema
-  getTables,
+    TableInfo,
+    deleteTable,
+    getModels,
+    getTableSchema, // Added getTableSchema
+    getTables,
 } from "../actions";
 import { TableListPage } from "./table-list-page";
 
@@ -128,13 +128,21 @@ describe("TableListPage", () => {
     const mockedDeleteTable = vi.mocked(deleteTable);
     expect(screen.getByText("users table")).toBeInTheDocument();
 
-    const usersCardDelete = screen.getByText("users table").closest('div[class*="h-60"]');
-    if (!usersCardDelete) throw new Error("Users card not found for delete test");
-    const deleteButton = within(usersCardDelete).getByRole('button', { name: /delete/i });
+    const usersCardDelete = screen
+      .getByText("users table")
+      .closest('div[class*="h-60"]');
+    if (!usersCardDelete)
+      throw new Error("Users card not found for delete test");
+    const deleteButton = within(usersCardDelete as HTMLElement).getByRole(
+      "button",
+      { name: /delete/i },
+    );
     await userEvent.click(deleteButton as HTMLElement);
 
     // Click the delete button in the confirmation dialog
-    const confirmDeleteButton = screen.getByRole('button', { name: /^delete$/i });
+    const confirmDeleteButton = screen.getByRole("button", {
+      name: /^delete$/i,
+    });
     await userEvent.click(confirmDeleteButton as HTMLElement); // This targets the button in the dialog
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
     await screen.findByText("recipes table new");
@@ -184,9 +192,16 @@ describe("TableListPage", () => {
       // model: "" // model removed
     });
 
-    const usersCardEdit = screen.getByText("users table").closest('div[class*="h-60"]');
+    const usersCardEdit = screen
+      .getByText("users table")
+      .closest('div[class*="h-60"]');
     if (!usersCardEdit) throw new Error("Users card not found for edit test");
-    const editButton = within(usersCardEdit).getByRole('button', { name: /edit/i });
+    const editButton = within(usersCardEdit as HTMLElement).getByRole(
+      "button",
+      {
+        name: /edit/i,
+      },
+    );
     await userEvent.click(editButton as HTMLElement);
 
     expect(mockedGetTableSchema).toHaveBeenCalledWith("abc");
