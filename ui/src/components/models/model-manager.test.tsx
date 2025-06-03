@@ -469,10 +469,9 @@ describe("ModelManager", () => {
     const modelContainer = modelElement.closest(
       'div[class*="h-60"]',
     ) as HTMLElement;
-    if (!modelContainer) throw new Error("Model container not found for editing");
-    await userEvent.click(
-      within(modelContainer).getByTitle("Edit"),
-    );
+    if (!modelContainer)
+      throw new Error("Model container not found for editing");
+    await userEvent.click(within(modelContainer).getByTitle("Edit"));
     await screen.findByText("Edit Model");
     await userEvent.clear(screen.getByLabelText("Name"));
     await userEvent.type(screen.getByLabelText("Name"), updatedName);
@@ -518,14 +517,16 @@ describe("ModelManager", () => {
     const modelContainer = modelElement.closest(
       'div[class*="h-60"]',
     ) as HTMLElement;
-    if (!modelContainer) throw new Error("Model container not found for deletion");
-    await userEvent.click(
-      within(modelContainer).getByTitle("Delete"),
-    );
+    if (!modelContainer)
+      throw new Error("Model container not found for deletion");
+    await userEvent.click(within(modelContainer).getByTitle("Delete"));
     // CommonCard dialog text
     expect(await screen.findByText("Are you sure?")).toBeInTheDocument();
-    expect(screen.getByText("This action cannot be undone. This will permanently delete the item.")).toBeInTheDocument();
-    // The confirm button in CommonCard's AlertDialog is an AlertDialogAction with text "Delete"
+    expect(
+      screen.getByText(
+        "This action cannot be undone. This will permanently delete the item.",
+      ),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     await waitFor(() => {
@@ -539,8 +540,8 @@ describe("ModelManager", () => {
           base_url: providerToDeleteFrom.base_url,
           editable: providerToDeleteFrom.editable,
           enabled: providerToDeleteFrom.enabled,
-          id: providerToDeleteFrom.id
-        })
+          id: providerToDeleteFrom.id,
+        }),
       );
     });
 
