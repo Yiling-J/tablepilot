@@ -11,10 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast"; // Import toast
 import { PlusIcon, QuestionMarkCircledIcon } from "@radix-ui/react-icons"; // Import QuestionMarkCircledIcon
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom"; // Removed unused import
 import { ModeToggle } from "./darkmode";
 import { CreateDatasetDialog } from "./dialog/dataset/dataset"; // Corrected Import path
 import { DatasetInfoDialog } from "./dialog/dataset/info"; // Import DatasetInfoDialog
+import { DatasetPreviewDialog } from "./dialog/dataset/preview"; // Import DatasetPreviewDialog
 import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
@@ -36,10 +37,14 @@ export function DatasetListPage() {
 
 function DatasetList() {
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Removed unused variable
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // State for dialog
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false); // State for info dialog
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false); // State for preview dialog
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(
+    null
+  ); // State for selected dataset ID
 
   const fetchDatasets = useCallback(async () => {
     setLoading(true);
@@ -133,7 +138,10 @@ function DatasetList() {
               <CommonCard
                 key={dataset.id}
                 name={dataset.name}
-                onClick={() => navigate(`/datasets/${dataset.id}`)}
+                onClick={() => {
+                  setSelectedDatasetId(dataset.id);
+                  setIsPreviewDialogOpen(true);
+                }}
                 onDelete={async () => {
                   // e.stopPropagation(); // CommonCard handles this if needed for the button
                   toast({
@@ -169,6 +177,14 @@ function DatasetList() {
       <DatasetInfoDialog
         isOpen={isInfoDialogOpen}
         onClose={() => setIsInfoDialogOpen(false)}
+      />
+      <DatasetPreviewDialog
+        isOpen={isPreviewDialogOpen}
+        onClose={() => {
+          setIsPreviewDialogOpen(false);
+          setSelectedDatasetId(null);
+        }}
+        datasetId={selectedDatasetId ?? undefined} // Pass undefined if null
       />
     </div>
   );
