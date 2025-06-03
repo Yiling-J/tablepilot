@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// TODO: remove this eslint disable
 import "@testing-library/jest-dom";
 import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen } from "@testing-library/react";

@@ -98,7 +98,7 @@ describe("TableListPage", () => {
 
   it("should navigate to table page when click", async () => {
     const m = vi.mocked(useNavigate);
-    await userEvent.click(screen.getByText("users"));
+    await userEvent.click(screen.getByText("users") as HTMLElement);
     expect((m.mock.results[0].value as Mock).mock.calls[0][0]).toBe(
       "/tables/abc",
     );
@@ -130,20 +130,22 @@ describe("TableListPage", () => {
 
     const usersCardDelete = screen.getByText("users table").closest('div[class*="h-60"]');
     if (!usersCardDelete) throw new Error("Users card not found for delete test");
-    await userEvent.click(within(usersCardDelete).getByTitle("Delete"));
+    const deleteButton = within(usersCardDelete).getByRole('button', { name: /delete/i });
+    await userEvent.click(deleteButton as HTMLElement);
 
     // Click the delete button in the confirmation dialog
-    await userEvent.click(screen.getByText("Delete")); // This targets the button in the dialog
+    const confirmDeleteButton = screen.getByRole('button', { name: /^delete$/i });
+    await userEvent.click(confirmDeleteButton as HTMLElement); // This targets the button in the dialog
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
     await screen.findByText("recipes table new");
     expect(screen.queryByText("users table")).toBe(null);
   });
   it("should open create table form when click add new table", async () => {
-    await userEvent.click(screen.getByText("Add New Table"));
+    await userEvent.click(screen.getByText("Add New Table") as HTMLElement);
     expect(screen.getByText("Create New Table")).toBeInTheDocument();
   });
   it("should open file selector when click import", async () => {
-    await userEvent.click(screen.getByText("Import"));
+    await userEvent.click(screen.getByText("Import") as HTMLElement);
     expect(
       screen.getByText("Click to select a CSV or image file"),
     ).toBeInTheDocument();
@@ -184,7 +186,8 @@ describe("TableListPage", () => {
 
     const usersCardEdit = screen.getByText("users table").closest('div[class*="h-60"]');
     if (!usersCardEdit) throw new Error("Users card not found for edit test");
-    await userEvent.click(within(usersCardEdit).getByTitle("Edit"));
+    const editButton = within(usersCardEdit).getByRole('button', { name: /edit/i });
+    await userEvent.click(editButton as HTMLElement);
 
     expect(mockedGetTableSchema).toHaveBeenCalledWith("abc");
     expect(await screen.findByText("Update Table")).toBeInTheDocument(); // Dialog title is "Update Table"
