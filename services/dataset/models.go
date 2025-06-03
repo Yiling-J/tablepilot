@@ -2,6 +2,7 @@ package dataset
 
 import (
 	"io"
+	"mime/multipart"
 
 	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
 )
@@ -35,10 +36,9 @@ type DatasetRows struct {
 
 // DatasetAPIRequest is used for API calls where files are base64 encoded strings
 type DatasetAPIRequest struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Type        string   `json:"type"`
-	Data        []string `json:"data"`
-	Files       []string `json:"files"`
-	FileNames   []string `json:"file_names"`
+	Name        string                  `form:"name"`
+	Description string                  `form:"description"`
+	Type        string                  `form:"type"`
+	Data        []string                `form:"data"`
+	Files       []*multipart.FileHeader `form:"files"`
 }

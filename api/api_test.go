@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -863,7 +865,46 @@ func TestAPI_CreateDataset(t *testing.T) {
 	server := NewTestServer(t, func(s *services.Backend) {
 		s.DatasetService = datasetMock
 	})
-	req, err := server.NewPostRequest("/api/v1/datasets", expectedRequest)
+	req, err := server.NewMultiplePartRequest("POST", "/api/v1/datasets", map[string]string{"name": "new_dataset", "description": "A new dataset for testing"}, nil)
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 201, gin.H{"id": "new_dataset_id", "name": "new_dataset"})
+}
+
+func TestAPI_CreateDatasetWithFiles(t *testing.T) {
+	expectedRequest := &dataset.CreateDatasetRequest{
+		Name:        "new_dataset",
+		Description: "A new dataset for testing",
+		Type:        "csv",
+	}
+	datasetMock := &dataset.DatasetServiceMock{
+		CreateFunc: func(ctx context.Context, req *dataset.CreateDatasetRequest) (string, error) {
+			require.Equal(t, expectedRequest.Name, req.Name)
+			require.Equal(t, expectedRequest.Description, req.Description)
+			require.Equal(t, 1, len(req.Files))
+			data, err := io.ReadAll(req.Files[0])
+			require.NoError(t, err)
+			require.Equal(t, "header1,header2,header3\nr1c1,r1c2,r1c3\n", string(data))
+			return "new_dataset_id", nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.DatasetService = datasetMock
+	})
+	var csvBuf bytes.Buffer
+	csvWriter := csv.NewWriter(&csvBuf)
+	csvHeaders := []string{"header1", "header2", "header3"}
+	err := csvWriter.Write(csvHeaders)
+	require.NoError(t, err)
+	err = csvWriter.Write([]string{"r1c1", "r1c2", "r1c3"})
+	require.NoError(t, err)
+	csvWriter.Flush()
+
+	req, err := server.NewMultiplePartRequest(
+		"POST", "/api/v1/datasets",
+		map[string]string{"name": "new_dataset", "description": "A new dataset for testing", "type": "csv"},
+		map[string]io.Reader{"1.csv": bytes.NewReader(csvBuf.Bytes())},
+	)
 	require.NoError(t, err)
 	resp := server.Send(req)
 	resp.ResponseEq(t, 201, gin.H{"id": "new_dataset_id", "name": "new_dataset"})

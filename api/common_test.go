@@ -1,7 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -86,6 +89,38 @@ func (ts *TestServer) NewPutRequest(url string, body any) (*http.Request, error)
 func (ts *TestServer) NewDeleteRequest(url string) (*http.Request, error) {
 	return http.NewRequest(http.MethodDelete, url, nil)
 }
+
+func (ts *TestServer) NewMultiplePartRequest(method, url string, fields map[string]string, files map[string]io.Reader) (*http.Request, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	for key, val := range fields {
+		if err := writer.WriteField(key, val); err != nil {
+			return nil, err
+		}
+	}
+	for fieldName, fileReader := range files {
+		part, err := writer.CreateFormFile("files", fieldName)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := io.Copy(part, fileReader); err != nil {
+			return nil, err
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	return req, nil
+}
+
 func (ts *TestServer) Send(req *http.Request) *ResponseHelper {
 	w := httptest.NewRecorder()
 	ts.server.Engine.ServeHTTP(w, req)

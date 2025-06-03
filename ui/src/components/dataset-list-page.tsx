@@ -1,4 +1,4 @@
-import { DatasetInfo, getDatasets, createDataset } from "@/actions"; // Added createDataset
+import { createDataset, DatasetInfo, getDatasets } from "@/actions"; // Added createDataset
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -7,14 +7,14 @@ import {
     CardHeader,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/hooks/use-toast"; // Import toast
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
+import { CreateDatasetDialog } from "./dialog/dataset/dataset"; // Corrected Import path
 import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
-import { CreateDatasetDialog } from "./dialog/dataset/dataset"; // Corrected Import path
-import { toast } from "@/hooks/use-toast"; // Import toast
 
 export function DatasetListPage() {
   return (
@@ -63,7 +63,7 @@ function DatasetList() {
   const handleCreateDataset = async (data: {
     name: string;
     description: string;
-    type: 'list' | 'csv';
+    type: "list" | "csv";
     options?: string[];
     files?: File[];
   }) => {
@@ -78,8 +78,8 @@ function DatasetList() {
         name: data.name,
         description: data.description,
         type: data.type,
-        data: data.type === 'list' ? (data.options || []) : [],
-        files: data.type === 'csv' ? (data.files || []) : [],
+        data: data.type === "list" ? data.options || [] : [],
+        files: data.type === "csv" ? data.files || [] : [],
       };
 
       await createDataset(requestPayload); // createDataset returns Promise<string> (the ID)
@@ -94,7 +94,8 @@ function DatasetList() {
       console.error("Failed to create dataset:", error);
       toast({
         title: "Error Creating Dataset",
-        description: error.message || "Failed to create dataset. Please try again.",
+        description:
+          error.message || "Failed to create dataset. Please try again.",
         variant: "destructive",
       });
       // Dialog remains open for user to correct or retry if needed, or close manually.
@@ -135,9 +136,10 @@ function DatasetList() {
                     variant="destructive"
                     onClick={async (e) => {
                       e.stopPropagation();
-                      // Add delete functionality here if needed
-                      // Example: await deleteDataset(dataset.id); fetchDatasets();
-                      toast({ title: "Delete clicked (not implemented)", description: `Dataset: ${dataset.name}`});
+                      toast({
+                        title: "Delete clicked (not implemented)",
+                        description: `Dataset: ${dataset.name}`,
+                      });
                     }}
                   >
                     Delete

@@ -3,8 +3,6 @@ package api
 import (
 	"errors"
 
-	"bytes"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -569,7 +567,7 @@ func (hs *HTTPServer) addRouters() {
 
 func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 	var apiReq services_dataset.DatasetAPIRequest
-	if err := ctx.ShouldBindJSON(&apiReq); err != nil {
+	if err := ctx.ShouldBind(&apiReq); err != nil {
 		errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err))
 		return
 	}
@@ -587,13 +585,13 @@ func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 			return
 		}
 		var readers []io.Reader
-		for _, fileContentBase64 := range apiReq.Files {
-			decodedBytes, err := base64.StdEncoding.DecodeString(fileContentBase64)
+		for _, fh := range apiReq.Files {
+			f, err := fh.Open()
 			if err != nil {
-				errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("failed to decode base64 file content: %w", err))
+				errorResponse(ctx, http.StatusBadRequest, err)
 				return
 			}
-			readers = append(readers, bytes.NewReader(decodedBytes))
+			readers = append(readers, f)
 		}
 		serviceReq.Files = readers
 	}
@@ -661,13 +659,13 @@ func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
 
 	if apiReq.Files != nil {
 		var readers []io.Reader
-		for _, fileContentBase64 := range apiReq.Files {
-			decodedBytes, err := base64.StdEncoding.DecodeString(fileContentBase64)
+		for _, fh := range apiReq.Files {
+			f, err := fh.Open()
 			if err != nil {
-				errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("failed to decode base64 file content: %w", err))
+				errorResponse(ctx, http.StatusBadRequest, err)
 				return
 			}
-			readers = append(readers, bytes.NewReader(decodedBytes))
+			readers = append(readers, f)
 		}
 		serviceReq.Files = readers
 		serviceReq.Fields = append(serviceReq.Fields, "files")
