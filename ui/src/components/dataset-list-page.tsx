@@ -7,12 +7,14 @@ import {
 } from "@/components/ui/card";
 import { CommonCard } from "@/components/ui/common-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button"; // Import Button
 import { toast } from "@/hooks/use-toast"; // Import toast
-import { PlusIcon } from "@radix-ui/react-icons";
+import { PlusIcon, QuestionMarkCircledIcon } from "@radix-ui/react-icons"; // Import QuestionMarkCircledIcon
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import { CreateDatasetDialog } from "./dialog/dataset/dataset"; // Corrected Import path
+import { DatasetInfoDialog } from "./dialog/dataset/info"; // Import DatasetInfoDialog
 import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
@@ -37,6 +39,7 @@ function DatasetList() {
   const navigate = useNavigate();
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // State for dialog
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false); // State for info dialog
 
   const fetchDatasets = useCallback(async () => {
     setLoading(true);
@@ -102,6 +105,11 @@ function DatasetList() {
     }
   };
 
+  const handleOpenInfoDialog = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsInfoDialogOpen(true);
+  };
+
   return (
     <div className="grow overflow-auto h-full flex flex-col">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -136,7 +144,7 @@ function DatasetList() {
                 <p className="line-clamp-4">{dataset.description}</p>
               </CommonCard>
             ))}
-        <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
+        <Card className="relative flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
           <div
             className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1 hover:h-[70%] peer"
             onClick={() => setIsCreateDialogOpen(true)} // Corrected onClick
@@ -144,12 +152,25 @@ function DatasetList() {
             <PlusIcon className="w-5 h-5 mr-2 mb-2" />
             <span>Add New Dataset</span>
           </div>
+          <div className="absolute bottom-2 right-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleOpenInfoDialog}
+            >
+              <QuestionMarkCircledIcon className="h-5 w-5" />
+            </Button>
+          </div>
         </Card>
       </div>
       <CreateDatasetDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         onCreate={handleCreateDataset}
+      />
+      <DatasetInfoDialog
+        isOpen={isInfoDialogOpen}
+        onClose={() => setIsInfoDialogOpen(false)}
       />
     </div>
   );
