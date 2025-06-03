@@ -1,11 +1,11 @@
 import { createDataset, DatasetInfo, getDatasets } from "@/actions"; // Added createDataset
-import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
     CardFooter,
     CardHeader,
 } from "@/components/ui/card";
+import { CommonCard } from "@/components/ui/common-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast"; // Import toast
 import { PlusIcon } from "@radix-ui/react-icons";
@@ -121,31 +121,20 @@ function DatasetList() {
               </Card>
             ))
           : datasets.map((dataset) => (
-              <div
+              <CommonCard
                 key={dataset.id}
-                className="h-60 flex flex-col rounded-lg bg-background p-4 border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer"
+                name={dataset.name}
                 onClick={() => navigate(`/datasets/${dataset.id}`)}
+                onDelete={async () => {
+                  // e.stopPropagation(); // CommonCard handles this if needed for the button
+                  toast({
+                    title: "Delete clicked (not implemented)",
+                    description: `Dataset: ${dataset.name}`,
+                  });
+                }}
               >
-                <div className="text-xl font-bold truncate">{dataset.name}</div>
-                <div className="grow mt-2">
-                  <p className="line-clamp-4">{dataset.description}</p>
-                </div>
-
-                <div className="self-end">
-                  <Button
-                    variant="destructive"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      toast({
-                        title: "Delete clicked (not implemented)",
-                        description: `Dataset: ${dataset.name}`,
-                      });
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
+                <p className="line-clamp-4">{dataset.description}</p>
+              </CommonCard>
             ))}
         <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
           <div

@@ -114,7 +114,7 @@ describe("WorkflowListPage", () => {
 
     const settingsButton = await within(
       workflowOneCard as HTMLElement,
-    ).findByTitle("Settings");
+    ).findByTitle("Edit");
 
     if (!settingsButton)
       throw new Error("Settings button not found for Workflow One");
@@ -145,7 +145,7 @@ describe("WorkflowListPage", () => {
       total: 0,
     });
     const deleteButton = within(workflowOneCard as HTMLElement).getByTitle(
-      "Delete Workflow",
+      "Delete",
     );
     await userEvent.click(deleteButton);
     // Click the delete button in the confirmation dialog

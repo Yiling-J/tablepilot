@@ -1,5 +1,5 @@
 import { TestProvider } from "@/test/helpers/test-provider";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Mock } from "vitest";
@@ -127,9 +127,13 @@ describe("TableListPage", () => {
     });
     const mockedDeleteTable = vi.mocked(deleteTable);
     expect(screen.getByText("users table")).toBeInTheDocument();
-    await userEvent.click(screen.getAllByTitle("Delete Table")[0]);
+
+    const usersCardDelete = screen.getByText("users table").closest('div[class*="h-60"]');
+    if (!usersCardDelete) throw new Error("Users card not found for delete test");
+    await userEvent.click(within(usersCardDelete).getByTitle("Delete"));
+
     // Click the delete button in the confirmation dialog
-    await userEvent.click(screen.getByText("Delete"));
+    await userEvent.click(screen.getByText("Delete")); // This targets the button in the dialog
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
     await screen.findByText("recipes table new");
     expect(screen.queryByText("users table")).toBe(null);
@@ -178,8 +182,9 @@ describe("TableListPage", () => {
       // model: "" // model removed
     });
 
-    const editButtons = screen.getAllByTitle("Edit Table");
-    await userEvent.click(editButtons[0]);
+    const usersCardEdit = screen.getByText("users table").closest('div[class*="h-60"]');
+    if (!usersCardEdit) throw new Error("Users card not found for edit test");
+    await userEvent.click(within(usersCardEdit).getByTitle("Edit"));
 
     expect(mockedGetTableSchema).toHaveBeenCalledWith("abc");
     expect(await screen.findByText("Update Table")).toBeInTheDocument(); // Dialog title is "Update Table"

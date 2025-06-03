@@ -9,9 +9,9 @@ import {
     Trash2,
 } from "lucide-react";
 import { AddModelCard } from "./add-model-card";
-import { ModelCard } from "./model-card";
 
 import { Model, Provider } from "@/actions";
+import { CommonCard } from "@/components/ui/common-card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
@@ -99,16 +99,27 @@ export function ProviderCard({
         {provider.models.length > 0 || provider.editable ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {provider.models.map((model: Model) => (
-              <ModelCard
+                <CommonCard
                 key={model.model}
-                model={model}
-                onEdit={() => onEditModel(provider.id.toString(), model.model)}
-                onDelete={() =>
-                  onDeleteModel(provider.id.toString(), model.model)
+                  name={model.alias}
+                  onEdit={
+                    provider.editable && provider.enabled
+                      ? () => onEditModel(provider.id.toString(), model.model)
+                      : undefined
+                  }
+                  onDelete={
+                    provider.editable && provider.enabled
+                      ? () => onDeleteModel(provider.id.toString(), model.model)
+                      : undefined
                 }
-                isProviderEditable={provider.editable}
-                isProviderEnabled={provider.enabled}
-              />
+                >
+                  <>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      No description
+                    </p>
+                    <p className="text-xs text-gray-500">ID: {model.model}</p>
+                  </>
+                </CommonCard>
             ))}
             {provider.editable && (
               <AddModelCard

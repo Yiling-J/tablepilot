@@ -467,10 +467,11 @@ describe("ModelManager", () => {
       modelToEdit.alias,
     );
     const modelContainer = modelElement.closest(
-      "div.model-card",
+      'div[class*="h-60"]',
     ) as HTMLElement;
+    if (!modelContainer) throw new Error("Model container not found for editing");
     await userEvent.click(
-      within(modelContainer).getByRole("button", { name: "Edit Model" }),
+      within(modelContainer).getByTitle("Edit"),
     );
     await screen.findByText("Edit Model");
     await userEvent.clear(screen.getByLabelText("Name"));
@@ -515,19 +516,39 @@ describe("ModelManager", () => {
       modelToDelete.alias,
     );
     const modelContainer = modelElement.closest(
-      "div.model-card",
+      'div[class*="h-60"]',
     ) as HTMLElement;
+    if (!modelContainer) throw new Error("Model container not found for deletion");
     await userEvent.click(
-      within(modelContainer).getByRole("button", { name: "Delete Model" }),
+      within(modelContainer).getByTitle("Delete"),
     );
-    expect(
-      await screen.findByText("Are you sure you want to delete this model?"),
-    ).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Delete" })); // Name of action button in AlertDialog
+    // CommonCard dialog text
+    expect(await screen.findByText("Are you sure?")).toBeInTheDocument();
+    expect(screen.getByText("This action cannot be undone. This will permanently delete the item.")).toBeInTheDocument();
+    // The confirm button in CommonCard's AlertDialog is an AlertDialogAction with text "Delete"
+    await userEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Model Deleted" }),
-    );
+    await waitFor(() => {
+      expect(mockedUpdateProvider).toHaveBeenCalledWith(
+        providerToDeleteFrom.id.toString(),
+        expect.objectContaining({
+          models: [sampleProviders[0].models[1]],
+          name: providerToDeleteFrom.name,
+          type: providerToDeleteFrom.type,
+          key: providerToDeleteFrom.key,
+          base_url: providerToDeleteFrom.base_url,
+          editable: providerToDeleteFrom.editable,
+          enabled: providerToDeleteFrom.enabled,
+          id: providerToDeleteFrom.id
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "Model Deleted" }),
+      );
+    });
     await waitFor(() =>
       expect(
         within(providerCard).queryByText(modelToDelete.alias),

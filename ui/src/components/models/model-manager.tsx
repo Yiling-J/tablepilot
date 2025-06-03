@@ -172,14 +172,21 @@ export function ModelManager() {
   };
 
   const handleDeleteModel = async (providerId: string, modelId: string) => {
+    console.log(`[handleDeleteModel] Called with providerId: ${providerId}, modelId: ${modelId}`);
+    console.log(`[handleDeleteModel] Current providers state: ${JSON.stringify(providers.map(p => ({id: p.id, type: typeof p.id}) ))}`);
+
     const updatedProviders = await Promise.all(
       providers.map(async (p) => {
+        console.log(`[handleDeleteModel] Mapping provider.id: ${p.id} (type: ${typeof p.id}). Comparing with providerId: ${providerId} (type: ${typeof providerId})`);
         if (p.id.toString() === providerId) {
+          console.log(`[handleDeleteModel] Matched providerId: ${providerId}. Preparing to update.`);
           const updated = {
             ...p,
             models: p.models.filter((m: Model) => m.model !== modelId),
           };
+          console.log(`[handleDeleteModel] About to call updateProvider for providerId: ${updated.id.toString()}`);
           await updateProvider(updated.id.toString(), updated);
+          console.log(`[handleDeleteModel] Called updateProvider for providerId: ${updated.id.toString()}`);
           return updated;
         }
         return p;
@@ -463,9 +470,9 @@ export function ModelManager() {
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => {
+                onClick={async () => { // Make this async
                   if (modelToDeleteDetails) {
-                    handleDeleteModel(
+                    await handleDeleteModel( // Await this call
                       modelToDeleteDetails.providerId,
                       modelToDeleteDetails.modelId,
                     );
