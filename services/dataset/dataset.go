@@ -119,6 +119,7 @@ func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 	var datasetInfos []*DatasetInfo
 	for _, ds := range datasets {
 		datasetInfos = append(datasetInfos, &DatasetInfo{
+			ID:          ds.Nanoid,
 			Name:        ds.Name,
 			Description: ds.Description,
 			Type:        string(ds.Type),

@@ -9,6 +9,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -17,7 +18,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Edit3, Trash2 } from "lucide-react";
 import * as React from "react";
 
@@ -67,7 +67,7 @@ export function CommonCard({
   const confirmDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (onDelete) {
-      await onDelete();
+      onDelete();
     }
     setIsDeleteDialogOpen(false);
   };
@@ -79,25 +79,22 @@ export function CommonCard({
 
   const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-  }
+  };
 
   return (
     <Card
-      className={`h-60 flex flex-col rounded-lg bg-background border border-gray-400/30 hover:bg-muted-foreground/5 cursor-pointer relative ${className}`}
+      className={`h-60 flex flex-col rounded-lg bg-background border border-gray-400/30 hover:bg-muted-foreground/5 relative ${className}`}
     >
       <div
         onClick={handleCardClick}
-        className="flex flex-col flex-grow p-4"
+        className="flex flex-col flex-grow p-4 cursor-pointer"
       >
         <CardHeader className="p-0 pb-2">
           <CardTitle className="text-lg font-semibold truncate">
             {name}
           </CardTitle>
           {badgeText && (
-            <Badge
-              variant="outline"
-              className="absolute top-2 right-2"
-            >
+            <Badge variant="outline" className="absolute top-2 right-2">
               {badgeText}
             </Badge>
           )}
@@ -107,25 +104,29 @@ export function CommonCard({
         </CardContent>
       </div>
       {(onEdit || onDelete) && (
-        <CardFooter className="px-4 py-3 border-t border-gray-400/30 flex justify-end gap-2">
+        <CardFooter className="px-4 py-1 border-t border-gray-400/30 flex justify-end gap-2 bg-accent/30">
           {onEdit && (
             <Button
               variant="ghost"
               size="icon"
               title="Edit"
               onClick={handleEditClick}
+              className="hover:bg-primary/10"
             >
               <Edit3 className="h-4 w-4" />
             </Button>
           )}
           {onDelete && (
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialog
+              open={isDeleteDialogOpen}
+              onOpenChange={setIsDeleteDialogOpen}
+            >
               <AlertDialogTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   title="Delete"
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive hover:text-destructive hover:bg-primary/10"
                   onClick={handleDeleteClick}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -135,11 +136,14 @@ export function CommonCard({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the item.
+                    This action cannot be undone. This will permanently delete
+                    the item.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel onClick={cancelDelete}>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel onClick={cancelDelete}>
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={confirmDelete}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

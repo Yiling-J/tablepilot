@@ -632,7 +632,7 @@ func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
 	datasetID := ctx.Param("id")
 	var apiReq services_dataset.DatasetAPIRequest
 
-	if err := ctx.ShouldBindJSON(&apiReq); err != nil {
+	if err := ctx.ShouldBind(&apiReq); err != nil {
 		errorResponse(ctx, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err))
 		return
 	}

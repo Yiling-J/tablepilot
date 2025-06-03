@@ -1,4 +1,9 @@
-import { createDataset, DatasetInfo, getDatasets } from "@/actions"; // Added createDataset
+import {
+    createDataset,
+    DatasetInfo,
+    deleteDataset,
+    getDatasets,
+} from "@/actions"; // Added createDataset
 import { Button } from "@/components/ui/button"; // Import Button
 import {
     Card,
@@ -43,7 +48,7 @@ function DatasetList() {
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false); // State for info dialog
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false); // State for preview dialog
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(
-    null
+    null,
   ); // State for selected dataset ID
 
   const fetchDatasets = useCallback(async () => {
@@ -76,12 +81,6 @@ function DatasetList() {
     files?: File[];
   }) => {
     try {
-      // The createDataset action might expect FormData for file uploads,
-      // or it might handle a plain object and construct FormData internally.
-      // Assuming it handles a plain object for now, as per its likely signature from actions.ts
-      // If it strictly requires FormData, this part needs adjustment.
-
-      // Prepare the request object for createDataset, aligning with CreateDatasetRequest
       const requestPayload = {
         name: data.name,
         description: data.description,
@@ -90,11 +89,11 @@ function DatasetList() {
         files: data.type === "csv" ? data.files || [] : [],
       };
 
-      await createDataset(requestPayload); // createDataset returns Promise<string> (the ID)
+      await createDataset(requestPayload);
 
       toast({
         title: "Success",
-        description: `Dataset "${data.name}" created successfully.`, // Use data.name from input
+        description: `Dataset "${data.name}" created successfully.`,
       });
       setIsCreateDialogOpen(false); // Close dialog on success
       fetchDatasets(); // Refresh the list, which will include the new dataset
@@ -107,7 +106,6 @@ function DatasetList() {
           "Failed to create dataset. Please try again.",
         variant: "destructive",
       });
-      // Dialog remains open for user to correct or retry if needed, or close manually.
     }
   };
 
@@ -143,11 +141,10 @@ function DatasetList() {
                   setIsPreviewDialogOpen(true);
                 }}
                 onDelete={async () => {
-                  // e.stopPropagation(); // CommonCard handles this if needed for the button
-                  toast({
-                    title: "Delete clicked (not implemented)",
-                    description: `Dataset: ${dataset.name}`,
-                  });
+                  setLoading(true);
+                  await deleteDataset(dataset.id);
+                  await fetchDatasets();
+                  setLoading(false);
                 }}
                 badgeText={dataset.type}
               >
@@ -184,7 +181,7 @@ function DatasetList() {
           setIsPreviewDialogOpen(false);
           setSelectedDatasetId(null);
         }}
-        datasetId={selectedDatasetId ?? undefined} // Pass undefined if null
+        datasetId={selectedDatasetId ?? undefined}
       />
     </div>
   );

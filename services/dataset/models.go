@@ -21,6 +21,7 @@ type UpdateDatasetRequest struct {
 }
 
 type DatasetInfo struct {
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Type        string `json:"type"`

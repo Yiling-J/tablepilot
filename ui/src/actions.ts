@@ -5,6 +5,7 @@ import {
     autofillUrl,
     datasetsUrl,
     generateUrl,
+    getDatasetUrl,
     getWorkflowUrl,
     importImageUrl,
     modelsUrl,
@@ -780,6 +781,9 @@ export async function createDataset(
   formData.append("name", req.name);
   formData.append("description", req.description);
   formData.append("type", req.type);
+  if (req.data.length > 0) {
+    req.data.forEach((v) => formData.append("data", v));
+  }
 
   for (let i = 0; i < req.files.length; i++) {
     formData.append("files", req.files[i]);
@@ -792,6 +796,33 @@ export async function createDataset(
   if (!res.ok) {
     toast.error("Failed to create dataset");
     throw new Error("Failed to create dataset");
+  }
+  return res.json();
+}
+
+export async function updateDataset(
+  id: string,
+  req: CreateDatasetRequest,
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("name", req.name);
+  formData.append("description", req.description);
+  formData.append("type", req.type);
+  if (req.data.length > 0) {
+    req.data.forEach((v) => formData.append("data", v));
+  }
+
+  for (let i = 0; i < req.files.length; i++) {
+    formData.append("files", req.files[i]);
+  }
+
+  const res = await fetch(getDatasetUrl(id), {
+    method: "PATCH",
+    body: formData,
+  });
+  if (!res.ok) {
+    toast.error("Failed to update dataset");
+    throw new Error("Failed to update dataset");
   }
   return res.json();
 }
@@ -816,4 +847,18 @@ export async function previewDataset(
     throw new Error("Failed to fetch workflows");
   }
   return res.json();
+}
+
+export async function deleteDataset(id: string) {
+  const res = await fetch(getDatasetUrl(id), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    toast.error("Failed to delete workflow");
+    throw new Error("Failed to delete workflow");
+  }
 }

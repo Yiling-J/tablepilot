@@ -1,35 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import { previewDataset } from "@/actions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from '@/components/ui/table';
-import { previewDataset } from '@/actions';
-
-// Define a more specific type for the data state
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DataValue = any; // Could be string, number, boolean, null
-interface CsvRow extends Record<string, DataValue> {}
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import { JSONObject } from "@/json";
+import React, { useEffect, useState } from "react";
 
 interface PreviewData {
-  type: 'list' | 'csv' | string;
-  data?: string[]; // For list type
-  rows?: CsvRow[];  // For csv type
-  // headers?: string[]; // Optional: if API directly provides headers for CSV
+  type: "list" | "csv" | string;
+  data?: string[];
+  rows?: JSONObject[];
 }
 
 interface DatasetPreviewDialogProps {
@@ -45,7 +40,7 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<PreviewData | null>(null); // Use the more specific PreviewData type
+  const [data, setData] = useState<PreviewData | null>(null);
 
   useEffect(() => {
     if (isOpen && datasetId) {
@@ -55,12 +50,11 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
       previewDataset(datasetId)
         .then((res) => {
           setData(res);
-          // For now, just log success. Actual data display will be implemented later.
-          console.log('Data loaded successfully', res);
+          console.log("Data loaded successfully", res);
         })
         .catch((err) => {
-          console.error('Error fetching dataset preview:', err);
-          setError(err.message || 'An unexpected error occurred.');
+          console.error("Error fetching dataset preview:", err);
+          setError(err.message || "An unexpected error occurred.");
         })
         .finally(() => {
           setIsLoading(false);
@@ -81,7 +75,7 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Dataset Preview</DialogTitle>
           <DialogDescription>
-            Previewing dataset{datasetId ? ` (ID: ${datasetId})` : ''}.
+            Previewing dataset{datasetId ? ` (ID: ${datasetId})` : ""}.
           </DialogDescription>
         </DialogHeader>
         <div className="p-4 min-h-[200px]">
@@ -95,7 +89,7 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
           {error && <div className="text-red-500">Error: {error}</div>}
           {!isLoading && !error && data && (
             <>
-              {data.type === 'list' && Array.isArray(data.data) ? (
+              {data.type === "list" && Array.isArray(data.data) ? (
                 <div className="flex flex-wrap">
                   {(data.data as string[]).map((item, index) => (
                     <Badge
@@ -107,9 +101,11 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                     </Badge>
                   ))}
                 </div>
-              ) : data.type === 'csv' && data.rows ? (
+              ) : data.type === "csv" && data.rows ? (
                 data.rows.length > 0 ? (
-                  <div className="overflow-x-auto max-h-[400px]"> {/* Added max-h for vertical scroll too */}
+                  <div className="overflow-x-auto max-h-[400px]">
+                    {" "}
+                    {/* Added max-h for vertical scroll too */}
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -121,11 +117,18 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                       <TableBody>
                         {data.rows.map((row, rowIndex) => (
                           <TableRow key={rowIndex}>
-                            {Object.keys(data.rows![0]).map((header) => ( // Use headers from first row for consistent key order
-                              <TableCell key={`${rowIndex}-${header}`}>
-                                {row[header] !== undefined && row[header] !== null ? String(row[header]) : '-'}
-                              </TableCell>
-                            ))}
+                            {Object.keys(data.rows![0]).map(
+                              (
+                                header, // Use headers from first row for consistent key order
+                              ) => (
+                                <TableCell key={`${rowIndex}-${header}`}>
+                                  {row[header] !== undefined &&
+                                  row[header] !== null
+                                    ? String(row[header])
+                                    : "-"}
+                                </TableCell>
+                              ),
+                            )}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -136,7 +139,8 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                 )
               ) : (
                 <div>
-                  Data loaded. Preview for this data type is not yet implemented or data is empty.
+                  Data loaded. Preview for this data type is not yet implemented
+                  or data is empty.
                 </div>
               )}
             </>
