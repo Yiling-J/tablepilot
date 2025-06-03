@@ -8,6 +8,7 @@ import {
     getWorkflowUrl,
     importImageUrl,
     modelsUrl,
+    previewDatasetUrl,
     providerUrl,
     providersUrl,
     regenerateUrl,
@@ -791,6 +792,28 @@ export async function createDataset(
   if (!res.ok) {
     toast.error("Failed to create dataset");
     throw new Error("Failed to create dataset");
+  }
+  return res.json();
+}
+
+export interface DatasetPreviewResponse {
+  type: DatasetType;
+  rows: JSONObject[];
+  data: string[];
+}
+
+export async function previewDataset(
+  id: string,
+): Promise<DatasetPreviewResponse> {
+  const res = await fetch(previewDatasetUrl(id), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    toast.error("Failed to fetch workflows");
+    throw new Error("Failed to fetch workflows");
   }
   return res.json();
 }
