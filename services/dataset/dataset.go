@@ -2,7 +2,6 @@ package dataset
 
 import (
 	"context"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +13,7 @@ import (
 	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/Yiling-J/tablepilot/services/source/csvindexer"
+	"github.com/Yiling-J/tablepilot/utils"
 )
 
 //go:generate moq -rm -out dataset_moq.go . DatasetService
@@ -58,7 +58,7 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 		for i, file := range req.Files {
 			// skip csv headers
 			if i > 0 {
-				reader := csv.NewReader(file)
+				reader := utils.NewCsvReader(file)
 				_, err = reader.Read()
 				if err != nil {
 					return fmt.Errorf("failed to read csv %w", err)
@@ -125,6 +125,7 @@ func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 			Type:        string(ds.Type),
 			ColumnCount: len(ds.Indexer.ColumnNames),
 			ValueCount:  len(ds.Values),
+			Data:        ds.Values,
 		})
 	}
 	return datasetInfos, nil
@@ -143,12 +144,11 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 		return ent.Rollback(tx, fmt.Errorf("dataset.Update: query dataset: %w", err)) // Clarified error
 	}
 
-	// Early check for type change attempt: If req.Type is specified and differs from ds.Type, reject.
 	if req.Type != "" && req.Type != string(ds.Type) {
 		return ent.Rollback(tx, errors.New("dataset type cannot be changed via update"))
 	}
 
-	originalPath := ds.Path // Store original path for potential cleanup if it's a CSV and data changes
+	originalPath := ds.Path
 	updater := ds.Update()
 	processDataRebuild := false
 
@@ -158,22 +158,18 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 			updater.SetName(req.Name)
 		case "description":
 			updater.SetDescription(req.Description)
-		// "type" case is removed as type changes are disallowed by the check above.
 		case "data", "files":
 			processDataRebuild = true
-			// Clear fields that will be repopulated by buildCreateDatasetReq
 			updater.ClearIndexer().ClearPath().SetValues(nil)
 		}
 	}
 
-	// Save all accumulated changes (metadata, cleared fields)
 	updatedDsEntity, err := updater.Save(ctx)
 	if err != nil {
 		return ent.Rollback(tx, fmt.Errorf("dataset.Update: save changes: %w", err)) // Clarified error
 	}
 
 	if processDataRebuild {
-		// If the original dataset had a path (was a CSV) and its data is being rebuilt, remove the old directory.
 		if originalPath != "" {
 			oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, originalPath)
 			if _, statErr := os.Stat(oldDirPath); !os.IsNotExist(statErr) {
@@ -183,10 +179,8 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 			}
 		}
 
-		// Prepare the request for buildCreateDatasetReq.
-		// Ensure Type in buildReq is the dataset's actual (original) type, as type changes are disallowed.
-		buildReq := req.CreateDatasetRequest         // Copy the request
-		buildReq.Type = string(updatedDsEntity.Type) // This is ds.Type, as type cannot change.
+		buildReq := req.CreateDatasetRequest
+		buildReq.Type = string(updatedDsEntity.Type)
 
 		err = s.buildCreateDatasetReq(ctx, &buildReq, updatedDsEntity)
 		if err != nil {
@@ -252,7 +246,7 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		db_dataset.Nanoid(dataset),
 	)).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("dataset.Preview: query dataset: %w", err) // Clarified error
+		return nil, fmt.Errorf("dataset.Preview: query dataset: %w", err)
 	}
 	switch sr.Type {
 	case "csv":
@@ -264,7 +258,7 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		counter := 0
 		rows := []map[string]any{}
 		columns := sr.Indexer.ColumnNames
-		s.Range(func(row []any) bool {
+		err = s.Range(func(row []any) bool {
 			rowm := map[string]any{}
 			for i, v := range row {
 				rowm[columns[i]] = v
@@ -273,6 +267,9 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 			counter += 1
 			return counter != 100
 		})
+		if err != nil {
+			return nil, fmt.Errorf("dataset.Preview: range csv data: %w", err)
+		}
 		return &DatasetRows{
 			Type: sr.Type,
 			Rows: rows,

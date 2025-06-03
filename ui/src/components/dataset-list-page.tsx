@@ -42,11 +42,13 @@ export function DatasetListPage() {
 
 function DatasetList() {
   const [loading, setLoading] = useState(true);
-  // const navigate = useNavigate(); // Removed unused variable
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // State for dialog
-  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false); // State for info dialog
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false); // State for preview dialog
+  const [editDataset, setEditDataset] = useState<DatasetInfo | undefined>(
+    undefined,
+  );
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(
     null,
   ); // State for selected dataset ID
@@ -67,11 +69,11 @@ function DatasetList() {
     } finally {
       setLoading(false);
     }
-  }, []); // Removed toast from dependency array as it's a stable function
+  }, []);
 
   useEffect(() => {
     fetchDatasets();
-  }, [fetchDatasets]); // Added fetchDatasets to dependency array
+  }, [fetchDatasets]);
 
   const handleCreateDataset = async (data: {
     name: string;
@@ -140,6 +142,10 @@ function DatasetList() {
                   setSelectedDatasetId(dataset.id);
                   setIsPreviewDialogOpen(true);
                 }}
+                onEdit={async () => {
+                  setEditDataset(dataset);
+                  setIsCreateDialogOpen(true);
+                }}
                 onDelete={async () => {
                   setLoading(true);
                   await deleteDataset(dataset.id);
@@ -154,7 +160,10 @@ function DatasetList() {
         <Card className="relative flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
           <div
             className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1 hover:h-[70%] peer"
-            onClick={() => setIsCreateDialogOpen(true)} // Corrected onClick
+            onClick={() => {
+              setEditDataset(undefined);
+              setIsCreateDialogOpen(true);
+            }}
           >
             <PlusIcon className="w-5 h-5 mr-2 mb-2" />
             <span>Add New Dataset</span>
@@ -170,6 +179,7 @@ function DatasetList() {
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         onCreate={handleCreateDataset}
+        dataset={editDataset}
       />
       <DatasetInfoDialog
         isOpen={isInfoDialogOpen}

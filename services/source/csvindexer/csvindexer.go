@@ -1,7 +1,6 @@
 package csvindexer
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"io"
@@ -9,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/utils"
 	"github.com/spf13/cast"
 )
 
@@ -30,7 +30,7 @@ func NewCSVIndexer(fs fs.FS, files []string) (*CSVIndexer, error) {
 			return nil, err
 		}
 		defer f.Close()
-		r := csv.NewReader(f)
+		r := utils.NewCsvReader(f)
 
 		fileColumns, err := r.Read()
 		if err != nil {
@@ -105,7 +105,7 @@ func (r *CSVIndexer) Fetch(idx int) ([]string, error) {
 	} else {
 		return nil, errors.New("file not seekable")
 	}
-	reader := csv.NewReader(f)
+	reader := utils.NewCsvReader(f)
 	for i := 0; ; i++ {
 		if i >= r.Count {
 			break
@@ -135,7 +135,7 @@ func (r *CSVIndexer) Range(fn func(row []string) bool) error {
 		if err != nil {
 			return err
 		}
-		reader := csv.NewReader(f)
+		reader := utils.NewCsvReader(f)
 		// skip header
 		_, err = reader.Read()
 		if err != nil {
@@ -166,7 +166,7 @@ func GetColumnsFromFiles(fs fs.FS, files []string) ([]string, error) {
 			return nil, err
 		}
 		defer f.Close()
-		r := csv.NewReader(f)
+		r := utils.NewCsvReader(f)
 
 		fileColumns, err := r.Read()
 		if err != nil {

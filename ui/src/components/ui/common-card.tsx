@@ -94,7 +94,10 @@ export function CommonCard({
             {name}
           </CardTitle>
           {badgeText && (
-            <Badge variant="outline" className="absolute top-2 right-2">
+            <Badge
+              variant="outline"
+              className="absolute top-2 right-4 tracking-wider px-4"
+            >
               {badgeText}
             </Badge>
           )}

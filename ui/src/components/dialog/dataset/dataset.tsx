@@ -13,10 +13,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface CreateDatasetDialogProps {
-  dataset?: DatasetInfo; // dataset is not undefined means update dataset
+  dataset?: DatasetInfo;
   isOpen: boolean;
   onClose: () => void;
   onCreate: (data: {
@@ -47,6 +47,18 @@ export function CreateDatasetDialog({
   const [filesError, setFilesError] = useState("");
 
   const internalCloseInitiatedRef = useRef(false);
+
+  useEffect(() => {
+    resetForm();
+    if (dataset) {
+      setName(dataset.name);
+      setDescription(dataset.description);
+      setType(dataset.type);
+      if (dataset.data) {
+        setListOptions(dataset.data.join("\n"));
+      }
+    }
+  }, [isOpen]);
 
   const resetForm = () => {
     setName("");
@@ -132,7 +144,7 @@ export function CreateDatasetDialog({
           (f, i, self) =>
             self.findIndex((t) => t.name === f.name && t.size === f.size) === i,
         ),
-      ); // Add new files, prevent duplicates
+      );
     }
   };
 
@@ -156,9 +168,11 @@ export function CreateDatasetDialog({
     >
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Create New Dataset</DialogTitle>
+          <DialogTitle>
+            {dataset ? "Update Dataset" : "Create New Dataset"}
+          </DialogTitle>
           <DialogDescription>
-            Enter the details for your new dataset. Name is required.
+            Enter the details for your new dataset.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -200,6 +214,7 @@ export function CreateDatasetDialog({
               value={type}
               onValueChange={(value: string) => setType(value as DatasetType)}
               className="col-span-3 flex gap-4"
+              disabled={dataset !== undefined}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="list" id="type-list" />
@@ -279,7 +294,9 @@ export function CreateDatasetDialog({
                   </ScrollArea>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  Select one or more CSV files.
+                  {dataset
+                    ? "Select one or more CSV files to REPLACE original data or leave it empty if you don't wan t to change."
+                    : "Select one or more CSV files."}
                 </p>
               </div>
             </div>

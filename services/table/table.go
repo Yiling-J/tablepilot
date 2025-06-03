@@ -23,6 +23,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/Yiling-J/tablepilot/services/source/huggingface"
 	"github.com/Yiling-J/tablepilot/services/table/util"
+	"github.com/Yiling-J/tablepilot/utils"
 	"github.com/spf13/cast"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 
@@ -808,7 +809,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, request ImportRequest) (s
 			}
 		}
 	}
-	cr := csv.NewReader(request.Reader)
+	cr := utils.NewCsvReader(request.Reader)
 	columns := []string{}
 	// rows read from csv
 	rows := [][]string{}
