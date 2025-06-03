@@ -3,6 +3,7 @@ import {
     DatasetInfo,
     deleteDataset,
     getDatasets,
+    updateDataset,
 } from "@/actions"; // Added createDataset
 import { Button } from "@/components/ui/button"; // Import Button
 import {
@@ -97,15 +98,52 @@ function DatasetList() {
         title: "Success",
         description: `Dataset "${data.name}" created successfully.`,
       });
-      setIsCreateDialogOpen(false); // Close dialog on success
-      fetchDatasets(); // Refresh the list, which will include the new dataset
+      setIsCreateDialogOpen(false);
+      fetchDatasets();
     } catch (error: unknown) {
-      console.error("Failed to create dataset:", error);
       toast({
         title: "Error Creating Dataset",
         description:
           (error instanceof Error ? error.message : undefined) ||
           "Failed to create dataset. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateDataset = async (
+    id: string,
+    data: {
+      name: string;
+      description: string;
+      type: "list" | "csv";
+      options?: string[];
+      files?: File[];
+    },
+  ) => {
+    try {
+      const requestPayload = {
+        name: data.name,
+        description: data.description,
+        type: data.type,
+        data: data.type === "list" ? data.options || [] : [],
+        files: data.type === "csv" ? data.files || [] : [],
+      };
+
+      await updateDataset(id, requestPayload);
+
+      toast({
+        title: "Success",
+        description: `Dataset "${data.name}" updated successfully.`,
+      });
+      setIsCreateDialogOpen(false);
+      fetchDatasets();
+    } catch (error: unknown) {
+      toast({
+        title: "Error Updating Dataset",
+        description:
+          (error instanceof Error ? error.message : undefined) ||
+          "Failed to update dataset. Please try again.",
         variant: "destructive",
       });
     }
@@ -179,6 +217,7 @@ function DatasetList() {
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         onCreate={handleCreateDataset}
+        onUpdate={handleUpdateDataset}
         dataset={editDataset}
       />
       <DatasetInfoDialog

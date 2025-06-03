@@ -75,7 +75,8 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Dataset Preview</DialogTitle>
           <DialogDescription>
-            Previewing dataset{datasetId ? ` (ID: ${datasetId})` : ""}.
+            Previewing dataset{datasetId ? ` (ID: ${datasetId})` : ""}.{" "}
+            {data?.type === "csv" && "First 100 rows."}
           </DialogDescription>
         </DialogHeader>
         <div className="p-4 min-h-[200px]">

@@ -26,6 +26,16 @@ interface CreateDatasetDialogProps {
     options?: string[];
     files?: File[];
   }) => void;
+  onUpdate: (
+    id: string,
+    data: {
+      name: string;
+      description: string;
+      type: "list" | "csv";
+      options?: string[];
+      files?: File[];
+    },
+  ) => void;
 }
 
 type DatasetType = "list" | "csv";
@@ -35,6 +45,7 @@ export function CreateDatasetDialog({
   isOpen,
   onClose,
   onCreate,
+  onUpdate,
 }: CreateDatasetDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -93,7 +104,7 @@ export function CreateDatasetDialog({
       setListOptionsError("");
     }
 
-    if (type === "csv" && selectedFiles.length === 0) {
+    if (type === "csv" && dataset === undefined && selectedFiles.length === 0) {
       setFilesError("Please select at least one CSV file");
       isValid = false;
     } else {
@@ -107,23 +118,44 @@ export function CreateDatasetDialog({
       return;
     }
 
-    if (type === "list") {
-      onCreate({
-        name,
-        description,
-        type,
-        options: listOptions
-          .split("\n")
-          .map((opt) => opt.trim())
-          .filter((opt) => opt),
-      });
-    } else if (type === "csv") {
-      onCreate({
-        name,
-        description,
-        type,
-        files: selectedFiles,
-      });
+    if (dataset) {
+      if (type === "list") {
+        onUpdate(dataset.id, {
+          name,
+          description,
+          type,
+          options: listOptions
+            .split("\n")
+            .map((opt) => opt.trim())
+            .filter((opt) => opt),
+        });
+      } else if (type === "csv") {
+        onUpdate(dataset.id, {
+          name,
+          description,
+          type,
+          files: selectedFiles,
+        });
+      }
+    } else {
+      if (type === "list") {
+        onCreate({
+          name,
+          description,
+          type,
+          options: listOptions
+            .split("\n")
+            .map((opt) => opt.trim())
+            .filter((opt) => opt),
+        });
+      } else if (type === "csv") {
+        onCreate({
+          name,
+          description,
+          type,
+          files: selectedFiles,
+        });
+      }
     }
     handleDialogShouldClose();
   };
