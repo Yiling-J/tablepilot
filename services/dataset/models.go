@@ -21,12 +21,13 @@ type UpdateDatasetRequest struct {
 }
 
 type DatasetInfo struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Type        string `json:"type"`
-	ColumnCount int    `json:"column_count"`
-	ValueCount  int    `json:"value_count"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Type        string   `json:"type"`
+	ColumnCount int      `json:"column_count"`
+	ValueCount  int      `json:"value_count"`
+	Data        []string `json:"data"`
 }
 
 type DatasetRows struct {

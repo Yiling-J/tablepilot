@@ -745,6 +745,7 @@ export interface DatasetInfo {
   name: string;
   type: DatasetType;
   description: string;
+  data: string[];
 }
 
 export interface GetDatasetsResponse {

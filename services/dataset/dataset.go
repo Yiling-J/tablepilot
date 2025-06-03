@@ -241,6 +241,7 @@ func (s *DatasetServiceImpl) Get(ctx context.Context, source string) (*DatasetIn
 		Type:        string(sr.Type),
 		ColumnCount: len(sr.Indexer.ColumnNames),
 		ValueCount:  len(sr.Values),
+		Data:        sr.Values,
 	}, nil
 }
 

@@ -1,3 +1,4 @@
+import { DatasetInfo } from "@/actions";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -15,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import React, { useRef, useState } from "react";
 
 interface CreateDatasetDialogProps {
+  dataset?: DatasetInfo; // dataset is not undefined means update dataset
   isOpen: boolean;
   onClose: () => void;
   onCreate: (data: {
@@ -28,11 +30,12 @@ interface CreateDatasetDialogProps {
 
 type DatasetType = "list" | "csv";
 
-export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
+export function CreateDatasetDialog({
+  dataset,
   isOpen,
   onClose,
   onCreate,
-}) => {
+}: CreateDatasetDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<DatasetType>("list");
@@ -293,4 +296,4 @@ export const CreateDatasetDialog: React.FC<CreateDatasetDialogProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}
