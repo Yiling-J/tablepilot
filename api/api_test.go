@@ -931,11 +931,10 @@ func TestAPI_UpdateDataset(t *testing.T) {
 		s.DatasetService = datasetMock
 	})
 
-	req, err := server.NewPatchRequest(
+	req, err := server.NewMultiplePartRequest("PATCH",
 		fmt.Sprintf("/api/v1/datasets/%s", datasetID),
-		dataset.DatasetAPIRequest{
-			Name: "xyz",
-		},
+		map[string]string{"name": "xyz"},
+		nil,
 	)
 	require.NoError(t, err)
 	resp := server.Send(req)

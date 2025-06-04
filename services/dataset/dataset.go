@@ -116,7 +116,7 @@ func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("dataset.List: query all: %w", err)
 	}
-	var datasetInfos []*DatasetInfo
+	datasetInfos := []*DatasetInfo{}
 	for _, ds := range datasets {
 		datasetInfos = append(datasetInfos, &DatasetInfo{
 			ID:          ds.Nanoid,
@@ -249,7 +249,7 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		return nil, fmt.Errorf("dataset.Preview: query dataset: %w", err)
 	}
 	switch sr.Type {
-	case "csv":
+	case db_dataset.TypeCsv:
 		dir := fmt.Sprintf("%s/datasets/shared/%s", s.cfg.Common.SourceDataDir, sr.Nanoid)
 		s := &source.CsvSource{RandomCSV: &csvindexer.CSVIndexer{
 			FS:         os.DirFS(dir),
@@ -274,7 +274,7 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 			Type: sr.Type,
 			Rows: rows,
 		}, nil
-	case "list":
+	case db_dataset.TypeList:
 		return &DatasetRows{
 			Type: sr.Type,
 			Data: sr.Values,

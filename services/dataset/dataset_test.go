@@ -142,13 +142,14 @@ func TestDatasetService_List(t *testing.T) {
 	foundListDs := false
 	foundCsvDs := false
 	for _, dsInfo := range listedDatasets {
-		if dsInfo.Name == listDatasetName_l {
+		switch dsInfo.Name {
+		case listDatasetName_l:
 			foundListDs = true
 			require.Equal(t, listDatasetDesc_l, dsInfo.Description)
 			require.Equal(t, "list", dsInfo.Type)
 			require.Equal(t, len(listDatasetData_l), dsInfo.ValueCount)
 			require.Equal(t, 0, dsInfo.ColumnCount) // List datasets have 0 column count
-		} else if dsInfo.Name == csvDatasetName_l {
+		case csvDatasetName_l:
 			foundCsvDs = true
 			require.Equal(t, csvDatasetDesc_l, dsInfo.Description)
 			require.Equal(t, "csv", dsInfo.Type)
@@ -502,7 +503,6 @@ func TestDatasetService_Delete(t *testing.T) {
 		require.Error(t, err)
 		require.True(t, ent.IsNotFound(err), "Expected a 'not found' error type, got: %v", err)
 	})
-
 }
 
 func TestDatasetService_Preview(t *testing.T) {
@@ -515,7 +515,7 @@ func TestDatasetService_Preview(t *testing.T) {
 
 	t.Run("list show all options", func(t *testing.T) {
 		data := []string{}
-		for i := 0; i < 120; i++ {
+		for i := range 120 {
 			data = append(data, fmt.Sprintf("%d", i))
 		}
 		ds1, err := srv.Create(t.Context(), &CreateDatasetRequest{
@@ -534,7 +534,7 @@ func TestDatasetService_Preview(t *testing.T) {
 		var buf bytes.Buffer
 		writer := csv.NewWriter(&buf)
 		_ = writer.Write([]string{"Name"})
-		for i := 0; i < 200; i++ {
+		for i := range 200 {
 			_ = writer.Write([]string{fmt.Sprintf("%d", i)})
 		}
 		writer.Flush()
@@ -554,7 +554,7 @@ func TestDatasetService_Preview(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 100, len(rows.Rows))
 		expected := []map[string]any{}
-		for i := 0; i < 100; i++ {
+		for i := range 100 {
 			expected = append(expected, map[string]any{"Name": fmt.Sprintf("%d", i)})
 		}
 		require.Equal(t, expected, rows.Rows)

@@ -324,10 +324,16 @@ func BuildCLI(root *cobra.Command) *CLI {
 		},
 	}
 	datasetCreateCmd.Flags().StringP("name", "n", "", "Name of the dataset (required)")
-	datasetCreateCmd.MarkFlagRequired("name")
+	err = datasetCreateCmd.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
+	}
 	datasetCreateCmd.Flags().StringP("desc", "d", "", "Description of the dataset")
 	datasetCreateCmd.Flags().StringP("type", "t", "", "Type of the dataset ('list' or 'csv') (required)")
-	datasetCreateCmd.MarkFlagRequired("type")
+	err = datasetCreateCmd.MarkFlagRequired("type")
+	if err != nil {
+		panic(err)
+	}
 	datasetCreateCmd.Flags().StringArrayP("file", "f", []string{}, "Dataset files, for csv type all files should have same schema, and for list type, the final options will be options in all files concate together")
 
 	datasetGetCmd := &cobra.Command{

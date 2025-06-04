@@ -1,16 +1,13 @@
-import "@testing-library/jest-dom";
 import { TestProvider } from "@/test/helpers/test-provider";
+import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
 import { vi } from "vitest";
 import { CreateDatasetDialog } from "./dataset";
 
-vi.mock("@/actions", () => ({
-  createDataset: vi.fn(),
-}));
-
 const mockOnCreate = vi.fn();
+const mockOnUpdate = vi.fn();
 
 describe("CreateDatasetDialog", () => {
   beforeEach(async () => {
@@ -22,6 +19,7 @@ describe("CreateDatasetDialog", () => {
           isOpen={true}
           onClose={() => {}}
           onCreate={mockOnCreate}
+          onUpdate={mockOnUpdate}
         />
       </TestProvider>,
     );
@@ -76,8 +74,12 @@ describe("CreateDatasetDialog", () => {
     await userEvent.click(csvTypeRadio);
 
     const fileInput = screen.getByLabelText("CSV Files") as HTMLInputElement;
-    const testFile1 = new File(["col1,col2\nval1,val2"], "test1.csv", { type: "text/csv" });
-    const testFile2 = new File(["h1,h2\ndata1,data2"], "test2.csv", { type: "text/csv" });
+    const testFile1 = new File(["col1,col2\nval1,val2"], "test1.csv", {
+      type: "text/csv",
+    });
+    const testFile2 = new File(["h1,h2\ndata1,data2"], "test2.csv", {
+      type: "text/csv",
+    });
     await userEvent.upload(fileInput, [testFile1, testFile2]);
 
     // Check if files are listed (optional, good for debugging)

@@ -330,7 +330,8 @@ func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to preview dataset '%s': %w", datasetIDOrName, err)
 	}
 
-	if previewData.Type == db_dataset.TypeList {
+	switch previewData.Type {
+	case db_dataset.TypeList:
 		if len(previewData.Data) == 0 {
 			fmt.Println("Dataset is empty.")
 		} else {
@@ -339,7 +340,7 @@ func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
 				fmt.Printf("%d: %s\n", i+1, item)
 			}
 		}
-	} else if previewData.Type == db_dataset.TypeCsv {
+	case db_dataset.TypeCsv:
 		if len(previewData.Rows) == 0 {
 			fmt.Println("Dataset is empty or has no rows to preview.")
 		} else {
@@ -392,7 +393,7 @@ func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
 				fmt.Println("(Preview limited to first 100 rows)")
 			}
 		}
-	} else {
+	default:
 		fmt.Printf("Unknown dataset type '%s' for preview.\n", previewData.Type)
 	}
 
