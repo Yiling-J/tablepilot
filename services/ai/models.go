@@ -23,6 +23,7 @@ type ModelList struct {
 }
 
 type GenerateListOptionsRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
+	Model   string   `json:"model"`
+	Prompt  string   `json:"prompt"`
+	Options []string `json:"options"`
 }

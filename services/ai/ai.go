@@ -23,7 +23,7 @@ type AiService interface {
 	ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
 	ListModels(ctx context.Context) *ModelList
 	FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
-	GenerateListOptions(ctx context.Context, model string, prompt string) ([]string, error)
+	GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest)
 }
 
 type AiServiceImpl struct {
@@ -281,14 +281,21 @@ var reflector = jsonschema.Reflector{
 	DoNotReference:            true,
 }
 
-func (ai *AiServiceImpl) GenerateListOptions(ctx context.Context, model string, prompt string) ([]string, error) {
+func (ai *AiServiceImpl) GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest) ([]string, error) {
+	if len(req.Options) > 0 {
+		b, err := json.Marshal(req.Options)
+		if err != nil {
+			return nil, fmt.Errorf("ai.GenerateListOptions: parse options: %w", err)
+		}
+		req.Prompt += fmt.Sprintf("\nHere are existing options(JSON List), don't repeat: %s", string(b))
+	}
 	resp, err := ai.Chat(ctx, &client.ChatRequest{
-		Messages:        []*client.Message{client.UserMessage(prompt)},
+		Messages:        []*client.Message{client.UserMessage(req.Prompt)},
 		Schema:          reflector.Reflect(data{}),
 		Temperature:     0.8,
 		PresencePenalty: 1.0,
 		MaxOutputTokens: 6000,
-		Model:           model,
+		Model:           req.Model,
 	})
 	if err != nil {
 		return nil, err

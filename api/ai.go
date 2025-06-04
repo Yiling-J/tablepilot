@@ -18,7 +18,7 @@ func (hs *HTTPServer) GenerateListOptions(ctx *gin.Context) {
 		return
 	}
 
-	options, err := hs.AIService.GenerateListOptions(ctx.Request.Context(), req.Model, req.Prompt)
+	options, err := hs.AIService.GenerateListOptions(ctx.Request.Context(), req)
 	if err != nil {
 		errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to generate options %w", err))
 		return
