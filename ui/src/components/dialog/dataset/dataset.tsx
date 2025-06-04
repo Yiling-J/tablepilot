@@ -19,8 +19,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Wand2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { IconWand } from "../../ui/icons";
 import { GenerateOptionsDialog } from "../generate-options-dialog";
 
 export interface CreateDatasetDialogProps {
@@ -215,7 +215,7 @@ export function CreateDatasetDialog({
             {dataset ? "Update Dataset" : "Create New Dataset"}
           </DialogTitle>
           <DialogDescription>
-            Enter the details for your new dataset.
+            Enter the details for your dataset.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -279,7 +279,9 @@ export function CreateDatasetDialog({
                 <Textarea
                   id="list-options"
                   value={listOptions}
-                  onChange={(e) => setListOptions(e.target.value)}
+                  onChange={(e) => {
+                    setListOptions(e.target.value);
+                  }}
                   placeholder="Enter each option on a new line"
                   className={`min-h-[150px] pr-12 ${listOptionsError ? "border-red-500" : ""} hide-scrollbar`}
                 />
@@ -287,12 +289,13 @@ export function CreateDatasetDialog({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        aria-label="wand-button"
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsGenerateOptionsDialogOpen(true)}
                         className="absolute bottom-7 right-3 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
                       >
-                        <IconWand className="size-5" />
+                        <Wand2 className="size-5" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -367,7 +370,7 @@ export function CreateDatasetDialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={name == ""}>
-            Create
+            {dataset ? "Update" : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -375,6 +378,7 @@ export function CreateDatasetDialog({
         isOpen={isGenerateOptionsDialogOpen}
         onClose={() => setIsGenerateOptionsDialogOpen(false)}
         datasetName={name}
+        currentOptions={listOptions.split("\n")}
         datasetDescription={description}
         onGenerationComplete={(generatedOptions: string[]) => {
           if (generatedOptions.length > 0) {
