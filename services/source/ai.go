@@ -15,7 +15,7 @@ type AISource struct {
 	Options []string `json:"options"`
 }
 
-func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.TableColumn, model string) error {
+func (as *AISource) Init(ctx context.Context, aiSrv ai.AiService, column *ent.TableColumn, model string) error {
 	builder := promptbuilder.NewColumnOptionsBuilder(column.Name, column.Description, as.Prompt)
 
 	if len(as.Options) > 0 {
@@ -25,7 +25,10 @@ func (as *AISource) Init(ctx context.Context, ai ai.AiService, column *ent.Table
 	if err != nil {
 		return err
 	}
-	ops, err := ai.GenerateListOptions(ctx, model, p)
+	ops, err := aiSrv.GenerateListOptions(ctx, ai.GenerateListOptionsRequest{
+		Prompt: p,
+		Model:  model,
+	})
 	if err != nil {
 		return err
 	}

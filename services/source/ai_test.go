@@ -24,9 +24,9 @@ func TestSource_AI(t *testing.T) {
 			require.NoError(t, err)
 			aiService := &ai.AiServiceMock{
 				GenerateListOptionsFunc: func(
-					ctx context.Context, model, prompt string,
+					ctx context.Context, req ai.GenerateListOptionsRequest,
 				) ([]string, error) {
-					require.Equal(t, p, prompt)
+					require.Equal(t, p, req.Prompt)
 					return []string{"foo", "bar"}, nil
 				},
 			}

@@ -23,7 +23,7 @@ type AiService interface {
 	ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
 	ListModels(ctx context.Context) *ModelList
 	FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
-	GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest)
+	GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest) ([]string, error)
 }
 
 type AiServiceImpl struct {
@@ -287,7 +287,7 @@ func (ai *AiServiceImpl) GenerateListOptions(ctx context.Context, req GenerateLi
 		if err != nil {
 			return nil, fmt.Errorf("ai.GenerateListOptions: parse options: %w", err)
 		}
-		req.Prompt += fmt.Sprintf("\nHere are existing options(JSON List), don't repeat: %s", string(b))
+		req.Prompt += fmt.Sprintf("\nHere are existing options(JSON List), **don't repeat and only return newly generated options**: %s", string(b))
 	}
 	resp, err := ai.Chat(ctx, &client.ChatRequest{
 		Messages:        []*client.Message{client.UserMessage(req.Prompt)},

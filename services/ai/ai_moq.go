@@ -25,7 +25,7 @@ var _ AiService = &AiServiceMock{}
 //			FunctionCallFunc: func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
 //				panic("mock out the FunctionCall method")
 //			},
-//			GenerateListOptionsFunc: func(ctx context.Context, req GenerateListOptionsRequest)  {
+//			GenerateListOptionsFunc: func(ctx context.Context, req GenerateListOptionsRequest) ([]string, error) {
 //				panic("mock out the GenerateListOptions method")
 //			},
 //			ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
@@ -48,7 +48,7 @@ type AiServiceMock struct {
 	FunctionCallFunc func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
 
 	// GenerateListOptionsFunc mocks the GenerateListOptions method.
-	GenerateListOptionsFunc func(ctx context.Context, req GenerateListOptionsRequest)
+	GenerateListOptionsFunc func(ctx context.Context, req GenerateListOptionsRequest) ([]string, error)
 
 	// ImageGenFunc mocks the ImageGen method.
 	ImageGenFunc func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
@@ -172,7 +172,7 @@ func (mock *AiServiceMock) FunctionCallCalls() []struct {
 }
 
 // GenerateListOptions calls GenerateListOptionsFunc.
-func (mock *AiServiceMock) GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest) {
+func (mock *AiServiceMock) GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest) ([]string, error) {
 	if mock.GenerateListOptionsFunc == nil {
 		panic("AiServiceMock.GenerateListOptionsFunc: method is nil but AiService.GenerateListOptions was just called")
 	}
@@ -186,7 +186,7 @@ func (mock *AiServiceMock) GenerateListOptions(ctx context.Context, req Generate
 	mock.lockGenerateListOptions.Lock()
 	mock.calls.GenerateListOptions = append(mock.calls.GenerateListOptions, callInfo)
 	mock.lockGenerateListOptions.Unlock()
-	mock.GenerateListOptionsFunc(ctx, req)
+	return mock.GenerateListOptionsFunc(ctx, req)
 }
 
 // GenerateListOptionsCalls gets all the calls that were made to GenerateListOptions.

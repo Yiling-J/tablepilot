@@ -298,7 +298,7 @@ func TestAIService_GenerateList(t *testing.T) {
 			require.Equal(t, "m1", request.Model)
 			require.Equal(t, int64(6000), request.MaxOutputTokens)
 			require.Equal(t, 1.0, request.PresencePenalty)
-			require.Equal(t, "pm\nHere are existing options(JSON List), don't repeat: [\"a\",\"b\"]", request.Messages[0].Content[0].Data)
+			require.Equal(t, "pm\nHere are existing options(JSON List), **don't repeat and only return newly generated options**: [\"a\",\"b\"]", request.Messages[0].Content[0].Data)
 			require.Equal(t, reflector.Reflect(data{}), request.Schema)
 			return &client.ChatResponse{Content: `{"Options": ["foo", "bar"]}`}, nil
 		},
