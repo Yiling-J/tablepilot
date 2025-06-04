@@ -2,20 +2,13 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	// Other imports like "net/http" might be implicitly handled by gin or needed if HTTPServer definition is in this file.
-	// For now, keeping it minimal based on direct usage in remaining functions.
 )
 
-// errorResponse provides a consistent way to send error messages.
 func errorResponse(ctx *gin.Context, code int, err error) {
-	_ = ctx.Error(err) // gin.Context.Error can take an error type
+	_ = ctx.Error(err)
 	ctx.JSON(code, err.Error())
 }
 
-// addRouters registers all the API routes.
-// It assumes hs *HTTPServer is defined elsewhere in the package and hs.apiv1 is a *gin.RouterGroup.
-// The handler methods (hs.ListModels, hs.CreateTable, etc.) are now in their respective files
-// but are still methods of HTTPServer.
 func (hs *HTTPServer) addRouters() {
 	hs.apiv1.GET("/models", hs.ListModels)
 	hs.apiv1.POST("/tables", hs.CreateTable)

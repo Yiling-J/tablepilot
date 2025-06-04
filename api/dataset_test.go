@@ -8,7 +8,6 @@ import (
 	"io"
 	"testing"
 
-	// "github.com/Yiling-J/tablepilot/ent" // Not directly used by these dataset tests, but GetDataset might if it returns ent.Dataset
 	"github.com/Yiling-J/tablepilot/services"
 	"github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/gin-gonic/gin"
@@ -105,7 +104,7 @@ func TestAPI_UpdateDataset(t *testing.T) {
 	datasetID := "existing_dataset_id"
 	expectedRequest := &dataset.UpdateDatasetRequest{
 		CreateDatasetRequest: dataset.CreateDatasetRequest{
-			Name:  "xyz",
+			Name: "xyz",
 			// Files field is omitted, so it will be nil.
 			// The handler initializes Files to []io.Reader{} if apiReq.Files is nil.
 		},
