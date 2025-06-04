@@ -2,6 +2,7 @@ package ai
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/provider"
+	"github.com/invopop/jsonschema"
 
 	"go.uber.org/zap"
 	"golang.org/x/time/rate"
@@ -21,6 +23,7 @@ type AiService interface {
 	ImageGen(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
 	ListModels(ctx context.Context) *ModelList
 	FunctionCall(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
+	GenerateListOptions(ctx context.Context, model string, prompt string) ([]string, error)
 }
 
 type AiServiceImpl struct {
@@ -267,4 +270,33 @@ func (ai *AiServiceImpl) ListModels(ctx context.Context) *ModelList {
 		return strings.Compare(a.Name, b.Name)
 	})
 	return list
+}
+
+type data struct {
+	Options []string
+}
+
+var reflector = jsonschema.Reflector{
+	AllowAdditionalProperties: false,
+	DoNotReference:            true,
+}
+
+func (ai *AiServiceImpl) GenerateListOptions(ctx context.Context, model string, prompt string) ([]string, error) {
+	resp, err := ai.Chat(ctx, &client.ChatRequest{
+		Messages:        []*client.Message{client.UserMessage(prompt)},
+		Schema:          reflector.Reflect(data{}),
+		Temperature:     0.8,
+		PresencePenalty: 1.0,
+		MaxOutputTokens: 6000,
+		Model:           model,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var d data
+	err = json.Unmarshal([]byte(resp.Content), &d)
+	if err != nil {
+		return nil, err
+	}
+	return d.Options, nil
 }

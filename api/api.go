@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
 
@@ -547,6 +548,9 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/regenerate/tables/:table", hs.Regenerate)
 	hs.apiv1.POST("/image_import/tables", hs.ImportImage)
 
+	// ai
+	hs.apiv1.POST("/ai/list_gen", hs.GenerateListOptions)
+
 	// workflows
 	hs.apiv1.GET("/workflows", hs.ListWorkflows)
 	hs.apiv1.GET("/workflows/:id", hs.GetWorkflow)
@@ -711,4 +715,20 @@ func (hs *HTTPServer) PreviewDataset(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, previewData)
+}
+
+func (hs *HTTPServer) GenerateListOptions(ctx *gin.Context) {
+	var req ai.GenerateListOptionsRequest
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		errorResponse(ctx, 400, err)
+		return
+	}
+
+	options, err := hs.AIService.GenerateListOptions(ctx.Request.Context(), req.Model, req.Prompt)
+	if err != nil {
+		errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to generate options %w", err))
+		return
+	}
+	ctx.JSON(http.StatusOK, options)
 }

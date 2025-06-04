@@ -968,7 +968,7 @@ func TestAPI_PreviewDataset(t *testing.T) {
 			{"col1": "val2_1", "col2": "val2_2"},
 		},
 		Data: []string{"col1", "col2"},
-		Type: "CSV", // Assuming db_dataset.Type can be represented or mocked as a string.
+		Type: "CSV",
 	}
 
 	datasetMock := &dataset.DatasetServiceMock{
@@ -1054,4 +1054,25 @@ func TestAPI_GetDataset(t *testing.T) {
 	resp.ResponseEq(
 		t, 200, expected,
 	)
+}
+
+func TestAPI_GenerateList(t *testing.T) {
+	aiMock := &ai.AiServiceMock{
+		GenerateListOptionsFunc: func(ctx context.Context, model, prompt string) ([]string, error) {
+			require.Equal(t, "m1", model)
+			require.Equal(t, "foobar", prompt)
+			return []string{"foo", "bar"}, nil
+		},
+	}
+	server := NewTestServer(t, func(s *services.Backend) {
+		s.AIService = aiMock
+	})
+
+	req, err := server.NewPostRequest("/api/v1/ai/list_gen", &ai.GenerateListOptionsRequest{
+		Model:  "m1",
+		Prompt: "foobar",
+	})
+	require.NoError(t, err)
+	resp := server.Send(req)
+	resp.ResponseEq(t, 200, []string{"foo", "bar"})
 }

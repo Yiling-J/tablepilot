@@ -287,3 +287,40 @@ func TestAIService_syncProviders(t *testing.T) {
 	models = srv.ListModels(ctx)
 	require.Empty(t, models.Models)
 }
+
+func TestAIService_GenerateList(t *testing.T) {
+	reflector := jsonschema.Reflector{
+		AllowAdditionalProperties: false,
+		DoNotReference:            true,
+	}
+	chatClient := &client.ChatClientMock{
+		ChatFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ChatResponse, error) {
+			require.Equal(t, "m1", request.Model)
+			require.Equal(t, int64(6000), request.MaxOutputTokens)
+			require.Equal(t, 1.0, request.PresencePenalty)
+			require.Equal(t, "pm", request.Messages[0].Content[0].Data)
+			require.Equal(t, reflector.Reflect(data{}), request.Schema)
+			return &client.ChatResponse{Content: `{"Options": ["foo", "bar"]}`}, nil
+		},
+	}
+	srv, err := NewAiService(&config.Config{}, &provider.ProviderServiceMock{
+		BuildProvidersFunc: func(ctx context.Context) error { return nil },
+		ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
+			return []provider.Provider{
+				{Name: "chat", Type: "openai", Models: []provider.Model{
+					{Model: "default", Client: "chat"},
+					{Model: "m1", Alias: "", Client: "chat"},
+				}, Enabled: true},
+			}, nil
+		},
+		WithSyncCallbackFunc: func(callback func(ctx context.Context, providers []provider.Provider)) {},
+	}, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	srv.defaultModel = "default"
+	srv.clients = map[string]client.ChatClient{
+		"chat": chatClient,
+	}
+	options, err := srv.GenerateListOptions(t.Context(), "m1", "pm")
+	require.NoError(t, err)
+	require.Equal(t, []string{"foo", "bar"}, options)
+}
