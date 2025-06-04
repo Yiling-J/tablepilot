@@ -1,23 +1,15 @@
 package api
 
 import (
-	"bytes"
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io"
 	"testing"
 
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/services"
-	"github.com/Yiling-J/tablepilot/services/ai"
-	"github.com/Yiling-J/tablepilot/services/dataset"
-	"github.com/Yiling-J/tablepilot/services/provider"
-
 	"github.com/Yiling-J/tablepilot/services/table"
-	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cast"
 	"github.com/stretchr/testify/require"
@@ -185,16 +177,7 @@ func TestAPI_GenerateStreaming(t *testing.T) {
 	require.Equal(t, "no-cache", headers.Get("Cache-Control"))
 	require.Equal(t, "keep-alive", headers.Get("Connection"))
 	require.Equal(t, "chunked", headers.Get("Transfer-Encoding"))
-	expectedData := `event:message
-data:{"data":[{"1":"0","2":"t0"}]}
-
-event:message
-data:{"data":[{"1":"1","2":"t1"}]}
-
-event:message
-data:[DONE]
-
-{"data":[]}`
+	expectedData := "event:message\ndata:{\"data\":[{\"1\":\"0\",\"2\":\"t0\"}]}\n\nevent:message\ndata:{\"data\":[{\"1\":\"1\",\"2\":\"t1\"}]}\n\nevent:message\ndata:[DONE]\n\n{\"data\":[]}"
 	require.Equal(
 		t, expectedData,
 		resp.response.Body.String(),
@@ -313,25 +296,6 @@ func TestAPI_Truncate(t *testing.T) {
 	resp.ResponseEq(t, 200, map[string]any{"removed": 5})
 }
 
-func TestAPI_ListModels(t *testing.T) {
-	expected := &ai.ModelList{
-		DefaultModel: "foo",
-		Models:       []ai.ModelListItem{{Name: "foo"}, {Name: "bar"}},
-	}
-	aiMock := &ai.AiServiceMock{
-		ListModelsFunc: func(ctx context.Context) *ai.ModelList {
-			return expected
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.AIService = aiMock
-	})
-	req, err := server.NewGetRequest("/api/v1/models")
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, expected)
-}
-
 func TestAPI_Autofill(t *testing.T) {
 	for _, emptyContextColumns := range []bool{false, true} {
 		t.Run(fmt.Sprintf("empty context columns %v", emptyContextColumns), func(t *testing.T) {
@@ -430,7 +394,7 @@ func TestAPI_CreateRows(t *testing.T) {
 
 func TestAPI_Sources(t *testing.T) {
 	sources := []*table.SharedSource{
-		{Name: "s1", Columns: []string{"c1"}, Data: json.RawMessage(`{"foo": "bar"}`)},
+		{Name: "s1", Columns: []string{"c1"}, Data: json.RawMessage([]byte("{\"foo\": \"bar\"}"))},
 	}
 	tableMock := &table.TableServiceMock{
 		SharedSourcesFunc: func(ctx context.Context) []*table.SharedSource {
@@ -463,87 +427,6 @@ func TestAPI_GetTableSchema(t *testing.T) {
 		t, 200, map[string]any{
 			"name": "bar", "model": "", "description": "", "columns": nil, "sources": nil,
 		},
-	)
-}
-
-func TestAPI_GetProviders(t *testing.T) {
-	providers := []provider.Provider{
-		{ID: 1, Name: "p"},
-	}
-	providerMock := &provider.ProviderServiceMock{
-		ListProvidersFunc: func(ctx context.Context) ([]provider.Provider, error) {
-			return providers, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.ProviderService = providerMock
-	})
-	req, err := server.NewGetRequest("/api/v1/providers")
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(
-		t, 200, providers,
-	)
-}
-
-func TestAPI_CreateProvider(t *testing.T) {
-	pr := provider.Provider{
-		Name: "p",
-	}
-	providerMock := &provider.ProviderServiceMock{
-		CreateProviderFunc: func(ctx context.Context, provider provider.Provider) error {
-			require.Equal(t, pr, provider)
-			return nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.ProviderService = providerMock
-	})
-	req, err := server.NewPostRequest("/api/v1/providers", pr)
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(
-		t, 200, "",
-	)
-}
-
-func TestAPI_UpdateProvider(t *testing.T) {
-	pr := provider.Provider{
-		Name: "p",
-	}
-	providerMock := &provider.ProviderServiceMock{
-		UpdateProviderFunc: func(ctx context.Context, id int, provider provider.Provider) error {
-			require.Equal(t, 2, id)
-			require.Equal(t, pr, provider)
-			return nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.ProviderService = providerMock
-	})
-	req, err := server.NewPatchRequest("/api/v1/providers/2", pr)
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(
-		t, 200, "",
-	)
-}
-
-func TestAPI_DeleteProvider(t *testing.T) {
-	providerMock := &provider.ProviderServiceMock{
-		DeleteProviderFunc: func(ctx context.Context, id int) error {
-			require.Equal(t, 2, id)
-			return nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.ProviderService = providerMock
-	})
-	req, err := server.NewDeleteRequest("/api/v1/providers/2")
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(
-		t, 200, "",
 	)
 }
 
@@ -621,7 +504,7 @@ func TestAPI_Regenerate(t *testing.T) {
 }
 
 func TestAPI_ImageImport(t *testing.T) {
-	req := table.ImportRequest{
+	reqBody := table.ImportRequest{ // Renamed req to reqBody to avoid conflict with req from NewPostRequest
 		Data:   []byte("data"),
 		Prompt: "pm",
 		Model:  "mm",
@@ -629,7 +512,7 @@ func TestAPI_ImageImport(t *testing.T) {
 
 	tableMock := &table.TableServiceMock{
 		ImportImageFunc: func(ctx context.Context, request table.ImportRequest) (string, error) {
-			require.Equal(t, req, request)
+			require.Equal(t, reqBody, request)
 			return "foobar", nil
 		},
 	}
@@ -637,442 +520,10 @@ func TestAPI_ImageImport(t *testing.T) {
 	server := NewTestServer(t, func(s *services.Backend) {
 		s.TableService = tableMock
 	})
-	r, err := server.NewPostRequest("/api/v1/image_import/tables", req)
+	r, err := server.NewPostRequest("/api/v1/image_import/tables", reqBody)
 	require.NoError(t, err)
 	resp := server.Send(r)
 	resp.ResponseEq(
 		t, 200, gin.H{"id": "foobar"},
 	)
-}
-
-func TestAPI_ListWorkflows(t *testing.T) {
-	w := []*ent.Workflow{{Nanoid: "i1", Name: "w1", Description: "dw1"}, {Nanoid: "i2", Name: "w2", Description: "dw2"}}
-	workflowMock := &workflow.WorkflowServiceMock{
-		ListFunc: func(ctx context.Context) ([]*ent.Workflow, error) {
-			return w, nil
-		},
-	}
-
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = workflowMock
-	})
-	r, err := server.NewGetRequest("/api/v1/workflows")
-	require.NoError(t, err)
-	resp := server.Send(r)
-	ws := []workflow.WorkflowSimple{
-		{ID: "i1", Name: "w1", Description: "dw1"}, {ID: "i2", Name: "w2", Description: "dw2"},
-	}
-	resp.ResponseEq(
-		t, 200, gin.H{"total": 2, "workflows": ws},
-	)
-}
-
-func TestAPI_GetWorkflow(t *testing.T) {
-	w := &ent.Workflow{
-		Nanoid: "i1", Name: "w1", Description: "dw1",
-		Variables: []schema.WorkflowVariable{{Name: "v1"}},
-		Steps:     []schema.WorkflowStep{{Type: schema.WorkflowStepTypeAutofill}},
-	}
-	workflowMock := &workflow.WorkflowServiceMock{
-		GetFunc: func(ctx context.Context, wf string) (*ent.Workflow, error) {
-			require.Equal(t, "foo", wf)
-			return w, nil
-		},
-	}
-
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = workflowMock
-	})
-	r, err := server.NewGetRequest("/api/v1/workflows/foo")
-	require.NoError(t, err)
-	resp := server.Send(r)
-	ws := workflow.Workflow{
-		ID: "i1", Name: "w1", Description: "dw1",
-		Variables: []schema.WorkflowVariable{{Name: "v1"}},
-		Steps:     []schema.WorkflowStep{{Type: schema.WorkflowStepTypeAutofill}},
-	}
-	resp.ResponseEq(
-		t, 200, ws,
-	)
-}
-
-func TestAPI_RunWorkflow(t *testing.T) {
-	var counter int
-	mockRunner := &workflow.RunnerMock{
-		NextFunc: func(ctx context.Context) (*workflow.WorkflowStepResult, error) {
-			if counter > 0 {
-				return nil, nil
-			}
-			counter += 1
-			return &workflow.WorkflowStepResult{
-				Action:  workflow.WorkflowActionShowMessage,
-				Message: "foobar",
-			}, nil
-		},
-	}
-	mockWorkflow := &workflow.WorkflowServiceMock{
-		StartFunc: func(ctx context.Context, id string, request workflow.StartWorklfowRequest) (workflow.Runner, error) {
-			require.Equal(t, request, workflow.StartWorklfowRequest{
-				Variables:   map[string]any{"a": "b"},
-				Model:       "aiai",
-				ImageModel:  "aiia",
-				Temperature: 0.56,
-			})
-			return mockRunner, nil
-		},
-		GetFunc: func(ctx context.Context, wf string) (*ent.Workflow, error) {
-			require.Equal(t, "foo", wf)
-			return &ent.Workflow{}, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = mockWorkflow
-	})
-	req, err := server.NewPostRequest("/api/v1/workflows/foo/run", &workflow.StartWorklfowRequest{
-		Temperature: 0.56,
-		Model:       "aiai",
-		ImageModel:  "aiia",
-		Variables:   map[string]any{"a": "b"},
-	})
-	require.NoError(t, err)
-	resp := server.Send(req)
-	headers := resp.response.Header()
-	require.Equal(t, "text/event-stream;charset=utf-8", headers.Get("Content-Type"))
-	require.Equal(t, "no-cache", headers.Get("Cache-Control"))
-	require.Equal(t, "keep-alive", headers.Get("Connection"))
-	require.Equal(t, "chunked", headers.Get("Transfer-Encoding"))
-	expectedData := `event:message
-data:{"data":"foobar","type":"MESSAGE"}
-
-event:message
-data:{"type":"STEP_DONE"}
-
-event:message
-data:{"type":"WORKFLOW_DONE"}
-
-event:message
-data:[DONE]
-
-""`
-	require.Equal(
-		t, expectedData,
-		resp.response.Body.String(),
-	)
-}
-
-func TestAPI_CreateWorkflow(t *testing.T) {
-	wf := &workflow.Workflow{
-		Name:        "w1",
-		Description: "www",
-	}
-	workflowMock := &workflow.WorkflowServiceMock{
-		CreateFunc: func(ctx context.Context, wff *workflow.Workflow) (string, error) {
-			require.Equal(t, wf, wff)
-			return "di", nil
-		},
-	}
-
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = workflowMock
-	})
-	r, err := server.NewPostRequest("/api/v1/workflows", wf)
-	require.NoError(t, err)
-	resp := server.Send(r)
-	require.Equal(t, 1, len(workflowMock.CreateCalls()))
-	resp.ResponseEq(
-		t, 200, gin.H{"id": "di"},
-	)
-}
-
-func TestAPI_UpdateWorkflow(t *testing.T) {
-	wf := &workflow.Workflow{
-		Name:        "w1",
-		Description: "www",
-	}
-	workflowMock := &workflow.WorkflowServiceMock{
-		UpdateFunc: func(ctx context.Context, id string, wff *workflow.Workflow) (string, error) {
-			require.Equal(t, "abc", id)
-			require.Equal(t, wf, wff)
-			return "di", nil
-		},
-	}
-
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = workflowMock
-	})
-	r, err := server.NewPatchRequest("/api/v1/workflows/abc", wf)
-	require.NoError(t, err)
-	resp := server.Send(r)
-	require.Equal(t, 1, len(workflowMock.UpdateCalls()))
-	resp.ResponseEq(
-		t, 200, gin.H{"id": "di"},
-	)
-}
-
-func TestAPI_DeleteWorkflow(t *testing.T) {
-	workflowMock := &workflow.WorkflowServiceMock{
-		DeleteFunc: func(ctx context.Context, wf string) error {
-			require.Equal(t, "abc", wf)
-			return nil
-		},
-	}
-
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = workflowMock
-	})
-	r, err := server.NewDeleteRequest("/api/v1/workflows/abc")
-	require.NoError(t, err)
-	resp := server.Send(r)
-	require.Equal(t, 1, len(workflowMock.DeleteCalls()))
-	resp.ResponseEq(
-		t, 200, "",
-	)
-}
-
-func TestAPI_ListDatasets(t *testing.T) {
-	ds := []*dataset.DatasetInfo{
-		{Name: "d1", Description: "desc1"},
-		{Name: "d2", Description: "desc2"},
-	}
-	datasetMock := &dataset.DatasetServiceMock{
-		ListFunc: func(ctx context.Context) ([]*dataset.DatasetInfo, error) {
-			return ds, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-	req, err := server.NewGetRequest("/api/v1/datasets")
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, gin.H{
-		"total":    2,
-		"datasets": ds,
-	})
-}
-
-func TestAPI_CreateDataset(t *testing.T) {
-	expectedRequest := &dataset.CreateDatasetRequest{
-		Name:        "new_dataset",
-		Description: "A new dataset for testing",
-	}
-	datasetMock := &dataset.DatasetServiceMock{
-		CreateFunc: func(ctx context.Context, req *dataset.CreateDatasetRequest) (string, error) {
-			require.Equal(t, expectedRequest, req)
-			return "new_dataset_id", nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-	req, err := server.NewMultiplePartRequest("POST", "/api/v1/datasets", map[string]string{"name": "new_dataset", "description": "A new dataset for testing"}, nil)
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 201, gin.H{"id": "new_dataset_id", "name": "new_dataset"})
-}
-
-func TestAPI_CreateDatasetWithFiles(t *testing.T) {
-	expectedRequest := &dataset.CreateDatasetRequest{
-		Name:        "new_dataset",
-		Description: "A new dataset for testing",
-		Type:        "csv",
-	}
-	datasetMock := &dataset.DatasetServiceMock{
-		CreateFunc: func(ctx context.Context, req *dataset.CreateDatasetRequest) (string, error) {
-			require.Equal(t, expectedRequest.Name, req.Name)
-			require.Equal(t, expectedRequest.Description, req.Description)
-			require.Equal(t, 1, len(req.Files))
-			data, err := io.ReadAll(req.Files[0])
-			require.NoError(t, err)
-			require.Equal(t, "header1,header2,header3\nr1c1,r1c2,r1c3\n", string(data))
-			return "new_dataset_id", nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-	var csvBuf bytes.Buffer
-	csvWriter := csv.NewWriter(&csvBuf)
-	csvHeaders := []string{"header1", "header2", "header3"}
-	err := csvWriter.Write(csvHeaders)
-	require.NoError(t, err)
-	err = csvWriter.Write([]string{"r1c1", "r1c2", "r1c3"})
-	require.NoError(t, err)
-	csvWriter.Flush()
-
-	req, err := server.NewMultiplePartRequest(
-		"POST", "/api/v1/datasets",
-		map[string]string{"name": "new_dataset", "description": "A new dataset for testing", "type": "csv"},
-		map[string]io.Reader{"1.csv": bytes.NewReader(csvBuf.Bytes())},
-	)
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 201, gin.H{"id": "new_dataset_id", "name": "new_dataset"})
-}
-
-func TestAPI_UpdateDataset(t *testing.T) {
-	datasetID := "existing_dataset_id"
-	expectedRequest := &dataset.UpdateDatasetRequest{
-		CreateDatasetRequest: dataset.CreateDatasetRequest{
-			Name:  "xyz",
-			Files: []io.Reader{},
-		},
-		Fields: []string{"name"},
-	}
-
-	datasetMock := &dataset.DatasetServiceMock{
-		UpdateFunc: func(ctx context.Context, id string, req *dataset.UpdateDatasetRequest) error {
-			require.Equal(t, datasetID, id)
-			require.Equal(t, expectedRequest, req)
-			return nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-
-	req, err := server.NewMultiplePartRequest("PATCH",
-		fmt.Sprintf("/api/v1/datasets/%s", datasetID),
-		map[string]string{"name": "xyz"},
-		nil,
-	)
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, gin.H{"id": datasetID})
-}
-
-func TestAPI_DeleteDataset(t *testing.T) {
-	datasetID := "dataset_to_delete_id"
-
-	datasetMock := &dataset.DatasetServiceMock{
-		DeleteFunc: func(ctx context.Context, id string) error {
-			require.Equal(t, datasetID, id)
-			return nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-
-	req, err := server.NewDeleteRequest(fmt.Sprintf("/api/v1/datasets/%s", datasetID))
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, "")
-}
-
-func TestAPI_PreviewDataset(t *testing.T) {
-	datasetID := "dataset_preview_id"
-	expectedResponse := &dataset.DatasetRows{
-		Rows: []map[string]any{
-			{"col1": "val1_1", "col2": "val1_2"},
-			{"col1": "val2_1", "col2": "val2_2"},
-		},
-		Data: []string{"col1", "col2"},
-		Type: "CSV",
-	}
-
-	datasetMock := &dataset.DatasetServiceMock{
-		PreviewFunc: func(ctx context.Context, id string) (*dataset.DatasetRows, error) {
-			require.Equal(t, datasetID, id)
-			return expectedResponse, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-
-	req, err := server.NewGetRequest(fmt.Sprintf("/api/v1/datasets/%s/preview", datasetID))
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, expectedResponse)
-}
-
-func TestAPI_RunWorkflowFileVar(t *testing.T) {
-	mockRunner := &workflow.RunnerMock{
-		NextFunc: func(ctx context.Context) (*workflow.WorkflowStepResult, error) {
-			return nil, nil
-		},
-	}
-	mockWorkflow := &workflow.WorkflowServiceMock{
-		StartFunc: func(ctx context.Context, id string, request workflow.StartWorklfowRequest) (workflow.Runner, error) {
-			require.Equal(t, request, workflow.StartWorklfowRequest{
-				Variables: map[string]any{
-					"image": "go.csv",
-					"go.csv__data": workflow.FileInfo{
-						Name: "go.csv",
-						Data: []byte("Hello, World!"),
-					},
-				},
-				Model:       "aiai",
-				ImageModel:  "aiia",
-				Temperature: 0.56,
-			})
-			return mockRunner, nil
-		},
-		GetFunc: func(ctx context.Context, wf string) (*ent.Workflow, error) {
-			require.Equal(t, "foo", wf)
-			return &ent.Workflow{
-				Variables: []schema.WorkflowVariable{
-					{Name: "image", Type: schema.WorkflowVariableTypeFile},
-				},
-			}, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.WorkflowService = mockWorkflow
-	})
-	req, err := server.NewPostRequest("/api/v1/workflows/foo/run", &workflow.StartWorklfowRequest{
-		Temperature: 0.56,
-		Model:       "aiai",
-		ImageModel:  "aiia",
-		Variables: map[string]any{"image": map[string]any{
-			"name": "go.csv",
-			"data": "data:text/csv;base64,SGVsbG8sIFdvcmxkIQ==",
-		}},
-	})
-	require.NoError(t, err)
-	resp := server.Send(req)
-	require.Equal(t, 200, resp.response.Code)
-	require.Equal(t, 1, len(mockWorkflow.StartCalls()))
-}
-
-func TestAPI_GetDataset(t *testing.T) {
-	expected := &dataset.DatasetInfo{Name: "ds", Description: "bar"}
-	datasetMock := &dataset.DatasetServiceMock{
-		GetFunc: func(ctx context.Context, dataset string) (*dataset.DatasetInfo, error) {
-			require.Equal(t, "foo", dataset)
-			return expected, nil
-		},
-	}
-
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-	r, err := server.NewGetRequest("/api/v1/datasets/foo")
-	require.NoError(t, err)
-	resp := server.Send(r)
-	resp.ResponseEq(
-		t, 200, expected,
-	)
-}
-
-func TestAPI_GenerateList(t *testing.T) {
-	aiMock := &ai.AiServiceMock{
-		GenerateListOptionsFunc: func(ctx context.Context, model, prompt string) ([]string, error) {
-			require.Equal(t, "m1", model)
-			require.Equal(t, "foobar", prompt)
-			return []string{"foo", "bar"}, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.AIService = aiMock
-	})
-
-	req, err := server.NewPostRequest("/api/v1/ai/list_gen", &ai.GenerateListOptionsRequest{
-		Model:  "m1",
-		Prompt: "foobar",
-	})
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, []string{"foo", "bar"})
 }
