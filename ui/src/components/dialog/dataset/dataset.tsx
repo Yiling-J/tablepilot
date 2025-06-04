@@ -14,8 +14,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import React, { useEffect, useRef, useState } from "react";
+import { GenerateOptionsDialog } from "../generate-options-dialog";
+import { IconWand } from "../../ui/icons";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-interface CreateDatasetDialogProps {
+export interface CreateDatasetDialogProps { // Added export
   dataset?: DatasetInfo;
   isOpen: boolean;
   onClose: () => void;
@@ -52,6 +60,8 @@ export function CreateDatasetDialog({
   const [type, setType] = useState<DatasetType>("list");
   const [listOptions, setListOptions] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isGenerateOptionsDialogOpen, setIsGenerateOptionsDialogOpen] =
+    useState(false);
 
   const [nameError, setNameError] = useState("");
   const [listOptionsError, setListOptionsError] = useState("");
@@ -264,14 +274,31 @@ export function CreateDatasetDialog({
               <Label htmlFor="list-options" className="text-right pt-2">
                 Options
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-3 relative">
                 <Textarea
                   id="list-options"
                   value={listOptions}
                   onChange={(e) => setListOptions(e.target.value)}
                   placeholder="Enter each option on a new line"
-                  className={`min-h-[100px] ${listOptionsError ? "border-red-500" : ""}`}
+                  className={`min-h-[100px] pr-12 ${listOptionsError ? "border-red-500" : ""}`}
                 />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsGenerateOptionsDialogOpen(true)}
+                        className="absolute bottom-2 right-2 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
+                      >
+                        <IconWand className="size-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Generate options with AI</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 {listOptionsError && (
                   <p className="text-xs text-red-500 mt-1">
                     {listOptionsError}
@@ -343,6 +370,27 @@ export function CreateDatasetDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <GenerateOptionsDialog
+        isOpen={isGenerateOptionsDialogOpen}
+        onClose={() => setIsGenerateOptionsDialogOpen(false)}
+        datasetName={name}
+        datasetDescription={description}
+        onGenerationComplete={(generatedOptions: string[]) => {
+          if (generatedOptions.length > 0) {
+            setListOptions(prevOptions => {
+              const currentOptions = prevOptions.trim();
+              const newOptionsString = generatedOptions.join('\n');
+              if (currentOptions === "") {
+                return newOptionsString;
+              }
+              return currentOptions + '\n' + newOptionsString;
+            });
+          }
+          // The GenerateOptionsDialog already calls its own onClose,
+          // but this ensures the state is consistent if called from elsewhere.
+          setIsGenerateOptionsDialogOpen(false);
+        }}
+      />
     </Dialog>
   );
 }

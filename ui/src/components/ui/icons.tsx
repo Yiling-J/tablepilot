@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Wand2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -17,4 +18,8 @@ function IconGithub({ className, ...props }: React.ComponentProps<"svg">) {
   );
 }
 
-export { IconGithub };
+function IconWand({ className, ...props }: React.ComponentProps<"svg">) {
+  return <Wand2 className={cn("size-4", className)} {...props} />;
+}
+
+export { IconGithub, IconWand };
