@@ -4,6 +4,7 @@ import { JSONObject } from "./json";
 import {
     autofillUrl,
     datasetsUrl,
+    genDatasetOptionsUrl,
     generateUrl,
     getDatasetUrl,
     getWorkflowUrl,
@@ -864,51 +865,25 @@ export async function deleteDataset(id: string) {
   }
 }
 
-export interface GenerateOptionsParams {
+export interface GenerateOptionsRequest {
   model: string;
   prompt: string;
+  options: string[];
 }
 
-export async function generateOptions({ model, prompt }: GenerateOptionsParams): Promise<string[]> {
-  console.log(`[Action] generateOptions called with model: ${model}, prompt: ${prompt}`);
-
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  // Simulate API response
-  // In a real scenario, this would be an API call:
-  // const response = await fetch('/api/generate-options', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ model, prompt }),
-  // });
-  // if (!response.ok) {
-  //   const errorData = await response.json();
-  //   throw new Error(errorData.message || 'Failed to generate options');
-  // }
-  // const data = await response.json();
-  // return data.options;
-
-  // Mocked success response:
-  if (prompt.toLowerCase().includes("error test")) {
-    console.error("[Action] generateOptions: Simulating an error.");
-    throw new Error("Simulated error: Could not generate options due to a server issue.");
+export async function generateOptions(
+  req: GenerateOptionsRequest,
+): Promise<string[]> {
+  const res = await fetch(genDatasetOptionsUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    toast.error("Failed to generate options for dataset");
+    throw new Error("Failed to generate options for dataset");
   }
-
-  const mockOptions = [
-    `Generated option 1 for ${model}`,
-    `Generated option 2 based on: "${prompt.substring(0, 30)}..."`,
-    `Another item - ${new Date().toLocaleTimeString()}`,
-  ];
-
-  // Simulate dynamic options based on prompt for better testing
-  if (prompt.toLowerCase().includes("empty")) {
-    return [];
-  }
-  if (prompt.toLowerCase().includes("specific")) {
-     return ["Specific Option Alpha", "Specific Option Beta", "Specific Option Gamma"];
-  }
-
-  console.log(`[Action] generateOptions: Returning mocked options:`, mockOptions);
-  return mockOptions;
+  return res.json();
 }

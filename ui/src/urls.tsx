@@ -79,3 +79,7 @@ export function getDatasetUrl(id: string): string {
 export function previewDatasetUrl(id: string) {
   return `${address}/api/v1/datasets/${id}/preview`;
 }
+
+export function genDatasetOptionsUrl() {
+  return `${address}/api/v1/ai/list_gen`;
+}

@@ -13,17 +13,18 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import React, { useEffect, useRef, useState } from "react";
-import { GenerateOptionsDialog } from "../generate-options-dialog";
-import { IconWand } from "../../ui/icons";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from "@/components/ui/tooltip";
+import React, { useEffect, useRef, useState } from "react";
+import { IconWand } from "../../ui/icons";
+import { GenerateOptionsDialog } from "../generate-options-dialog";
 
-export interface CreateDatasetDialogProps { // Added export
+export interface CreateDatasetDialogProps {
+  // Added export
   dataset?: DatasetInfo;
   isOpen: boolean;
   onClose: () => void;
@@ -280,7 +281,7 @@ export function CreateDatasetDialog({
                   value={listOptions}
                   onChange={(e) => setListOptions(e.target.value)}
                   placeholder="Enter each option on a new line"
-                  className={`min-h-[100px] pr-12 ${listOptionsError ? "border-red-500" : ""}`}
+                  className={`min-h-[150px] pr-12 ${listOptionsError ? "border-red-500" : ""} hide-scrollbar`}
                 />
                 <TooltipProvider>
                   <Tooltip>
@@ -289,7 +290,7 @@ export function CreateDatasetDialog({
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsGenerateOptionsDialogOpen(true)}
-                        className="absolute bottom-2 right-2 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
+                        className="absolute bottom-7 right-3 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
                       >
                         <IconWand className="size-5" />
                       </Button>
@@ -377,17 +378,15 @@ export function CreateDatasetDialog({
         datasetDescription={description}
         onGenerationComplete={(generatedOptions: string[]) => {
           if (generatedOptions.length > 0) {
-            setListOptions(prevOptions => {
+            setListOptions((prevOptions) => {
               const currentOptions = prevOptions.trim();
-              const newOptionsString = generatedOptions.join('\n');
+              const newOptionsString = generatedOptions.join("\n");
               if (currentOptions === "") {
                 return newOptionsString;
               }
-              return currentOptions + '\n' + newOptionsString;
+              return currentOptions + "\n" + newOptionsString;
             });
           }
-          // The GenerateOptionsDialog already calls its own onClose,
-          // but this ensures the state is consistent if called from elsewhere.
           setIsGenerateOptionsDialogOpen(false);
         }}
       />
