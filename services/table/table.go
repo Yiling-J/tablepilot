@@ -68,6 +68,7 @@ type TableService interface {
 	CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error)
 	DeleteColumn(ctx context.Context, table string, column string) (string, error)
 	GetTableDatasets(ctx context.Context, table string) ([]dataset_service.DatasetInfo, error)
+	RemoveUnboundDatasets(ctx context.Context) error
 }
 
 type TableServiceImpl struct {
@@ -1123,4 +1124,23 @@ func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, colum
 		}
 	}
 	return "", tx.Commit()
+}
+
+func (t *TableServiceImpl) RemoveUnboundDatasets(ctx context.Context) error {
+	dss, err := t.db.Dataset.Query().Where(dataset.Not(dataset.HasTable()), dataset.Private(true)).All(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, ds := range dss {
+		if ds.CreatedAt.Add(1 * time.Hour).Before(time.Now()) {
+			err := t.dataset.Delete(ctx, ds.Nanoid)
+			if err != nil {
+				t.logger.Errorw("failed to delete unbound dataset", "id", ds.Nanoid)
+			} else {
+				t.logger.Infow("unbound dataset deleted", "id", ds.Nanoid)
+			}
+		}
+	}
+	return nil
 }

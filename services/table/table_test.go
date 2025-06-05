@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -1339,4 +1340,30 @@ func TestTableService_DeleteColumn(t *testing.T) {
 	}
 	require.ElementsMatch(t, []string{"aa", "bb"}, ns)
 	require.ElementsMatch(t, []string{"a", "b"}, js)
+}
+
+func TestTableService_DeleteUnboundDatasets(t *testing.T) {
+	db := db.NewTestDB()
+	tb, err := db.TableMeta.Create().SetName("tb").Save(t.Context())
+	require.NoError(t, err)
+	ds1, err := db.Dataset.Create().SetName("ds1").SetCreatedAt(time.Now().Add(-10 * time.Hour)).SetType(dataset.TypeList).SetPrivate(true).Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.Dataset.Create().SetName("ds2").SetCreatedAt(time.Now().Add(-10 * time.Hour)).SetType(dataset.TypeList).SetPrivate(true).SetTableID(tb.ID).Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.Dataset.Create().SetName("ds3").SetCreatedAt(time.Now().Add(-10 * time.Hour)).SetType(dataset.TypeList).SetPrivate(false).Save(t.Context())
+	require.NoError(t, err)
+	_, err = db.Dataset.Create().SetName("ds4").SetCreatedAt(time.Now().Add(-2 * time.Minute)).SetType(dataset.TypeList).SetPrivate(true).Save(t.Context())
+	require.NoError(t, err)
+	removed := []string{}
+	mockedDatasetService := &dataset_service.DatasetServiceMock{
+		DeleteFunc: func(ctx context.Context, dataset string) error {
+			removed = append(removed, dataset)
+			return nil
+		},
+	}
+	srv, err := NewTableService(&config.Config{}, db, nil, mockedDatasetService, zap.NewNop().Sugar())
+	require.NoError(t, err)
+	err = srv.RemoveUnboundDatasets(t.Context())
+	require.NoError(t, err)
+	require.ElementsMatch(t, []string{ds1.Nanoid}, removed)
 }

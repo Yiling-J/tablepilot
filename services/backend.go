@@ -1,7 +1,9 @@
 package services
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -32,6 +34,14 @@ func NewBackend(
 	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
 	providerService provider.ProviderService, workflowService workflow.WorkflowService, datasetService dataset.DatasetService,
 ) *Backend {
+	go func() {
+		err := tableService.RemoveUnboundDatasets(context.Background())
+		if err != nil {
+			logger.Errorw("delete unbound datasets error", "error", err)
+		}
+		time.Sleep(10 * time.Minute)
+	}()
+
 	return &Backend{
 		Config:          config,
 		DB:              db,

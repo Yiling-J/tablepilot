@@ -377,7 +377,8 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 	required := []string{"__id__"}
 	for _, col := range g.missingColumns {
 		s := &jsonschema.Schema{
-			Type: col.Type.String(),
+			Type:        col.Type.String(),
+			Description: col.Description,
 		}
 		if s.Type == "array" {
 			s.Items = &jsonschema.Schema{Type: "string"}
