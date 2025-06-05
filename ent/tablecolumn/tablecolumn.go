@@ -31,6 +31,10 @@ const (
 	FieldFillMode = "fill_mode"
 	// FieldSource holds the string denoting the source field in the database.
 	FieldSource = "source"
+	// FieldSourceID holds the string denoting the source_id field in the database.
+	FieldSourceID = "source_id"
+	// FieldSourceType holds the string denoting the source_type field in the database.
+	FieldSourceType = "source_type"
 	// FieldContextLength holds the string denoting the context_length field in the database.
 	FieldContextLength = "context_length"
 	// FieldTableID holds the string denoting the table_id field in the database.
@@ -69,6 +73,8 @@ var Columns = []string{
 	FieldType,
 	FieldFillMode,
 	FieldSource,
+	FieldSourceID,
+	FieldSourceType,
 	FieldContextLength,
 	FieldTableID,
 	FieldRandom,
@@ -161,6 +167,29 @@ func FillModeValidator(fm FillMode) error {
 	}
 }
 
+// SourceType defines the type for the "source_type" enum field.
+type SourceType string
+
+// SourceType values.
+const (
+	SourceTypeTable   SourceType = "table"
+	SourceTypeDataset SourceType = "dataset"
+)
+
+func (st SourceType) String() string {
+	return string(st)
+}
+
+// SourceTypeValidator is a validator for the "source_type" field enum values. It is called by the builders before save.
+func SourceTypeValidator(st SourceType) error {
+	switch st {
+	case SourceTypeTable, SourceTypeDataset:
+		return nil
+	default:
+		return fmt.Errorf("tablecolumn: invalid enum value for source_type field: %q", st)
+	}
+}
+
 // OrderOption defines the ordering options for the TableColumn queries.
 type OrderOption func(*sql.Selector)
 
@@ -207,6 +236,16 @@ func ByFillMode(opts ...sql.OrderTermOption) OrderOption {
 // BySource orders the results by the source field.
 func BySource(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSource, opts...).ToFunc()
+}
+
+// BySourceID orders the results by the source_id field.
+func BySourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourceID, opts...).ToFunc()
+}
+
+// BySourceType orders the results by the source_type field.
+func BySourceType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSourceType, opts...).ToFunc()
 }
 
 // ByContextLength orders the results by the context_length field.

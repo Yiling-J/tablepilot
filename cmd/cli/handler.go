@@ -25,6 +25,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/gammazero/toposort"
 
 	"github.com/spf13/cast"
@@ -45,9 +46,27 @@ func NewHandler(backend *services.Backend) *Handler {
 	}
 }
 
+func parsePaths(paths []string) ([]string, error) {
+	fm := map[string]bool{}
+	results := []string{}
+	for _, p := range paths {
+		files, err := doublestar.FilepathGlob(p)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			if _, ok := fm[f]; !ok {
+				fm[f] = true
+				results = append(results, f)
+			}
+		}
+	}
+	return results, nil
+}
+
 func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 	for _, fileName := range args {
-		var req table.TableGenRequest
+		var req table.CLITableGenRequest
 		f, err := os.ReadFile(fileName)
 		if err != nil {
 			return err
@@ -56,7 +75,43 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		id, err := h.backend.TableService.Create(cmd.Context(), &req)
+		gen := &table.TableGenRequest{
+			Name:        req.Name,
+			Model:       req.Model,
+			Description: req.Description,
+		}
+		for _, ds := range req.Datasets {
+			readers := []io.Reader{}
+			if ds.Type == db_dataset.TypeCsv && len(ds.Paths) > 0 {
+				files, err := parsePaths(ds.Paths)
+				if err != nil {
+					return err
+				}
+				for _, f := range files {
+					r, err := os.Open(f)
+					if err != nil {
+						return err
+					}
+					defer r.Close()
+					readers = append(readers, r)
+				}
+			}
+			h.backend.Logger.Debugw("creating dataset", "paths", ds.Paths)
+			id, err := h.backend.DatasetService.Create(cmd.Context(), &dataset.CreateDatasetRequest{
+				Name:        ds.Name,
+				Description: ds.Description,
+				Type:        ds.Type,
+				Private:     true,
+				Data:        ds.Values,
+				Files:       readers,
+			})
+			_ = id
+			if err != nil {
+				return err
+			}
+			h.backend.Logger.Debugw("dataset created", "paths", ds.Paths)
+		}
+		id, err := h.backend.TableService.Create(cmd.Context(), gen)
 		if err != nil {
 			return err
 		}
@@ -126,7 +181,7 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 	req := &dataset.CreateDatasetRequest{
 		Name:        name,
 		Description: desc,
-		Type:        datasetType,
+		Type:        db_dataset.Type(datasetType),
 	}
 
 	switch datasetType {
@@ -988,16 +1043,6 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Table Description: %s\n", tb.Description)
 		fmt.Println("")
 		for {
-			if len(info.Sources) > 0 {
-				fmt.Println("Here is the sources of the table in JSON format:")
-				for _, source := range info.Sources {
-					b, err := json.Marshal(source)
-					if err != nil {
-						return err
-					}
-					fmt.Println(string(b))
-				}
-			}
 			fmt.Println("Here is the columns of the table in JSON format:")
 			for _, column := range info.Columns {
 				b, err := json.Marshal(column)

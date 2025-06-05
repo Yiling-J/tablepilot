@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // DatasetCreate is the builder for creating a Dataset entity.
@@ -125,6 +126,39 @@ func (dc *DatasetCreate) SetValues(s []string) *DatasetCreate {
 	return dc
 }
 
+// SetPrivate sets the "private" field.
+func (dc *DatasetCreate) SetPrivate(b bool) *DatasetCreate {
+	dc.mutation.SetPrivate(b)
+	return dc
+}
+
+// SetNillablePrivate sets the "private" field if the given value is not nil.
+func (dc *DatasetCreate) SetNillablePrivate(b *bool) *DatasetCreate {
+	if b != nil {
+		dc.SetPrivate(*b)
+	}
+	return dc
+}
+
+// SetTableID sets the "table" edge to the TableMeta entity by ID.
+func (dc *DatasetCreate) SetTableID(id int) *DatasetCreate {
+	dc.mutation.SetTableID(id)
+	return dc
+}
+
+// SetNillableTableID sets the "table" edge to the TableMeta entity by ID if the given value is not nil.
+func (dc *DatasetCreate) SetNillableTableID(id *int) *DatasetCreate {
+	if id != nil {
+		dc = dc.SetTableID(*id)
+	}
+	return dc
+}
+
+// SetTable sets the "table" edge to the TableMeta entity.
+func (dc *DatasetCreate) SetTable(t *TableMeta) *DatasetCreate {
+	return dc.SetTableID(t.ID)
+}
+
 // Mutation returns the DatasetMutation object of the builder.
 func (dc *DatasetCreate) Mutation() *DatasetMutation {
 	return dc.mutation
@@ -172,6 +206,10 @@ func (dc *DatasetCreate) defaults() {
 		v := dataset.DefaultDescription
 		dc.mutation.SetDescription(v)
 	}
+	if _, ok := dc.mutation.Private(); !ok {
+		v := dataset.DefaultPrivate
+		dc.mutation.SetPrivate(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -194,6 +232,9 @@ func (dc *DatasetCreate) check() error {
 		if err := dataset.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "Dataset.type": %w`, err)}
 		}
+	}
+	if _, ok := dc.mutation.Private(); !ok {
+		return &ValidationError{Name: "private", err: errors.New(`ent: missing required field "Dataset.private"`)}
 	}
 	return nil
 }
@@ -257,6 +298,27 @@ func (dc *DatasetCreate) createSpec() (*Dataset, *sqlgraph.CreateSpec) {
 	if value, ok := dc.mutation.Values(); ok {
 		_spec.SetField(dataset.FieldValues, field.TypeJSON, value)
 		_node.Values = value
+	}
+	if value, ok := dc.mutation.Private(); ok {
+		_spec.SetField(dataset.FieldPrivate, field.TypeBool, value)
+		_node.Private = value
+	}
+	if nodes := dc.mutation.TableIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   dataset.TableTable,
+			Columns: []string{dataset.TableColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(tablemeta.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.table_meta_datasets = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -433,6 +495,18 @@ func (u *DatasetUpsert) UpdateValues() *DatasetUpsert {
 // ClearValues clears the value of the "values" field.
 func (u *DatasetUpsert) ClearValues() *DatasetUpsert {
 	u.SetNull(dataset.FieldValues)
+	return u
+}
+
+// SetPrivate sets the "private" field.
+func (u *DatasetUpsert) SetPrivate(v bool) *DatasetUpsert {
+	u.Set(dataset.FieldPrivate, v)
+	return u
+}
+
+// UpdatePrivate sets the "private" field to the value that was provided on create.
+func (u *DatasetUpsert) UpdatePrivate() *DatasetUpsert {
+	u.SetExcluded(dataset.FieldPrivate)
 	return u
 }
 
@@ -625,6 +699,20 @@ func (u *DatasetUpsertOne) UpdateValues() *DatasetUpsertOne {
 func (u *DatasetUpsertOne) ClearValues() *DatasetUpsertOne {
 	return u.Update(func(s *DatasetUpsert) {
 		s.ClearValues()
+	})
+}
+
+// SetPrivate sets the "private" field.
+func (u *DatasetUpsertOne) SetPrivate(v bool) *DatasetUpsertOne {
+	return u.Update(func(s *DatasetUpsert) {
+		s.SetPrivate(v)
+	})
+}
+
+// UpdatePrivate sets the "private" field to the value that was provided on create.
+func (u *DatasetUpsertOne) UpdatePrivate() *DatasetUpsertOne {
+	return u.Update(func(s *DatasetUpsert) {
+		s.UpdatePrivate()
 	})
 }
 
@@ -983,6 +1071,20 @@ func (u *DatasetUpsertBulk) UpdateValues() *DatasetUpsertBulk {
 func (u *DatasetUpsertBulk) ClearValues() *DatasetUpsertBulk {
 	return u.Update(func(s *DatasetUpsert) {
 		s.ClearValues()
+	})
+}
+
+// SetPrivate sets the "private" field.
+func (u *DatasetUpsertBulk) SetPrivate(v bool) *DatasetUpsertBulk {
+	return u.Update(func(s *DatasetUpsert) {
+		s.SetPrivate(v)
+	})
+}
+
+// UpdatePrivate sets the "private" field to the value that was provided on create.
+func (u *DatasetUpsertBulk) UpdatePrivate() *DatasetUpsertBulk {
+	return u.Update(func(s *DatasetUpsert) {
+		s.UpdatePrivate()
 	})
 }
 

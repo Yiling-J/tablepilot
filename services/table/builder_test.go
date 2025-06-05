@@ -10,7 +10,6 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
-	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -41,7 +40,7 @@ func TestBuilder_GenerateBuilderTables(t *testing.T) {
 			}, nil
 		},
 	}
-	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, aiService, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
 	tables, err := srv.GenerateBuilderTables(ctx, "gogo", ModelParams{
@@ -84,7 +83,7 @@ func TestBuilder_PolishBuilderTables(t *testing.T) {
 			}, nil
 		},
 	}
-	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, aiService, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
 	tables, err := srv.PolishBuilderTables(ctx, []BuilderTable{
@@ -145,7 +144,7 @@ func TestBuilder_BuildTable(t *testing.T) {
 			}
 		},
 	}
-	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, aiService, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
 	schema, err := srv.BuildTable(ctx, "foo", "bar", []string{"baz"}, []*TableInfo{
@@ -155,24 +154,14 @@ func TestBuilder_BuildTable(t *testing.T) {
 	}, ModelParams{Model: "m1",
 		Temperature: 0.32})
 	require.NoError(t, err)
-	s := &source.AISource{
-		BasicSource: source.BasicSource{
-			Name: "s1",
-			Type: "ai",
-		},
-		Prompt: "go",
-	}
-	bs, err := json.Marshal(s)
-	require.NoError(t, err)
 	require.Equal(t, &TableGenRequest{
 		Name:        "foo",
 		Description: "bar",
-		Sources:     []json.RawMessage{bs},
-		Columns: []TableGenColumn{
+		Columns: []*TableGenColumn{
 			{Name: "c1", Description: "c1d", Type: "string", FillMode: "ai", ContextLength: 3},
 			{
 				Name: "c2", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10,
-				Random: true, Repeat: 5, Source: "externalSource", LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
+				Random: true, Repeat: 5, SourceID: "externalSource", LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
 			},
 		},
 	}, schema)
@@ -181,24 +170,14 @@ func TestBuilder_BuildTable(t *testing.T) {
 func TestBuilder_PolishBuilderTable(t *testing.T) {
 	db := db.NewTestDB()
 	ctx := context.Background()
-	s := &source.AISource{
-		BasicSource: source.BasicSource{
-			Name: "s1",
-			Type: "ai",
-		},
-		Prompt: "go",
-	}
-	bs, err := json.Marshal(s)
-	require.NoError(t, err)
 	req := &TableGenRequest{
 		Name:        "foo",
 		Description: "bar",
-		Sources:     []json.RawMessage{bs},
-		Columns: []TableGenColumn{
+		Columns: []*TableGenColumn{
 			{Name: "c1", Description: "c1d", Type: "string", FillMode: "ai", ContextLength: 3},
 			{
 				Name: "c2", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10,
-				Random: true, Repeat: 5, Source: "externalSource", LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
+				Random: true, Repeat: 5, SourceID: "externalSource", LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
 			},
 		},
 	}
@@ -208,9 +187,7 @@ func TestBuilder_PolishBuilderTable(t *testing.T) {
 			require.Equal(t, 0.32, request.Temperature)
 			cb, err := json.Marshal(req.Columns)
 			require.NoError(t, err)
-			sb, err := json.Marshal(req.Sources)
-			require.NoError(t, err)
-			pm := promptbuilder.NewTablePolishBuilder("go", req.Name, req.Description, string(sb), string(cb), []promptbuilder.TableInfoSimple{
+			pm := promptbuilder.NewTablePolishBuilder("go", req.Name, req.Description, "", string(cb), []promptbuilder.TableInfoSimple{
 				{Name: "baz", Description: "abc", Columns: []promptbuilder.TableColumnSimple{
 					{Name: "c1", Description: "c1d"},
 				}},
@@ -237,7 +214,7 @@ func TestBuilder_PolishBuilderTable(t *testing.T) {
 			}
 		},
 	}
-	srv, err := NewTableService(&config.Config{}, db, aiService, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{}, db, aiService, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
 	schema, err := srv.PolishBuilderTable(ctx, req, "go", []*TableInfo{
@@ -250,8 +227,7 @@ func TestBuilder_PolishBuilderTable(t *testing.T) {
 	require.Equal(t, &TableGenRequest{
 		Name:        "foo",
 		Description: "bar",
-		Sources:     []json.RawMessage{bs},
-		Columns: []TableGenColumn{
+		Columns: []*TableGenColumn{
 			{Name: "c1", Description: "c1d", Type: "string", FillMode: "ai", ContextLength: 3},
 			{Name: "c3", Description: "c3d", Type: "string", FillMode: "ai", ContextLength: 0},
 		},

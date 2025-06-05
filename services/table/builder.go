@@ -226,10 +226,6 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 	if err != nil {
 		return nil, fmt.Errorf("table.PolishBuilderTable: marshaling columns: %w", err)
 	}
-	sb, err := json.Marshal(table.Sources)
-	if err != nil {
-		return nil, fmt.Errorf("table.PolishBuilderTable: marshaling sources: %w", err)
-	}
 	tbs := []promptbuilder.TableInfoSimple{}
 	for _, tb := range exists {
 		info := promptbuilder.TableInfoSimple{
@@ -245,7 +241,7 @@ func (t *TableServiceImpl) PolishBuilderTable(ctx context.Context, table *TableG
 		}
 		tbs = append(tbs, info)
 	}
-	pm := promptbuilder.NewTablePolishBuilder(prompt, table.Name, table.Description, string(sb), string(cb), tbs)
+	pm := promptbuilder.NewTablePolishBuilder(prompt, table.Name, table.Description, "", string(cb), tbs)
 	message, err := pm.Prompt()
 	if err != nil {
 		return nil, fmt.Errorf("table.PolishBuilderTable: building prompt: %w", err)

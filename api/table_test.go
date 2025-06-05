@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -23,9 +22,7 @@ func TestAPI_CreateTable(t *testing.T) {
 		Columns: []table.TableGenColumn{
 			{Name: "col1", Description: "desc", Type: "string", FillMode: "ai"},
 		},
-		Sources: []json.RawMessage{[]byte(`{"source":"s"}`)},
 	}
-	expectedRequest.MarkAPIRequest()
 	tableMock := &table.TableServiceMock{
 		CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
 			require.Equal(t, expectedRequest, req)
@@ -49,9 +46,7 @@ func TestAPI_UpdateTable(t *testing.T) {
 		Columns: []table.TableGenColumn{
 			{Name: "col1", Description: "desc", Type: "string", FillMode: "ai"},
 		},
-		Sources: []json.RawMessage{[]byte(`{"source":"s"}`)},
 	}
-	expectedRequest.MarkAPIRequest()
 	tableMock := &table.TableServiceMock{
 		UpdateFunc: func(ctx context.Context, tb string, req *table.TableGenRequest) (string, error) {
 			require.Equal(t, "foo", tb)
@@ -390,24 +385,6 @@ func TestAPI_CreateRows(t *testing.T) {
 	require.NoError(t, err)
 	resp := server.Send(req)
 	resp.ResponseEq(t, 200, "")
-}
-
-func TestAPI_Sources(t *testing.T) {
-	sources := []*table.SharedSource{
-		{Name: "s1", Columns: []string{"c1"}, Data: json.RawMessage([]byte("{\"foo\": \"bar\"}"))},
-	}
-	tableMock := &table.TableServiceMock{
-		SharedSourcesFunc: func(ctx context.Context) []*table.SharedSource {
-			return sources
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.TableService = tableMock
-	})
-	req, err := server.NewGetRequest("/api/v1/sources")
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, map[string]any{"sources": sources})
 }
 
 func TestAPI_GetTableSchema(t *testing.T) {

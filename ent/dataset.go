@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/schema"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // Dataset is the model entity for the Dataset schema.
@@ -36,8 +37,34 @@ type Dataset struct {
 	// Indexer holds the value of the "indexer" field.
 	Indexer schema.CSVIndexer `json:"indexer,omitempty"`
 	// Values holds the value of the "values" field.
-	Values       []string `json:"values,omitempty"`
-	selectValues sql.SelectValues
+	Values []string `json:"values,omitempty"`
+	// Private holds the value of the "private" field.
+	Private bool `json:"private,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the DatasetQuery when eager-loading is set.
+	Edges               DatasetEdges `json:"edges"`
+	table_meta_datasets *int
+	selectValues        sql.SelectValues
+}
+
+// DatasetEdges holds the relations/edges for other nodes in the graph.
+type DatasetEdges struct {
+	// Table holds the value of the table edge.
+	Table *TableMeta `json:"table,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// TableOrErr returns the Table value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e DatasetEdges) TableOrErr() (*TableMeta, error) {
+	if e.Table != nil {
+		return e.Table, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: tablemeta.Label}
+	}
+	return nil, &NotLoadedError{edge: "table"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -47,12 +74,16 @@ func (*Dataset) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case dataset.FieldIndexer, dataset.FieldValues:
 			values[i] = new([]byte)
+		case dataset.FieldPrivate:
+			values[i] = new(sql.NullBool)
 		case dataset.FieldID:
 			values[i] = new(sql.NullInt64)
 		case dataset.FieldNanoid, dataset.FieldName, dataset.FieldPath, dataset.FieldDescription, dataset.FieldType:
 			values[i] = new(sql.NullString)
 		case dataset.FieldCreatedAt, dataset.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case dataset.ForeignKeys[0]: // table_meta_datasets
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -132,6 +163,19 @@ func (d *Dataset) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field values: %w", err)
 				}
 			}
+		case dataset.FieldPrivate:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field private", values[i])
+			} else if value.Valid {
+				d.Private = value.Bool
+			}
+		case dataset.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field table_meta_datasets", value)
+			} else if value.Valid {
+				d.table_meta_datasets = new(int)
+				*d.table_meta_datasets = int(value.Int64)
+			}
 		default:
 			d.selectValues.Set(columns[i], values[i])
 		}
@@ -143,6 +187,11 @@ func (d *Dataset) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (d *Dataset) Value(name string) (ent.Value, error) {
 	return d.selectValues.Get(name)
+}
+
+// QueryTable queries the "table" edge of the Dataset entity.
+func (d *Dataset) QueryTable() *TableMetaQuery {
+	return NewDatasetClient(d.config).QueryTable(d)
 }
 
 // Update returns a builder for updating this Dataset.
@@ -194,6 +243,9 @@ func (d *Dataset) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("values=")
 	builder.WriteString(fmt.Sprintf("%v", d.Values))
+	builder.WriteString(", ")
+	builder.WriteString("private=")
+	builder.WriteString(fmt.Sprintf("%v", d.Private))
 	builder.WriteByte(')')
 	return builder.String()
 }

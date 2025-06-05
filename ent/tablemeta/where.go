@@ -455,16 +455,6 @@ func ModelContainsFold(v string) predicate.TableMeta {
 	return predicate.TableMeta(sql.FieldContainsFold(FieldModel, v))
 }
 
-// SourcesIsNil applies the IsNil predicate on the "sources" field.
-func SourcesIsNil() predicate.TableMeta {
-	return predicate.TableMeta(sql.FieldIsNull(FieldSources))
-}
-
-// SourcesNotNil applies the NotNil predicate on the "sources" field.
-func SourcesNotNil() predicate.TableMeta {
-	return predicate.TableMeta(sql.FieldNotNull(FieldSources))
-}
-
 // HasColumns applies the HasEdge predicate on the "columns" edge.
 func HasColumns() predicate.TableMeta {
 	return predicate.TableMeta(func(s *sql.Selector) {
@@ -503,6 +493,29 @@ func HasRows() predicate.TableMeta {
 func HasRowsWith(preds ...predicate.TableRow) predicate.TableMeta {
 	return predicate.TableMeta(func(s *sql.Selector) {
 		step := newRowsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDatasets applies the HasEdge predicate on the "datasets" edge.
+func HasDatasets() predicate.TableMeta {
+	return predicate.TableMeta(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, DatasetsTable, DatasetsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDatasetsWith applies the HasEdge predicate on the "datasets" edge with a given conditions (other predicates).
+func HasDatasetsWith(preds ...predicate.Dataset) predicate.TableMeta {
+	return predicate.TableMeta(func(s *sql.Selector) {
+		step := newDatasetsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

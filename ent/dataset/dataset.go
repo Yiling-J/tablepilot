@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -32,8 +33,19 @@ const (
 	FieldIndexer = "indexer"
 	// FieldValues holds the string denoting the values field in the database.
 	FieldValues = "values"
+	// FieldPrivate holds the string denoting the private field in the database.
+	FieldPrivate = "private"
+	// EdgeTable holds the string denoting the table edge name in mutations.
+	EdgeTable = "table"
 	// Table holds the table name of the dataset in the database.
 	Table = "datasets"
+	// TableTable is the table that holds the table relation/edge.
+	TableTable = "datasets"
+	// TableInverseTable is the table name for the TableMeta entity.
+	// It exists in this package in order to avoid circular dependency with the "tablemeta" package.
+	TableInverseTable = "table_meta"
+	// TableColumn is the table column denoting the table relation/edge.
+	TableColumn = "table_meta_datasets"
 )
 
 // Columns holds all SQL columns for dataset fields.
@@ -48,12 +60,24 @@ var Columns = []string{
 	FieldType,
 	FieldIndexer,
 	FieldValues,
+	FieldPrivate,
+}
+
+// ForeignKeys holds the SQL foreign-keys that are owned by the "datasets"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"table_meta_datasets",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -71,6 +95,8 @@ var (
 	NameValidator func(string) error
 	// DefaultDescription holds the default value on creation for the "description" field.
 	DefaultDescription string
+	// DefaultPrivate holds the default value on creation for the "private" field.
+	DefaultPrivate bool
 )
 
 // Type defines the type for the "type" enum field.
@@ -137,4 +163,23 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 // ByType orders the results by the type field.
 func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByPrivate orders the results by the private field.
+func ByPrivate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPrivate, opts...).ToFunc()
+}
+
+// ByTableField orders the results by table field.
+func ByTableField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTableStep(), sql.OrderByField(field, opts...))
+	}
+}
+func newTableStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TableInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, TableTable, TableColumn),
+	)
 }

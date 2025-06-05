@@ -2,7 +2,6 @@ package table
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -43,8 +42,9 @@ func TestTableService_ValidateLinkedColumnInfo(t *testing.T) {
 				}
 			}
 			c.column.FillMode = "pick"
-			c.column.Source = "so"
-			err = validateLinkedColumnInfo(ctx, tx, []TableGenColumn{c.column}, map[string]json.RawMessage{"so": []byte(`{"type":"linked","table":"table"}`)})
+			c.column.SourceID = "table"
+			c.column.SourceType = tablecolumn.SourceTypeTable
+			err = validateLinkedColumnInfo(ctx, tx.Client(), tb.ID, []*TableGenColumn{&c.column})
 			require.Equal(t, c.error, err)
 		})
 	}

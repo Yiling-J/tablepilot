@@ -3,7 +3,6 @@
 package ent
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -30,8 +29,6 @@ type TableMeta struct {
 	Description string `json:"description,omitempty"`
 	// Model holds the value of the "model" field.
 	Model string `json:"model,omitempty"`
-	// Sources holds the value of the "sources" field.
-	Sources map[string]json.RawMessage `json:"sources,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TableMetaQuery when eager-loading is set.
 	Edges        TableMetaEdges `json:"edges"`
@@ -44,9 +41,11 @@ type TableMetaEdges struct {
 	Columns []*TableColumn `json:"columns,omitempty"`
 	// Rows holds the value of the rows edge.
 	Rows []*TableRow `json:"rows,omitempty"`
+	// Datasets holds the value of the datasets edge.
+	Datasets []*Dataset `json:"datasets,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // ColumnsOrErr returns the Columns value or an error if the edge
@@ -67,13 +66,20 @@ func (e TableMetaEdges) RowsOrErr() ([]*TableRow, error) {
 	return nil, &NotLoadedError{edge: "rows"}
 }
 
+// DatasetsOrErr returns the Datasets value or an error if the edge
+// was not loaded in eager-loading.
+func (e TableMetaEdges) DatasetsOrErr() ([]*Dataset, error) {
+	if e.loadedTypes[2] {
+		return e.Datasets, nil
+	}
+	return nil, &NotLoadedError{edge: "datasets"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*TableMeta) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tablemeta.FieldSources:
-			values[i] = new([]byte)
 		case tablemeta.FieldID:
 			values[i] = new(sql.NullInt64)
 		case tablemeta.FieldNanoid, tablemeta.FieldName, tablemeta.FieldDescription, tablemeta.FieldModel:
@@ -137,14 +143,6 @@ func (tm *TableMeta) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				tm.Model = value.String
 			}
-		case tablemeta.FieldSources:
-			if value, ok := values[i].(*[]byte); !ok {
-				return fmt.Errorf("unexpected type %T for field sources", values[i])
-			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &tm.Sources); err != nil {
-					return fmt.Errorf("unmarshal field sources: %w", err)
-				}
-			}
 		default:
 			tm.selectValues.Set(columns[i], values[i])
 		}
@@ -166,6 +164,11 @@ func (tm *TableMeta) QueryColumns() *TableColumnQuery {
 // QueryRows queries the "rows" edge of the TableMeta entity.
 func (tm *TableMeta) QueryRows() *TableRowQuery {
 	return NewTableMetaClient(tm.config).QueryRows(tm)
+}
+
+// QueryDatasets queries the "datasets" edge of the TableMeta entity.
+func (tm *TableMeta) QueryDatasets() *DatasetQuery {
+	return NewTableMetaClient(tm.config).QueryDatasets(tm)
 }
 
 // Update returns a builder for updating this TableMeta.
@@ -208,9 +211,6 @@ func (tm *TableMeta) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("model=")
 	builder.WriteString(tm.Model)
-	builder.WriteString(", ")
-	builder.WriteString("sources=")
-	builder.WriteString(fmt.Sprintf("%v", tm.Sources))
 	builder.WriteByte(')')
 	return builder.String()
 }

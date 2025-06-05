@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	services_dataset "github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +24,7 @@ func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 	serviceReq := &services_dataset.CreateDatasetRequest{
 		Name:        apiReq.Name,
 		Description: apiReq.Description,
-		Type:        apiReq.Type,
+		Type:        dataset.Type(apiReq.Type),
 		Data:        apiReq.Data,
 	}
 

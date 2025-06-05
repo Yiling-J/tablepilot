@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 )
 
@@ -82,6 +83,11 @@ func Path(v string) predicate.Dataset {
 // Description applies equality check predicate on the "description" field. It's identical to DescriptionEQ.
 func Description(v string) predicate.Dataset {
 	return predicate.Dataset(sql.FieldEQ(FieldDescription, v))
+}
+
+// Private applies equality check predicate on the "private" field. It's identical to PrivateEQ.
+func Private(v bool) predicate.Dataset {
+	return predicate.Dataset(sql.FieldEQ(FieldPrivate, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -502,6 +508,39 @@ func ValuesIsNil() predicate.Dataset {
 // ValuesNotNil applies the NotNil predicate on the "values" field.
 func ValuesNotNil() predicate.Dataset {
 	return predicate.Dataset(sql.FieldNotNull(FieldValues))
+}
+
+// PrivateEQ applies the EQ predicate on the "private" field.
+func PrivateEQ(v bool) predicate.Dataset {
+	return predicate.Dataset(sql.FieldEQ(FieldPrivate, v))
+}
+
+// PrivateNEQ applies the NEQ predicate on the "private" field.
+func PrivateNEQ(v bool) predicate.Dataset {
+	return predicate.Dataset(sql.FieldNEQ(FieldPrivate, v))
+}
+
+// HasTable applies the HasEdge predicate on the "table" edge.
+func HasTable() predicate.Dataset {
+	return predicate.Dataset(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, TableTable, TableColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTableWith applies the HasEdge predicate on the "table" edge with a given conditions (other predicates).
+func HasTableWith(preds ...predicate.TableMeta) predicate.Dataset {
+	return predicate.Dataset(func(s *sql.Selector) {
+		step := newTableStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

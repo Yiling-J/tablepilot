@@ -6,7 +6,6 @@ import (
 
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/spf13/cast"
-	"github.com/tidwall/gjson"
 )
 
 type tableBuilder struct {
@@ -20,7 +19,7 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 		columnDescription := cast.ToString(args["description"])
 		columnType := cast.ToString(args["type"])
 		contextLength := cast.ToInt(args["contextLength"])
-		tb.table.Columns = append(tb.table.Columns, TableGenColumn{
+		tb.table.Columns = append(tb.table.Columns, &TableGenColumn{
 			Name:          columnName,
 			Description:   columnDescription,
 			Type:          columnType,
@@ -35,10 +34,9 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 		random := cast.ToBool(args["random"])
 		repeat := cast.ToInt(args["repeat"])
 		replacement := cast.ToBool(args["replacement"])
-		source := cast.ToString(args["source"])
 		linkedColumn := cast.ToString(args["linkedColumn"])
 		linkedContextColumns := cast.ToStringSlice(args["linkedContextColumns"])
-		tb.table.Columns = append(tb.table.Columns, TableGenColumn{
+		tb.table.Columns = append(tb.table.Columns, &TableGenColumn{
 			Name:                 columnName,
 			Description:          columnDescription,
 			Type:                 columnType,
@@ -47,7 +45,6 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 			Random:               random,
 			Repeat:               repeat,
 			Replacement:          replacement,
-			Source:               source,
 			LinkedColumn:         linkedColumn,
 			LinkedContextColumns: linkedContextColumns,
 		})
@@ -60,10 +57,10 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 			Options: cast.ToStringSlice(args["options"]),
 		}
 		b, err := json.Marshal(source)
+		_ = b
 		if err != nil {
 			return err
 		}
-		tb.table.Sources = append(tb.table.Sources, b)
 	case "AddAiSource":
 		source := &source.AISource{
 			BasicSource: source.BasicSource{
@@ -73,10 +70,10 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 			Prompt: cast.ToString(args["prompt"]),
 		}
 		b, err := json.Marshal(source)
+		_ = b
 		if err != nil {
 			return err
 		}
-		tb.table.Sources = append(tb.table.Sources, b)
 	case "AddLinkedSource":
 		source := &source.LinkedSource{
 			BasicSource: source.BasicSource{
@@ -86,13 +83,13 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 			Table: cast.ToString(args["table"]),
 		}
 		b, err := json.Marshal(source)
+		_ = b
 		if err != nil {
 			return err
 		}
-		tb.table.Sources = append(tb.table.Sources, b)
 	case "RemoveColumn":
 		name := cast.ToString(args["name"])
-		columns := []TableGenColumn{}
+		columns := []*TableGenColumn{}
 		for _, col := range tb.table.Columns {
 			if col.Name == name {
 				continue
@@ -101,15 +98,6 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 		}
 		tb.table.Columns = columns
 	case "RemoveSource":
-		name := cast.ToString(args["name"])
-		sources := []json.RawMessage{}
-		for _, s := range tb.table.Sources {
-			if gjson.GetBytes(s, "name").String() == name {
-				continue
-			}
-			sources = append(sources, s)
-		}
-		tb.table.Sources = sources
 	default:
 	}
 	return nil

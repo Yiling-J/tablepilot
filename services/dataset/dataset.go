@@ -40,8 +40,14 @@ func NewDatasetService(db *ent.Client, cfg *config.Config) *DatasetServiceImpl {
 
 func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *CreateDatasetRequest, sr *ent.Dataset) error {
 	switch req.Type {
-	case "csv":
-		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, "datasets/shared", sr.Nanoid)
+	case db_dataset.TypeCsv:
+		relativePath := ""
+		if req.Private {
+			relativePath = filepath.Join("datasets/private", sr.Nanoid)
+		} else {
+			relativePath = filepath.Join("datasets/shared", sr.Nanoid)
+		}
+		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, relativePath)
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
@@ -80,11 +86,11 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 		if err != nil {
 			return fmt.Errorf("table.Create: build csv index: %w", err)
 		}
-		err = sr.Update().SetPath(fmt.Sprintf("datasets/shared/%s", sr.Nanoid)).SetIndexer(indexer.CSVIndexer).Exec(ctx)
+		err = sr.Update().SetPath(relativePath).SetIndexer(indexer.CSVIndexer).Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("table.Create: update dataset metadata: %w", err) // Clarified error
 		}
-	case "list":
+	case db_dataset.TypeList:
 		err := sr.Update().SetValues(req.Data).Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("table.Create: update dataset values: %w", err) // Clarified error
@@ -99,8 +105,8 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 		return "", fmt.Errorf("dataset.Create: starting a transaction: %w", err)
 	}
 	sr, err := tx.Dataset.Create().SetName(req.Name).SetDescription(req.Description).SetType(
-		db_dataset.Type(req.Type),
-	).Save(ctx)
+		req.Type,
+	).SetPrivate(req.Private).Save(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err)) // Clarified error
 	}
@@ -112,7 +118,7 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 }
 
 func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
-	datasets, err := s.db.Dataset.Query().All(ctx)
+	datasets, err := s.db.Dataset.Query().Where(db_dataset.Private(false)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("dataset.List: query all: %w", err)
 	}
@@ -144,7 +150,7 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 		return ent.Rollback(tx, fmt.Errorf("dataset.Update: query dataset: %w", err)) // Clarified error
 	}
 
-	if req.Type != "" && req.Type != string(ds.Type) {
+	if req.Type != "" && req.Type != ds.Type {
 		return ent.Rollback(tx, errors.New("dataset type cannot be changed via update"))
 	}
 
@@ -180,7 +186,7 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 		}
 
 		buildReq := req.CreateDatasetRequest
-		buildReq.Type = string(updatedDsEntity.Type)
+		buildReq.Type = updatedDsEntity.Type
 
 		err = s.buildCreateDatasetReq(ctx, &buildReq, updatedDsEntity)
 		if err != nil {

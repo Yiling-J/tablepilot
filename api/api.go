@@ -21,7 +21,6 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.POST("/generate/tables/:table", hs.Generate)
 	hs.apiv1.POST("/autofill/tables/:table", hs.Autofill)
 	hs.apiv1.GET("/tables/:table/rows", hs.Rows)
-	hs.apiv1.GET("/sources", hs.SharedSources)
 	hs.apiv1.GET("/tables/:table/schema", hs.GetTableSchema)
 	hs.apiv1.GET("/providers", hs.GetProviders)
 	hs.apiv1.POST("/providers", hs.CreateProvider)

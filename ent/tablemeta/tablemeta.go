@@ -26,12 +26,12 @@ const (
 	FieldDescription = "description"
 	// FieldModel holds the string denoting the model field in the database.
 	FieldModel = "model"
-	// FieldSources holds the string denoting the sources field in the database.
-	FieldSources = "sources"
 	// EdgeColumns holds the string denoting the columns edge name in mutations.
 	EdgeColumns = "columns"
 	// EdgeRows holds the string denoting the rows edge name in mutations.
 	EdgeRows = "rows"
+	// EdgeDatasets holds the string denoting the datasets edge name in mutations.
+	EdgeDatasets = "datasets"
 	// Table holds the table name of the tablemeta in the database.
 	Table = "table_meta"
 	// ColumnsTable is the table that holds the columns relation/edge.
@@ -48,6 +48,13 @@ const (
 	RowsInverseTable = "table_rows"
 	// RowsColumn is the table column denoting the rows relation/edge.
 	RowsColumn = "table_meta_rows"
+	// DatasetsTable is the table that holds the datasets relation/edge.
+	DatasetsTable = "datasets"
+	// DatasetsInverseTable is the table name for the Dataset entity.
+	// It exists in this package in order to avoid circular dependency with the "dataset" package.
+	DatasetsInverseTable = "datasets"
+	// DatasetsColumn is the table column denoting the datasets relation/edge.
+	DatasetsColumn = "table_meta_datasets"
 )
 
 // Columns holds all SQL columns for tablemeta fields.
@@ -59,7 +66,6 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldModel,
-	FieldSources,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -152,6 +158,20 @@ func ByRows(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRowsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByDatasetsCount orders the results by datasets count.
+func ByDatasetsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDatasetsStep(), opts...)
+	}
+}
+
+// ByDatasets orders the results by datasets terms.
+func ByDatasets(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDatasetsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newColumnsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -164,5 +184,12 @@ func newRowsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RowsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RowsTable, RowsColumn),
+	)
+}
+func newDatasetsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DatasetsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, DatasetsTable, DatasetsColumn),
 	)
 }

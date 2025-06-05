@@ -85,6 +85,11 @@ func Source(v string) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldSource, v))
 }
 
+// SourceID applies equality check predicate on the "source_id" field. It's identical to SourceIDEQ.
+func SourceID(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldSourceID, v))
+}
+
 // ContextLength applies equality check predicate on the "context_length" field. It's identical to ContextLengthEQ.
 func ContextLength(v int) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldEQ(FieldContextLength, v))
@@ -543,6 +548,111 @@ func SourceEqualFold(v string) predicate.TableColumn {
 // SourceContainsFold applies the ContainsFold predicate on the "source" field.
 func SourceContainsFold(v string) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldContainsFold(FieldSource, v))
+}
+
+// SourceIDEQ applies the EQ predicate on the "source_id" field.
+func SourceIDEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldSourceID, v))
+}
+
+// SourceIDNEQ applies the NEQ predicate on the "source_id" field.
+func SourceIDNEQ(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldSourceID, v))
+}
+
+// SourceIDIn applies the In predicate on the "source_id" field.
+func SourceIDIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIn(FieldSourceID, vs...))
+}
+
+// SourceIDNotIn applies the NotIn predicate on the "source_id" field.
+func SourceIDNotIn(vs ...string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotIn(FieldSourceID, vs...))
+}
+
+// SourceIDGT applies the GT predicate on the "source_id" field.
+func SourceIDGT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGT(FieldSourceID, v))
+}
+
+// SourceIDGTE applies the GTE predicate on the "source_id" field.
+func SourceIDGTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldGTE(FieldSourceID, v))
+}
+
+// SourceIDLT applies the LT predicate on the "source_id" field.
+func SourceIDLT(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLT(FieldSourceID, v))
+}
+
+// SourceIDLTE applies the LTE predicate on the "source_id" field.
+func SourceIDLTE(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldLTE(FieldSourceID, v))
+}
+
+// SourceIDContains applies the Contains predicate on the "source_id" field.
+func SourceIDContains(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContains(FieldSourceID, v))
+}
+
+// SourceIDHasPrefix applies the HasPrefix predicate on the "source_id" field.
+func SourceIDHasPrefix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasPrefix(FieldSourceID, v))
+}
+
+// SourceIDHasSuffix applies the HasSuffix predicate on the "source_id" field.
+func SourceIDHasSuffix(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldHasSuffix(FieldSourceID, v))
+}
+
+// SourceIDIsNil applies the IsNil predicate on the "source_id" field.
+func SourceIDIsNil() predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIsNull(FieldSourceID))
+}
+
+// SourceIDNotNil applies the NotNil predicate on the "source_id" field.
+func SourceIDNotNil() predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotNull(FieldSourceID))
+}
+
+// SourceIDEqualFold applies the EqualFold predicate on the "source_id" field.
+func SourceIDEqualFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEqualFold(FieldSourceID, v))
+}
+
+// SourceIDContainsFold applies the ContainsFold predicate on the "source_id" field.
+func SourceIDContainsFold(v string) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldContainsFold(FieldSourceID, v))
+}
+
+// SourceTypeEQ applies the EQ predicate on the "source_type" field.
+func SourceTypeEQ(v SourceType) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldEQ(FieldSourceType, v))
+}
+
+// SourceTypeNEQ applies the NEQ predicate on the "source_type" field.
+func SourceTypeNEQ(v SourceType) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNEQ(FieldSourceType, v))
+}
+
+// SourceTypeIn applies the In predicate on the "source_type" field.
+func SourceTypeIn(vs ...SourceType) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIn(FieldSourceType, vs...))
+}
+
+// SourceTypeNotIn applies the NotIn predicate on the "source_type" field.
+func SourceTypeNotIn(vs ...SourceType) predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotIn(FieldSourceType, vs...))
+}
+
+// SourceTypeIsNil applies the IsNil predicate on the "source_type" field.
+func SourceTypeIsNil() predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIsNull(FieldSourceType))
+}
+
+// SourceTypeNotNil applies the NotNil predicate on the "source_type" field.
+func SourceTypeNotNil() predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotNull(FieldSourceType))
 }
 
 // ContextLengthEQ applies the EQ predicate on the "context_length" field.

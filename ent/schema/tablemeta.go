@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"encoding/json"
 	"regexp"
 
 	"entgo.io/ent"
@@ -28,7 +27,6 @@ func (TableMeta) Fields() []ent.Field {
 		field.String("name").Unique().NotEmpty().Match(regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")),
 		field.String("description").Default(""),
 		field.String("model").Default(""),
-		field.JSON("sources", map[string]json.RawMessage{}).Optional(),
 	}
 }
 
@@ -37,6 +35,7 @@ func (TableMeta) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("columns", TableColumn.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("rows", TableRow.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("datasets", Dataset.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

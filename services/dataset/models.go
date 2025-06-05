@@ -8,11 +8,12 @@ import (
 )
 
 type CreateDatasetRequest struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Type        string      `json:"type"`
-	Data        []string    `json:"data"`  // for list type
-	Files       []io.Reader `json:"files"` // for csv type
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Type        db_dataset.Type `json:"type"`
+	Data        []string        `json:"data"`  // for list type
+	Files       []io.Reader     `json:"files"` // for csv type
+	Private     bool            `json:"private"`
 }
 
 type UpdateDatasetRequest struct {

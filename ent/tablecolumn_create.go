@@ -111,6 +111,34 @@ func (tcc *TableColumnCreate) SetNillableSource(s *string) *TableColumnCreate {
 	return tcc
 }
 
+// SetSourceID sets the "source_id" field.
+func (tcc *TableColumnCreate) SetSourceID(s string) *TableColumnCreate {
+	tcc.mutation.SetSourceID(s)
+	return tcc
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableSourceID(s *string) *TableColumnCreate {
+	if s != nil {
+		tcc.SetSourceID(*s)
+	}
+	return tcc
+}
+
+// SetSourceType sets the "source_type" field.
+func (tcc *TableColumnCreate) SetSourceType(tt tablecolumn.SourceType) *TableColumnCreate {
+	tcc.mutation.SetSourceType(tt)
+	return tcc
+}
+
+// SetNillableSourceType sets the "source_type" field if the given value is not nil.
+func (tcc *TableColumnCreate) SetNillableSourceType(tt *tablecolumn.SourceType) *TableColumnCreate {
+	if tt != nil {
+		tcc.SetSourceType(*tt)
+	}
+	return tcc
+}
+
 // SetContextLength sets the "context_length" field.
 func (tcc *TableColumnCreate) SetContextLength(i int) *TableColumnCreate {
 	tcc.mutation.SetContextLength(i)
@@ -299,6 +327,11 @@ func (tcc *TableColumnCreate) check() error {
 			return &ValidationError{Name: "fill_mode", err: fmt.Errorf(`ent: validator failed for field "TableColumn.fill_mode": %w`, err)}
 		}
 	}
+	if v, ok := tcc.mutation.SourceType(); ok {
+		if err := tablecolumn.SourceTypeValidator(v); err != nil {
+			return &ValidationError{Name: "source_type", err: fmt.Errorf(`ent: validator failed for field "TableColumn.source_type": %w`, err)}
+		}
+	}
 	if _, ok := tcc.mutation.ContextLength(); !ok {
 		return &ValidationError{Name: "context_length", err: errors.New(`ent: missing required field "TableColumn.context_length"`)}
 	}
@@ -381,6 +414,14 @@ func (tcc *TableColumnCreate) createSpec() (*TableColumn, *sqlgraph.CreateSpec) 
 	if value, ok := tcc.mutation.Source(); ok {
 		_spec.SetField(tablecolumn.FieldSource, field.TypeString, value)
 		_node.Source = value
+	}
+	if value, ok := tcc.mutation.SourceID(); ok {
+		_spec.SetField(tablecolumn.FieldSourceID, field.TypeString, value)
+		_node.SourceID = value
+	}
+	if value, ok := tcc.mutation.SourceType(); ok {
+		_spec.SetField(tablecolumn.FieldSourceType, field.TypeEnum, value)
+		_node.SourceType = value
 	}
 	if value, ok := tcc.mutation.ContextLength(); ok {
 		_spec.SetField(tablecolumn.FieldContextLength, field.TypeInt, value)
@@ -580,6 +621,42 @@ func (u *TableColumnUpsert) UpdateSource() *TableColumnUpsert {
 // ClearSource clears the value of the "source" field.
 func (u *TableColumnUpsert) ClearSource() *TableColumnUpsert {
 	u.SetNull(tablecolumn.FieldSource)
+	return u
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *TableColumnUpsert) SetSourceID(v string) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldSourceID, v)
+	return u
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateSourceID() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldSourceID)
+	return u
+}
+
+// ClearSourceID clears the value of the "source_id" field.
+func (u *TableColumnUpsert) ClearSourceID() *TableColumnUpsert {
+	u.SetNull(tablecolumn.FieldSourceID)
+	return u
+}
+
+// SetSourceType sets the "source_type" field.
+func (u *TableColumnUpsert) SetSourceType(v tablecolumn.SourceType) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldSourceType, v)
+	return u
+}
+
+// UpdateSourceType sets the "source_type" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateSourceType() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldSourceType)
+	return u
+}
+
+// ClearSourceType clears the value of the "source_type" field.
+func (u *TableColumnUpsert) ClearSourceType() *TableColumnUpsert {
+	u.SetNull(tablecolumn.FieldSourceType)
 	return u
 }
 
@@ -847,6 +924,48 @@ func (u *TableColumnUpsertOne) UpdateSource() *TableColumnUpsertOne {
 func (u *TableColumnUpsertOne) ClearSource() *TableColumnUpsertOne {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.ClearSource()
+	})
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *TableColumnUpsertOne) SetSourceID(v string) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetSourceID(v)
+	})
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateSourceID() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateSourceID()
+	})
+}
+
+// ClearSourceID clears the value of the "source_id" field.
+func (u *TableColumnUpsertOne) ClearSourceID() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.ClearSourceID()
+	})
+}
+
+// SetSourceType sets the "source_type" field.
+func (u *TableColumnUpsertOne) SetSourceType(v tablecolumn.SourceType) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetSourceType(v)
+	})
+}
+
+// UpdateSourceType sets the "source_type" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateSourceType() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateSourceType()
+	})
+}
+
+// ClearSourceType clears the value of the "source_type" field.
+func (u *TableColumnUpsertOne) ClearSourceType() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.ClearSourceType()
 	})
 }
 
@@ -1296,6 +1415,48 @@ func (u *TableColumnUpsertBulk) UpdateSource() *TableColumnUpsertBulk {
 func (u *TableColumnUpsertBulk) ClearSource() *TableColumnUpsertBulk {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.ClearSource()
+	})
+}
+
+// SetSourceID sets the "source_id" field.
+func (u *TableColumnUpsertBulk) SetSourceID(v string) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetSourceID(v)
+	})
+}
+
+// UpdateSourceID sets the "source_id" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateSourceID() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateSourceID()
+	})
+}
+
+// ClearSourceID clears the value of the "source_id" field.
+func (u *TableColumnUpsertBulk) ClearSourceID() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.ClearSourceID()
+	})
+}
+
+// SetSourceType sets the "source_type" field.
+func (u *TableColumnUpsertBulk) SetSourceType(v tablecolumn.SourceType) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetSourceType(v)
+	})
+}
+
+// UpdateSourceType sets the "source_type" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateSourceType() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateSourceType()
+	})
+}
+
+// ClearSourceType clears the value of the "source_type" field.
+func (u *TableColumnUpsertBulk) ClearSourceType() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.ClearSourceType()
 	})
 }
 

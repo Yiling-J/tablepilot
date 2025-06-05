@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
@@ -22,13 +23,14 @@ import (
 // TableMetaQuery is the builder for querying TableMeta entities.
 type TableMetaQuery struct {
 	config
-	ctx         *QueryContext
-	order       []tablemeta.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.TableMeta
-	withColumns *TableColumnQuery
-	withRows    *TableRowQuery
-	modifiers   []func(*sql.Selector)
+	ctx          *QueryContext
+	order        []tablemeta.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.TableMeta
+	withColumns  *TableColumnQuery
+	withRows     *TableRowQuery
+	withDatasets *DatasetQuery
+	modifiers    []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -102,6 +104,28 @@ func (tmq *TableMetaQuery) QueryRows() *TableRowQuery {
 			sqlgraph.From(tablemeta.Table, tablemeta.FieldID, selector),
 			sqlgraph.To(tablerow.Table, tablerow.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, tablemeta.RowsTable, tablemeta.RowsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tmq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDatasets chains the current query on the "datasets" edge.
+func (tmq *TableMetaQuery) QueryDatasets() *DatasetQuery {
+	query := (&DatasetClient{config: tmq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tmq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tmq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tablemeta.Table, tablemeta.FieldID, selector),
+			sqlgraph.To(dataset.Table, dataset.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, tablemeta.DatasetsTable, tablemeta.DatasetsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tmq.driver.Dialect(), step)
 		return fromU, nil
@@ -296,13 +320,14 @@ func (tmq *TableMetaQuery) Clone() *TableMetaQuery {
 		return nil
 	}
 	return &TableMetaQuery{
-		config:      tmq.config,
-		ctx:         tmq.ctx.Clone(),
-		order:       append([]tablemeta.OrderOption{}, tmq.order...),
-		inters:      append([]Interceptor{}, tmq.inters...),
-		predicates:  append([]predicate.TableMeta{}, tmq.predicates...),
-		withColumns: tmq.withColumns.Clone(),
-		withRows:    tmq.withRows.Clone(),
+		config:       tmq.config,
+		ctx:          tmq.ctx.Clone(),
+		order:        append([]tablemeta.OrderOption{}, tmq.order...),
+		inters:       append([]Interceptor{}, tmq.inters...),
+		predicates:   append([]predicate.TableMeta{}, tmq.predicates...),
+		withColumns:  tmq.withColumns.Clone(),
+		withRows:     tmq.withRows.Clone(),
+		withDatasets: tmq.withDatasets.Clone(),
 		// clone intermediate query.
 		sql:       tmq.sql.Clone(),
 		path:      tmq.path,
@@ -329,6 +354,17 @@ func (tmq *TableMetaQuery) WithRows(opts ...func(*TableRowQuery)) *TableMetaQuer
 		opt(query)
 	}
 	tmq.withRows = query
+	return tmq
+}
+
+// WithDatasets tells the query-builder to eager-load the nodes that are connected to
+// the "datasets" edge. The optional arguments are used to configure the query builder of the edge.
+func (tmq *TableMetaQuery) WithDatasets(opts ...func(*DatasetQuery)) *TableMetaQuery {
+	query := (&DatasetClient{config: tmq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tmq.withDatasets = query
 	return tmq
 }
 
@@ -410,9 +446,10 @@ func (tmq *TableMetaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*T
 	var (
 		nodes       = []*TableMeta{}
 		_spec       = tmq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			tmq.withColumns != nil,
 			tmq.withRows != nil,
+			tmq.withDatasets != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -447,6 +484,13 @@ func (tmq *TableMetaQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*T
 		if err := tmq.loadRows(ctx, query, nodes,
 			func(n *TableMeta) { n.Edges.Rows = []*TableRow{} },
 			func(n *TableMeta, e *TableRow) { n.Edges.Rows = append(n.Edges.Rows, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tmq.withDatasets; query != nil {
+		if err := tmq.loadDatasets(ctx, query, nodes,
+			func(n *TableMeta) { n.Edges.Datasets = []*Dataset{} },
+			func(n *TableMeta, e *Dataset) { n.Edges.Datasets = append(n.Edges.Datasets, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -509,6 +553,37 @@ func (tmq *TableMetaQuery) loadRows(ctx context.Context, query *TableRowQuery, n
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected referenced foreign-key "table_meta_rows" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (tmq *TableMetaQuery) loadDatasets(ctx context.Context, query *DatasetQuery, nodes []*TableMeta, init func(*TableMeta), assign func(*TableMeta, *Dataset)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*TableMeta)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Dataset(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(tablemeta.DatasetsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.table_meta_datasets
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "table_meta_datasets" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "table_meta_datasets" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

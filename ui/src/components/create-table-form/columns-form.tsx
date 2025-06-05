@@ -1,9 +1,11 @@
 import {
     Column,
+    DatasetInfo,
     LinkedSource,
     SourceData,
     TableCreateRequest,
     TableInfo,
+    getDatasets,
     getSources,
     getTables,
 } from "@/actions";
@@ -24,7 +26,9 @@ import { NumberInput } from "@/components/ui/number-input";
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
+    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -64,6 +68,7 @@ export function ColumnsForm({
   const [repeat, setRepeat] = useState(1);
   const [selectedColumn, setSelectedColumn] = useState<string>("");
   const [tables, setTables] = useState<TableInfo[]>([]);
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [linkedTableColumns, setLinkedTableColumns] = useState<Column[]>([]);
   const [selectedContextColumns, setSelectedContextColumns] = useState<
     string[]
@@ -89,6 +94,7 @@ export function ColumnsForm({
     if (tables.length === 0) {
       fetchTables();
     }
+    fetchDatasets();
   }, []);
 
   // Fetch tables from API
@@ -107,6 +113,15 @@ export function ColumnsForm({
       );
     } catch (error) {
       console.error("Error fetching tables:", error);
+    }
+  };
+
+  const fetchDatasets = async () => {
+    try {
+      const ds = await getDatasets();
+      setDatasets(ds.datasets);
+    } catch (error) {
+      console.error("Error fetching datasets:", error);
     }
   };
 
@@ -327,16 +342,27 @@ export function ColumnsForm({
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.sources.map((src, index) => (
-                        <SelectItem key={index} value={src.name}>
-                          {src.name}
-                        </SelectItem>
-                      ))}
-                      {sourcesRef.current.map((src, index) => (
-                        <SelectItem key={index} value={src.name}>
-                          {src.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Datasets</SelectLabel>
+                        {formData.sources.map((src, index) => (
+                          <SelectItem key={index} value={src.name}>
+                            {src.name}
+                          </SelectItem>
+                        ))}
+                        {sourcesRef.current.map((src, index) => (
+                          <SelectItem key={index} value={src.name}>
+                            {src.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Tables</SelectLabel>
+                        {datasets.map((ds, index) => (
+                          <SelectItem key={index} value={ds.id}>
+                            {ds.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
 

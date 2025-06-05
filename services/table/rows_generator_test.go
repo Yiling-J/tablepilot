@@ -37,7 +37,7 @@ func TestRowsGenerator_PrepareRows(t *testing.T) {
 		Random: false,
 	})
 	generator := &AIRowsGenerator{
-		indexerMap: map[string]*source.Indexer{
+		indexers: map[string]*source.Indexer{
 			"c1": idx,
 		},
 		table: &ent.TableMeta{Edges: ent.TableMetaEdges{
@@ -363,10 +363,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 	t.Run("pick-type column", func(t *testing.T) {
 		db := db.NewTestDB()
 		ctx := context.Background()
-		sc := &source.ListSource{Options: []string{"a", "b"}, BasicSource: source.BasicSource{Type: "list"}}
-		sb, err := json.Marshal(sc)
-		require.NoError(t, err)
-		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").SetSources(map[string]json.RawMessage{"so": sb}).Save(ctx)
+		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
 		require.NoError(t, err)
 		col, err := db.TableColumn.Create().
 			SetName("c").
@@ -968,7 +965,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		})
 		generator := &AIRowsGenerator{
 			sourceDataDir: "./",
-			indexerMap: map[string]*source.Indexer{
+			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
 			table: &ent.TableMeta{Edges: ent.TableMetaEdges{
@@ -999,7 +996,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		})
 		generator := &AIRowsGenerator{
 			sourceDataDir: "./",
-			indexerMap: map[string]*source.Indexer{
+			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
 			table: &ent.TableMeta{Edges: ent.TableMetaEdges{
@@ -1030,7 +1027,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 		})
 		generator := &AIRowsGenerator{
 			sourceDataDir: "./",
-			indexerMap: map[string]*source.Indexer{
+			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
 			table: &ent.TableMeta{Edges: ent.TableMetaEdges{
@@ -1099,7 +1096,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 				ContextColumns: []string{"c1"},
 			},
 			sourceDataDir: "./",
-			indexerMap: map[string]*source.Indexer{
+			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
 			table:  tb,
@@ -1162,7 +1159,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 				ContextColumns: []string{"c1"},
 			},
 			sourceDataDir: "./",
-			indexerMap: map[string]*source.Indexer{
+			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
 			table:  tb,

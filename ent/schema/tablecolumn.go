@@ -26,7 +26,9 @@ func (TableColumn) Fields() []ent.Field {
 		field.String("description").Optional(),
 		field.Enum("type").Values("string", "number", "integer", "boolean", "array", "image"),
 		field.Enum("fill_mode").Values("ai", "pick"),
-		field.String("source").Optional(),
+		field.String("source").Optional(), // deprecated
+		field.String("source_id").Optional(),
+		field.Enum("source_type").Optional().Values("table", "dataset"),
 		field.Int("context_length").Default(0),
 		field.Int("table_id"),
 		field.Bool("random").Default(false),

@@ -16,7 +16,6 @@ func (hs *HTTPServer) CreateTable(ctx *gin.Context) {
 		errorResponse(ctx, 400, err)
 		return
 	}
-	request.MarkAPIRequest()
 
 	uid, err := hs.TableService.Create(ctx.Request.Context(), &request)
 	if err != nil {
@@ -34,7 +33,6 @@ func (hs *HTTPServer) UpdateTable(ctx *gin.Context) {
 		errorResponse(ctx, 400, err)
 		return
 	}
-	request.MarkAPIRequest()
 
 	uid, err := hs.TableService.Update(ctx.Request.Context(), ctx.Param("table"), &request)
 	if err != nil {
@@ -213,11 +211,6 @@ func (hs *HTTPServer) CreateRows(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(200, "")
-}
-
-func (hs *HTTPServer) SharedSources(ctx *gin.Context) {
-	sources := hs.TableService.SharedSources(ctx)
-	ctx.JSON(200, gin.H{"sources": sources})
 }
 
 func (hs *HTTPServer) GetTableSchema(ctx *gin.Context) {
