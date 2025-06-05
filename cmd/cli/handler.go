@@ -186,44 +186,54 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 
 	switch datasetType {
 	case "list":
-		filePaths, err := cmd.Flags().GetStringArray("file")
+		filePaths, err := cmd.Flags().GetStringArray("path")
 		if err != nil {
 			return fmt.Errorf("error getting data flag for list type: %w", err)
 		}
+		if len(filePaths) == 0 {
+			return fmt.Errorf("at least one --path must be provided for type 'list'")
+		}
 		options := []string{}
-		for _, fp := range filePaths {
-			o, err := ReadLines(fp)
+		files, err := parsePaths(filePaths)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			r, err := os.Open(f)
 			if err != nil {
-				return fmt.Errorf("failed to read file %s: %w", fp, err)
+				return err
+			}
+			defer r.Close()
+			o, err := ReadLines(f)
+			if err != nil {
+				return fmt.Errorf("failed to read file %s: %w", f, err)
 			}
 			options = append(options, o...)
 		}
 		req.Data = options
 	case "csv":
-		filePaths, err := cmd.Flags().GetStringArray("file")
+		filePaths, err := cmd.Flags().GetStringArray("path")
 		if err != nil {
 			return fmt.Errorf("error getting file flag for csv type: %w", err)
 		}
 		if len(filePaths) == 0 {
-			return fmt.Errorf("at least one --file path must be provided for type 'csv'")
+			return fmt.Errorf("at least one --path must be provided for type 'csv'")
 		}
-		var files []io.Reader
-		for _, filePath := range filePaths {
-			file, err := os.Open(filePath)
+		var readers []io.Reader
+		files, err := parsePaths(filePaths)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			file, err := os.Open(f)
 			if err != nil {
-				// Close already opened files if any
-				for _, f := range files {
-					if c, ok := f.(io.Closer); ok {
-						c.Close()
-					}
-				}
-				return fmt.Errorf("failed to open file %s: %w", filePath, err)
+				return fmt.Errorf("failed to open file %s: %w", f, err)
 			}
-			files = append(files, file)
+			readers = append(readers, file)
 		}
-		req.Files = files
+		req.Files = readers
 		defer func() {
-			for _, f := range files {
+			for _, f := range readers {
 				if c, ok := f.(io.Closer); ok {
 					c.Close()
 				}

@@ -13,7 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
@@ -21,6 +23,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
+	dataset_service "github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/Yiling-J/tablepilot/services/source"
 
 	"github.com/invopop/jsonschema"
@@ -50,34 +53,6 @@ func TestRowsGenerator_PrepareRows(t *testing.T) {
 	err = generator.prepareRows(context.TODO(), 1)
 	require.NoError(t, err)
 	require.Equal(t, map[string]*schema.CellValue{"c1": {Value: "foo"}, "__id__": {Value: 0}}, generator.rows[0])
-}
-
-func TestRowsGenerator_PrepareRowsSharedSource(t *testing.T) {
-	ctx := context.TODO()
-	db := db.NewTestDB()
-	tb, err := db.TableMeta.Create().SetName("foo").SetDescription("bar").Save(ctx)
-	require.NoError(t, err)
-	col, err := db.TableColumn.Create().
-		SetName("c1").
-		SetFillMode(tablecolumn.FillModePick).
-		SetSource("so").
-		SetTablemeta(tb).
-		SetContextLength(5).
-		SetType(tablecolumn.TypeString).Save(ctx)
-	require.NoError(t, err)
-	generator, err := NewRowsGenerator(ctx, GenerateRowsRequest{
-		Table: "foo",
-		Batch: 5,
-		Count: 5,
-		sharedSources: map[string]json.RawMessage{
-			"so": json.RawMessage(`{"type":"list","options":["o1"]}`),
-		},
-	}, db, nil, zap.NewNop().Sugar())
-	require.NoError(t, err)
-
-	err = generator.prepareRows(context.TODO(), 1)
-	require.NoError(t, err)
-	require.Equal(t, map[string]*schema.CellValue{col.Nanoid: {Value: "o1"}, "__id__": {Value: 0}}, generator.rows[0])
 }
 
 func TestRowsGenerator_PrepareContextRows(t *testing.T) {
@@ -363,6 +338,13 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 	t.Run("pick-type column", func(t *testing.T) {
 		db := db.NewTestDB()
 		ctx := context.Background()
+		ds := dataset_service.NewDatasetService(db, &config.Config{})
+		did, err := ds.Create(t.Context(), &dataset_service.CreateDatasetRequest{
+			Name: "ds",
+			Type: dataset.TypeList,
+			Data: []string{"a", "b"},
+		})
+		require.NoError(t, err)
 		tb, err := db.TableMeta.Create().SetName("table").SetDescription("bar").Save(ctx)
 		require.NoError(t, err)
 		col, err := db.TableColumn.Create().
@@ -374,7 +356,7 @@ func TestRowsGenerator_Prompt(t *testing.T) {
 		col2, err := db.TableColumn.Create().
 			SetName("c2").
 			SetFillMode(tablecolumn.FillModePick).
-			SetSource("so").
+			SetSourceID(did).SetSourceType(tablecolumn.SourceTypeDataset).
 			SetTablemeta(tb).
 			SetType(tablecolumn.TypeString).Save(ctx)
 		require.NoError(t, err)

@@ -41,7 +41,7 @@ func TestHandler_Create(t *testing.T) {
 		CreateFunc: func(ctx context.Context, req *table.TableGenRequest) (string, error) {
 			require.Equal(t, &table.TableGenRequest{
 				Name: "go",
-				Columns: []table.TableGenColumn{
+				Columns: []*table.TableGenColumn{
 					{Name: "c1", Type: "string", FillMode: "ai"},
 				},
 			}, req)
@@ -75,7 +75,7 @@ func TestHandler_Update(t *testing.T) {
 			require.Equal(t, "foo", tb)
 			require.Equal(t, &table.TableGenRequest{
 				Name: "go",
-				Columns: []table.TableGenColumn{
+				Columns: []*table.TableGenColumn{
 					{Name: "c1", Type: "string", FillMode: "ai"},
 				},
 			}, req)
@@ -719,7 +719,7 @@ func TestHandler_Builder(t *testing.T) {
 				return &table.TableGenRequest{
 					Name:        "tb1",
 					Description: "d1",
-					Columns:     []table.TableGenColumn{},
+					Columns:     []*table.TableGenColumn{},
 				}, nil
 			case "tb2":
 				require.Equal(t, []*table.TableInfo{
@@ -728,7 +728,7 @@ func TestHandler_Builder(t *testing.T) {
 				return &table.TableGenRequest{
 					Name:        "tb2",
 					Description: "d2",
-					Columns:     []table.TableGenColumn{},
+					Columns:     []*table.TableGenColumn{},
 				}, nil
 			}
 			return nil, errors.New("build table err")
@@ -737,7 +737,7 @@ func TestHandler_Builder(t *testing.T) {
 			return &table.TableGenRequest{
 				Name:        "tb1",
 				Description: "d1",
-				Columns: []table.TableGenColumn{
+				Columns: []*table.TableGenColumn{
 					{Name: "col1", Description: "dc1"},
 				},
 			}, nil

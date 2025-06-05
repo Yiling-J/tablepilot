@@ -19,7 +19,7 @@ func TestAPI_CreateTable(t *testing.T) {
 		Name:        "recipes",
 		Model:       "m1",
 		Description: "all recipes",
-		Columns: []table.TableGenColumn{
+		Columns: []*table.TableGenColumn{
 			{Name: "col1", Description: "desc", Type: "string", FillMode: "ai"},
 		},
 	}
@@ -43,7 +43,7 @@ func TestAPI_UpdateTable(t *testing.T) {
 		Name:        "recipes",
 		Model:       "m1",
 		Description: "all recipes",
-		Columns: []table.TableGenColumn{
+		Columns: []*table.TableGenColumn{
 			{Name: "col1", Description: "desc", Type: "string", FillMode: "ai"},
 		},
 	}

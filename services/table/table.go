@@ -391,7 +391,6 @@ func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*T
 }
 
 func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
-	params.sharedSources = map[string]json.RawMessage{}
 	params.sourceDataDir = t.config.Common.SourceDataDir
 	generator, err := NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
 	if err != nil {
