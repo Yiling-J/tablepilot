@@ -402,7 +402,7 @@ func TestAPI_GetTableSchema(t *testing.T) {
 	resp := server.Send(req)
 	resp.ResponseEq(
 		t, 200, map[string]any{
-			"name": "bar", "model": "", "description": "", "columns": nil, "sources": nil,
+			"name": "bar", "model": "", "description": "", "columns": nil,
 		},
 	)
 }

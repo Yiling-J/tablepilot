@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/spf13/cast"
 )
@@ -36,6 +37,8 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 		replacement := cast.ToBool(args["replacement"])
 		linkedColumn := cast.ToString(args["linkedColumn"])
 		linkedContextColumns := cast.ToStringSlice(args["linkedContextColumns"])
+		sourceID := cast.ToString(args["sourceID"])
+		sourceType := cast.ToString(args["sourceType"])
 		tb.table.Columns = append(tb.table.Columns, &TableGenColumn{
 			Name:                 columnName,
 			Description:          columnDescription,
@@ -47,40 +50,16 @@ func (tb *tableBuilder) run(ctx context.Context, name string, args map[string]an
 			Replacement:          replacement,
 			LinkedColumn:         linkedColumn,
 			LinkedContextColumns: linkedContextColumns,
+			SourceID:             sourceID,
+			SourceType:           tablecolumn.SourceType(sourceType),
 		})
-	case "AddListSource":
+	case "AddListDataset":
 		source := &source.ListSource{
 			BasicSource: source.BasicSource{
 				Name: cast.ToString(args["name"]),
 				Type: "list",
 			},
 			Options: cast.ToStringSlice(args["options"]),
-		}
-		b, err := json.Marshal(source)
-		_ = b
-		if err != nil {
-			return err
-		}
-	case "AddAiSource":
-		source := &source.AISource{
-			BasicSource: source.BasicSource{
-				Name: cast.ToString(args["name"]),
-				Type: "ai",
-			},
-			Prompt: cast.ToString(args["prompt"]),
-		}
-		b, err := json.Marshal(source)
-		_ = b
-		if err != nil {
-			return err
-		}
-	case "AddLinkedSource":
-		source := &source.LinkedSource{
-			BasicSource: source.BasicSource{
-				Name: cast.ToString(args["name"]),
-				Type: "linked",
-			},
-			Table: cast.ToString(args["table"]),
 		}
 		b, err := json.Marshal(source)
 		_ = b

@@ -79,6 +79,7 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 			Name:        req.Name,
 			Model:       req.Model,
 			Description: req.Description,
+			Columns:     req.Columns,
 		}
 		for _, ds := range req.Datasets {
 			readers := []io.Reader{}

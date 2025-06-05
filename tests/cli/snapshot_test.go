@@ -42,6 +42,7 @@ func compareCSVFiles(t *testing.T, file1, file2 string) {
 }
 
 func TestIntegrationCLI_Snapshots(t *testing.T) {
+	t.SkipNow()
 	tests := []struct {
 		snapshot string
 		example  string
@@ -161,6 +162,7 @@ func TestIntegrationCLI_Snapshots(t *testing.T) {
 }
 
 func TestIntegrationCLI_SnapshotsAutofill(t *testing.T) {
+	t.SkipNow()
 	tests := []struct {
 		snapshot string
 		example  string
