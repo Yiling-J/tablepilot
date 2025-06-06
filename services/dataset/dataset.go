@@ -11,6 +11,7 @@ import (
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
+	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/Yiling-J/tablepilot/services/source/csvindexer"
 	"github.com/Yiling-J/tablepilot/utils"
@@ -24,6 +25,7 @@ type DatasetService interface {
 	Update(ctx context.Context, dataset string, req *UpdateDatasetRequest) error
 	Delete(ctx context.Context, dataset string) error
 	Preview(ctx context.Context, source string) (*DatasetRows, error)
+	ListTableDatasets(ctx context.Context, table string) ([]*DatasetInfo, error)
 }
 
 type DatasetServiceImpl struct {
@@ -119,6 +121,28 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 
 func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 	datasets, err := s.db.Dataset.Query().Where(db_dataset.Private(false)).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("dataset.List: query all: %w", err)
+	}
+	datasetInfos := []*DatasetInfo{}
+	for _, ds := range datasets {
+		datasetInfos = append(datasetInfos, &DatasetInfo{
+			ID:          ds.Nanoid,
+			Name:        ds.Name,
+			Description: ds.Description,
+			Type:        string(ds.Type),
+			ColumnCount: len(ds.Indexer.ColumnNames),
+			ValueCount:  len(ds.Values),
+			Data:        ds.Values,
+		})
+	}
+	return datasetInfos, nil
+}
+
+func (s *DatasetServiceImpl) ListTableDatasets(ctx context.Context, table string) ([]*DatasetInfo, error) {
+	datasets, err := s.db.Dataset.Query().Where(db_dataset.Private(true), db_dataset.HasTableWith(
+		tablemeta.Nanoid(table),
+	)).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("dataset.List: query all: %w", err)
 	}

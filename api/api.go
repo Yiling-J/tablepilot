@@ -28,6 +28,7 @@ func (hs *HTTPServer) addRouters() {
 	hs.apiv1.PATCH("/providers/:id", hs.UpdateProvider)
 	hs.apiv1.POST("/regenerate/tables/:table", hs.Regenerate)
 	hs.apiv1.POST("/image_import/tables", hs.ImportImage)
+	hs.apiv1.GET("/tables/:table/datasets", hs.ListTableDatasets)
 
 	// ai
 	hs.apiv1.POST("/ai/list_gen", hs.GenerateListOptions)
