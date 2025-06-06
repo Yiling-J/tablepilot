@@ -24,14 +24,13 @@ import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ContextVariable } from "../ui/var-input";
 import { ColumnsForm } from "./columns-form";
+import { DatasetsForm } from "./datasets-form";
 import { JsonPreview } from "./json-preview";
 import { NameDescriptionForm } from "./name-description-form";
-import { SourcesForm } from "./sources-form";
 
 const initialFormData: TableCreateRequest = {
   name: "",
   description: "",
-  sources: [],
   columns: [],
 };
 
@@ -144,7 +143,7 @@ export default function CreateTableForm({
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="step1">Basic</TabsTrigger>
                 <TabsTrigger value="step2" disabled={!isStep1Valid || loading}>
-                  Sources
+                  Datasets
                 </TabsTrigger>
                 <TabsTrigger
                   value="step3"
@@ -161,11 +160,13 @@ export default function CreateTableForm({
                 />
               </TabsContent>
               <TabsContent value="step2">
-                <SourcesForm
-                  variables={variables}
-                  formData={formData}
-                  updateFormData={updateFormData}
-                  tables={tables}
+                <DatasetsForm
+                  form={form} // form is TableCreateRequest (optional) - used by DatasetsForm for context
+                  table={table} // table is string (optional) - used by DatasetsForm
+                  variables={variables} // variables is ContextVariable[] (optional) - available if needed
+                  // formData={formData} // Removed
+                  // updateFormData={updateFormData} // Removed
+                  // tables={tables} // Removed
                 />
               </TabsContent>
               <TabsContent value="step3">

@@ -164,7 +164,6 @@ describe("TableListPage", () => {
     mockedGetTableSchema.mockResolvedValue({
       name: "users",
       description: "users table",
-      sources: [], // Added sources
       columns: [
         {
           name: "name", // id removed

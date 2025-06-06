@@ -160,7 +160,6 @@ export type Source = AiSource | ListSource | LinkedSource;
 export interface TableCreateRequest {
   name: string;
   description: string;
-  sources: Source[];
   columns: {
     name: string;
     description: string;

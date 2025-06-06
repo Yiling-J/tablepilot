@@ -90,6 +90,7 @@ function DatasetList() {
         type: data.type,
         data: data.type === "list" ? data.options || [] : [],
         files: data.type === "csv" ? data.files || [] : [],
+        private: false, // Added private field
       };
 
       await createDataset(requestPayload);
@@ -128,6 +129,7 @@ function DatasetList() {
         type: data.type,
         data: data.type === "list" ? data.options || [] : [],
         files: data.type === "csv" ? data.files || [] : [],
+        private: false, // Added private field
       };
 
       await updateDataset(id, requestPayload);

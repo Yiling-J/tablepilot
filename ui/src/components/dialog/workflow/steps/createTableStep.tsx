@@ -87,10 +87,6 @@ export function CreateTableStep({
             <span className="text-muted-foreground">Columns:</span>
             <span>{step.request.columns.length} columns</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Sources:</span>
-            <span>{step.request.sources.length} sources</span>
-          </div>
         </div>
       </div>
     </div>
