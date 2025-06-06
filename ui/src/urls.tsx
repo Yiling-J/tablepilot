@@ -83,3 +83,7 @@ export function previewDatasetUrl(id: string) {
 export function genDatasetOptionsUrl() {
   return `${address}/api/v1/ai/list_gen`;
 }
+
+export function tableDatasetsUrl(id: string) {
+  return `${address}/api/v1/tables/${id}/datasets`;
+}

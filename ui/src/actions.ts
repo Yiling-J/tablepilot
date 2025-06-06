@@ -18,6 +18,7 @@ import {
     runWorkflowUrl,
     schemaUrl,
     sourcesUrl,
+    tableDatasetsUrl,
     tableUrl,
     tablesUrl,
     truncateUrl,
@@ -768,12 +769,29 @@ export async function getDatasets(): Promise<GetDatasetsResponse> {
   return res.json();
 }
 
+export async function getTableDatasets(
+  id: string,
+): Promise<GetDatasetsResponse> {
+  const res = await fetch(tableDatasetsUrl(id), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    toast.error("Failed to fetch workflows");
+    throw new Error("Failed to fetch workflows");
+  }
+  return res.json();
+}
+
 export interface CreateDatasetRequest {
   name: string;
   description: string;
   type: DatasetType;
   data: string[];
   files: File[];
+  private: boolean;
 }
 
 export async function createDataset(
@@ -782,6 +800,7 @@ export async function createDataset(
   const formData = new FormData();
   formData.append("name", req.name);
   formData.append("description", req.description);
+  formData.append("private", JSON.stringify(req.private));
   formData.append("type", req.type);
   if (req.data.length > 0) {
     req.data.forEach((v) => formData.append("data", v));
