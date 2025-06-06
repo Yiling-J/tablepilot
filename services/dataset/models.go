@@ -14,6 +14,7 @@ type CreateDatasetRequest struct {
 	Data        []string        `json:"data"`  // for list type
 	Files       []io.Reader     `json:"files"` // for csv type
 	Private     bool            `json:"private"`
+	Table       string          `json:"table"`
 }
 
 type UpdateDatasetRequest struct {

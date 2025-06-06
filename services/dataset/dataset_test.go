@@ -213,6 +213,32 @@ func TestDatasetService_Create(t *testing.T) {
 	}, rows.Rows)
 }
 
+func TestDatasetService_CreateForTable(t *testing.T) {
+	db := db.NewTestDB()
+	srv := NewDatasetService(db, &config.Config{
+		Common: config.Common{
+			SourceDataDir: "./dstest",
+		},
+	})
+	tb, err := db.TableMeta.Create().SetName("t1").Save(t.Context())
+	require.NoError(t, err)
+
+	ds1, err := srv.Create(t.Context(), &CreateDatasetRequest{
+		Name:        "ds",
+		Description: "dataset",
+		Type:        "list",
+		Data:        []string{"foo", "bar"},
+		Table:       tb.Nanoid,
+	})
+	require.NoError(t, err)
+	d, err := db.Dataset.Query().Where(dataset.Nanoid(ds1)).Only(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, true, d.Private)
+	tbd, err := d.QueryTable().Only(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, tb.ID, tbd.ID)
+}
+
 func TestDatasetService_Update(t *testing.T) {
 	db := db.NewTestDB()
 	testDirBase := "./dstest_update_" + uuid.NewString()

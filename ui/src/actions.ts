@@ -791,6 +791,7 @@ export interface CreateDatasetRequest {
   data: string[];
   files: File[];
   private: boolean;
+  table?: string;
 }
 
 export async function createDataset(
@@ -817,7 +818,7 @@ export async function createDataset(
     toast.error("Failed to create dataset");
     throw new Error("Failed to create dataset");
   }
-  return res.json();
+  return res.json().then((v) => v.id);
 }
 
 export async function updateDataset(

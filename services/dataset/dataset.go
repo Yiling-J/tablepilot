@@ -106,11 +106,19 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 	if err != nil {
 		return "", fmt.Errorf("dataset.Create: starting a transaction: %w", err)
 	}
-	sr, err := tx.Dataset.Create().SetName(req.Name).SetDescription(req.Description).SetType(
+	creator := tx.Dataset.Create().SetName(req.Name).SetDescription(req.Description).SetType(
 		req.Type,
-	).SetPrivate(req.Private).Save(ctx)
+	).SetPrivate(req.Private)
+	if req.Table != "" {
+		tb, err := tx.TableMeta.Query().Where(tablemeta.Nanoid(req.Table)).Only(ctx)
+		if err != nil {
+			return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: get tablle: %w", err))
+		}
+		creator.SetPrivate(true).SetTable(tb)
+	}
+	sr, err := creator.Save(ctx)
 	if err != nil {
-		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err)) // Clarified error
+		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err))
 	}
 	err = s.buildCreateDatasetReq(ctx, req, sr)
 	if err != nil {
