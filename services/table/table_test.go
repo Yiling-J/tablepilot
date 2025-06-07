@@ -80,7 +80,8 @@ func TestTableService_Create(t *testing.T) {
 		},
 		{
 			Name: "country", Description: "recipe country", Type: "string",
-			FillMode: "pick", SourceID: "countries", SourceType: tablecolumn.SourceTypeDataset,
+			FillMode: "pick", SourceType: tablecolumn.SourceTypeOptions,
+			Options: []string{"China", "Italy"},
 		},
 		{
 			Name: "user", Description: "recipe user", Type: "boolean",
@@ -118,11 +119,7 @@ func TestTableService_Create(t *testing.T) {
 	srv, err := NewTableService(&config.Config{}, db, aiService, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
-	ds1, err := db.Dataset.Create().SetName("countries").SetType(dataset.TypeList).SetValues([]string{
-		"China", "Japan", "Englland",
-	}).Save(ctx)
-	require.NoError(t, err)
-	ds2, err := db.Dataset.Create().SetName("tags").SetType(dataset.TypeList).SetValues([]string{
+	ds, err := db.Dataset.Create().SetName("tags").SetType(dataset.TypeList).SetValues([]string{
 		"a", "b", "c",
 	}).Save(ctx)
 	require.NoError(t, err)
@@ -172,7 +169,7 @@ func TestTableService_Create(t *testing.T) {
 		&ent.TableColumn{
 			Name: "tag", Description: "recipe tag", ContextLength: 0,
 			Type: tablecolumn.TypeArray, FillMode: tablecolumn.FillModePick,
-			SourceID: ds2.Nanoid, SourceType: tablecolumn.SourceTypeDataset,
+			SourceID: ds.Nanoid, SourceType: tablecolumn.SourceTypeDataset,
 			Random: true, Replacement: true, Repeat: 3,
 		},
 		table.Edges.Columns[2],
@@ -182,7 +179,7 @@ func TestTableService_Create(t *testing.T) {
 		&ent.TableColumn{
 			Name: "country", Description: "recipe country", ContextLength: 0,
 			Type: tablecolumn.TypeString, FillMode: tablecolumn.FillModePick,
-			SourceID: ds1.Nanoid, SourceType: tablecolumn.SourceTypeDataset,
+			Options: []string{"China", "Italy"}, SourceType: tablecolumn.SourceTypeOptions,
 		},
 		table.Edges.Columns[3],
 	)
@@ -1180,7 +1177,7 @@ func TestTableService_GetTableSchema(t *testing.T) {
 	require.NoError(t, err)
 	schema, err := srv.GetTableSchema(ctx, id)
 	require.NoError(t, err)
-	expected := `{"name":"test","model":"","description":"test table","columns":[{"name":"name","description":"recipe name","type":"string","fill_mode":"ai","source_type":"","source_id":"","random":false,"replacement":false,"repeat":1,"context_length":5,"linked_column":"","linked_context_columns":[]},{"name":"count","description":"recipe count","type":"integer","fill_mode":"ai","source_type":"","source_id":"","random":false,"replacement":false,"repeat":1,"context_length":3,"linked_column":"","linked_context_columns":[]},{"name":"tag","description":"recipe tag","type":"array","fill_mode":"pick","source_type":"","source_id":"","random":true,"replacement":true,"repeat":3,"context_length":0,"linked_column":"","linked_context_columns":null},{"name":"country","description":"recipe country","type":"string","fill_mode":"pick","source_type":"","source_id":"","random":false,"replacement":false,"repeat":0,"context_length":0,"linked_column":"","linked_context_columns":null},{"name":"user","description":"recipe user","type":"boolean","fill_mode":"pick","source_type":"","source_id":"","random":false,"replacement":false,"repeat":0,"context_length":0,"linked_column":"name","linked_context_columns":["age"]},{"name":"extra","description":"","type":"string","fill_mode":"ai","source_type":"","source_id":"","random":false,"replacement":false,"repeat":1,"context_length":0,"linked_column":"","linked_context_columns":[]}]}`
+	expected := `{"name":"test","model":"","description":"test table","columns":[{"name":"name","description":"recipe name","type":"string","fill_mode":"ai","source_type":"","source_id":"","options":null,"random":false,"replacement":false,"repeat":1,"context_length":5,"linked_column":"","linked_context_columns":[]},{"name":"count","description":"recipe count","type":"integer","fill_mode":"ai","source_type":"","source_id":"","options":null,"random":false,"replacement":false,"repeat":1,"context_length":3,"linked_column":"","linked_context_columns":[]},{"name":"tag","description":"recipe tag","type":"array","fill_mode":"pick","source_type":"","source_id":"","options":null,"random":true,"replacement":true,"repeat":3,"context_length":0,"linked_column":"","linked_context_columns":null},{"name":"country","description":"recipe country","type":"string","fill_mode":"pick","source_type":"","source_id":"","options":null,"random":false,"replacement":false,"repeat":0,"context_length":0,"linked_column":"","linked_context_columns":null},{"name":"user","description":"recipe user","type":"boolean","fill_mode":"pick","source_type":"","source_id":"","options":null,"random":false,"replacement":false,"repeat":0,"context_length":0,"linked_column":"name","linked_context_columns":["age"]},{"name":"extra","description":"","type":"string","fill_mode":"ai","source_type":"","source_id":"","options":null,"random":false,"replacement":false,"repeat":1,"context_length":0,"linked_column":"","linked_context_columns":[]}]}`
 	b, err := json.Marshal(schema)
 	require.NoError(t, err)
 	require.Equal(t, expected, string(b))

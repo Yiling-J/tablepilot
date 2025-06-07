@@ -177,11 +177,12 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 			SetType(tablecolumn.Type(col.Type)).
 			SetContextLength(col.ContextLength)
 
-		if col.SourceID != "" && col.FillMode == "pick" {
+		if col.FillMode == "pick" {
 			cc.SetSourceID(col.SourceID).SetSourceType(col.SourceType).SetRandom(col.Random).
 				SetReplacement(col.Replacement).
 				SetRepeat(col.Repeat).SetLinkedColumn(col.LinkedColumn).
-				SetLinkedContextColumns(col.LinkedContextColumns)
+				SetLinkedContextColumns(col.LinkedContextColumns).
+				SetOptions(col.Options)
 		}
 		columnCreates = append(columnCreates, cc)
 		t.logger.Debugw(

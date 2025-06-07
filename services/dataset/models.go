@@ -28,6 +28,7 @@ type DatasetInfo struct {
 	ColumnCount int      `json:"column_count"`
 	ValueCount  int      `json:"value_count"`
 	Data        []string `json:"data"`
+	Columns     []string `json:"columns"`
 }
 
 type DatasetRows struct {

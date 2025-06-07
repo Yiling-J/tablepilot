@@ -16,6 +16,7 @@ type TableGenColumn struct {
 	FillMode             string                 `json:"fill_mode"`
 	SourceType           tablecolumn.SourceType `json:"source_type"`
 	SourceID             string                 `json:"source_id"`
+	Options              []string               `json:"options"`
 	Random               bool                   `json:"random"`
 	Replacement          bool                   `json:"replacement"`
 	Repeat               int                    `json:"repeat"`

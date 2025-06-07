@@ -2,13 +2,13 @@ package table
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"time"
 
 	// #nosec
 	"crypto/md5"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"

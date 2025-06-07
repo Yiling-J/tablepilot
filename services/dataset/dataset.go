@@ -127,6 +127,7 @@ func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 			ColumnCount: len(ds.Indexer.ColumnNames),
 			ValueCount:  len(ds.Values),
 			Data:        ds.Values,
+			Columns:     ds.Indexer.ColumnNames,
 		})
 	}
 	return datasetInfos, nil

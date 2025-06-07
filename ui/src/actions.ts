@@ -708,6 +708,7 @@ export interface DatasetInfo {
   type: DatasetType;
   description: string;
   data: string[];
+  columns: string[];
 }
 
 export interface GetDatasetsResponse {
