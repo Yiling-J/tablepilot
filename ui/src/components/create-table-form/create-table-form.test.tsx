@@ -1,11 +1,9 @@
 import {
-    AiSource,
-    LinkedSource,
     TableCreateRequest,
     TableInfo,
     createRows,
     createTable,
-    getSources,
+    getDatasets,
     getTables,
     updateTable,
 } from "@/actions";
@@ -29,7 +27,6 @@ describe("CreateTableForm", () => {
     );
     await screen.findByText("Table Configuration");
     expect(screen.getByText("Basic")).toBeInTheDocument();
-    expect(screen.getByText("Sources")).toBeDisabled();
     expect(screen.getByText("Columns")).toBeDisabled();
   });
 
@@ -46,13 +43,10 @@ describe("CreateTableForm", () => {
     expect(screen.getByText("Table name cannot be empty.")).toBeInTheDocument();
     await userEvent.click(input);
     await userEvent.keyboard("test");
-    expect(screen.getByText("Sources")).toBeEnabled();
     expect(screen.getByText("Columns")).toBeEnabled();
     await userEvent.clear(input);
-    expect(screen.getByText("Sources")).toBeDisabled();
     expect(screen.getByText("Columns")).toBeDisabled();
     await userEvent.keyboard("****");
-    expect(screen.getByText("Sources")).toBeDisabled();
     expect(screen.getByText("Columns")).toBeDisabled();
     expect(
       screen.getByText(
@@ -101,129 +95,7 @@ describe("CreateTableForm", () => {
     );
     await screen.findByText("Table Configuration");
     await userEvent.click(screen.getByText("Next"));
-    await screen.findByText("Data Sources");
-  });
-
-  describe("AddSource", () => {
-    beforeEach(async () => {
-      vi.mock("@/actions");
-      const table = {
-        id: "abc",
-        name: "users",
-        description: "users table",
-        columns: [
-          {
-            id: "col1",
-            name: "name",
-            description: "user name",
-            type: "string",
-            fill_mode: "ai",
-          },
-          {
-            id: "col2",
-            name: "job",
-            description: "user job",
-            type: "string",
-            fill_mode: "ai",
-          },
-        ],
-        model: "",
-      } as TableInfo;
-      const mockedGetTables = vi.mocked(getTables);
-      mockedGetTables.mockResolvedValue({
-        tables: [table],
-        total: 1,
-      });
-      const form = {
-        name: "foo",
-        description: "bar",
-        sources: [],
-        columns: [],
-      };
-      render(
-        <TestProvider>
-          <CreateTableForm close={() => {}} form={form} />
-        </TestProvider>,
-      );
-      await screen.findByText("Table Configuration");
-      await userEvent.click(screen.getByText("Next"));
-      await userEvent.click(screen.getByText("Add Source"));
-      await screen.findByText("Add New Source");
-    });
-    it("should add a new ai type source, and can edit/delete", async () => {
-      await userEvent.click(
-        screen.getByPlaceholderText("e.g., cuisines, meals, customer"),
-      );
-      await userEvent.keyboard("s1");
-      await userEvent.click(
-        screen.getByPlaceholderText("e.g., Generate 20 recipe cuisines."),
-      );
-      await userEvent.keyboard("20 tags");
-      await userEvent.click(screen.getByText("Add"));
-      await userEvent.click(screen.getByText("Show JSON"));
-      await screen.findByText("JSON Preview");
-      expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "20 tags" } ], "columns": [] }`,
-      );
-      expect(screen.getByText("s1")).toBeInTheDocument();
-      expect(screen.getByText("AI Generated")).toBeInTheDocument();
-
-      // edit
-      await userEvent.click(screen.getByTestId("source-ops").children.item(0)!);
-      await screen.findByText("Table Configuration");
-      expect(screen.getByDisplayValue("s1")).toBeInTheDocument();
-      await userEvent.click(screen.getByText("Update"));
-
-      // delete
-      await userEvent.click(screen.getByTestId("source-ops").children.item(1)!);
-      expect(
-        screen.getByText(
-          `No sources added yet. Click the "Add Source" button to create one.`,
-        ),
-      ).toBeInTheDocument();
-      expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [], "columns": [] }`,
-      );
-    });
-
-    it("should add a new list type source", async () => {
-      await userEvent.click(
-        screen.getByPlaceholderText("e.g., cuisines, meals, customer"),
-      );
-      await userEvent.keyboard("s1");
-      await userEvent.click(screen.getByText("AI Generated").parentElement!);
-      await userEvent.click(screen.getByText("List of Options"));
-      await userEvent.click(screen.getByPlaceholderText(/Dinner/i));
-      await userEvent.keyboard(`foo
-bar`);
-      await userEvent.click(screen.getByText("Add"));
-      await userEvent.click(screen.getByText("Show JSON"));
-      await screen.findByText("JSON Preview");
-      expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "list", "options": [ "foo", "bar" ] } ], "columns": [] }`,
-      );
-      expect(screen.getByText("s1")).toBeInTheDocument();
-      expect(screen.getByText("List of Options")).toBeInTheDocument();
-    });
-
-    it("should add a new linked table type source", async () => {
-      await userEvent.click(
-        screen.getByPlaceholderText("e.g., cuisines, meals, customer"),
-      );
-      await userEvent.keyboard("s1");
-      await userEvent.click(screen.getByText("AI Generated").parentElement!);
-      await userEvent.click(screen.getByText("Linked Table"));
-      await userEvent.click(screen.getByText("Select a table").parentElement!);
-      await userEvent.click(screen.getByText("users"));
-      await userEvent.click(screen.getByText("Add"));
-      await userEvent.click(screen.getByText("Show JSON"));
-      await screen.findByText("JSON Preview");
-      expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "linked", "table": "users" } ], "columns": [] }`,
-      );
-      expect(screen.getByText("s1")).toBeInTheDocument();
-      expect(screen.getByText("Linked Table")).toBeInTheDocument();
-    });
+    await screen.findByText("Columns");
   });
 
   describe("AddColumns", () => {
@@ -256,26 +128,23 @@ bar`);
         tables: [table],
         total: 1,
       });
-      const mockedGetSources = vi.mocked(getSources);
-      mockedGetSources.mockResolvedValue([
-        {
-          name: "s1",
-          data: {},
-          columns: [],
-        },
-        {
-          name: "s3",
-          data: { name: "s3", type: "ai", prompt: "foo" },
-          columns: [],
-        },
-      ]);
+      const mockedGetDatasets = vi.mocked(getDatasets);
+      mockedGetDatasets.mockResolvedValue({
+        datasets: [
+          {
+            id: "d1",
+            name: "s1",
+            description: "ds",
+            type: "csv",
+            data: [],
+            columns: [],
+          },
+        ],
+        total: 1,
+      });
       const form = {
         name: "foo",
         description: "bar",
-        sources: [
-          { name: "s1", type: "ai", prompt: "" } as AiSource,
-          { name: "s2", type: "linked", table: "users" } as LinkedSource,
-        ],
         columns: [],
       };
       render(
@@ -284,7 +153,6 @@ bar`);
         </TestProvider>,
       );
       await screen.findByText("Table Configuration");
-      await userEvent.click(screen.getByText("Next"));
       await userEvent.click(screen.getByText("Next"));
       await userEvent.click(screen.getByText("Add Column"));
       await screen.findByText("Add New Column");
@@ -297,12 +165,13 @@ bar`);
       );
       await userEvent.keyboard("recipe name");
     });
-    it("should add a new default type source and can edit/delete", async () => {
+
+    it("should add a new default type column and can edit/delete", async () => {
       await userEvent.click(screen.getByText("Add"));
       await userEvent.click(screen.getByText("Show JSON"));
       await screen.findByText("JSON Preview");
       expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "ai", "random": true, "replacement": false, "repeat": 1, "linked_column": "", "linked_context_columns": [] } ] }`,
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "ai", "random": true, "replacement": false, "repeat": 1, "linked_column": "", "linked_context_columns": [], "options": [] } ] }`,
       );
       expect(screen.getByText("c1")).toBeInTheDocument();
       // edit
@@ -319,10 +188,11 @@ bar`);
         ),
       ).toBeInTheDocument();
       expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [] }`,
+        `{ "name": "foo", "description": "bar", "columns": [] }`,
       );
     });
-    it("should add a new integer type source with options", async () => {
+
+    it("should add a new integer type column with options", async () => {
       await userEvent.click(screen.getByText("String").parentElement!);
       await userEvent.click(screen.getByText("Integer"));
       await userEvent.click(screen.getByPlaceholderText("e.g., 5"));
@@ -331,23 +201,35 @@ bar`);
       await userEvent.click(screen.getByText("Show JSON"));
       await screen.findByText("JSON Preview");
       expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "integer", "fill_mode": "ai", "random": true, "replacement": false, "repeat": 1, "linked_column": "", "linked_context_columns": [], "context_length": 12 } ] }`,
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "integer", "fill_mode": "ai", "random": true, "replacement": false, "repeat": 1, "linked_column": "", "linked_context_columns": [], "context_length": 12, "options": [] } ] }`,
       );
       expect(screen.getByText("c1")).toBeInTheDocument();
     });
-    it("should show sources and shared sources in source list", async () => {
+
+    it("should show tables in source list", async () => {
       await userEvent.click(screen.getByText("AI Generated").parentElement!);
-      await userEvent.click(screen.getByText("Pick from Source"));
-      await userEvent.click(screen.getByText("Select source").parentElement!);
+      await userEvent.click(screen.getByText("Select from Table"));
+      await userEvent.click(screen.getByText("Select a table").parentElement!);
+      expect(screen.getAllByText("users").length).toBe(1);
+      expect(screen.getByText("users")).toBeInTheDocument();
+    });
+
+    it("should show datasets in source list", async () => {
+      await userEvent.click(screen.getByText("AI Generated").parentElement!);
+      await userEvent.click(screen.getByText("Select from Dataset"));
+      await userEvent.click(
+        screen.getByText("Select a dataset").parentElement!,
+      );
       expect(screen.getAllByText("s1").length).toBe(1);
       expect(screen.getByText("s1")).toBeInTheDocument();
-      expect(screen.getByText("s2")).toBeInTheDocument();
-      expect(screen.getByText("s3")).toBeInTheDocument();
     });
-    it("should create pick from ai list column", async () => {
+
+    it("should create pick from dataset column", async () => {
       await userEvent.click(screen.getByText("AI Generated").parentElement!);
-      await userEvent.click(screen.getByText("Pick from Source"));
-      await userEvent.click(screen.getByText("Select source").parentElement!);
+      await userEvent.click(screen.getByText("Select from Dataset"));
+      await userEvent.click(
+        screen.getByText("Select a dataset").parentElement!,
+      );
       await userEvent.click(screen.getByText("s1"));
       await userEvent.click(
         screen.getByText("Random Selection").parentElement!
@@ -363,14 +245,15 @@ bar`);
       await userEvent.click(screen.getByText("Show JSON"));
       await screen.findByText("JSON Preview");
       expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "", "linked_context_columns": [], "source": "s1" } ] }`,
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "", "linked_context_columns": [], "source_id": "d1", "source_type": "dataset", "options": [] } ] }`,
       );
     });
+
     it("should create pick from table column", async () => {
       await userEvent.click(screen.getByText("AI Generated").parentElement!);
-      await userEvent.click(screen.getByText("Pick from Source"));
-      await userEvent.click(screen.getByText("Select source").parentElement!);
-      await userEvent.click(screen.getByText("s2"));
+      await userEvent.click(screen.getByText("Select from Table"));
+      await userEvent.click(screen.getByText("Select a table").parentElement!);
+      await userEvent.click(screen.getByText("users"));
       await userEvent.click(screen.getByText("Select a column").parentElement!);
       await userEvent.click(screen.getByText("name"));
       await userEvent.click(screen.getByText("Select context columns"));
@@ -379,9 +262,10 @@ bar`);
       await userEvent.click(screen.getByText("Show JSON"));
       await screen.findByText("JSON Preview");
       expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "sources": [ { "name": "s1", "type": "ai", "prompt": "" }, { "name": "s2", "type": "linked", "table": "users" } ], "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": true, "replacement": false, "repeat": 1, "linked_column": "name", "linked_context_columns": [ "job" ], "source": "s2" } ] }`,
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": true, "replacement": false, "repeat": 1, "linked_column": "name", "linked_context_columns": [ "job" ], "source_id": "abc", "source_type": "table", "options": [] } ] }`,
       );
     });
+
     it("should call create API when click complete", async () => {
       const mockedCreateTable = vi.mocked(createTable);
       mockedCreateTable.mockResolvedValue({
@@ -399,10 +283,6 @@ bar`);
       expect(mockedCreateTable.mock.calls[0][0]).toMatchObject({
         name: "foo",
         description: "bar",
-        sources: [
-          { name: "s1", type: "ai", prompt: "" },
-          { name: "s2", type: "linked", table: "users" },
-        ],
         columns: [
           {
             name: "c1",
@@ -440,19 +320,20 @@ describe("CreateTableFormWithRows", () => {
       tables: [table],
       total: 1,
     });
-    const mockedGetSources = vi.mocked(getSources);
-    mockedGetSources.mockResolvedValue([
-      {
-        name: "s1",
-        data: {},
-        columns: [],
-      },
-      {
-        name: "s3",
-        data: { name: "s3", type: "ai", prompt: "foo" },
-        columns: [],
-      },
-    ]);
+    const mockedGetDatasets = vi.mocked(getDatasets);
+    mockedGetDatasets.mockResolvedValue({
+      datasets: [
+        {
+          id: "d1",
+          name: "s1",
+          description: "ds",
+          type: "csv",
+          data: [],
+          columns: [],
+        },
+      ],
+      total: 1,
+    });
     const mockedCreateRows = vi.mocked(createRows);
     const mockedCreateTable = vi.mocked(createTable);
     mockedCreateTable.mockResolvedValue({
@@ -491,7 +372,6 @@ describe("CreateTableFormWithRows", () => {
       </TestProvider>,
     );
     await screen.findByText("Table Configuration");
-    await userEvent.click(screen.getByText("Next"));
     await userEvent.click(screen.getByText("Next"));
     await userEvent.click(screen.getByText("Complete"));
     expect(mockedCreateRows.mock.calls[0][0]).toBe("t1");
@@ -534,26 +414,23 @@ describe("UpdateTableForm", () => {
       tables: [table],
       total: 1,
     });
-    const mockedGetSources = vi.mocked(getSources);
-    mockedGetSources.mockResolvedValue([
-      {
-        name: "s1",
-        data: {},
-        columns: [],
-      },
-      {
-        name: "s3",
-        data: { name: "s3", type: "ai", prompt: "foo" },
-        columns: [],
-      },
-    ]);
+    const mockedGetDatasets = vi.mocked(getDatasets);
+    mockedGetDatasets.mockResolvedValue({
+      datasets: [
+        {
+          id: "d1",
+          name: "s1",
+          description: "ds",
+          type: "csv",
+          data: [],
+          columns: [],
+        },
+      ],
+      total: 1,
+    });
     const form = {
       name: "foo",
       description: "bar",
-      sources: [
-        { name: "s1", type: "ai", prompt: "" } as AiSource,
-        { name: "s2", type: "linked", table: "users" } as LinkedSource,
-      ],
       columns: [
         {
           name: "c1",
@@ -590,7 +467,6 @@ describe("UpdateTableForm", () => {
       </TestProvider>,
     );
     await screen.findByText("Update your table configuration or import JSON");
-    await userEvent.click(screen.getByText("Next"));
     await userEvent.click(screen.getByText("Next"));
     mockedGetTables.mockReset();
     await userEvent.click(screen.getByText("Complete"));

@@ -181,7 +181,7 @@ export default function CreateTableForm({
           >
             {showPreview ? "Hide" : "Show"} JSON
           </Button>
-          {activeTab !== "step3" ? (
+          {activeTab !== "step2" ? (
             <Button
               onClick={handleNext}
               disabled={

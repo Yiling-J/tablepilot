@@ -531,7 +531,6 @@ export interface UserInputStepPayload {
 export interface CreateTableStepPayload {
   request: TableCreateRequest;
   on_exists: string;
-  datasets: string[];
 }
 
 export interface DeleteTableStepPayload {

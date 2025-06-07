@@ -148,13 +148,14 @@ func TestDatasetService_List(t *testing.T) {
 			require.Equal(t, listDatasetDesc_l, dsInfo.Description)
 			require.Equal(t, "list", dsInfo.Type)
 			require.Equal(t, len(listDatasetData_l), dsInfo.ValueCount)
-			require.Equal(t, 0, dsInfo.ColumnCount) // List datasets have 0 column count
+			require.Equal(t, 0, dsInfo.ColumnCount)
 		case csvDatasetName_l:
 			foundCsvDs = true
 			require.Equal(t, csvDatasetDesc_l, dsInfo.Description)
 			require.Equal(t, "csv", dsInfo.Type)
 			require.Equal(t, len(csvHeaders_l), dsInfo.ColumnCount)
-			require.Equal(t, 0, dsInfo.ValueCount) // CSV datasets have 0 value count
+			require.Equal(t, 0, dsInfo.ValueCount)
+			require.Equal(t, []string{"header1", "header2", "header3"}, dsInfo.Columns)
 		}
 	}
 	require.True(t, foundListDs, "List dataset was not found in the list")

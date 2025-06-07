@@ -27,7 +27,6 @@ import {
     SelectContent,
     SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
@@ -149,7 +148,7 @@ export function ColumnsForm({
       context_length: contextLength,
       source_id: sourceID,
       source_type: sourceType,
-      options: listOptions.split("\n"),
+      options: listOptions.split("\n").filter((i) => i !== ""),
     };
 
     let updatedColumns = [...formData.columns];
@@ -366,7 +365,6 @@ export function ColumnsForm({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectLabel>Tables</SelectLabel>
                         {tables.map((tb, index) => (
                           <SelectItem key={`shared-${index}`} value={tb.id}>
                             {tb.name}
@@ -434,7 +432,6 @@ export function ColumnsForm({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectLabel>Tables</SelectLabel>
                         {datasets.map((ds, index) => (
                           <SelectItem key={`shared-${index}`} value={ds.id}>
                             {ds.name}
