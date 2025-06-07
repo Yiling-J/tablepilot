@@ -334,7 +334,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 	if err != nil {
 		panic(err)
 	}
-	datasetCreateCmd.Flags().StringArrayP("file", "f", []string{}, "Dataset files, for csv type all files should have same schema, and for list type, the final options will be options in all files concate together")
+	datasetCreateCmd.Flags().StringArrayP("path", "p", []string{}, "Dataset file paths, for csv type all files should have same schema, and for list type, the final options will be options in all files concate together")
 
 	datasetGetCmd := &cobra.Command{
 		Use:   "get <dataset_id>",

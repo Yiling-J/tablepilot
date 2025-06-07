@@ -58,7 +58,7 @@ func NewOpenAIChatCompletionService(config *config.OpenAI) *openai.ChatCompletio
 			dir, _ := os.Getwd()
 			filename := fmt.Sprintf("tests/snapshots/%s.json", name)
 			if strings.HasSuffix(dir, "tests/cli") {
-				filename = fmt.Sprintf("../snapshots/%s.json", name)
+				filename = fmt.Sprintf("snapshots/%s.json", name)
 			}
 			fileData, err := os.ReadFile(filename)
 			if err == nil {

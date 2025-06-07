@@ -1,0 +1,36 @@
+{
+  "name": "customers",
+  "description": "A list of customers who visit the restaurant",
+  "columns": [
+    {
+      "name": "Name",
+      "description": "The name of the customer",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Job",
+      "description": "The customer's occupation or profession",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Age",
+      "description": "The customer's age",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Country",
+      "description": "The country the customer is from",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Taste Preference",
+      "description": "The customer's taste preferences (e.g., spicy, sweet, etc.)",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}
