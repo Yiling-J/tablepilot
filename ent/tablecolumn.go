@@ -53,6 +53,8 @@ type TableColumn struct {
 	LinkedColumn string `json:"linked_column,omitempty"`
 	// LinkedContextColumns holds the value of the "linked_context_columns" field.
 	LinkedContextColumns []string `json:"linked_context_columns,omitempty"`
+	// Options holds the value of the "options" field.
+	Options []string `json:"options,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TableColumnQuery when eager-loading is set.
 	Edges        TableColumnEdges `json:"edges"`
@@ -84,7 +86,7 @@ func (*TableColumn) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tablecolumn.FieldLinkedContextColumns:
+		case tablecolumn.FieldLinkedContextColumns, tablecolumn.FieldOptions:
 			values[i] = new([]byte)
 		case tablecolumn.FieldRandom, tablecolumn.FieldReplacement:
 			values[i] = new(sql.NullBool)
@@ -219,6 +221,14 @@ func (tc *TableColumn) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field linked_context_columns: %w", err)
 				}
 			}
+		case tablecolumn.FieldOptions:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field options", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &tc.Options); err != nil {
+					return fmt.Errorf("unmarshal field options: %w", err)
+				}
+			}
 		default:
 			tc.selectValues.Set(columns[i], values[i])
 		}
@@ -310,6 +320,9 @@ func (tc *TableColumn) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("linked_context_columns=")
 	builder.WriteString(fmt.Sprintf("%v", tc.LinkedContextColumns))
+	builder.WriteString(", ")
+	builder.WriteString("options=")
+	builder.WriteString(fmt.Sprintf("%v", tc.Options))
 	builder.WriteByte(')')
 	return builder.String()
 }

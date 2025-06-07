@@ -24,7 +24,6 @@ import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { ContextVariable } from "../ui/var-input";
 import { ColumnsForm } from "./columns-form";
-import { DatasetsForm } from "./datasets-form";
 import { JsonPreview } from "./json-preview";
 import { NameDescriptionForm } from "./name-description-form";
 
@@ -36,6 +35,7 @@ const initialFormData: TableCreateRequest = {
 
 interface CreateTableFormProps {
   table?: string;
+  workflow?: string;
   close: () => void;
   form?: TableCreateRequest;
   rows?: JSONObject[];
@@ -71,7 +71,6 @@ export default function CreateTableForm({
 
   const handleNext = () => {
     if (activeTab === "step1") setActiveTab("step2");
-    else if (activeTab === "step2") setActiveTab("step3");
   };
 
   const handlePrevious = () => {
@@ -140,15 +139,9 @@ export default function CreateTableForm({
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="step1">Basic</TabsTrigger>
                 <TabsTrigger value="step2" disabled={!isStep1Valid || loading}>
-                  Datasets
-                </TabsTrigger>
-                <TabsTrigger
-                  value="step3"
-                  disabled={!isStep1Valid || !isStep2Valid || loading}
-                >
                   Columns
                 </TabsTrigger>
               </TabsList>
@@ -160,16 +153,6 @@ export default function CreateTableForm({
                 />
               </TabsContent>
               <TabsContent value="step2">
-                <DatasetsForm
-                  form={form} // form is TableCreateRequest (optional) - used by DatasetsForm for context
-                  table={table} // table is string (optional) - used by DatasetsForm
-                  variables={variables} // variables is ContextVariable[] (optional) - available if needed
-                  // formData={formData} // Removed
-                  // updateFormData={updateFormData} // Removed
-                  // tables={tables} // Removed
-                />
-              </TabsContent>
-              <TabsContent value="step3">
                 <ColumnsForm
                   variables={variables}
                   formData={formData}

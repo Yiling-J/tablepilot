@@ -15,7 +15,6 @@ import (
 	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 	"github.com/Yiling-J/tablepilot/ent/schema"
-	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // DatasetUpdate is the builder for updating Dataset entities.
@@ -164,48 +163,9 @@ func (du *DatasetUpdate) ClearValues() *DatasetUpdate {
 	return du
 }
 
-// SetPrivate sets the "private" field.
-func (du *DatasetUpdate) SetPrivate(b bool) *DatasetUpdate {
-	du.mutation.SetPrivate(b)
-	return du
-}
-
-// SetNillablePrivate sets the "private" field if the given value is not nil.
-func (du *DatasetUpdate) SetNillablePrivate(b *bool) *DatasetUpdate {
-	if b != nil {
-		du.SetPrivate(*b)
-	}
-	return du
-}
-
-// SetTableID sets the "table" edge to the TableMeta entity by ID.
-func (du *DatasetUpdate) SetTableID(id int) *DatasetUpdate {
-	du.mutation.SetTableID(id)
-	return du
-}
-
-// SetNillableTableID sets the "table" edge to the TableMeta entity by ID if the given value is not nil.
-func (du *DatasetUpdate) SetNillableTableID(id *int) *DatasetUpdate {
-	if id != nil {
-		du = du.SetTableID(*id)
-	}
-	return du
-}
-
-// SetTable sets the "table" edge to the TableMeta entity.
-func (du *DatasetUpdate) SetTable(t *TableMeta) *DatasetUpdate {
-	return du.SetTableID(t.ID)
-}
-
 // Mutation returns the DatasetMutation object of the builder.
 func (du *DatasetUpdate) Mutation() *DatasetMutation {
 	return du.mutation
-}
-
-// ClearTable clears the "table" edge to the TableMeta entity.
-func (du *DatasetUpdate) ClearTable() *DatasetUpdate {
-	du.mutation.ClearTable()
-	return du
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -323,38 +283,6 @@ func (du *DatasetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if du.mutation.ValuesCleared() {
 		_spec.ClearField(dataset.FieldValues, field.TypeJSON)
-	}
-	if value, ok := du.mutation.Private(); ok {
-		_spec.SetField(dataset.FieldPrivate, field.TypeBool, value)
-	}
-	if du.mutation.TableCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   dataset.TableTable,
-			Columns: []string{dataset.TableColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tablemeta.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := du.mutation.TableIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   dataset.TableTable,
-			Columns: []string{dataset.TableColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tablemeta.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(du.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
@@ -510,48 +438,9 @@ func (duo *DatasetUpdateOne) ClearValues() *DatasetUpdateOne {
 	return duo
 }
 
-// SetPrivate sets the "private" field.
-func (duo *DatasetUpdateOne) SetPrivate(b bool) *DatasetUpdateOne {
-	duo.mutation.SetPrivate(b)
-	return duo
-}
-
-// SetNillablePrivate sets the "private" field if the given value is not nil.
-func (duo *DatasetUpdateOne) SetNillablePrivate(b *bool) *DatasetUpdateOne {
-	if b != nil {
-		duo.SetPrivate(*b)
-	}
-	return duo
-}
-
-// SetTableID sets the "table" edge to the TableMeta entity by ID.
-func (duo *DatasetUpdateOne) SetTableID(id int) *DatasetUpdateOne {
-	duo.mutation.SetTableID(id)
-	return duo
-}
-
-// SetNillableTableID sets the "table" edge to the TableMeta entity by ID if the given value is not nil.
-func (duo *DatasetUpdateOne) SetNillableTableID(id *int) *DatasetUpdateOne {
-	if id != nil {
-		duo = duo.SetTableID(*id)
-	}
-	return duo
-}
-
-// SetTable sets the "table" edge to the TableMeta entity.
-func (duo *DatasetUpdateOne) SetTable(t *TableMeta) *DatasetUpdateOne {
-	return duo.SetTableID(t.ID)
-}
-
 // Mutation returns the DatasetMutation object of the builder.
 func (duo *DatasetUpdateOne) Mutation() *DatasetMutation {
 	return duo.mutation
-}
-
-// ClearTable clears the "table" edge to the TableMeta entity.
-func (duo *DatasetUpdateOne) ClearTable() *DatasetUpdateOne {
-	duo.mutation.ClearTable()
-	return duo
 }
 
 // Where appends a list predicates to the DatasetUpdate builder.
@@ -699,38 +588,6 @@ func (duo *DatasetUpdateOne) sqlSave(ctx context.Context) (_node *Dataset, err e
 	}
 	if duo.mutation.ValuesCleared() {
 		_spec.ClearField(dataset.FieldValues, field.TypeJSON)
-	}
-	if value, ok := duo.mutation.Private(); ok {
-		_spec.SetField(dataset.FieldPrivate, field.TypeBool, value)
-	}
-	if duo.mutation.TableCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   dataset.TableTable,
-			Columns: []string{dataset.TableColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tablemeta.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := duo.mutation.TableIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   dataset.TableTable,
-			Columns: []string{dataset.TableColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(tablemeta.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_spec.AddModifiers(duo.modifiers...)
 	_node = &Dataset{config: duo.config}

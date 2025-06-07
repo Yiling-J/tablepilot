@@ -2,11 +2,9 @@ import {
     Column,
     DatasetInfo,
     // LinkedSource, // Removed as unused
-    SourceData,
     TableCreateRequest,
     TableInfo,
     getDatasets,
-    getSources,
     getTables,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
@@ -34,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ContextVariable, MentionInput } from "../ui/var-input";
 import { LinkedColumnSettings } from "./linked-column-settings";
 
@@ -44,6 +42,7 @@ interface ColumnsFormProps {
   disabled: boolean;
   variables?: ContextVariable[];
   tables?: TableInfo[];
+  privateDatasets?: DatasetInfo[];
 }
 
 export function ColumnsForm({
@@ -52,6 +51,7 @@ export function ColumnsForm({
   disabled,
   variables,
   tables: tablesProp,
+  privateDatasets,
 }: ColumnsFormProps) {
   const [columnName, setColumnName] = useState("");
   const [columnDescription, setColumnDescription] = useState("");
@@ -73,7 +73,6 @@ export function ColumnsForm({
   const [selectedContextColumns, setSelectedContextColumns] = useState<
     string[]
   >([]);
-  const sourcesRef = useRef<SourceData[]>([]);
 
   const resetForm = () => {
     setColumnName("");
@@ -106,8 +105,6 @@ export function ColumnsForm({
         const resp = await getTables();
         setTables(resp.tables);
       }
-      const so = await getSources();
-      sourcesRef.current = so;
     } catch (error) {
       console.error("Error fetching tables:", error);
     }
@@ -116,7 +113,7 @@ export function ColumnsForm({
   const fetchDatasets = async () => {
     try {
       const ds = await getDatasets();
-      setDatasets(ds.datasets);
+      setDatasets([...(privateDatasets ?? []), ...ds.datasets]);
     } catch (error) {
       console.error("Error fetching datasets:", error);
     }
@@ -164,58 +161,10 @@ export function ColumnsForm({
     setRepeat(column.repeat);
     setSelectedColumn(column.linked_column);
     setSelectedContextColumns(column.linked_context_columns || []);
-    // TODO: Re-evaluate how to get linkedTableColumns if column.source refers to a dataset or shared source
-    // For now, removing the part that depends on formData.sources
-    // if (column.source) {
-    //   const sharedSource = sourcesRef.current.find((s) => s.name === column.source);
-    //   if (sharedSource && sharedSource.data.type === "linked") {
-    //     const table = tables.find((t) => t.name === sharedSource.data.table);
-    //     if (table) {
-    //       setLinkedTableColumns(table.columns);
-    //     }
-    //   } else {
-    //      // Potentially check datasets if column.source could be a dataset ID
-    //   }
-    // }
     setIsDialogOpen(true);
   };
 
-  const handleSelectSource = (source: string | undefined) => {
-    setSource(source);
-    setSelectedColumn("");
-    setSelectedContextColumns([]);
-    if (source) {
-      // const ls = formData.sources.find((s) => s.name === source); // Removed
-      // if (ls && ls.type === "linked") {
-      //   const linkedSource = ls as LinkedSource;
-      //   const table = tables.find((t) => t.name === linkedSource.table);
-      //   if (table) {
-      //     setLinkedTableColumns(table.columns);
-      //   }
-      // }
-      // if (!ls) { // Logic will now always fall into here or be adapted if source can be a dataset ID
-        // try find from shared sources
-        const ss = sourcesRef.current.find((s) => s.name === source);
-        if (ss && ss.data.type === "linked") {
-          const table = tables.find((t) => t.name === ss.data.table);
-          if (table) {
-            setLinkedTableColumns(table.columns);
-          }
-        }
-        if (ss && ss.data.type === "csv") {
-          setLinkedTableColumns(
-            ss.columns.map((c) => ({
-              id: c,
-              name: c,
-              description: "",
-              type: "string",
-              fill_mode: "ai",
-            })),
-          );
-        }
-      // Removed extra closing brace here
-    }
-  };
+  const handleSelectSource = (source: string | undefined) => {};
 
   const handleDeleteColumn = (index: number) => {
     const updatedColumns = formData.columns.filter((_, i) => i !== index);
@@ -326,16 +275,12 @@ export function ColumnsForm({
                   <Select
                     value={source}
                     onValueChange={handleSelectSource}
-                    disabled={
-                      datasets.length === 0 &&
-                      sourcesRef.current.length === 0
-                    }
+                    disabled={datasets.length === 0 && tables.length === 0}
                   >
                     <SelectTrigger>
                       <SelectValue
                         placeholder={
-                          datasets.length === 0 &&
-                          sourcesRef.current.length === 0
+                          datasets.length === 0 && tables.length === 0
                             ? "No sources/datasets available"
                             : "Select source or dataset"
                         }
@@ -343,7 +288,7 @@ export function ColumnsForm({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectLabel>Project Datasets</SelectLabel>
+                        <SelectLabel>Datasets</SelectLabel>
                         {datasets.map((ds, index) => (
                           <SelectItem key={`dataset-${index}`} value={ds.id}>
                             {ds.name} ({ds.type})
@@ -351,32 +296,23 @@ export function ColumnsForm({
                         ))}
                       </SelectGroup>
                       <SelectGroup>
-                        <SelectLabel>Shared Sources</SelectLabel>
-                        {sourcesRef.current.map((src, index) => (
-                          <SelectItem key={`shared-${index}`} value={src.name}>
-                            {src.name} ({typeof src.data.type === 'string' ? src.data.type : 'unknown'})
+                        <SelectLabel>Tables</SelectLabel>
+                        {tables.map((tb, index) => (
+                          <SelectItem key={`shared-${index}`} value={tb.id}>
+                            {tb.name}
                           </SelectItem>
                         ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
 
-                  {/* TODO: Re-evaluate this logic. Does `source` variable now hold a datasetId or a shared source name?
-                      The type check `?.type === "linked"` was for the old Source interface.
-                      If a dataset can be "linked", we need to check `datasets.find(ds => ds.id === source)?.type` or similar.
-                      If a sharedSource can be "linked", then `sourcesRef.current.find(s => s.name === source)?.data.type === "linked"`
-                  */}
-                  {(sourcesRef.current.find((s) => s.name === source)?.data?.type === "linked" ||
-                    sourcesRef.current.find((s) => s.name === source)?.data?.type === "csv") && ( // Assuming CSV can also be linked for columns
-                    <LinkedColumnSettings
-                      linkedTableColumns={linkedTableColumns}
-                      selectedColumn={selectedColumn}
-                      setSelectedColumn={setSelectedColumn}
-                      selectedContextColumns={selectedContextColumns}
-                      setSelectedContextColumns={setSelectedContextColumns}
-                    />
-                  )}
-                  {/* Removed duplicate LinkedColumnSettings blocks based on formData.sources, covered by above */}
+                  <LinkedColumnSettings
+                    linkedTableColumns={linkedTableColumns}
+                    selectedColumn={selectedColumn}
+                    setSelectedColumn={setSelectedColumn}
+                    selectedContextColumns={selectedContextColumns}
+                    setSelectedContextColumns={setSelectedContextColumns}
+                  />
 
                   <div className="flex items-center space-x-2 pt-2">
                     <Switch
@@ -406,9 +342,10 @@ export function ColumnsForm({
                     />
                     <Label htmlFor="reppeat">Repeat selection</Label>
                   </div>
-                  {(datasets.length === 0 && sourcesRef.current.length === 0) && (
+                  {datasets.length === 0 && tables.length === 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Create a Dataset or ensure shared sources are available to use this fill mode.
+                      Create a Dataset or ensure shared sources are available to
+                      use this fill mode.
                     </p>
                   )}
                 </div>

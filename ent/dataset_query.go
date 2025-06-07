@@ -14,7 +14,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
-	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 )
 
 // DatasetQuery is the builder for querying Dataset entities.
@@ -24,8 +23,6 @@ type DatasetQuery struct {
 	order      []dataset.OrderOption
 	inters     []Interceptor
 	predicates []predicate.Dataset
-	withTable  *TableMetaQuery
-	withFKs    bool
 	modifiers  []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -61,28 +58,6 @@ func (dq *DatasetQuery) Unique(unique bool) *DatasetQuery {
 func (dq *DatasetQuery) Order(o ...dataset.OrderOption) *DatasetQuery {
 	dq.order = append(dq.order, o...)
 	return dq
-}
-
-// QueryTable chains the current query on the "table" edge.
-func (dq *DatasetQuery) QueryTable() *TableMetaQuery {
-	query := (&TableMetaClient{config: dq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := dq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := dq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(dataset.Table, dataset.FieldID, selector),
-			sqlgraph.To(tablemeta.Table, tablemeta.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, dataset.TableTable, dataset.TableColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // First returns the first Dataset entity from the query.
@@ -277,23 +252,11 @@ func (dq *DatasetQuery) Clone() *DatasetQuery {
 		order:      append([]dataset.OrderOption{}, dq.order...),
 		inters:     append([]Interceptor{}, dq.inters...),
 		predicates: append([]predicate.Dataset{}, dq.predicates...),
-		withTable:  dq.withTable.Clone(),
 		// clone intermediate query.
 		sql:       dq.sql.Clone(),
 		path:      dq.path,
 		modifiers: append([]func(*sql.Selector){}, dq.modifiers...),
 	}
-}
-
-// WithTable tells the query-builder to eager-load the nodes that are connected to
-// the "table" edge. The optional arguments are used to configure the query builder of the edge.
-func (dq *DatasetQuery) WithTable(opts ...func(*TableMetaQuery)) *DatasetQuery {
-	query := (&TableMetaClient{config: dq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	dq.withTable = query
-	return dq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -372,26 +335,15 @@ func (dq *DatasetQuery) prepareQuery(ctx context.Context) error {
 
 func (dq *DatasetQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Dataset, error) {
 	var (
-		nodes       = []*Dataset{}
-		withFKs     = dq.withFKs
-		_spec       = dq.querySpec()
-		loadedTypes = [1]bool{
-			dq.withTable != nil,
-		}
+		nodes = []*Dataset{}
+		_spec = dq.querySpec()
 	)
-	if dq.withTable != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, dataset.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Dataset).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Dataset{config: dq.config}
 		nodes = append(nodes, node)
-		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(dq.modifiers) > 0 {
@@ -406,46 +358,7 @@ func (dq *DatasetQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Data
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := dq.withTable; query != nil {
-		if err := dq.loadTable(ctx, query, nodes, nil,
-			func(n *Dataset, e *TableMeta) { n.Edges.Table = e }); err != nil {
-			return nil, err
-		}
-	}
 	return nodes, nil
-}
-
-func (dq *DatasetQuery) loadTable(ctx context.Context, query *TableMetaQuery, nodes []*Dataset, init func(*Dataset), assign func(*Dataset, *TableMeta)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*Dataset)
-	for i := range nodes {
-		if nodes[i].table_meta_datasets == nil {
-			continue
-		}
-		fk := *nodes[i].table_meta_datasets
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(tablemeta.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "table_meta_datasets" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
 }
 
 func (dq *DatasetQuery) sqlCount(ctx context.Context) (int, error) {

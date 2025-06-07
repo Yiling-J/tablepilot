@@ -42,10 +42,6 @@ func init() {
 	datasetDescDescription := datasetFields[2].Descriptor()
 	// dataset.DefaultDescription holds the default value on creation for the description field.
 	dataset.DefaultDescription = datasetDescDescription.Default.(string)
-	// datasetDescPrivate is the schema descriptor for private field.
-	datasetDescPrivate := datasetFields[6].Descriptor()
-	// dataset.DefaultPrivate holds the default value on creation for the private field.
-	dataset.DefaultPrivate = datasetDescPrivate.Default.(bool)
 	modelMixin := schema.Model{}.Mixin()
 	modelMixinFields0 := modelMixin[0].Fields()
 	_ = modelMixinFields0

@@ -161,12 +161,3 @@ func (hs *HTTPServer) PreviewDataset(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, previewData)
 }
-
-func (hs *HTTPServer) ListTableDatasets(ctx *gin.Context) {
-	datasets, err := hs.DatasetService.ListTableDatasets(ctx.Request.Context(), ctx.Param("table"))
-	if err != nil {
-		errorResponse(ctx, http.StatusInternalServerError, fmt.Errorf("failed to list datasets: %w", err))
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"total": len(datasets), "datasets": datasets})
-}

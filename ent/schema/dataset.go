@@ -2,9 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 )
 
 type FileOffset struct {
@@ -41,21 +39,14 @@ func (Dataset) Fields() []ent.Field {
 		field.Enum("type").Values("list", "csv"),
 		field.JSON("indexer", CSVIndexer{}).Optional(),
 		field.Strings("values").Optional(),
-		field.Bool("private").Default(false),
 	}
 }
 
 // Edges of the Dataset.
 func (Dataset) Edges() []ent.Edge {
-	return []ent.Edge{
-		edge.From("table", TableMeta.Type).
-			Ref("datasets").
-			Unique(),
-	}
+	return nil
 }
 
 func (Dataset) Indexes() []ent.Index {
-	return []ent.Index{
-		index.Fields("private"),
-	}
+	return nil
 }

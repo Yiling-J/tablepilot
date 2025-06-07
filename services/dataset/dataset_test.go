@@ -13,7 +13,6 @@ import (
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
-	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -211,32 +210,6 @@ func TestDatasetService_Create(t *testing.T) {
 		{"Name": "Bob", "Age": "25", "City": "San Francisco"},
 		{"Name": "Tommy", "Age": "65", "City": "Apple"},
 	}, rows.Rows)
-}
-
-func TestDatasetService_CreateForTable(t *testing.T) {
-	db := db.NewTestDB()
-	srv := NewDatasetService(db, &config.Config{
-		Common: config.Common{
-			SourceDataDir: "./dstest",
-		},
-	})
-	tb, err := db.TableMeta.Create().SetName("t1").Save(t.Context())
-	require.NoError(t, err)
-
-	ds1, err := srv.Create(t.Context(), &CreateDatasetRequest{
-		Name:        "ds",
-		Description: "dataset",
-		Type:        "list",
-		Data:        []string{"foo", "bar"},
-		Table:       tb.Nanoid,
-	})
-	require.NoError(t, err)
-	d, err := db.Dataset.Query().Where(dataset.Nanoid(ds1)).Only(t.Context())
-	require.NoError(t, err)
-	require.Equal(t, true, d.Private)
-	tbd, err := d.QueryTable().Only(t.Context())
-	require.NoError(t, err)
-	require.Equal(t, tb.ID, tbd.ID)
 }
 
 func TestDatasetService_Update(t *testing.T) {
@@ -586,29 +559,4 @@ func TestDatasetService_Preview(t *testing.T) {
 		}
 		require.Equal(t, expected, rows.Rows)
 	})
-}
-
-func TestDatasetService_ListTableDatasets(t *testing.T) {
-	db := db.NewTestDB()
-	srv := NewDatasetService(db, &config.Config{})
-	tb, err := db.TableMeta.Create().SetName("t1").Save(t.Context())
-	require.NoError(t, err)
-	tb2, err := db.TableMeta.Create().SetName("t2").Save(t.Context())
-	require.NoError(t, err)
-
-	ds1, err := db.Dataset.Create().SetName("ds1").SetType(dataset.TypeList).SetTable(tb).SetPrivate(true).Save(t.Context())
-	require.NoError(t, err)
-	ds2, err := db.Dataset.Create().SetName("ds2").SetType(dataset.TypeList).SetTable(tb).SetPrivate(true).Save(t.Context())
-	require.NoError(t, err)
-	_, err = db.Dataset.Create().SetName("ds3").SetType(dataset.TypeList).SetPrivate(false).Save(t.Context())
-	require.NoError(t, err)
-	_, err = db.Dataset.Create().SetName("ds4").SetType(dataset.TypeList).SetTable(tb2).SetPrivate(true).Save(t.Context())
-	require.NoError(t, err)
-
-	dss, err := srv.ListTableDatasets(t.Context(), tb.Nanoid)
-	require.NoError(t, err)
-	require.Equal(t, []*DatasetInfo{
-		{ID: ds1.Nanoid, Name: ds1.Name, Type: "list"},
-		{ID: ds2.Nanoid, Name: ds2.Name, Type: "list"},
-	}, dss)
 }

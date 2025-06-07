@@ -49,6 +49,8 @@ const (
 	FieldLinkedColumn = "linked_column"
 	// FieldLinkedContextColumns holds the string denoting the linked_context_columns field in the database.
 	FieldLinkedContextColumns = "linked_context_columns"
+	// FieldOptions holds the string denoting the options field in the database.
+	FieldOptions = "options"
 	// EdgeTablemeta holds the string denoting the tablemeta edge name in mutations.
 	EdgeTablemeta = "tablemeta"
 	// Table holds the table name of the tablecolumn in the database.
@@ -82,6 +84,7 @@ var Columns = []string{
 	FieldRepeat,
 	FieldLinkedColumn,
 	FieldLinkedContextColumns,
+	FieldOptions,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -174,6 +177,7 @@ type SourceType string
 const (
 	SourceTypeTable   SourceType = "table"
 	SourceTypeDataset SourceType = "dataset"
+	SourceTypeOptions SourceType = "options"
 )
 
 func (st SourceType) String() string {
@@ -183,7 +187,7 @@ func (st SourceType) String() string {
 // SourceTypeValidator is a validator for the "source_type" field enum values. It is called by the builders before save.
 func SourceTypeValidator(st SourceType) error {
 	switch st {
-	case SourceTypeTable, SourceTypeDataset:
+	case SourceTypeTable, SourceTypeDataset, SourceTypeOptions:
 		return nil
 	default:
 		return fmt.Errorf("tablecolumn: invalid enum value for source_type field: %q", st)

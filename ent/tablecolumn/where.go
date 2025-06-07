@@ -840,6 +840,16 @@ func LinkedColumnContainsFold(v string) predicate.TableColumn {
 	return predicate.TableColumn(sql.FieldContainsFold(FieldLinkedColumn, v))
 }
 
+// OptionsIsNil applies the IsNil predicate on the "options" field.
+func OptionsIsNil() predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldIsNull(FieldOptions))
+}
+
+// OptionsNotNil applies the NotNil predicate on the "options" field.
+func OptionsNotNil() predicate.TableColumn {
+	return predicate.TableColumn(sql.FieldNotNull(FieldOptions))
+}
+
 // HasTablemeta applies the HasEdge predicate on the "tablemeta" edge.
 func HasTablemeta() predicate.TableColumn {
 	return predicate.TableColumn(func(s *sql.Selector) {

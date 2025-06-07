@@ -14,7 +14,7 @@ func ErrColumnNotFound(input string) error {
 	return fmt.Errorf("column not found: %s", input)
 }
 
-func validateLinkedColumnInfo(ctx context.Context, db *ent.Client, tableID int, columns []*TableGenColumn) error {
+func validateLinkedColumnInfo(ctx context.Context, db *ent.Client, columns []*TableGenColumn) error {
 	// validate linked column column/context_columns exists
 	for _, col := range columns {
 		if col.FillMode != "pick" {
@@ -76,12 +76,7 @@ func validateLinkedColumnInfo(ctx context.Context, db *ent.Client, tableID int, 
 					}
 				}
 			}
-			if linkedDataset.Private && tableID > 0 {
-				err = linkedDataset.Update().SetTableID(tableID).Exec(ctx)
-				if err != nil {
-					return err
-				}
-			}
+		case tablecolumn.SourceTypeOptions:
 		}
 	}
 	return nil

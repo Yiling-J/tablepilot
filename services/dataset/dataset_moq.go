@@ -30,9 +30,6 @@ var _ DatasetService = &DatasetServiceMock{}
 //			ListFunc: func(ctx context.Context) ([]*DatasetInfo, error) {
 //				panic("mock out the List method")
 //			},
-//			ListTableDatasetsFunc: func(ctx context.Context, table string) ([]*DatasetInfo, error) {
-//				panic("mock out the ListTableDatasets method")
-//			},
 //			PreviewFunc: func(ctx context.Context, source string) (*DatasetRows, error) {
 //				panic("mock out the Preview method")
 //			},
@@ -57,9 +54,6 @@ type DatasetServiceMock struct {
 
 	// ListFunc mocks the List method.
 	ListFunc func(ctx context.Context) ([]*DatasetInfo, error)
-
-	// ListTableDatasetsFunc mocks the ListTableDatasets method.
-	ListTableDatasetsFunc func(ctx context.Context, table string) ([]*DatasetInfo, error)
 
 	// PreviewFunc mocks the Preview method.
 	PreviewFunc func(ctx context.Context, source string) (*DatasetRows, error)
@@ -95,13 +89,6 @@ type DatasetServiceMock struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
 		}
-		// ListTableDatasets holds details about calls to the ListTableDatasets method.
-		ListTableDatasets []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Table is the table argument value.
-			Table string
-		}
 		// Preview holds details about calls to the Preview method.
 		Preview []struct {
 			// Ctx is the ctx argument value.
@@ -119,13 +106,12 @@ type DatasetServiceMock struct {
 			Req *UpdateDatasetRequest
 		}
 	}
-	lockCreate            sync.RWMutex
-	lockDelete            sync.RWMutex
-	lockGet               sync.RWMutex
-	lockList              sync.RWMutex
-	lockListTableDatasets sync.RWMutex
-	lockPreview           sync.RWMutex
-	lockUpdate            sync.RWMutex
+	lockCreate  sync.RWMutex
+	lockDelete  sync.RWMutex
+	lockGet     sync.RWMutex
+	lockList    sync.RWMutex
+	lockPreview sync.RWMutex
+	lockUpdate  sync.RWMutex
 }
 
 // Create calls CreateFunc.
@@ -265,42 +251,6 @@ func (mock *DatasetServiceMock) ListCalls() []struct {
 	mock.lockList.RLock()
 	calls = mock.calls.List
 	mock.lockList.RUnlock()
-	return calls
-}
-
-// ListTableDatasets calls ListTableDatasetsFunc.
-func (mock *DatasetServiceMock) ListTableDatasets(ctx context.Context, table string) ([]*DatasetInfo, error) {
-	if mock.ListTableDatasetsFunc == nil {
-		panic("DatasetServiceMock.ListTableDatasetsFunc: method is nil but DatasetService.ListTableDatasets was just called")
-	}
-	callInfo := struct {
-		Ctx   context.Context
-		Table string
-	}{
-		Ctx:   ctx,
-		Table: table,
-	}
-	mock.lockListTableDatasets.Lock()
-	mock.calls.ListTableDatasets = append(mock.calls.ListTableDatasets, callInfo)
-	mock.lockListTableDatasets.Unlock()
-	return mock.ListTableDatasetsFunc(ctx, table)
-}
-
-// ListTableDatasetsCalls gets all the calls that were made to ListTableDatasets.
-// Check the length with:
-//
-//	len(mockedDatasetService.ListTableDatasetsCalls())
-func (mock *DatasetServiceMock) ListTableDatasetsCalls() []struct {
-	Ctx   context.Context
-	Table string
-} {
-	var calls []struct {
-		Ctx   context.Context
-		Table string
-	}
-	mock.lockListTableDatasets.RLock()
-	calls = mock.calls.ListTableDatasets
-	mock.lockListTableDatasets.RUnlock()
 	return calls
 }
 

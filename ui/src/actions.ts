@@ -17,8 +17,6 @@ import {
     rowsUrl,
     runWorkflowUrl,
     schemaUrl,
-    sourcesUrl,
-    tableDatasetsUrl,
     tableUrl,
     tablesUrl,
     truncateUrl,
@@ -135,27 +133,7 @@ export async function getTable(id: string): Promise<TableInfo> {
   return res.json();
 }
 
-interface BaseSource {
-  name: string;
-  type: string;
-}
-
-export interface AiSource extends BaseSource {
-  type: "ai";
-  prompt: string;
-}
-
-export interface ListSource extends BaseSource {
-  type: "list";
-  options: string[];
-}
-
-export interface LinkedSource extends BaseSource {
-  type: "linked";
-  table: string;
-}
-
-export type Source = AiSource | ListSource | LinkedSource;
+export type SourceType = "dataset" | "table" | "options";
 
 export interface TableCreateRequest {
   name: string;
@@ -166,7 +144,9 @@ export interface TableCreateRequest {
     type: string;
     fill_mode: string;
     context_length?: number;
-    source?: string;
+    source_type?: SourceType;
+    source_id?: string;
+    options?: string[];
     random: boolean;
     replacement: boolean;
     repeat: number;
@@ -364,26 +344,6 @@ export async function createRows(table: string, rows: JSONObject[]) {
   }
 }
 
-export interface SourceData {
-  name: string;
-  data: JSONObject;
-  columns: string[];
-}
-
-export async function getSources(): Promise<SourceData[]> {
-  const res = await fetch(sourcesUrl(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    toast.error("Failed to fetch sources");
-    throw new Error("Failed to fetch sources");
-  }
-  return res.json().then((v) => v.sources);
-}
-
 export async function getTableSchema(
   table: string,
 ): Promise<TableCreateRequest> {
@@ -571,6 +531,7 @@ export interface UserInputStepPayload {
 export interface CreateTableStepPayload {
   request: TableCreateRequest;
   on_exists: string;
+  datasets: string[];
 }
 
 export interface DeleteTableStepPayload {
@@ -768,22 +729,6 @@ export async function getDatasets(): Promise<GetDatasetsResponse> {
   return res.json();
 }
 
-export async function getTableDatasets(
-  id: string,
-): Promise<GetDatasetsResponse> {
-  const res = await fetch(tableDatasetsUrl(id), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    toast.error("Failed to fetch workflows");
-    throw new Error("Failed to fetch workflows");
-  }
-  return res.json();
-}
-
 export interface CreateDatasetRequest {
   name: string;
   description: string;
@@ -792,6 +737,7 @@ export interface CreateDatasetRequest {
   files: File[];
   private: boolean;
   table?: string;
+  workflow?: string;
 }
 
 export async function createDataset(

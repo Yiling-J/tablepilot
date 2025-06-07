@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/ent/tablerow"
@@ -129,21 +128,6 @@ func (tmc *TableMetaCreate) AddRows(t ...*TableRow) *TableMetaCreate {
 		ids[i] = t[i].ID
 	}
 	return tmc.AddRowIDs(ids...)
-}
-
-// AddDatasetIDs adds the "datasets" edge to the Dataset entity by IDs.
-func (tmc *TableMetaCreate) AddDatasetIDs(ids ...int) *TableMetaCreate {
-	tmc.mutation.AddDatasetIDs(ids...)
-	return tmc
-}
-
-// AddDatasets adds the "datasets" edges to the Dataset entity.
-func (tmc *TableMetaCreate) AddDatasets(d ...*Dataset) *TableMetaCreate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return tmc.AddDatasetIDs(ids...)
 }
 
 // Mutation returns the TableMetaMutation object of the builder.
@@ -291,22 +275,6 @@ func (tmc *TableMetaCreate) createSpec() (*TableMeta, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tablerow.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := tmc.mutation.DatasetsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

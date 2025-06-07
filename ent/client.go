@@ -363,22 +363,6 @@ func (c *DatasetClient) GetX(ctx context.Context, id int) *Dataset {
 	return obj
 }
 
-// QueryTable queries the table edge of a Dataset.
-func (c *DatasetClient) QueryTable(d *Dataset) *TableMetaQuery {
-	query := (&TableMetaClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := d.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(dataset.Table, dataset.FieldID, id),
-			sqlgraph.To(tablemeta.Table, tablemeta.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, dataset.TableTable, dataset.TableColumn),
-		)
-		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
 func (c *DatasetClient) Hooks() []Hook {
 	return c.hooks.Dataset
@@ -984,22 +968,6 @@ func (c *TableMetaClient) QueryRows(tm *TableMeta) *TableRowQuery {
 			sqlgraph.From(tablemeta.Table, tablemeta.FieldID, id),
 			sqlgraph.To(tablerow.Table, tablerow.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, tablemeta.RowsTable, tablemeta.RowsColumn),
-		)
-		fromV = sqlgraph.Neighbors(tm.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryDatasets queries the datasets edge of a TableMeta.
-func (c *TableMetaClient) QueryDatasets(tm *TableMeta) *DatasetQuery {
-	query := (&DatasetClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := tm.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(tablemeta.Table, tablemeta.FieldID, id),
-			sqlgraph.To(dataset.Table, dataset.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, tablemeta.DatasetsTable, tablemeta.DatasetsColumn),
 		)
 		fromV = sqlgraph.Neighbors(tm.driver.Dialect(), step)
 		return fromV, nil

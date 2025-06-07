@@ -501,29 +501,6 @@ func HasRowsWith(preds ...predicate.TableRow) predicate.TableMeta {
 	})
 }
 
-// HasDatasets applies the HasEdge predicate on the "datasets" edge.
-func HasDatasets() predicate.TableMeta {
-	return predicate.TableMeta(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, DatasetsTable, DatasetsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasDatasetsWith applies the HasEdge predicate on the "datasets" edge with a given conditions (other predicates).
-func HasDatasetsWith(preds ...predicate.Dataset) predicate.TableMeta {
-	return predicate.TableMeta(func(s *sql.Selector) {
-		step := newDatasetsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.TableMeta) predicate.TableMeta {
 	return predicate.TableMeta(sql.AndPredicates(predicates...))

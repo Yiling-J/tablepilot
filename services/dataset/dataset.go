@@ -11,7 +11,6 @@ import (
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
-	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/Yiling-J/tablepilot/services/source/csvindexer"
 	"github.com/Yiling-J/tablepilot/utils"
@@ -25,7 +24,6 @@ type DatasetService interface {
 	Update(ctx context.Context, dataset string, req *UpdateDatasetRequest) error
 	Delete(ctx context.Context, dataset string) error
 	Preview(ctx context.Context, source string) (*DatasetRows, error)
-	ListTableDatasets(ctx context.Context, table string) ([]*DatasetInfo, error)
 }
 
 type DatasetServiceImpl struct {
@@ -43,12 +41,7 @@ func NewDatasetService(db *ent.Client, cfg *config.Config) *DatasetServiceImpl {
 func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *CreateDatasetRequest, sr *ent.Dataset) error {
 	switch req.Type {
 	case db_dataset.TypeCsv:
-		relativePath := ""
-		if req.Private {
-			relativePath = filepath.Join("datasets/private", sr.Nanoid)
-		} else {
-			relativePath = filepath.Join("datasets/shared", sr.Nanoid)
-		}
+		relativePath := filepath.Join("datasets/shared", sr.Nanoid)
 		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, relativePath)
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {
@@ -106,17 +99,9 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 	if err != nil {
 		return "", fmt.Errorf("dataset.Create: starting a transaction: %w", err)
 	}
-	creator := tx.Dataset.Create().SetName(req.Name).SetDescription(req.Description).SetType(
+	sr, err := tx.Dataset.Create().SetName(req.Name).SetDescription(req.Description).SetType(
 		req.Type,
-	).SetPrivate(req.Private)
-	if req.Table != "" {
-		tb, err := tx.TableMeta.Query().Where(tablemeta.Nanoid(req.Table)).Only(ctx)
-		if err != nil {
-			return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: get tablle: %w", err))
-		}
-		creator.SetPrivate(true).SetTable(tb)
-	}
-	sr, err := creator.Save(ctx)
+	).Save(ctx)
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("dataset.Create: save dataset: %w", err))
 	}
@@ -128,29 +113,7 @@ func (s *DatasetServiceImpl) Create(ctx context.Context, req *CreateDatasetReque
 }
 
 func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
-	datasets, err := s.db.Dataset.Query().Where(db_dataset.Private(false)).All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("dataset.List: query all: %w", err)
-	}
-	datasetInfos := []*DatasetInfo{}
-	for _, ds := range datasets {
-		datasetInfos = append(datasetInfos, &DatasetInfo{
-			ID:          ds.Nanoid,
-			Name:        ds.Name,
-			Description: ds.Description,
-			Type:        string(ds.Type),
-			ColumnCount: len(ds.Indexer.ColumnNames),
-			ValueCount:  len(ds.Values),
-			Data:        ds.Values,
-		})
-	}
-	return datasetInfos, nil
-}
-
-func (s *DatasetServiceImpl) ListTableDatasets(ctx context.Context, table string) ([]*DatasetInfo, error) {
-	datasets, err := s.db.Dataset.Query().Where(db_dataset.Private(true), db_dataset.HasTableWith(
-		tablemeta.Nanoid(table),
-	)).All(ctx)
+	datasets, err := s.db.Dataset.Query().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("dataset.List: query all: %w", err)
 	}

@@ -35,7 +35,6 @@ func (TableMeta) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("columns", TableColumn.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("rows", TableRow.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
-		edge.To("datasets", Dataset.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

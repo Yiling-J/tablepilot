@@ -7,7 +7,6 @@ import (
 	"context"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/ent/schema"
-	dataset_service "github.com/Yiling-J/tablepilot/services/dataset"
 	"sync"
 )
 
@@ -48,9 +47,6 @@ var _ TableService = &TableServiceMock{}
 //			GenetateFunc: func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
 //				panic("mock out the Genetate method")
 //			},
-//			GetTableDatasetsFunc: func(ctx context.Context, table string) ([]dataset_service.DatasetInfo, error) {
-//				panic("mock out the GetTableDatasets method")
-//			},
 //			GetTableDetailFunc: func(ctx context.Context, table string) (*TableInfo, error) {
 //				panic("mock out the GetTableDetail method")
 //			},
@@ -71,9 +67,6 @@ var _ TableService = &TableServiceMock{}
 //			},
 //			PolishBuilderTablesFunc: func(ctx context.Context, tables []BuilderTable, prompt string, params ModelParams) ([]BuilderTable, error) {
 //				panic("mock out the PolishBuilderTables method")
-//			},
-//			RemoveUnboundDatasetsFunc: func(ctx context.Context) error {
-//				panic("mock out the RemoveUnboundDatasets method")
 //			},
 //			RowsFunc: func(ctx context.Context, table string) (*Rows, error) {
 //				panic("mock out the Rows method")
@@ -121,9 +114,6 @@ type TableServiceMock struct {
 	// GenetateFunc mocks the Genetate method.
 	GenetateFunc func(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error)
 
-	// GetTableDatasetsFunc mocks the GetTableDatasets method.
-	GetTableDatasetsFunc func(ctx context.Context, table string) ([]dataset_service.DatasetInfo, error)
-
 	// GetTableDetailFunc mocks the GetTableDetail method.
 	GetTableDetailFunc func(ctx context.Context, table string) (*TableInfo, error)
 
@@ -144,9 +134,6 @@ type TableServiceMock struct {
 
 	// PolishBuilderTablesFunc mocks the PolishBuilderTables method.
 	PolishBuilderTablesFunc func(ctx context.Context, tables []BuilderTable, prompt string, params ModelParams) ([]BuilderTable, error)
-
-	// RemoveUnboundDatasetsFunc mocks the RemoveUnboundDatasets method.
-	RemoveUnboundDatasetsFunc func(ctx context.Context) error
 
 	// RowsFunc mocks the Rows method.
 	RowsFunc func(ctx context.Context, table string) (*Rows, error)
@@ -241,13 +228,6 @@ type TableServiceMock struct {
 			// Params is the params argument value.
 			Params GenerateRowsRequest
 		}
-		// GetTableDatasets holds details about calls to the GetTableDatasets method.
-		GetTableDatasets []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-			// Table is the table argument value.
-			Table string
-		}
 		// GetTableDetail holds details about calls to the GetTableDetail method.
 		GetTableDetail []struct {
 			// Ctx is the ctx argument value.
@@ -305,11 +285,6 @@ type TableServiceMock struct {
 			// Params is the params argument value.
 			Params ModelParams
 		}
-		// RemoveUnboundDatasets holds details about calls to the RemoveUnboundDatasets method.
-		RemoveUnboundDatasets []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
 		// Rows holds details about calls to the Rows method.
 		Rows []struct {
 			// Ctx is the ctx argument value.
@@ -350,7 +325,6 @@ type TableServiceMock struct {
 	lockDeleteColumn          sync.RWMutex
 	lockGenerateBuilderTables sync.RWMutex
 	lockGenetate              sync.RWMutex
-	lockGetTableDatasets      sync.RWMutex
 	lockGetTableDetail        sync.RWMutex
 	lockGetTableSchema        sync.RWMutex
 	lockImport                sync.RWMutex
@@ -358,7 +332,6 @@ type TableServiceMock struct {
 	lockListTables            sync.RWMutex
 	lockPolishBuilderTable    sync.RWMutex
 	lockPolishBuilderTables   sync.RWMutex
-	lockRemoveUnboundDatasets sync.RWMutex
 	lockRows                  sync.RWMutex
 	lockTruncate              sync.RWMutex
 	lockUpdate                sync.RWMutex
@@ -721,42 +694,6 @@ func (mock *TableServiceMock) GenetateCalls() []struct {
 	return calls
 }
 
-// GetTableDatasets calls GetTableDatasetsFunc.
-func (mock *TableServiceMock) GetTableDatasets(ctx context.Context, table string) ([]dataset_service.DatasetInfo, error) {
-	if mock.GetTableDatasetsFunc == nil {
-		panic("TableServiceMock.GetTableDatasetsFunc: method is nil but TableService.GetTableDatasets was just called")
-	}
-	callInfo := struct {
-		Ctx   context.Context
-		Table string
-	}{
-		Ctx:   ctx,
-		Table: table,
-	}
-	mock.lockGetTableDatasets.Lock()
-	mock.calls.GetTableDatasets = append(mock.calls.GetTableDatasets, callInfo)
-	mock.lockGetTableDatasets.Unlock()
-	return mock.GetTableDatasetsFunc(ctx, table)
-}
-
-// GetTableDatasetsCalls gets all the calls that were made to GetTableDatasets.
-// Check the length with:
-//
-//	len(mockedTableService.GetTableDatasetsCalls())
-func (mock *TableServiceMock) GetTableDatasetsCalls() []struct {
-	Ctx   context.Context
-	Table string
-} {
-	var calls []struct {
-		Ctx   context.Context
-		Table string
-	}
-	mock.lockGetTableDatasets.RLock()
-	calls = mock.calls.GetTableDatasets
-	mock.lockGetTableDatasets.RUnlock()
-	return calls
-}
-
 // GetTableDetail calls GetTableDetailFunc.
 func (mock *TableServiceMock) GetTableDetail(ctx context.Context, table string) (*TableInfo, error) {
 	if mock.GetTableDetailFunc == nil {
@@ -1022,38 +959,6 @@ func (mock *TableServiceMock) PolishBuilderTablesCalls() []struct {
 	mock.lockPolishBuilderTables.RLock()
 	calls = mock.calls.PolishBuilderTables
 	mock.lockPolishBuilderTables.RUnlock()
-	return calls
-}
-
-// RemoveUnboundDatasets calls RemoveUnboundDatasetsFunc.
-func (mock *TableServiceMock) RemoveUnboundDatasets(ctx context.Context) error {
-	if mock.RemoveUnboundDatasetsFunc == nil {
-		panic("TableServiceMock.RemoveUnboundDatasetsFunc: method is nil but TableService.RemoveUnboundDatasets was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockRemoveUnboundDatasets.Lock()
-	mock.calls.RemoveUnboundDatasets = append(mock.calls.RemoveUnboundDatasets, callInfo)
-	mock.lockRemoveUnboundDatasets.Unlock()
-	return mock.RemoveUnboundDatasetsFunc(ctx)
-}
-
-// RemoveUnboundDatasetsCalls gets all the calls that were made to RemoveUnboundDatasets.
-// Check the length with:
-//
-//	len(mockedTableService.RemoveUnboundDatasetsCalls())
-func (mock *TableServiceMock) RemoveUnboundDatasetsCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockRemoveUnboundDatasets.RLock()
-	calls = mock.calls.RemoveUnboundDatasets
-	mock.lockRemoveUnboundDatasets.RUnlock()
 	return calls
 }
 

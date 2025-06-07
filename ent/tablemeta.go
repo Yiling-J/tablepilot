@@ -41,11 +41,9 @@ type TableMetaEdges struct {
 	Columns []*TableColumn `json:"columns,omitempty"`
 	// Rows holds the value of the rows edge.
 	Rows []*TableRow `json:"rows,omitempty"`
-	// Datasets holds the value of the datasets edge.
-	Datasets []*Dataset `json:"datasets,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 }
 
 // ColumnsOrErr returns the Columns value or an error if the edge
@@ -64,15 +62,6 @@ func (e TableMetaEdges) RowsOrErr() ([]*TableRow, error) {
 		return e.Rows, nil
 	}
 	return nil, &NotLoadedError{edge: "rows"}
-}
-
-// DatasetsOrErr returns the Datasets value or an error if the edge
-// was not loaded in eager-loading.
-func (e TableMetaEdges) DatasetsOrErr() ([]*Dataset, error) {
-	if e.loadedTypes[2] {
-		return e.Datasets, nil
-	}
-	return nil, &NotLoadedError{edge: "datasets"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -164,11 +153,6 @@ func (tm *TableMeta) QueryColumns() *TableColumnQuery {
 // QueryRows queries the "rows" edge of the TableMeta entity.
 func (tm *TableMeta) QueryRows() *TableRowQuery {
 	return NewTableMetaClient(tm.config).QueryRows(tm)
-}
-
-// QueryDatasets queries the "datasets" edge of the TableMeta entity.
-func (tm *TableMeta) QueryDatasets() *DatasetQuery {
-	return NewTableMetaClient(tm.config).QueryDatasets(tm)
 }
 
 // Update returns a builder for updating this TableMeta.

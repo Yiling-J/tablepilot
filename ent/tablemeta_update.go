@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/predicate"
 	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
@@ -136,21 +135,6 @@ func (tmu *TableMetaUpdate) AddRows(t ...*TableRow) *TableMetaUpdate {
 	return tmu.AddRowIDs(ids...)
 }
 
-// AddDatasetIDs adds the "datasets" edge to the Dataset entity by IDs.
-func (tmu *TableMetaUpdate) AddDatasetIDs(ids ...int) *TableMetaUpdate {
-	tmu.mutation.AddDatasetIDs(ids...)
-	return tmu
-}
-
-// AddDatasets adds the "datasets" edges to the Dataset entity.
-func (tmu *TableMetaUpdate) AddDatasets(d ...*Dataset) *TableMetaUpdate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return tmu.AddDatasetIDs(ids...)
-}
-
 // Mutation returns the TableMetaMutation object of the builder.
 func (tmu *TableMetaUpdate) Mutation() *TableMetaMutation {
 	return tmu.mutation
@@ -196,27 +180,6 @@ func (tmu *TableMetaUpdate) RemoveRows(t ...*TableRow) *TableMetaUpdate {
 		ids[i] = t[i].ID
 	}
 	return tmu.RemoveRowIDs(ids...)
-}
-
-// ClearDatasets clears all "datasets" edges to the Dataset entity.
-func (tmu *TableMetaUpdate) ClearDatasets() *TableMetaUpdate {
-	tmu.mutation.ClearDatasets()
-	return tmu
-}
-
-// RemoveDatasetIDs removes the "datasets" edge to Dataset entities by IDs.
-func (tmu *TableMetaUpdate) RemoveDatasetIDs(ids ...int) *TableMetaUpdate {
-	tmu.mutation.RemoveDatasetIDs(ids...)
-	return tmu
-}
-
-// RemoveDatasets removes "datasets" edges to Dataset entities.
-func (tmu *TableMetaUpdate) RemoveDatasets(d ...*Dataset) *TableMetaUpdate {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return tmu.RemoveDatasetIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -397,51 +360,6 @@ func (tmu *TableMetaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if tmu.mutation.DatasetsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tmu.mutation.RemovedDatasetsIDs(); len(nodes) > 0 && !tmu.mutation.DatasetsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tmu.mutation.DatasetsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	_spec.AddModifiers(tmu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, tmu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -568,21 +486,6 @@ func (tmuo *TableMetaUpdateOne) AddRows(t ...*TableRow) *TableMetaUpdateOne {
 	return tmuo.AddRowIDs(ids...)
 }
 
-// AddDatasetIDs adds the "datasets" edge to the Dataset entity by IDs.
-func (tmuo *TableMetaUpdateOne) AddDatasetIDs(ids ...int) *TableMetaUpdateOne {
-	tmuo.mutation.AddDatasetIDs(ids...)
-	return tmuo
-}
-
-// AddDatasets adds the "datasets" edges to the Dataset entity.
-func (tmuo *TableMetaUpdateOne) AddDatasets(d ...*Dataset) *TableMetaUpdateOne {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return tmuo.AddDatasetIDs(ids...)
-}
-
 // Mutation returns the TableMetaMutation object of the builder.
 func (tmuo *TableMetaUpdateOne) Mutation() *TableMetaMutation {
 	return tmuo.mutation
@@ -628,27 +531,6 @@ func (tmuo *TableMetaUpdateOne) RemoveRows(t ...*TableRow) *TableMetaUpdateOne {
 		ids[i] = t[i].ID
 	}
 	return tmuo.RemoveRowIDs(ids...)
-}
-
-// ClearDatasets clears all "datasets" edges to the Dataset entity.
-func (tmuo *TableMetaUpdateOne) ClearDatasets() *TableMetaUpdateOne {
-	tmuo.mutation.ClearDatasets()
-	return tmuo
-}
-
-// RemoveDatasetIDs removes the "datasets" edge to Dataset entities by IDs.
-func (tmuo *TableMetaUpdateOne) RemoveDatasetIDs(ids ...int) *TableMetaUpdateOne {
-	tmuo.mutation.RemoveDatasetIDs(ids...)
-	return tmuo
-}
-
-// RemoveDatasets removes "datasets" edges to Dataset entities.
-func (tmuo *TableMetaUpdateOne) RemoveDatasets(d ...*Dataset) *TableMetaUpdateOne {
-	ids := make([]int, len(d))
-	for i := range d {
-		ids[i] = d[i].ID
-	}
-	return tmuo.RemoveDatasetIDs(ids...)
 }
 
 // Where appends a list predicates to the TableMetaUpdate builder.
@@ -852,51 +734,6 @@ func (tmuo *TableMetaUpdateOne) sqlSave(ctx context.Context) (_node *TableMeta, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tablerow.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if tmuo.mutation.DatasetsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tmuo.mutation.RemovedDatasetsIDs(); len(nodes) > 0 && !tmuo.mutation.DatasetsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := tmuo.mutation.DatasetsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   tablemeta.DatasetsTable,
-			Columns: []string{tablemeta.DatasetsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(dataset.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

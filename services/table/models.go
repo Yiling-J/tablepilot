@@ -40,11 +40,10 @@ type CLITableGenDataset struct {
 }
 
 type CLITableGenRequest struct {
-	Name        string               `json:"name"`
-	Model       string               `json:"model"`
-	Description string               `json:"description"`
-	Columns     []*TableGenColumn    `json:"columns"`
-	Datasets    []CLITableGenDataset `json:"datasets"`
+	Name        string            `json:"name"`
+	Model       string            `json:"model"`
+	Description string            `json:"description"`
+	Columns     []*TableGenColumn `json:"columns"`
 }
 
 type AutofillRequest struct {

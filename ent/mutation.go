@@ -56,10 +56,7 @@ type DatasetMutation struct {
 	indexer       *schema.CSVIndexer
 	values        *[]string
 	appendvalues  []string
-	private       *bool
 	clearedFields map[string]struct{}
-	table         *int
-	clearedtable  bool
 	done          bool
 	oldValue      func(context.Context) (*Dataset, error)
 	predicates    []predicate.Dataset
@@ -581,81 +578,6 @@ func (m *DatasetMutation) ResetValues() {
 	delete(m.clearedFields, dataset.FieldValues)
 }
 
-// SetPrivate sets the "private" field.
-func (m *DatasetMutation) SetPrivate(b bool) {
-	m.private = &b
-}
-
-// Private returns the value of the "private" field in the mutation.
-func (m *DatasetMutation) Private() (r bool, exists bool) {
-	v := m.private
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPrivate returns the old "private" field's value of the Dataset entity.
-// If the Dataset object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *DatasetMutation) OldPrivate(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPrivate is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPrivate requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPrivate: %w", err)
-	}
-	return oldValue.Private, nil
-}
-
-// ResetPrivate resets all changes to the "private" field.
-func (m *DatasetMutation) ResetPrivate() {
-	m.private = nil
-}
-
-// SetTableID sets the "table" edge to the TableMeta entity by id.
-func (m *DatasetMutation) SetTableID(id int) {
-	m.table = &id
-}
-
-// ClearTable clears the "table" edge to the TableMeta entity.
-func (m *DatasetMutation) ClearTable() {
-	m.clearedtable = true
-}
-
-// TableCleared reports if the "table" edge to the TableMeta entity was cleared.
-func (m *DatasetMutation) TableCleared() bool {
-	return m.clearedtable
-}
-
-// TableID returns the "table" edge ID in the mutation.
-func (m *DatasetMutation) TableID() (id int, exists bool) {
-	if m.table != nil {
-		return *m.table, true
-	}
-	return
-}
-
-// TableIDs returns the "table" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// TableID instead. It exists only for internal usage by the builders.
-func (m *DatasetMutation) TableIDs() (ids []int) {
-	if id := m.table; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetTable resets all changes to the "table" edge.
-func (m *DatasetMutation) ResetTable() {
-	m.table = nil
-	m.clearedtable = false
-}
-
 // Where appends a list predicates to the DatasetMutation builder.
 func (m *DatasetMutation) Where(ps ...predicate.Dataset) {
 	m.predicates = append(m.predicates, ps...)
@@ -690,7 +612,7 @@ func (m *DatasetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DatasetMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, dataset.FieldCreatedAt)
 	}
@@ -718,9 +640,6 @@ func (m *DatasetMutation) Fields() []string {
 	if m.values != nil {
 		fields = append(fields, dataset.FieldValues)
 	}
-	if m.private != nil {
-		fields = append(fields, dataset.FieldPrivate)
-	}
 	return fields
 }
 
@@ -747,8 +666,6 @@ func (m *DatasetMutation) Field(name string) (ent.Value, bool) {
 		return m.Indexer()
 	case dataset.FieldValues:
 		return m.Values()
-	case dataset.FieldPrivate:
-		return m.Private()
 	}
 	return nil, false
 }
@@ -776,8 +693,6 @@ func (m *DatasetMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldIndexer(ctx)
 	case dataset.FieldValues:
 		return m.OldValues(ctx)
-	case dataset.FieldPrivate:
-		return m.OldPrivate(ctx)
 	}
 	return nil, fmt.Errorf("unknown Dataset field %s", name)
 }
@@ -849,13 +764,6 @@ func (m *DatasetMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetValues(v)
-		return nil
-	case dataset.FieldPrivate:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPrivate(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Dataset field %s", name)
@@ -972,37 +880,25 @@ func (m *DatasetMutation) ResetField(name string) error {
 	case dataset.FieldValues:
 		m.ResetValues()
 		return nil
-	case dataset.FieldPrivate:
-		m.ResetPrivate()
-		return nil
 	}
 	return fmt.Errorf("unknown Dataset field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DatasetMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.table != nil {
-		edges = append(edges, dataset.EdgeTable)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *DatasetMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case dataset.EdgeTable:
-		if id := m.table; id != nil {
-			return []ent.Value{*id}
-		}
-	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DatasetMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 0)
 	return edges
 }
 
@@ -1014,42 +910,25 @@ func (m *DatasetMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DatasetMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedtable {
-		edges = append(edges, dataset.EdgeTable)
-	}
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *DatasetMutation) EdgeCleared(name string) bool {
-	switch name {
-	case dataset.EdgeTable:
-		return m.clearedtable
-	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *DatasetMutation) ClearEdge(name string) error {
-	switch name {
-	case dataset.EdgeTable:
-		m.ClearTable()
-		return nil
-	}
 	return fmt.Errorf("unknown Dataset unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *DatasetMutation) ResetEdge(name string) error {
-	switch name {
-	case dataset.EdgeTable:
-		m.ResetTable()
-		return nil
-	}
 	return fmt.Errorf("unknown Dataset edge %s", name)
 }
 
@@ -2840,6 +2719,8 @@ type TableColumnMutation struct {
 	linked_column                *string
 	linked_context_columns       *[]string
 	appendlinked_context_columns []string
+	options                      *[]string
+	appendoptions                []string
 	clearedFields                map[string]struct{}
 	tablemeta                    *int
 	clearedtablemeta             bool
@@ -3704,6 +3585,71 @@ func (m *TableColumnMutation) ResetLinkedContextColumns() {
 	m.appendlinked_context_columns = nil
 }
 
+// SetOptions sets the "options" field.
+func (m *TableColumnMutation) SetOptions(s []string) {
+	m.options = &s
+	m.appendoptions = nil
+}
+
+// Options returns the value of the "options" field in the mutation.
+func (m *TableColumnMutation) Options() (r []string, exists bool) {
+	v := m.options
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOptions returns the old "options" field's value of the TableColumn entity.
+// If the TableColumn object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TableColumnMutation) OldOptions(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOptions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOptions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOptions: %w", err)
+	}
+	return oldValue.Options, nil
+}
+
+// AppendOptions adds s to the "options" field.
+func (m *TableColumnMutation) AppendOptions(s []string) {
+	m.appendoptions = append(m.appendoptions, s...)
+}
+
+// AppendedOptions returns the list of values that were appended to the "options" field in this mutation.
+func (m *TableColumnMutation) AppendedOptions() ([]string, bool) {
+	if len(m.appendoptions) == 0 {
+		return nil, false
+	}
+	return m.appendoptions, true
+}
+
+// ClearOptions clears the value of the "options" field.
+func (m *TableColumnMutation) ClearOptions() {
+	m.options = nil
+	m.appendoptions = nil
+	m.clearedFields[tablecolumn.FieldOptions] = struct{}{}
+}
+
+// OptionsCleared returns if the "options" field was cleared in this mutation.
+func (m *TableColumnMutation) OptionsCleared() bool {
+	_, ok := m.clearedFields[tablecolumn.FieldOptions]
+	return ok
+}
+
+// ResetOptions resets all changes to the "options" field.
+func (m *TableColumnMutation) ResetOptions() {
+	m.options = nil
+	m.appendoptions = nil
+	delete(m.clearedFields, tablecolumn.FieldOptions)
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by id.
 func (m *TableColumnMutation) SetTablemetaID(id int) {
 	m.tablemeta = &id
@@ -3778,7 +3724,7 @@ func (m *TableColumnMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TableColumnMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, tablecolumn.FieldCreatedAt)
 	}
@@ -3830,6 +3776,9 @@ func (m *TableColumnMutation) Fields() []string {
 	if m.linked_context_columns != nil {
 		fields = append(fields, tablecolumn.FieldLinkedContextColumns)
 	}
+	if m.options != nil {
+		fields = append(fields, tablecolumn.FieldOptions)
+	}
 	return fields
 }
 
@@ -3872,6 +3821,8 @@ func (m *TableColumnMutation) Field(name string) (ent.Value, bool) {
 		return m.LinkedColumn()
 	case tablecolumn.FieldLinkedContextColumns:
 		return m.LinkedContextColumns()
+	case tablecolumn.FieldOptions:
+		return m.Options()
 	}
 	return nil, false
 }
@@ -3915,6 +3866,8 @@ func (m *TableColumnMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldLinkedColumn(ctx)
 	case tablecolumn.FieldLinkedContextColumns:
 		return m.OldLinkedContextColumns(ctx)
+	case tablecolumn.FieldOptions:
+		return m.OldOptions(ctx)
 	}
 	return nil, fmt.Errorf("unknown TableColumn field %s", name)
 }
@@ -4043,6 +3996,13 @@ func (m *TableColumnMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLinkedContextColumns(v)
 		return nil
+	case tablecolumn.FieldOptions:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOptions(v)
+		return nil
 	}
 	return fmt.Errorf("unknown TableColumn field %s", name)
 }
@@ -4121,6 +4081,9 @@ func (m *TableColumnMutation) ClearedFields() []string {
 	if m.FieldCleared(tablecolumn.FieldSourceType) {
 		fields = append(fields, tablecolumn.FieldSourceType)
 	}
+	if m.FieldCleared(tablecolumn.FieldOptions) {
+		fields = append(fields, tablecolumn.FieldOptions)
+	}
 	return fields
 }
 
@@ -4155,6 +4118,9 @@ func (m *TableColumnMutation) ClearField(name string) error {
 		return nil
 	case tablecolumn.FieldSourceType:
 		m.ClearSourceType()
+		return nil
+	case tablecolumn.FieldOptions:
+		m.ClearOptions()
 		return nil
 	}
 	return fmt.Errorf("unknown TableColumn nullable field %s", name)
@@ -4214,6 +4180,9 @@ func (m *TableColumnMutation) ResetField(name string) error {
 		return nil
 	case tablecolumn.FieldLinkedContextColumns:
 		m.ResetLinkedContextColumns()
+		return nil
+	case tablecolumn.FieldOptions:
+		m.ResetOptions()
 		return nil
 	}
 	return fmt.Errorf("unknown TableColumn field %s", name)
@@ -4296,28 +4265,25 @@ func (m *TableColumnMutation) ResetEdge(name string) error {
 // TableMetaMutation represents an operation that mutates the TableMeta nodes in the graph.
 type TableMetaMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	created_at      *time.Time
-	updated_at      *time.Time
-	nanoid          *string
-	name            *string
-	description     *string
-	model           *string
-	clearedFields   map[string]struct{}
-	columns         map[int]struct{}
-	removedcolumns  map[int]struct{}
-	clearedcolumns  bool
-	rows            map[int]struct{}
-	removedrows     map[int]struct{}
-	clearedrows     bool
-	datasets        map[int]struct{}
-	removeddatasets map[int]struct{}
-	cleareddatasets bool
-	done            bool
-	oldValue        func(context.Context) (*TableMeta, error)
-	predicates      []predicate.TableMeta
+	op             Op
+	typ            string
+	id             *int
+	created_at     *time.Time
+	updated_at     *time.Time
+	nanoid         *string
+	name           *string
+	description    *string
+	model          *string
+	clearedFields  map[string]struct{}
+	columns        map[int]struct{}
+	removedcolumns map[int]struct{}
+	clearedcolumns bool
+	rows           map[int]struct{}
+	removedrows    map[int]struct{}
+	clearedrows    bool
+	done           bool
+	oldValue       func(context.Context) (*TableMeta, error)
+	predicates     []predicate.TableMeta
 }
 
 var _ ent.Mutation = (*TableMetaMutation)(nil)
@@ -4781,60 +4747,6 @@ func (m *TableMetaMutation) ResetRows() {
 	m.removedrows = nil
 }
 
-// AddDatasetIDs adds the "datasets" edge to the Dataset entity by ids.
-func (m *TableMetaMutation) AddDatasetIDs(ids ...int) {
-	if m.datasets == nil {
-		m.datasets = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.datasets[ids[i]] = struct{}{}
-	}
-}
-
-// ClearDatasets clears the "datasets" edge to the Dataset entity.
-func (m *TableMetaMutation) ClearDatasets() {
-	m.cleareddatasets = true
-}
-
-// DatasetsCleared reports if the "datasets" edge to the Dataset entity was cleared.
-func (m *TableMetaMutation) DatasetsCleared() bool {
-	return m.cleareddatasets
-}
-
-// RemoveDatasetIDs removes the "datasets" edge to the Dataset entity by IDs.
-func (m *TableMetaMutation) RemoveDatasetIDs(ids ...int) {
-	if m.removeddatasets == nil {
-		m.removeddatasets = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.datasets, ids[i])
-		m.removeddatasets[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedDatasets returns the removed IDs of the "datasets" edge to the Dataset entity.
-func (m *TableMetaMutation) RemovedDatasetsIDs() (ids []int) {
-	for id := range m.removeddatasets {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// DatasetsIDs returns the "datasets" edge IDs in the mutation.
-func (m *TableMetaMutation) DatasetsIDs() (ids []int) {
-	for id := range m.datasets {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetDatasets resets all changes to the "datasets" edge.
-func (m *TableMetaMutation) ResetDatasets() {
-	m.datasets = nil
-	m.cleareddatasets = false
-	m.removeddatasets = nil
-}
-
 // Where appends a list predicates to the TableMetaMutation builder.
 func (m *TableMetaMutation) Where(ps ...predicate.TableMeta) {
 	m.predicates = append(m.predicates, ps...)
@@ -5074,15 +4986,12 @@ func (m *TableMetaMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TableMetaMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.columns != nil {
 		edges = append(edges, tablemeta.EdgeColumns)
 	}
 	if m.rows != nil {
 		edges = append(edges, tablemeta.EdgeRows)
-	}
-	if m.datasets != nil {
-		edges = append(edges, tablemeta.EdgeDatasets)
 	}
 	return edges
 }
@@ -5103,27 +5012,18 @@ func (m *TableMetaMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case tablemeta.EdgeDatasets:
-		ids := make([]ent.Value, 0, len(m.datasets))
-		for id := range m.datasets {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TableMetaMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.removedcolumns != nil {
 		edges = append(edges, tablemeta.EdgeColumns)
 	}
 	if m.removedrows != nil {
 		edges = append(edges, tablemeta.EdgeRows)
-	}
-	if m.removeddatasets != nil {
-		edges = append(edges, tablemeta.EdgeDatasets)
 	}
 	return edges
 }
@@ -5144,27 +5044,18 @@ func (m *TableMetaMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case tablemeta.EdgeDatasets:
-		ids := make([]ent.Value, 0, len(m.removeddatasets))
-		for id := range m.removeddatasets {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TableMetaMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.clearedcolumns {
 		edges = append(edges, tablemeta.EdgeColumns)
 	}
 	if m.clearedrows {
 		edges = append(edges, tablemeta.EdgeRows)
-	}
-	if m.cleareddatasets {
-		edges = append(edges, tablemeta.EdgeDatasets)
 	}
 	return edges
 }
@@ -5177,8 +5068,6 @@ func (m *TableMetaMutation) EdgeCleared(name string) bool {
 		return m.clearedcolumns
 	case tablemeta.EdgeRows:
 		return m.clearedrows
-	case tablemeta.EdgeDatasets:
-		return m.cleareddatasets
 	}
 	return false
 }
@@ -5200,9 +5089,6 @@ func (m *TableMetaMutation) ResetEdge(name string) error {
 		return nil
 	case tablemeta.EdgeRows:
 		m.ResetRows()
-		return nil
-	case tablemeta.EdgeDatasets:
-		m.ResetDatasets()
 		return nil
 	}
 	return fmt.Errorf("unknown TableMeta edge %s", name)

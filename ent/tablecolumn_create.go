@@ -221,6 +221,12 @@ func (tcc *TableColumnCreate) SetLinkedContextColumns(s []string) *TableColumnCr
 	return tcc
 }
 
+// SetOptions sets the "options" field.
+func (tcc *TableColumnCreate) SetOptions(s []string) *TableColumnCreate {
+	tcc.mutation.SetOptions(s)
+	return tcc
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcc *TableColumnCreate) SetTablemetaID(id int) *TableColumnCreate {
 	tcc.mutation.SetTablemetaID(id)
@@ -446,6 +452,10 @@ func (tcc *TableColumnCreate) createSpec() (*TableColumn, *sqlgraph.CreateSpec) 
 	if value, ok := tcc.mutation.LinkedContextColumns(); ok {
 		_spec.SetField(tablecolumn.FieldLinkedContextColumns, field.TypeJSON, value)
 		_node.LinkedContextColumns = value
+	}
+	if value, ok := tcc.mutation.Options(); ok {
+		_spec.SetField(tablecolumn.FieldOptions, field.TypeJSON, value)
+		_node.Options = value
 	}
 	if nodes := tcc.mutation.TablemetaIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -753,6 +763,24 @@ func (u *TableColumnUpsert) SetLinkedContextColumns(v []string) *TableColumnUpse
 // UpdateLinkedContextColumns sets the "linked_context_columns" field to the value that was provided on create.
 func (u *TableColumnUpsert) UpdateLinkedContextColumns() *TableColumnUpsert {
 	u.SetExcluded(tablecolumn.FieldLinkedContextColumns)
+	return u
+}
+
+// SetOptions sets the "options" field.
+func (u *TableColumnUpsert) SetOptions(v []string) *TableColumnUpsert {
+	u.Set(tablecolumn.FieldOptions, v)
+	return u
+}
+
+// UpdateOptions sets the "options" field to the value that was provided on create.
+func (u *TableColumnUpsert) UpdateOptions() *TableColumnUpsert {
+	u.SetExcluded(tablecolumn.FieldOptions)
+	return u
+}
+
+// ClearOptions clears the value of the "options" field.
+func (u *TableColumnUpsert) ClearOptions() *TableColumnUpsert {
+	u.SetNull(tablecolumn.FieldOptions)
 	return u
 }
 
@@ -1078,6 +1106,27 @@ func (u *TableColumnUpsertOne) SetLinkedContextColumns(v []string) *TableColumnU
 func (u *TableColumnUpsertOne) UpdateLinkedContextColumns() *TableColumnUpsertOne {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.UpdateLinkedContextColumns()
+	})
+}
+
+// SetOptions sets the "options" field.
+func (u *TableColumnUpsertOne) SetOptions(v []string) *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetOptions(v)
+	})
+}
+
+// UpdateOptions sets the "options" field to the value that was provided on create.
+func (u *TableColumnUpsertOne) UpdateOptions() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateOptions()
+	})
+}
+
+// ClearOptions clears the value of the "options" field.
+func (u *TableColumnUpsertOne) ClearOptions() *TableColumnUpsertOne {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.ClearOptions()
 	})
 }
 
@@ -1569,6 +1618,27 @@ func (u *TableColumnUpsertBulk) SetLinkedContextColumns(v []string) *TableColumn
 func (u *TableColumnUpsertBulk) UpdateLinkedContextColumns() *TableColumnUpsertBulk {
 	return u.Update(func(s *TableColumnUpsert) {
 		s.UpdateLinkedContextColumns()
+	})
+}
+
+// SetOptions sets the "options" field.
+func (u *TableColumnUpsertBulk) SetOptions(v []string) *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.SetOptions(v)
+	})
+}
+
+// UpdateOptions sets the "options" field to the value that was provided on create.
+func (u *TableColumnUpsertBulk) UpdateOptions() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.UpdateOptions()
+	})
+}
+
+// ClearOptions clears the value of the "options" field.
+func (u *TableColumnUpsertBulk) ClearOptions() *TableColumnUpsertBulk {
+	return u.Update(func(s *TableColumnUpsert) {
+		s.ClearOptions()
 	})
 }
 

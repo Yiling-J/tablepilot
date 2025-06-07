@@ -295,6 +295,24 @@ func (tcu *TableColumnUpdate) AppendLinkedContextColumns(s []string) *TableColum
 	return tcu
 }
 
+// SetOptions sets the "options" field.
+func (tcu *TableColumnUpdate) SetOptions(s []string) *TableColumnUpdate {
+	tcu.mutation.SetOptions(s)
+	return tcu
+}
+
+// AppendOptions appends s to the "options" field.
+func (tcu *TableColumnUpdate) AppendOptions(s []string) *TableColumnUpdate {
+	tcu.mutation.AppendOptions(s)
+	return tcu
+}
+
+// ClearOptions clears the value of the "options" field.
+func (tcu *TableColumnUpdate) ClearOptions() *TableColumnUpdate {
+	tcu.mutation.ClearOptions()
+	return tcu
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcu *TableColumnUpdate) SetTablemetaID(id int) *TableColumnUpdate {
 	tcu.mutation.SetTablemetaID(id)
@@ -475,6 +493,17 @@ func (tcu *TableColumnUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, tablecolumn.FieldLinkedContextColumns, value)
 		})
+	}
+	if value, ok := tcu.mutation.Options(); ok {
+		_spec.SetField(tablecolumn.FieldOptions, field.TypeJSON, value)
+	}
+	if value, ok := tcu.mutation.AppendedOptions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tablecolumn.FieldOptions, value)
+		})
+	}
+	if tcu.mutation.OptionsCleared() {
+		_spec.ClearField(tablecolumn.FieldOptions, field.TypeJSON)
 	}
 	if tcu.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -791,6 +820,24 @@ func (tcuo *TableColumnUpdateOne) AppendLinkedContextColumns(s []string) *TableC
 	return tcuo
 }
 
+// SetOptions sets the "options" field.
+func (tcuo *TableColumnUpdateOne) SetOptions(s []string) *TableColumnUpdateOne {
+	tcuo.mutation.SetOptions(s)
+	return tcuo
+}
+
+// AppendOptions appends s to the "options" field.
+func (tcuo *TableColumnUpdateOne) AppendOptions(s []string) *TableColumnUpdateOne {
+	tcuo.mutation.AppendOptions(s)
+	return tcuo
+}
+
+// ClearOptions clears the value of the "options" field.
+func (tcuo *TableColumnUpdateOne) ClearOptions() *TableColumnUpdateOne {
+	tcuo.mutation.ClearOptions()
+	return tcuo
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcuo *TableColumnUpdateOne) SetTablemetaID(id int) *TableColumnUpdateOne {
 	tcuo.mutation.SetTablemetaID(id)
@@ -1001,6 +1048,17 @@ func (tcuo *TableColumnUpdateOne) sqlSave(ctx context.Context) (_node *TableColu
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, tablecolumn.FieldLinkedContextColumns, value)
 		})
+	}
+	if value, ok := tcuo.mutation.Options(); ok {
+		_spec.SetField(tablecolumn.FieldOptions, field.TypeJSON, value)
+	}
+	if value, ok := tcuo.mutation.AppendedOptions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tablecolumn.FieldOptions, value)
+		})
+	}
+	if tcuo.mutation.OptionsCleared() {
+		_spec.ClearField(tablecolumn.FieldOptions, field.TypeJSON)
 	}
 	if tcuo.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -44,7 +44,7 @@ func TestTableService_ValidateLinkedColumnInfo(t *testing.T) {
 			c.column.FillMode = "pick"
 			c.column.SourceID = "table"
 			c.column.SourceType = tablecolumn.SourceTypeTable
-			err = validateLinkedColumnInfo(ctx, tx.Client(), tb.ID, []*TableGenColumn{&c.column})
+			err = validateLinkedColumnInfo(ctx, tx.Client(), []*TableGenColumn{&c.column})
 			require.Equal(t, c.error, err)
 		})
 	}

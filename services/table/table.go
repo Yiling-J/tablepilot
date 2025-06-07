@@ -67,8 +67,6 @@ type TableService interface {
 	CSV(ctx context.Context, table string) ([]byte, error)
 	CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error)
 	DeleteColumn(ctx context.Context, table string, column string) (string, error)
-	GetTableDatasets(ctx context.Context, table string) ([]dataset_service.DatasetInfo, error)
-	RemoveUnboundDatasets(ctx context.Context) error
 }
 
 type TableServiceImpl struct {
@@ -112,7 +110,7 @@ func (t *TableServiceImpl) Create(ctx context.Context, req *TableGenRequest) (st
 	}
 
 	// validate linked column column/context_columns exists
-	err = validateLinkedColumnInfo(ctx, tx.Client(), table.ID, req.Columns)
+	err = validateLinkedColumnInfo(ctx, tx.Client(), req.Columns)
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("table.Create: validating linked column info: %w", err))
 	}
@@ -228,7 +226,7 @@ func (t *TableServiceImpl) Update(ctx context.Context, table string, req *TableG
 	}
 
 	// validate linked column column/context_columns exists
-	err = validateLinkedColumnInfo(ctx, tx.Client(), dbtable.ID, req.Columns)
+	err = validateLinkedColumnInfo(ctx, tx.Client(), req.Columns)
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("table.Update: validating linked column info: %w", err))
 	}
@@ -474,23 +472,6 @@ func (t *TableServiceImpl) Truncate(ctx context.Context, table string) (int, err
 }
 
 func (t *TableServiceImpl) Delete(ctx context.Context, table string) (int, error) {
-	meta, err := t.db.TableMeta.Query().Where(tablemeta.Or(
-		tablemeta.Nanoid(table),
-		tablemeta.Name(table),
-	)).First(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("table.Truncate: querying table: %w", err)
-	}
-	dss, err := t.db.Dataset.Query().Where(dataset.HasTableWith(tablemeta.Nanoid(meta.Nanoid))).All(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("table.Truncate: querying table: %w", err)
-	}
-	for _, ds := range dss {
-		err = t.dataset.Delete(ctx, ds.Nanoid)
-		if err != nil {
-			return 0, fmt.Errorf("table.Delete: deleting table datasets: %w", err)
-		}
-	}
 	count, err := t.db.TableMeta.Delete().Where(tablemeta.Or(
 		tablemeta.Nanoid(table),
 		tablemeta.Name(table),
@@ -840,6 +821,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, request ImportRequest) (s
 					return "", ent.Rollback(tx, fmt.Errorf("table.Import: ranging over CSV source: %w", err))
 				}
 			}
+		case tablecolumn.SourceTypeOptions:
 		}
 	}
 
@@ -937,6 +919,13 @@ func getSourceFromColumn(ctx context.Context, db *ent.Client, sourceDataDir stri
 			}
 			so = ls
 		}
+	case tablecolumn.SourceTypeOptions:
+		ls := &source.ListSource{Options: column.Options}
+		err := ls.Init(ctx, sourceDataDir)
+		if err != nil {
+			return nil, fmt.Errorf("table.parseLinkedSource: initializing options source: %w", err)
+		}
+		so = ls
 	}
 	return so, nil
 }
@@ -975,31 +964,11 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 	return schema, nil
 }
 
-func (t *TableServiceImpl) GetTableDatasets(ctx context.Context, table string) ([]dataset_service.DatasetInfo, error) {
-	meta, err := t.db.TableMeta.Query().WithDatasets().Where(tablemeta.Or(
-		tablemeta.Nanoid(table),
-		tablemeta.Name(table),
-	)).First(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("table.GetTableSchema: querying table metadata: %w", err)
-	}
-	datasets := []dataset_service.DatasetInfo{}
-	for _, ds := range meta.Edges.Datasets {
-		datasets = append(datasets, dataset_service.DatasetInfo{
-			ID:          ds.Nanoid,
-			Name:        ds.Name,
-			Description: ds.Description,
-			Type:        ds.Type.String(),
-		})
-	}
-	return datasets, nil
-}
-
 func (t *TableServiceImpl) Validate(ctx context.Context, req *TableGenRequest) error {
 	if len(req.Columns) == 0 {
 		return fmt.Errorf("table.Validate: columns should not be empty")
 	}
-	return validateLinkedColumnInfo(ctx, t.db, 0, req.Columns)
+	return validateLinkedColumnInfo(ctx, t.db, req.Columns)
 }
 
 func (t *TableServiceImpl) CreateColumn(ctx context.Context, table string, column TableGenColumn) (string, error) {
@@ -1017,7 +986,7 @@ func (t *TableServiceImpl) CreateColumn(ctx context.Context, table string, colum
 	}
 
 	// validate linked column column/context_columns exists
-	err = validateLinkedColumnInfo(ctx, tx.Client(), tb.ID, []*TableGenColumn{&column})
+	err = validateLinkedColumnInfo(ctx, tx.Client(), []*TableGenColumn{&column})
 	if err != nil {
 		return "", ent.Rollback(tx, fmt.Errorf("table.CreateColumn: validating linked column info: %w", err))
 	}
@@ -1124,23 +1093,4 @@ func (t *TableServiceImpl) DeleteColumn(ctx context.Context, table string, colum
 		}
 	}
 	return "", tx.Commit()
-}
-
-func (t *TableServiceImpl) RemoveUnboundDatasets(ctx context.Context) error {
-	dss, err := t.db.Dataset.Query().Where(dataset.Not(dataset.HasTable()), dataset.Private(true)).All(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, ds := range dss {
-		if ds.CreatedAt.Add(1 * time.Hour).Before(time.Now()) {
-			err := t.dataset.Delete(ctx, ds.Nanoid)
-			if err != nil {
-				t.logger.Errorw("failed to delete unbound dataset", "id", ds.Nanoid)
-			} else {
-				t.logger.Infow("unbound dataset deleted", "id", ds.Nanoid)
-			}
-		}
-	}
-	return nil
 }

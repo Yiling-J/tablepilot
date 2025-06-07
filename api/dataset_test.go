@@ -202,26 +202,3 @@ func TestAPI_GetDataset(t *testing.T) {
 		t, 200, expected,
 	)
 }
-
-func TestAPI_ListTableDatasets(t *testing.T) {
-	ds := []*dataset.DatasetInfo{
-		{Name: "d1", Description: "desc1"},
-		{Name: "d2", Description: "desc2"},
-	}
-	datasetMock := &dataset.DatasetServiceMock{
-		ListTableDatasetsFunc: func(ctx context.Context, table string) ([]*dataset.DatasetInfo, error) {
-			require.Equal(t, "tb1", table)
-			return ds, nil
-		},
-	}
-	server := NewTestServer(t, func(s *services.Backend) {
-		s.DatasetService = datasetMock
-	})
-	req, err := server.NewGetRequest("/api/v1/tables/tb1/datasets")
-	require.NoError(t, err)
-	resp := server.Send(req)
-	resp.ResponseEq(t, 200, gin.H{
-		"total":    2,
-		"datasets": ds,
-	})
-}

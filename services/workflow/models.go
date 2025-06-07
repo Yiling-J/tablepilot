@@ -71,6 +71,7 @@ type WorkflowCreateTablePayload struct {
 	SchemaFile string                       `json:"schema_file"`
 	OnExists   schema.WorkflowTableOnExists `json:"on_exists"`
 	Request    table.TableGenRequest        `json:"request"`
+	Datasets   []string                     `json:"datasets"`
 }
 
 type WorkflowGeneratePayload struct {

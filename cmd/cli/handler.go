@@ -81,37 +81,6 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 			Description: req.Description,
 			Columns:     req.Columns,
 		}
-		for _, ds := range req.Datasets {
-			readers := []io.Reader{}
-			if ds.Type == db_dataset.TypeCsv && len(ds.Paths) > 0 {
-				files, err := parsePaths(ds.Paths)
-				if err != nil {
-					return err
-				}
-				for _, f := range files {
-					r, err := os.Open(f)
-					if err != nil {
-						return err
-					}
-					defer r.Close()
-					readers = append(readers, r)
-				}
-			}
-			h.backend.Logger.Debugw("creating dataset", "paths", ds.Paths)
-			id, err := h.backend.DatasetService.Create(cmd.Context(), &dataset.CreateDatasetRequest{
-				Name:        ds.Name,
-				Description: ds.Description,
-				Type:        ds.Type,
-				Private:     true,
-				Data:        ds.Values,
-				Files:       readers,
-			})
-			_ = id
-			if err != nil {
-				return err
-			}
-			h.backend.Logger.Debugw("dataset created", "paths", ds.Paths)
-		}
 		id, err := h.backend.TableService.Create(cmd.Context(), gen)
 		if err != nil {
 			return err
