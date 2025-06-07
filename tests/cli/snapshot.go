@@ -46,16 +46,19 @@ var autofills = []struct {
 	example  string
 	commands [][]string
 }{
-	// {"pokemons", "pokemons/pokemons.json", [][]string{
-	// 	{"create", "../../examples/pokemons/pokemons.json"},
-	// 	{"import", "examples/pokemons/pokemons.csv"},
-	// 	{"autofill", "pokemons", "-c", "5", "-b", "3", "--columns", "Ecology"},
-	// }},
-	// {"pokemons_autofill", "pokemons_autofill/pokemons.json", [][]string{
-	// 	{"create", "../../examples/pokemons_autofill/pokemons.json"},
-	// 	{"import", "examples/pokemons_autofill/data.csv", "-t", "pokemon_stories"},
-	// 	{"autofill", "pokemon_stories", "-c", "5", "-b", "3", "--columns", "Story"},
-	// }},
+	// autofill
+	{"pokemons", "pokemons.json", [][]string{
+		{"create", "cases/pokemons.json"},
+		{"import", "cases/pokemons.csv", "-t", "pokemons"},
+		{"autofill", "pokemons", "-c", "5", "-b", "3", "--columns", "Ecology"},
+	}},
+	// autofill based on linked column with context
+	{"pokemons_autofill", "pokemons_autofill.json", [][]string{
+		{"dataset", "create", "--name", "pokemons", "--type", "csv", "--path", "cases/pokemons.csv"},
+		{"create", "cases/pokemons_autofill.json"},
+		{"import", "cases/stories.csv", "-t", "pokemon_stories"},
+		{"autofill", "pokemon_stories", "-c", "5", "-b", "3", "--columns", "Story"},
+	}},
 }
 
 func main() {
@@ -146,6 +149,7 @@ func main() {
 		_ = os.Remove("test.db")
 		_ = os.Remove("tmp.csv")
 		_ = os.Remove(fmt.Sprintf("snapshots/%s.json", af.snapshot))
+		_ = os.MkdirAll("snapshots", os.ModePerm)
 		os.Setenv("TABLEPILOT_SNAPSHOT_RECORD", af.snapshot)
 
 		for _, command := range af.commands {
@@ -157,7 +161,7 @@ func main() {
 			}
 		}
 
-		p := "../../examples/" + af.example
+		p := "cases/" + af.example
 		b, err := os.ReadFile(p)
 		if err != nil {
 			panic(err)

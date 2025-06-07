@@ -1,0 +1,42 @@
+{
+  "name": "pokemon_stories",
+  "description": "A table of engaging and imaginative Pokémon stories, generated based on the detailed characteristics of each Pokémon.",
+  "columns": [
+    {
+      "name": "Pokemon1",
+      "description": "The first Pokemon in the story",
+      "type": "string",
+      "fill_mode": "pick",
+      "source_id": "pokemons",
+      "source_type": "dataset",
+      "linked_column": "Name",
+      "random": true
+    },
+    {
+      "name": "Pokemon2",
+      "description": "The second Pokemon in the story",
+      "type": "string",
+      "fill_mode": "pick",
+      "source_id": "pokemons",
+      "source_type": "dataset",
+      "linked_column": "Name",
+      "random": true
+    },
+    {
+      "name": "Pokemon3",
+      "description": "The third Pokemon in the story",
+      "type": "string",
+      "fill_mode": "pick",
+      "source_id": "pokemons",
+      "source_type": "dataset",
+      "linked_column": "Name",
+      "random": true
+    },
+    {
+      "name": "Story",
+      "description": "A captivating and well-structured Pokémon story featuring the selected Pokémon. The story should be rich in detail, character interactions, and adventure.",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}

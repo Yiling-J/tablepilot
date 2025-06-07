@@ -1,0 +1,72 @@
+{
+  "name": "pokemons",
+  "description": "Table of Pokemon from the first 8 generations",
+  "columns": [
+    {
+      "name": "Name",
+      "description": "Name of the Pokemon",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Pokedex Number",
+      "description": "The entry number of the Pokemon in the National Pokedex",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Type1",
+      "description": "Primary type of the Pokemon",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Type2",
+      "description": "Secondary type of the Pokemon (if applicable)",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Classification",
+      "description": "Classification described by the Sun and Moon Pokedex",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Height (m)",
+      "description": "Average height of the Pokemon in meters",
+      "type": "number",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Weight (kg)",
+      "description": "Average weight of the Pokemon in kilograms",
+      "type": "number",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Abilities",
+      "description": "List of abilities that the Pokemon can use",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Generation",
+      "description": "Generation in which the Pokemon was first introduced",
+      "type": "integer",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Legendary Status",
+      "description": "Denotes if the Pokemon is legendary",
+      "type": "string",
+      "fill_mode": "ai"
+    },
+    {
+      "name": "Ecology",
+      "description": "Generate detailed ecological information about a Pokémon, including its natural habitat, diet, social behavior (solitary or group-living), and common personality traits.",
+      "type": "string",
+      "fill_mode": "ai"
+    }
+  ]
+}

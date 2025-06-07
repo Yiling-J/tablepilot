@@ -106,19 +106,19 @@ func TestIntegrationCLI_Snapshots(t *testing.T) {
 }
 
 func TestIntegrationCLI_SnapshotsAutofill(t *testing.T) {
-	t.SkipNow()
 	for _, tt := range autofills {
 		t.Run(tt.snapshot, func(t *testing.T) {
 			t.Setenv("TABLEPILOT_SNAPSHOT_TEST", tt.snapshot)
 			defer func() { _ = os.Remove("test.db") }()
 			defer func() { _ = os.Remove("tmp.csv") }()
+			defer func() { _ = os.RemoveAll("datasets") }()
 
 			httpmock.Activate()
 			defer httpmock.DeactivateAndReset()
 
 			counter := 0
 			snapshots := []snapshot{}
-			raw, err := os.ReadFile("../snapshots/" + tt.snapshot + ".json")
+			raw, err := os.ReadFile("snapshots/" + tt.snapshot + ".json")
 			require.NoError(t, err)
 			err = json.Unmarshal(raw, &snapshots)
 			require.NoError(t, err)
@@ -152,7 +152,7 @@ func TestIntegrationCLI_SnapshotsAutofill(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			p := "../../examples/" + tt.example
+			p := "cases/" + tt.example
 			b, err := os.ReadFile(p)
 			require.NoError(t, err)
 			tableName := gjson.GetBytes(b, "name").String()
@@ -160,7 +160,7 @@ func TestIntegrationCLI_SnapshotsAutofill(t *testing.T) {
 			err = root.Execute()
 			require.NoError(t, err)
 
-			compareCSVFiles(t, "tmp.csv", "../snapshots/"+tt.snapshot+".csv")
+			compareCSVFiles(t, "tmp.csv", "snapshots/"+tt.snapshot+".csv")
 		})
 	}
 }
