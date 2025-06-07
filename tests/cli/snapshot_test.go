@@ -45,6 +45,7 @@ func TestIntegrationCLI_Snapshots(t *testing.T) {
 			t.Setenv("TABLEPILOT_SNAPSHOT_TEST", tt.snapshot)
 			defer func() { _ = os.Remove("test.db") }()
 			defer func() { _ = os.Remove("tmp.csv") }()
+			defer func() { _ = os.RemoveAll("datasets") }()
 
 			httpmock.Activate()
 			defer httpmock.DeactivateAndReset()
