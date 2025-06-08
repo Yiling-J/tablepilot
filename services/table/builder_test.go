@@ -125,11 +125,11 @@ func TestBuilder_BuildTable(t *testing.T) {
 						"description":   "c2d",
 						"type":          "string",
 						"contextLength": 10,
-						"options":       []string{"lc1", "lc2"},
+						"options":       []string{"a", "b"},
 					}},
 					{Name: "AddPickFromTableColumn", Arguments: map[string]any{
-						"name":                 "c2",
-						"description":          "c2d",
+						"name":                 "c3",
+						"description":          "c3d",
 						"type":                 "string",
 						"contextLength":        3,
 						"random":               true,
@@ -165,12 +165,11 @@ func TestBuilder_BuildTable(t *testing.T) {
 		Columns: []*TableGenColumn{
 			{Name: "c1", Description: "c1d", Type: "string", FillMode: "ai", ContextLength: 3},
 			{
-				Name: "c2", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10,
-				Random: true, Repeat: 5, SourceID: "s1", SourceType: tablecolumn.SourceTypeOptions, Options: []string{"a", "b"},
+				Name: "c2", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10, SourceType: tablecolumn.SourceTypeOptions, Options: []string{"a", "b"},
 			},
 			{
-				Name: "c3", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10,
-				Random: true, Repeat: 5, SourceID: "s1", SourceType: tablecolumn.SourceTypeDataset, LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
+				Name: "c3", Description: "c3d", Type: "string", FillMode: "pick", ContextLength: 3,
+				Random: true, Repeat: 5, SourceID: "tx", SourceType: tablecolumn.SourceTypeTable, LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
 			},
 		},
 	}, schema)
