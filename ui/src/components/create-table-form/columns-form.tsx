@@ -634,13 +634,7 @@ export function ColumnsForm({
                   <div className="mb-1">{column.description}</div>
                   <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                     <span>Type: {column.type}</span>
-                    <span>Fill: {column.fill_mode}</span>
-                    {column.context_length && (
-                      <span>Context: {column.context_length}</span>
-                    )}
-                    {column.source_id && (
-                      <span>Source: {column.source_id}</span>
-                    )}
+                    <span>Fill Type: {column.fill_mode}</span>
                   </div>
                 </div>
               </CardContent>
