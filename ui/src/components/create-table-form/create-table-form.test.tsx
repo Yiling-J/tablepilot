@@ -137,6 +137,14 @@ describe("CreateTableForm", () => {
             description: "ds",
             type: "csv",
             data: [],
+            columns: ["col1", "col2"],
+          },
+          {
+            id: "d2",
+            name: "s2",
+            description: "ds",
+            type: "list",
+            data: ["foo", "bar"],
             columns: [],
           },
         ],
@@ -224,13 +232,17 @@ describe("CreateTableForm", () => {
       expect(screen.getByText("s1")).toBeInTheDocument();
     });
 
-    it("should create pick from dataset column", async () => {
+    it("should create pick from dataset-csv column", async () => {
       await userEvent.click(screen.getByText("AI Generated").parentElement!);
       await userEvent.click(screen.getByText("Select from Dataset"));
       await userEvent.click(
         screen.getByText("Select a dataset").parentElement!,
       );
       await userEvent.click(screen.getByText("s1"));
+      await userEvent.click(screen.getByText("Select a column").parentElement!);
+      await userEvent.click(screen.getByText("col1"));
+      await userEvent.click(screen.getByText("Select context columns"));
+      await userEvent.click(screen.getByText("col2"));
       await userEvent.click(
         screen.getByText("Random Selection").parentElement!
           .firstElementChild as HTMLElement,
@@ -245,7 +257,65 @@ describe("CreateTableForm", () => {
       await userEvent.click(screen.getByText("Show JSON"));
       await screen.findByText("JSON Preview");
       expect(screen.getByTestId("json-preview")).toHaveTextContent(
-        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "", "linked_context_columns": [], "source_id": "d1", "source_type": "dataset", "options": [] } ] }`,
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "col1", "linked_context_columns": [ "col2" ], "source_id": "d1", "source_type": "dataset", "options": [] } ] }`,
+      );
+    });
+
+    it("should create pick from dataset-list column", async () => {
+      await userEvent.click(screen.getByText("AI Generated").parentElement!);
+      await userEvent.click(screen.getByText("Select from Dataset"));
+      await userEvent.click(
+        screen.getByText("Select a dataset").parentElement!,
+      );
+      await userEvent.click(screen.getByText("s2"));
+      const col = screen.queryByText("Select a column");
+      expect(col).toBeNull();
+      const lcol = screen.queryByText("Select context columns");
+      expect(lcol).toBeNull();
+      await userEvent.click(
+        screen.getByText("Random Selection").parentElement!
+          .firstElementChild as HTMLElement,
+      );
+      await userEvent.click(
+        screen.getByText("Selection with Replacement").parentElement!
+          .firstElementChild as HTMLElement,
+      );
+      await userEvent.click(screen.getByDisplayValue("1"));
+      await userEvent.keyboard("2");
+      await userEvent.click(screen.getByText("Add"));
+      await userEvent.click(screen.getByText("Show JSON"));
+      await screen.findByText("JSON Preview");
+      expect(screen.getByTestId("json-preview")).toHaveTextContent(
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "", "linked_context_columns": [], "source_id": "d2", "source_type": "dataset", "options": [] } ] }`,
+      );
+    });
+
+    it("should create pick from options column", async () => {
+      await userEvent.click(screen.getByText("AI Generated").parentElement!);
+      await userEvent.click(screen.getByText("Select from Options"));
+      expect(screen.getByText("Options")).toBeInTheDocument();
+      await userEvent.type(
+        screen.getByPlaceholderText(
+          "Each line will be treated as a separate option.",
+        ),
+        "aaa\nbbb",
+      );
+      await userEvent.click(
+        screen.getByText("Random Selection").parentElement!
+          .firstElementChild as HTMLElement,
+      );
+      await userEvent.click(
+        screen.getByText("Selection with Replacement").parentElement!
+          .firstElementChild as HTMLElement,
+      );
+      await userEvent.click(screen.getByDisplayValue("1"));
+      await userEvent.keyboard("2");
+      expect(screen.getByText("Add")).toBeEnabled();
+      await userEvent.click(screen.getByText("Add"));
+      await userEvent.click(screen.getByText("Show JSON"));
+      await screen.findByText("JSON Preview");
+      expect(screen.getByTestId("json-preview")).toHaveTextContent(
+        `{ "name": "foo", "description": "bar", "columns": [ { "name": "c1", "description": "recipe name", "type": "string", "fill_mode": "pick", "random": false, "replacement": true, "repeat": 12, "linked_column": "", "linked_context_columns": [], "source_type": "options", "options": [ "aaa", "bbb" ] } ] }`,
       );
     });
 

@@ -86,6 +86,7 @@ export function ColumnsForm({
   const [listOptions, setListOptions] = useState("");
   const [isGenerateOptionsDialogOpen, setIsGenerateOptionsDialogOpen] =
     useState(false);
+  const [tabularSource, setTabularSource] = useState(false);
 
   const resetForm = () => {
     setColumnName("");
@@ -102,6 +103,7 @@ export function ColumnsForm({
     setSelectedColumn("");
     setSelectedContextColumns([]);
     setListOptions("");
+    setTabularSource(false);
   };
 
   useEffect(() => {
@@ -132,6 +134,21 @@ export function ColumnsForm({
     } catch (error) {
       console.error("Error fetching datasets:", error);
     }
+  };
+
+  const canSave = () => {
+    if (fillMode !== "pick") {
+      return true;
+    }
+    switch (sourceType) {
+      case "table":
+        return !!sourceID;
+      case "dataset":
+        return !!sourceID;
+      case "options":
+        return listOptions.length > 0;
+    }
+    return true;
   };
 
   const handleAddColumn = () => {
@@ -186,9 +203,11 @@ export function ColumnsForm({
     setSourceID(source);
     setSelectedColumn("");
     setSelectedContextColumns([]);
+    setTabularSource(false);
 
     switch (sourceType) {
       case "table":
+        setTabularSource(true);
         const table = tables.find((t) => t.id === source);
         if (table) {
           setLinkedTableColumns(table.columns);
@@ -197,6 +216,7 @@ export function ColumnsForm({
       case "dataset":
         const ds = datasets.find((t) => t.id === source);
         if (ds && ds.type === "csv") {
+          setTabularSource(true);
           setLinkedTableColumns(
             ds.columns.map((c) => {
               return {
@@ -440,13 +460,15 @@ export function ColumnsForm({
                       </SelectGroup>
                     </SelectContent>
                   </Select>
-                  <LinkedColumnSettings
-                    linkedTableColumns={linkedTableColumns}
-                    selectedColumn={selectedColumn}
-                    setSelectedColumn={setSelectedColumn}
-                    selectedContextColumns={selectedContextColumns}
-                    setSelectedContextColumns={setSelectedContextColumns}
-                  />
+                  {tabularSource && (
+                    <LinkedColumnSettings
+                      linkedTableColumns={linkedTableColumns}
+                      selectedColumn={selectedColumn}
+                      setSelectedColumn={setSelectedColumn}
+                      selectedContextColumns={selectedContextColumns}
+                      setSelectedContextColumns={setSelectedContextColumns}
+                    />
+                  )}
                   <div className="flex items-center space-x-2 pt-2">
                     <Switch
                       id="random"
@@ -511,7 +533,7 @@ export function ColumnsForm({
                       }}
                       textarea={true}
                       rows={4}
-                      placeholder=""
+                      placeholder="Each line will be treated as a separate option."
                       className="pr-12 hide-scrollbar mt-2"
                     />
                     <TooltipProvider>
@@ -532,9 +554,6 @@ export function ColumnsForm({
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Each line will be treated as a separate option.
-                    </p>
                   </div>
                   <div className="flex items-center space-x-2 pt-2">
                     <Switch
@@ -569,10 +588,7 @@ export function ColumnsForm({
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleAddColumn}
-                disabled={fillMode === "pick" && !sourceID}
-              >
+              <Button onClick={handleAddColumn} disabled={!canSave()}>
                 {editIndex !== null ? "Update" : "Add"}
               </Button>
             </DialogFooter>
