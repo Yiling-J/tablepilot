@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { CircleHelp, Edit, Plus, Trash2, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FillModeHelpDialog } from "../dialog/fill-mode-help-dialog";
 import { GenerateOptionsDialog } from "../dialog/generate-options-dialog";
 import { ContextVariable, MentionInput } from "../ui/var-input";
 import { LinkedColumnSettings } from "./linked-column-settings";
@@ -87,6 +88,8 @@ export function ColumnsForm({
   const [isGenerateOptionsDialogOpen, setIsGenerateOptionsDialogOpen] =
     useState(false);
   const [tabularSource, setTabularSource] = useState(false);
+  const [isFillModeHelpDialogOpen, setIsFillModeHelpDialogOpen] =
+    useState(false);
 
   const resetForm = () => {
     setColumnName("");
@@ -305,9 +308,16 @@ export function ColumnsForm({
               <div className="grid gap-2">
                 <div className="flex flex-row items-center pb-2 justify-between">
                   <Label htmlFor="fillMode">Fill Mode</Label>
-                  <Button size="icon" variant="ghost" className="ml-2 size-5">
-                    <CircleHelp />
-                  </Button>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="ml-2 size-5"
+                      onClick={() => setIsFillModeHelpDialogOpen(true)}
+                    >
+                      <CircleHelp />
+                    </Button>
+                  </DialogTrigger>
                 </div>
                 <Select
                   value={`${fillMode}-${sourceType}`}
@@ -647,6 +657,10 @@ export function ColumnsForm({
           ))}
         </div>
       )}
+      <FillModeHelpDialog
+        isOpen={isFillModeHelpDialogOpen}
+        onClose={() => setIsFillModeHelpDialogOpen(false)}
+      />
     </div>
   );
 }
