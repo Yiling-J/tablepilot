@@ -50,7 +50,6 @@ interface ColumnsFormProps {
   disabled: boolean;
   variables?: ContextVariable[];
   tables?: TableInfo[];
-  privateDatasets?: DatasetInfo[];
 }
 
 export function ColumnsForm({
@@ -59,7 +58,6 @@ export function ColumnsForm({
   disabled,
   variables,
   tables: tablesProp,
-  privateDatasets,
 }: ColumnsFormProps) {
   const [columnName, setColumnName] = useState("");
   const [columnDescription, setColumnDescription] = useState("");
@@ -133,7 +131,7 @@ export function ColumnsForm({
   const fetchDatasets = async () => {
     try {
       const ds = await getDatasets();
-      setDatasets([...(privateDatasets ?? []), ...ds.datasets]);
+      setDatasets(ds.datasets ?? []);
     } catch (error) {
       console.error("Error fetching datasets:", error);
     }
@@ -506,10 +504,9 @@ export function ColumnsForm({
                       <SelectGroup>
                         {datasets.map((ds, index) => (
                           <SelectItem key={`shared-${index}`} value={ds.id}>
-                            <div className="flex flex-row">
-                              <p>Name: {ds.name}</p>
-                              <p className="pl-2">Type: {ds.type}</p>
-                            </div>
+                            <p>
+                              Name: {ds.name} Type: {ds.type}
+                            </p>
                           </SelectItem>
                         ))}
                       </SelectGroup>

@@ -43,7 +43,6 @@ describe("ImportFile", () => {
       expect(form).toMatchObject({
         name: "users",
         description: "",
-        sources: [],
         columns: [
           {
             name: "name",

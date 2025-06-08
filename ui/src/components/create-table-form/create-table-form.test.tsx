@@ -148,7 +148,7 @@ describe("CreateTableForm", () => {
             columns: [],
           },
         ],
-        total: 1,
+        total: 2,
       });
       const form = {
         name: "foo",
@@ -228,8 +228,8 @@ describe("CreateTableForm", () => {
       await userEvent.click(
         screen.getByText("Select a dataset").parentElement!,
       );
-      expect(screen.getAllByText("s1").length).toBe(1);
-      expect(screen.getByText("s1")).toBeInTheDocument();
+      expect(screen.getAllByText("Name: s1 Type: csv").length).toBe(1);
+      expect(screen.getByText("Name: s1 Type: csv")).toBeInTheDocument();
     });
 
     it("should create pick from dataset-csv column", async () => {
@@ -238,7 +238,7 @@ describe("CreateTableForm", () => {
       await userEvent.click(
         screen.getByText("Select a dataset").parentElement!,
       );
-      await userEvent.click(screen.getByText("s1"));
+      await userEvent.click(screen.getByText("Name: s1 Type: csv"));
       await userEvent.click(screen.getByText("Select a column").parentElement!);
       await userEvent.click(screen.getByText("col1"));
       await userEvent.click(screen.getByText("Select context columns"));
@@ -267,7 +267,7 @@ describe("CreateTableForm", () => {
       await userEvent.click(
         screen.getByText("Select a dataset").parentElement!,
       );
-      await userEvent.click(screen.getByText("s2"));
+      await userEvent.click(screen.getByText("Name: s2 Type: list"));
       const col = screen.queryByText("Select a column");
       expect(col).toBeNull();
       const lcol = screen.queryByText("Select context columns");
