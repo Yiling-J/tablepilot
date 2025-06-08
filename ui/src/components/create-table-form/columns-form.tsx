@@ -37,7 +37,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Edit, Plus, Trash2, Wand2 } from "lucide-react";
+import { CircleHelp, Edit, Plus, Trash2, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GenerateOptionsDialog } from "../dialog/generate-options-dialog";
 import { ContextVariable, MentionInput } from "../ui/var-input";
@@ -303,7 +303,12 @@ export function ColumnsForm({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="fillMode">Fill Mode</Label>
+                <div className="flex flex-row items-center pb-2 justify-between">
+                  <Label htmlFor="fillMode">Fill Mode</Label>
+                  <Button size="icon" variant="ghost" className="ml-2 size-5">
+                    <CircleHelp />
+                  </Button>
+                </div>
                 <Select
                   value={`${fillMode}-${sourceType}`}
                   onValueChange={(v) => {
