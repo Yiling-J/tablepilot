@@ -77,8 +77,9 @@ describe("GenerateOptionsDialog", () => {
       const promptTextarea = screen.getByLabelText(
         "Prompt",
       ) as HTMLTextAreaElement;
-      expect(promptTextarea.value).toContain("MyDataset");
-      expect(promptTextarea.value).toContain("A test dataset.");
+      expect(promptTextarea.value).toBe(
+        "Generate data for this dataset named 'MyDataset' (Description: 'A test dataset.').Data type should be a list of string and each value should be distinct.",
+      );
     });
 
     it("pre-fills prompt with a default message if name and description are absent", () => {
@@ -86,8 +87,8 @@ describe("GenerateOptionsDialog", () => {
       const promptTextarea = screen.getByLabelText(
         "Prompt",
       ) as HTMLTextAreaElement;
-      expect(promptTextarea.value).toContain(
-        "Based on a dataset, generate a list of options for this dataset. The options should be distinct.",
+      expect(promptTextarea.value).toBe(
+        "Generate data for this datasetData type should be a list of string and each value should be distinct.",
       );
     });
     it("pre-fills prompt with dataset name if description is absent", () => {

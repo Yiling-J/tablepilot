@@ -40,15 +40,15 @@ export function GenerateOptionsDialog({
     if (isOpen) {
       setSelectedModel("");
 
-      let initialPrompt = "Based on a dataset";
+      let initialPrompt = "Generate data for this dataset";
       if (datasetName) {
         initialPrompt += ` named '${datasetName}'`;
       }
       if (datasetDescription) {
-        initialPrompt += ` (Description: '${datasetDescription}')`;
+        initialPrompt += ` (Description: '${datasetDescription}').`;
       }
       initialPrompt +=
-        ", generate a list of options for this dataset. The options should be distinct.";
+        "Data type should be a list of string and each value should be distinct.";
       setPrompt(initialPrompt);
     }
   }, [isOpen]);
@@ -68,7 +68,7 @@ export function GenerateOptionsDialog({
       const options = await generateOptions({
         model: selectedModel,
         prompt,
-        options: currentOptions,
+        options: currentOptions.filter((o) => o.length > 0),
       });
       onGenerationComplete(options);
       toast.success("Options generated successfully!");

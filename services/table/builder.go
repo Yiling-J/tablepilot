@@ -91,8 +91,8 @@ func getTools(polish bool, imageGen bool) []client.ChatTool {
 			},
 		},
 		{
-			Name:        "AddPickColumn",
-			Description: "Add a column that picks values from a source.",
+			Name:        "AddPickFromTableColumn",
+			Description: "Add a column that picks values from a table.",
 			Parameters: []client.ChatToolParam{
 				{Name: "name", Type: "string", Description: "Name of the column"},
 				{Name: "description", Type: "string", Description: "Description of the column"},
@@ -105,32 +105,27 @@ func getTools(polish bool, imageGen bool) []client.ChatTool {
 				{Name: "random", Type: "boolean", Description: "Whether to randomly pick values"},
 				{Name: "repeat", Type: "integer", Description: "Number of times values can repeat (0 means at least once)"},
 				{Name: "contextLength", Type: "integer", Description: "Defines how many previous values in this column will be sent to the LLM when generating a new batch of rows. This helps provide context for the generation."},
-				{Name: "sourceID", Type: "string", Description: "id of the source"},
-				{Name: "sourceType", Type: "string", Description: "type of the source"},
+				{Name: "table", Type: "string", Description: "name of the table where values are pick from"},
 				{Name: "linkedColumn", Type: "string", Description: "Name of the display column this one depends on"},
 				{Name: "linkedContextColumns", Type: "[]string", Description: "Columns used as context when sending linked data to AI."},
 			},
 		},
 		{
-			Name:        "AddListDataset",
-			Description: "Add a dataset of values from a fixed list.",
-			Parameters: []client.ChatToolParam{
-				{Name: "name", Type: "string", Description: "Name of the source"},
-				{Name: "options", Type: "[]string", Description: "List of options"},
-			},
-		},
-		{
-			Name:        "RemoveColumn",
-			Description: "Remove column from table by name.",
+			Name:        "AddPickFromOptionsColumn",
+			Description: "Add a column that picks values from a list of options.",
 			Parameters: []client.ChatToolParam{
 				{Name: "name", Type: "string", Description: "Name of the column"},
-			},
-		},
-		{
-			Name:        "RemoveSource",
-			Description: "Remove source from table by name.",
-			Parameters: []client.ChatToolParam{
-				{Name: "name", Type: "string", Description: "Name of the source"},
+				{Name: "description", Type: "string", Description: "Description of the column"},
+				{
+					Name:        "type",
+					Type:        "string",
+					Description: "Type of the column (e.g., string, number)",
+					Enum:        columnTypes,
+				},
+				{Name: "random", Type: "boolean", Description: "Whether to randomly pick values"},
+				{Name: "repeat", Type: "integer", Description: "Number of times values can repeat (0 means at least once)"},
+				{Name: "contextLength", Type: "integer", Description: "Defines how many previous values in this column will be sent to the LLM when generating a new batch of rows. This helps provide context for the generation."},
+				{Name: "options", Type: "[]string", Description: "List of available options."},
 			},
 		},
 	}...)
@@ -141,13 +136,6 @@ func getTools(polish bool, imageGen bool) []client.ChatTool {
 				Description: "Remove column from table by name.",
 				Parameters: []client.ChatToolParam{
 					{Name: "name", Type: "string", Description: "Name of the column"},
-				},
-			},
-			{
-				Name:        "RemoveSource",
-				Description: "Remove source from table by name.",
-				Parameters: []client.ChatToolParam{
-					{Name: "name", Type: "string", Description: "Name of the source"},
 				},
 			},
 		}...)

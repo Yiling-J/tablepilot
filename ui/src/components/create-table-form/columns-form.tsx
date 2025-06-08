@@ -192,14 +192,41 @@ export function ColumnsForm({
     setFillMode(column.fill_mode);
     setContextLength(column.context_length);
     setSourceID(column.source_id);
+    setSourceType(column.source_type);
+    switch (column.source_type) {
+      case "table":
+        setTabularSource(true);
+        const table = tables.find((t) => t.id === column.source_id);
+        if (table) {
+          setLinkedTableColumns(table.columns);
+        }
+        break;
+      case "dataset":
+        const ds = datasets.find((t) => t.id === column.source_id);
+        if (ds && ds.type === "csv") {
+          setTabularSource(true);
+          setLinkedTableColumns(
+            ds.columns.map((c) => {
+              return {
+                id: c,
+                name: c,
+                description: "",
+                type: "string",
+                fill_mode: "ai",
+              };
+            }),
+          );
+        }
+        break;
+    }
     setEditIndex(index);
     setRandom(column.random);
     setReplacement(column.replacement);
     setRepeat(column.repeat);
     setSelectedColumn(column.linked_column);
     setSelectedContextColumns(column.linked_context_columns || []);
-    setIsDialogOpen(true);
     setListOptions((column.options ?? []).join("\n"));
+    setIsDialogOpen(true);
   };
 
   const handleSelectSource = (source: string | undefined) => {
@@ -245,7 +272,7 @@ export function ColumnsForm({
     <div className="space-y-4 py-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Table Columns</h3>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen}>
           <DialogTrigger asChild>
             <Button
               disabled={disabled}
@@ -257,7 +284,13 @@ export function ColumnsForm({
               <Plus className="mr-2 h-4 w-4" /> Add Column
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[530px] scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background">
+          <DialogContent
+            className="sm:max-w-[530px] scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background"
+            onInteractOutside={(e) => {
+              e.preventDefault();
+            }}
+            hideCloseButton={true}
+          >
             <DialogHeader>
               <DialogTitle>
                 {editIndex !== null ? "Edit Column" : "Add New Column"}
@@ -268,6 +301,10 @@ export function ColumnsForm({
             </DialogHeader>
             <div className="grid gap-4 py-4 px-2 max-h-[65vh] overflow-auto scrollbar-thin">
               <div className="grid gap-2">
+                <FillModeHelpDialog
+                  isOpen={isFillModeHelpDialogOpen}
+                  onOpenChange={setIsFillModeHelpDialogOpen}
+                />
                 <Label htmlFor="columnName">Column Name</Label>
                 <MentionInput
                   id="columnName"
@@ -469,7 +506,10 @@ export function ColumnsForm({
                       <SelectGroup>
                         {datasets.map((ds, index) => (
                           <SelectItem key={`shared-${index}`} value={ds.id}>
-                            {ds.name}
+                            <div className="flex flex-row">
+                              <p>Name: {ds.name}</p>
+                              <p className="pl-2">Type: {ds.type}</p>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -657,10 +697,6 @@ export function ColumnsForm({
           ))}
         </div>
       )}
-      <FillModeHelpDialog
-        isOpen={isFillModeHelpDialogOpen}
-        onClose={() => setIsFillModeHelpDialogOpen(false)}
-      />
     </div>
   );
 }

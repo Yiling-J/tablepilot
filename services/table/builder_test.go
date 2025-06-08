@@ -117,22 +117,25 @@ func TestBuilder_BuildTable(t *testing.T) {
 			require.Equal(t, getTools(false, false), request.Tools)
 			return &client.FunctionCallResponse{
 				FunctionCalls: []client.FunctionCall{
-					{Name: "AddListDataset", Arguments: map[string]any{
-						"name": "s1", "options": []string{"foo", "bar"},
-					}},
 					{Name: "AddAiColumn", Arguments: map[string]any{
 						"name": "c1", "description": "c1d", "type": "string", "contextLength": 3,
 					}},
-					{Name: "AddPickColumn", Arguments: map[string]any{
+					{Name: "AddPickFromOptionsColumn", Arguments: map[string]any{
+						"name":          "c2",
+						"description":   "c2d",
+						"type":          "string",
+						"contextLength": 10,
+						"options":       []string{"lc1", "lc2"},
+					}},
+					{Name: "AddPickFromTableColumn", Arguments: map[string]any{
 						"name":                 "c2",
 						"description":          "c2d",
 						"type":                 "string",
-						"contextLength":        10,
+						"contextLength":        3,
 						"random":               true,
 						"repeat":               5,
 						"replacement":          false,
-						"sourceID":             "s1",
-						"sourceType":           "dataset",
+						"table":                "tx",
 						"linkedColumn":         "ln",
 						"linkedContextColumns": []string{"lc1", "lc2"},
 					}},
@@ -163,6 +166,10 @@ func TestBuilder_BuildTable(t *testing.T) {
 			{Name: "c1", Description: "c1d", Type: "string", FillMode: "ai", ContextLength: 3},
 			{
 				Name: "c2", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10,
+				Random: true, Repeat: 5, SourceID: "s1", SourceType: tablecolumn.SourceTypeOptions, Options: []string{"a", "b"},
+			},
+			{
+				Name: "c3", Description: "c2d", Type: "string", FillMode: "pick", ContextLength: 10,
 				Random: true, Repeat: 5, SourceID: "s1", SourceType: tablecolumn.SourceTypeDataset, LinkedColumn: "ln", LinkedContextColumns: []string{"lc1", "lc2"},
 			},
 		},

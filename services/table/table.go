@@ -958,6 +958,8 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 			ContextLength:        col.ContextLength,
 			LinkedColumn:         col.LinkedColumn,
 			LinkedContextColumns: col.LinkedContextColumns,
+			SourceID:             col.SourceID,
+			SourceType:           col.SourceType,
 		})
 	}
 	schema.Columns = columns
