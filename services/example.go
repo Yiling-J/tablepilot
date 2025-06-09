@@ -92,6 +92,9 @@ func createAppStartExample(ctx context.Context, tableService table.TableService,
 			},
 		},
 	})
+	if err != nil {
+		return err
+	}
 
 	createTablePayload := &workflow.WorkflowCreateTablePayload{
 		OnExists: schema.OnExistsRecreate,
@@ -119,8 +122,17 @@ func createAppStartExample(ctx context.Context, tableService table.TableService,
 	exportPayload := &workflow.WorkflowExportTableParams{Table: "{{.fruit}}_recipes"}
 
 	m1, err := json.Marshal(createTablePayload)
+	if err != nil {
+		return err
+	}
 	m2, err := json.Marshal(genratePayload)
+	if err != nil {
+		return err
+	}
 	m3, err := json.Marshal(exportPayload)
+	if err != nil {
+		return err
+	}
 
 	_, err = workflowService.Create(ctx, &workflow.Workflow{
 		Name:        "fruit recipe gen",
