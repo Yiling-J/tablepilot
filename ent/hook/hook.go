@@ -9,6 +9,18 @@ import (
 	"github.com/Yiling-J/tablepilot/ent"
 )
 
+// The DatasetFunc type is an adapter to allow the use of ordinary
+// function as Dataset mutator.
+type DatasetFunc func(context.Context, *ent.DatasetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DatasetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DatasetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DatasetMutation", m)
+}
+
 // The ModelFunc type is an adapter to allow the use of ordinary
 // function as Model mutator.
 type ModelFunc func(context.Context, *ent.ModelMutation) (ent.Value, error)

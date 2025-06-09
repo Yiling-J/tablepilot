@@ -1,4 +1,4 @@
-import { Source, TableCreateRequest, TableInfo, importImage } from "@/actions";
+import { TableCreateRequest, TableInfo, importImage } from "@/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -101,7 +101,6 @@ export function ImportFileDialog({
       const form = {
         name: file.name.substring(0, file.name.lastIndexOf(".")) || file.name,
         description: "",
-        sources: new Array<Source>(),
         columns: columns.map((c) => {
           return {
             name: c,

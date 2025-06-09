@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -56,14 +57,22 @@ type Config struct {
 	Models    []Model
 	Providers []Provider
 	Sources   []map[string]any
+
+	// internal use only, create example tables/datasets if true
+	ShouldCreateExampleTable bool
 }
 
 func NewConfig(name string) (config *Config, err error) {
-	viper.SetConfigFile(name)
+	if name != "" {
+		viper.SetConfigFile(name)
+	} else {
+		fmt.Println("No config file provided; using default configuration.")
+	}
 	viper.AutomaticEnv()
-	err = viper.ReadInConfig()
-	if err != nil {
-		return config, err
+	if err := viper.ReadInConfig(); err != nil {
+		if ok := errors.As(err, &viper.ConfigFileNotFoundError{}); !ok {
+			return config, err
+		}
 	}
 	var bc []BasicProvider
 	err = viper.UnmarshalKey("providers", &bc)
@@ -97,10 +106,16 @@ func NewConfig(name string) (config *Config, err error) {
 	}
 	config.Providers = providers
 	if config.Server.Address == "" {
-		config.Server.Address = ":8080"
+		config.Server.Address = ":8083"
 	}
 	if config.Common.SourceDataDir == "" {
 		config.Common.SourceDataDir = "./"
+	}
+	if config.Database == nil {
+		config.Database = &Database{
+			Driver: "sqlite3",
+			DSN:    "data.db?_pragma=foreign_keys(1)",
+		}
 	}
 	return config, nil
 }

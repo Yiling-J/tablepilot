@@ -24,7 +24,7 @@
       "description": "Image of the model",
       "type": "image",
       "fill_mode": "pick",
-      "source": "model"
+      "source_type": "model"
     },
     {
       "name": "Hat",

@@ -455,16 +455,6 @@ func ModelContainsFold(v string) predicate.TableMeta {
 	return predicate.TableMeta(sql.FieldContainsFold(FieldModel, v))
 }
 
-// SourcesIsNil applies the IsNil predicate on the "sources" field.
-func SourcesIsNil() predicate.TableMeta {
-	return predicate.TableMeta(sql.FieldIsNull(FieldSources))
-}
-
-// SourcesNotNil applies the NotNil predicate on the "sources" field.
-func SourcesNotNil() predicate.TableMeta {
-	return predicate.TableMeta(sql.FieldNotNull(FieldSources))
-}
-
 // HasColumns applies the HasEdge predicate on the "columns" edge.
 func HasColumns() predicate.TableMeta {
 	return predicate.TableMeta(func(s *sql.Selector) {

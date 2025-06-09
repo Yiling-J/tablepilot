@@ -73,5 +73,5 @@ func (Workflow) Fields() []ent.Field {
 
 // Edges of the Workflow.
 func (Workflow) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{}
 }

@@ -8,6 +8,25 @@ import (
 )
 
 var (
+	// DatasetsColumns holds the columns for the "datasets" table.
+	DatasetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Nullable: true},
+		{Name: "updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "nanoid", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "path", Type: field.TypeString, Nullable: true},
+		{Name: "description", Type: field.TypeString, Default: ""},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"list", "csv"}},
+		{Name: "indexer", Type: field.TypeJSON, Nullable: true},
+		{Name: "values", Type: field.TypeJSON, Nullable: true},
+	}
+	// DatasetsTable holds the schema information for the "datasets" table.
+	DatasetsTable = &schema.Table{
+		Name:       "datasets",
+		Columns:    DatasetsColumns,
+		PrimaryKey: []*schema.Column{DatasetsColumns[0]},
+	}
 	// ModelsColumns holds the columns for the "models" table.
 	ModelsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -63,12 +82,15 @@ var (
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"string", "number", "integer", "boolean", "array", "image"}},
 		{Name: "fill_mode", Type: field.TypeEnum, Enums: []string{"ai", "pick"}},
 		{Name: "source", Type: field.TypeString, Nullable: true},
+		{Name: "source_id", Type: field.TypeString, Nullable: true},
+		{Name: "source_type", Type: field.TypeEnum, Nullable: true, Enums: []string{"table", "dataset", "options"}},
 		{Name: "context_length", Type: field.TypeInt, Default: 0},
 		{Name: "random", Type: field.TypeBool, Default: false},
 		{Name: "replacement", Type: field.TypeBool, Default: false},
 		{Name: "repeat", Type: field.TypeInt, Default: 1},
 		{Name: "linked_column", Type: field.TypeString, Default: ""},
 		{Name: "linked_context_columns", Type: field.TypeJSON},
+		{Name: "options", Type: field.TypeJSON, Nullable: true},
 		{Name: "table_id", Type: field.TypeInt},
 	}
 	// TableColumnsTable holds the schema information for the "table_columns" table.
@@ -79,7 +101,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "table_columns_table_meta_columns",
-				Columns:    []*schema.Column{TableColumnsColumns[15]},
+				Columns:    []*schema.Column{TableColumnsColumns[18]},
 				RefColumns: []*schema.Column{TableMetaColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -88,7 +110,7 @@ var (
 			{
 				Name:    "tablecolumn_name_table_id",
 				Unique:  true,
-				Columns: []*schema.Column{TableColumnsColumns[4], TableColumnsColumns[15]},
+				Columns: []*schema.Column{TableColumnsColumns[4], TableColumnsColumns[18]},
 			},
 		},
 	}
@@ -101,7 +123,6 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "description", Type: field.TypeString, Default: ""},
 		{Name: "model", Type: field.TypeString, Default: ""},
-		{Name: "sources", Type: field.TypeJSON, Nullable: true},
 	}
 	// TableMetaTable holds the schema information for the "table_meta" table.
 	TableMetaTable = &schema.Table{
@@ -151,6 +172,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		DatasetsTable,
 		ModelsTable,
 		ProvidersTable,
 		TableColumnsTable,

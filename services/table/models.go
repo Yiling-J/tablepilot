@@ -5,37 +5,46 @@ import (
 	"io"
 
 	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
+	"github.com/Yiling-J/tablepilot/ent/tablecolumn"
 )
 
 type TableGenColumn struct {
-	Name                 string   `json:"name"`
-	Description          string   `json:"description"`
-	Type                 string   `json:"type"`
-	FillMode             string   `json:"fill_mode"`
-	Source               string   `json:"source"`
-	Random               bool     `json:"random"`
-	Replacement          bool     `json:"replacement"`
-	Repeat               int      `json:"repeat"`
-	ContextLength        int      `json:"context_length"`
-	LinkedColumn         string   `json:"linked_column"`
-	LinkedContextColumns []string `json:"linked_context_columns"`
+	Name                 string                 `json:"name"`
+	Description          string                 `json:"description"`
+	Type                 string                 `json:"type"`
+	FillMode             string                 `json:"fill_mode"`
+	SourceType           tablecolumn.SourceType `json:"source_type"`
+	SourceID             string                 `json:"source_id"`
+	Options              []string               `json:"options"`
+	Random               bool                   `json:"random"`
+	Replacement          bool                   `json:"replacement"`
+	Repeat               int                    `json:"repeat"`
+	ContextLength        int                    `json:"context_length"`
+	LinkedColumn         string                 `json:"linked_column"`
+	LinkedContextColumns []string               `json:"linked_context_columns"`
 }
 
 type TableGenRequest struct {
 	Name        string            `json:"name"`
 	Model       string            `json:"model"`
 	Description string            `json:"description"`
-	Columns     []TableGenColumn  `json:"columns"`
-	Sources     []json.RawMessage `json:"sources"`
-	apiRequest  bool
+	Columns     []*TableGenColumn `json:"columns"`
 }
 
-func (r *TableGenRequest) MarkAPIRequest() {
-	r.apiRequest = true
+type CLITableGenDataset struct {
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Type        dataset.Type `json:"type"`
+	Values      []string     `json:"values"`
+	Paths       []string     `json:"paths"`
 }
 
-func (r *TableGenRequest) APIRequest() bool {
-	return r.apiRequest
+type CLITableGenRequest struct {
+	Name        string            `json:"name"`
+	Model       string            `json:"model"`
+	Description string            `json:"description"`
+	Columns     []*TableGenColumn `json:"columns"`
 }
 
 type AutofillRequest struct {
@@ -61,8 +70,6 @@ type GenerateRowsRequest struct {
 	Stream bool `json:"stream"`
 
 	Autofill AutofillRequest `json:"autofill"`
-	// shared sources from config file
-	sharedSources map[string]json.RawMessage
 	// used in file list source and csv source, the root fs for files
 	sourceDataDir string
 }

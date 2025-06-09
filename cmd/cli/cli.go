@@ -45,7 +45,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 	cli := &CLI{}
 
 	cmd := root
-	cmd.PersistentFlags().StringVar(&configPath, "config", "config.toml", "path to the config file")
+	cmd.PersistentFlags().StringVar(&configPath, "config", "", "path to the config file")
 
 	var verbose bool
 	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output (default: false)")
@@ -310,6 +310,87 @@ func BuildCLI(root *cobra.Command) *CLI {
 	)
 
 	cmd.AddCommand(workflowCommand)
+
+	datasetCmd := &cobra.Command{
+		Use:   "dataset",
+		Short: "Manage datasets",
+	}
+
+	datasetCreateCmd := &cobra.Command{
+		Use:   "create --name <name> [--desc <description>]",
+		Short: "Create a new dataset",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.CreateDataset(cmd, args)
+		},
+	}
+	datasetCreateCmd.Flags().StringP("name", "n", "", "Name of the dataset (required)")
+	err = datasetCreateCmd.MarkFlagRequired("name")
+	if err != nil {
+		panic(err)
+	}
+	datasetCreateCmd.Flags().StringP("desc", "d", "", "Description of the dataset")
+	datasetCreateCmd.Flags().StringP("type", "t", "", "Type of the dataset ('list' or 'csv') (required)")
+	err = datasetCreateCmd.MarkFlagRequired("type")
+	if err != nil {
+		panic(err)
+	}
+	datasetCreateCmd.Flags().StringArrayP("path", "p", []string{}, "Dataset file paths, for csv type all files should have same schema, and for list type, the final options will be options in all files concate together")
+
+	datasetGetCmd := &cobra.Command{
+		Use:   "get <dataset_id>",
+		Short: "Get info of a dataset by id",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.GetDataset(cmd, args)
+		},
+	}
+
+	datasetListCmd := &cobra.Command{
+		Use:   "list",
+		Short: "List all available datasets",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.ListDatasets(cmd, args)
+		},
+	}
+
+	datasetUpdateCmd := &cobra.Command{
+		Use:   "update <dataset_id> [--name <new_name>]",
+		Short: "Update an existing dataset",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.UpdateDataset(cmd, args)
+		},
+	}
+	datasetUpdateCmd.Flags().String("name", "", "New name for the dataset")
+	datasetUpdateCmd.Flags().String("desc", "", "New description for the dataset")
+	datasetUpdateCmd.Flags().String("type", "", "New type for the dataset ('list' or 'csv')")
+	datasetUpdateCmd.Flags().StringArrayP("file", "f", []string{}, "New data files")
+
+	datasetDeleteCmd := &cobra.Command{
+		Use:   "delete <dataset_id>",
+		Short: "Delete a dataset",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.DeleteDataset(cmd, args)
+		},
+	}
+
+	datasetPreviewCmd := &cobra.Command{
+		Use:   "preview <dataset_id>",
+		Short: "Preview data from a dataset (first 100 rows for CSV, all options for List)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cli.Handler.PreviewDataset(cmd, args)
+		},
+	}
+
+	datasetCmd.AddCommand(datasetCreateCmd)
+	datasetCmd.AddCommand(datasetGetCmd)
+	datasetCmd.AddCommand(datasetListCmd)
+	datasetCmd.AddCommand(datasetUpdateCmd)
+	datasetCmd.AddCommand(datasetDeleteCmd)
+	datasetCmd.AddCommand(datasetPreviewCmd)
+	cmd.AddCommand(datasetCmd)
 
 	return cli
 }

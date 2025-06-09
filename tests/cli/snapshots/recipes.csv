@@ -1,0 +1,6 @@
+Name,Ing1,Ing2,Ingredients,Cooking Time,Meal,Difficulty Level,Instructions
+Garlic Sauce,Garlic,Garlic,"[""Garlic"",""Olive Oil"",""Salt"",""Pepper"",""Herbs""]",15,Dinner,1,"Mince the garlic and saute it in olive oil. Add salt, pepper, and herbs to taste. Serve as a simple garlic sauce."
+Coconut Milkshake,Coconut milk,Coconut milk,"[""Coconut milk"",""Sugar"",""Ice"",""Vanilla Extract""]",5,Drinks,1,Blend coconut milk with sugar and vanilla extract. Add ice and blend until smooth. Serve chilled.
+Thyme Cookies,Thyme,Thyme,"[""Thyme"",""Sugar"",""Butter"",""Flour"",""Eggs""]",20,Desserts,2,"Mix thyme with sugar, butter, flour, and eggs. Bake in a preheated oven until golden brown. Serve warm."
+Mushroom Stew,Celery,Celery,"[""Celery"",""Mushrooms"",""Water"",""Salt"",""Pepper""]",25,Lunch,3,Combine celery and mushrooms in a pot. Add water and simmer for 20 minutes.
+Pepper Omelet,Black pepper,Black pepper,"[""Eggs"",""Black pepper"",""Salt"",""Oil""]",10,Breakfast,2,Whisk eggs with black pepper. Pour into a pan and cook until set.

@@ -3,17 +3,20 @@ import toast from "react-hot-toast";
 import { JSONObject } from "./json";
 import {
     autofillUrl,
+    datasetsUrl,
+    genDatasetOptionsUrl,
     generateUrl,
+    getDatasetUrl,
     getWorkflowUrl,
     importImageUrl,
     modelsUrl,
+    previewDatasetUrl,
     providerUrl,
     providersUrl,
     regenerateUrl,
     rowsUrl,
     runWorkflowUrl,
     schemaUrl,
-    sourcesUrl,
     tableUrl,
     tablesUrl,
     truncateUrl,
@@ -130,39 +133,20 @@ export async function getTable(id: string): Promise<TableInfo> {
   return res.json();
 }
 
-interface BaseSource {
-  name: string;
-  type: string;
-}
-
-export interface AiSource extends BaseSource {
-  type: "ai";
-  prompt: string;
-}
-
-export interface ListSource extends BaseSource {
-  type: "list";
-  options: string[];
-}
-
-export interface LinkedSource extends BaseSource {
-  type: "linked";
-  table: string;
-}
-
-export type Source = AiSource | ListSource | LinkedSource;
+export type SourceType = "dataset" | "table" | "options";
 
 export interface TableCreateRequest {
   name: string;
   description: string;
-  sources: Source[];
   columns: {
     name: string;
     description: string;
     type: string;
     fill_mode: string;
     context_length?: number;
-    source?: string;
+    source_type?: SourceType;
+    source_id?: string;
+    options?: string[];
     random: boolean;
     replacement: boolean;
     repeat: number;
@@ -358,26 +342,6 @@ export async function createRows(table: string, rows: JSONObject[]) {
     toast.error("Failed to create rows");
     throw new Error("Failed to create rows");
   }
-}
-
-export interface SourceData {
-  name: string;
-  data: JSONObject;
-  columns: string[];
-}
-
-export async function getSources(): Promise<SourceData[]> {
-  const res = await fetch(sourcesUrl(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    toast.error("Failed to fetch sources");
-    throw new Error("Failed to fetch sources");
-  }
-  return res.json().then((v) => v.sources);
 }
 
 export async function getTableSchema(
@@ -733,4 +697,158 @@ export async function deleteWorkflow(id: string) {
     toast.error("Failed to delete workflow");
     throw new Error("Failed to delete workflow");
   }
+}
+
+export type DatasetType = "list" | "csv";
+
+export interface DatasetInfo {
+  id: string;
+  name: string;
+  type: DatasetType;
+  description: string;
+  data: string[];
+  columns: string[];
+}
+
+export interface GetDatasetsResponse {
+  datasets: DatasetInfo[];
+  total: number;
+}
+
+export async function getDatasets(): Promise<GetDatasetsResponse> {
+  const res = await fetch(datasetsUrl(), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    toast.error("Failed to fetch workflows");
+    throw new Error("Failed to fetch workflows");
+  }
+  return res.json();
+}
+
+export interface CreateDatasetRequest {
+  name: string;
+  description: string;
+  type: DatasetType;
+  data: string[];
+  files: File[];
+  private: boolean;
+  table?: string;
+  workflow?: string;
+}
+
+export async function createDataset(
+  req: CreateDatasetRequest,
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("name", req.name);
+  formData.append("description", req.description);
+  formData.append("private", JSON.stringify(req.private));
+  formData.append("type", req.type);
+  if (req.data.length > 0) {
+    req.data.forEach((v) => formData.append("data", v));
+  }
+
+  for (let i = 0; i < req.files.length; i++) {
+    formData.append("files", req.files[i]);
+  }
+
+  const res = await fetch(datasetsUrl(), {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    toast.error("Failed to create dataset");
+    throw new Error("Failed to create dataset");
+  }
+  return res.json().then((v) => v.id);
+}
+
+export async function updateDataset(
+  id: string,
+  req: CreateDatasetRequest,
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("name", req.name);
+  formData.append("description", req.description);
+  formData.append("type", req.type);
+  if (req.data.length > 0) {
+    req.data.forEach((v) => formData.append("data", v));
+  }
+
+  for (let i = 0; i < req.files.length; i++) {
+    formData.append("files", req.files[i]);
+  }
+
+  const res = await fetch(getDatasetUrl(id), {
+    method: "PATCH",
+    body: formData,
+  });
+  if (!res.ok) {
+    toast.error("Failed to update dataset");
+    throw new Error("Failed to update dataset");
+  }
+  return res.json();
+}
+
+export interface DatasetPreviewResponse {
+  type: DatasetType;
+  rows: JSONObject[];
+  data: string[];
+}
+
+export async function previewDataset(
+  id: string,
+): Promise<DatasetPreviewResponse> {
+  const res = await fetch(previewDatasetUrl(id), {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) {
+    toast.error("Failed to fetch workflows");
+    throw new Error("Failed to fetch workflows");
+  }
+  return res.json();
+}
+
+export async function deleteDataset(id: string) {
+  const res = await fetch(getDatasetUrl(id), {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    toast.error("Failed to delete workflow");
+    throw new Error("Failed to delete workflow");
+  }
+}
+
+export interface GenerateOptionsRequest {
+  model: string;
+  prompt: string;
+  options: string[];
+}
+
+export async function generateOptions(
+  req: GenerateOptionsRequest,
+): Promise<string[]> {
+  const res = await fetch(genDatasetOptionsUrl(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    toast.error("Failed to generate options for dataset");
+    throw new Error("Failed to generate options for dataset");
+  }
+  return res.json();
 }

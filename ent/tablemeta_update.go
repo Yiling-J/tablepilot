@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -103,18 +102,6 @@ func (tmu *TableMetaUpdate) SetNillableModel(s *string) *TableMetaUpdate {
 	if s != nil {
 		tmu.SetModel(*s)
 	}
-	return tmu
-}
-
-// SetSources sets the "sources" field.
-func (tmu *TableMetaUpdate) SetSources(mm map[string]json.RawMessage) *TableMetaUpdate {
-	tmu.mutation.SetSources(mm)
-	return tmu
-}
-
-// ClearSources clears the value of the "sources" field.
-func (tmu *TableMetaUpdate) ClearSources() *TableMetaUpdate {
-	tmu.mutation.ClearSources()
 	return tmu
 }
 
@@ -282,12 +269,6 @@ func (tmu *TableMetaUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := tmu.mutation.Model(); ok {
 		_spec.SetField(tablemeta.FieldModel, field.TypeString, value)
-	}
-	if value, ok := tmu.mutation.Sources(); ok {
-		_spec.SetField(tablemeta.FieldSources, field.TypeJSON, value)
-	}
-	if tmu.mutation.SourcesCleared() {
-		_spec.ClearField(tablemeta.FieldSources, field.TypeJSON)
 	}
 	if tmu.mutation.ColumnsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -472,18 +453,6 @@ func (tmuo *TableMetaUpdateOne) SetNillableModel(s *string) *TableMetaUpdateOne 
 	if s != nil {
 		tmuo.SetModel(*s)
 	}
-	return tmuo
-}
-
-// SetSources sets the "sources" field.
-func (tmuo *TableMetaUpdateOne) SetSources(mm map[string]json.RawMessage) *TableMetaUpdateOne {
-	tmuo.mutation.SetSources(mm)
-	return tmuo
-}
-
-// ClearSources clears the value of the "sources" field.
-func (tmuo *TableMetaUpdateOne) ClearSources() *TableMetaUpdateOne {
-	tmuo.mutation.ClearSources()
 	return tmuo
 }
 
@@ -681,12 +650,6 @@ func (tmuo *TableMetaUpdateOne) sqlSave(ctx context.Context) (_node *TableMeta, 
 	}
 	if value, ok := tmuo.mutation.Model(); ok {
 		_spec.SetField(tablemeta.FieldModel, field.TypeString, value)
-	}
-	if value, ok := tmuo.mutation.Sources(); ok {
-		_spec.SetField(tablemeta.FieldSources, field.TypeJSON, value)
-	}
-	if tmuo.mutation.SourcesCleared() {
-		_spec.ClearField(tablemeta.FieldSources, field.TypeJSON)
 	}
 	if tmuo.mutation.ColumnsCleared() {
 		edge := &sqlgraph.EdgeSpec{

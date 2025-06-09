@@ -145,6 +145,46 @@ func (tcu *TableColumnUpdate) ClearSource() *TableColumnUpdate {
 	return tcu
 }
 
+// SetSourceID sets the "source_id" field.
+func (tcu *TableColumnUpdate) SetSourceID(s string) *TableColumnUpdate {
+	tcu.mutation.SetSourceID(s)
+	return tcu
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableSourceID(s *string) *TableColumnUpdate {
+	if s != nil {
+		tcu.SetSourceID(*s)
+	}
+	return tcu
+}
+
+// ClearSourceID clears the value of the "source_id" field.
+func (tcu *TableColumnUpdate) ClearSourceID() *TableColumnUpdate {
+	tcu.mutation.ClearSourceID()
+	return tcu
+}
+
+// SetSourceType sets the "source_type" field.
+func (tcu *TableColumnUpdate) SetSourceType(tt tablecolumn.SourceType) *TableColumnUpdate {
+	tcu.mutation.SetSourceType(tt)
+	return tcu
+}
+
+// SetNillableSourceType sets the "source_type" field if the given value is not nil.
+func (tcu *TableColumnUpdate) SetNillableSourceType(tt *tablecolumn.SourceType) *TableColumnUpdate {
+	if tt != nil {
+		tcu.SetSourceType(*tt)
+	}
+	return tcu
+}
+
+// ClearSourceType clears the value of the "source_type" field.
+func (tcu *TableColumnUpdate) ClearSourceType() *TableColumnUpdate {
+	tcu.mutation.ClearSourceType()
+	return tcu
+}
+
 // SetContextLength sets the "context_length" field.
 func (tcu *TableColumnUpdate) SetContextLength(i int) *TableColumnUpdate {
 	tcu.mutation.ResetContextLength()
@@ -255,6 +295,24 @@ func (tcu *TableColumnUpdate) AppendLinkedContextColumns(s []string) *TableColum
 	return tcu
 }
 
+// SetOptions sets the "options" field.
+func (tcu *TableColumnUpdate) SetOptions(s []string) *TableColumnUpdate {
+	tcu.mutation.SetOptions(s)
+	return tcu
+}
+
+// AppendOptions appends s to the "options" field.
+func (tcu *TableColumnUpdate) AppendOptions(s []string) *TableColumnUpdate {
+	tcu.mutation.AppendOptions(s)
+	return tcu
+}
+
+// ClearOptions clears the value of the "options" field.
+func (tcu *TableColumnUpdate) ClearOptions() *TableColumnUpdate {
+	tcu.mutation.ClearOptions()
+	return tcu
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcu *TableColumnUpdate) SetTablemetaID(id int) *TableColumnUpdate {
 	tcu.mutation.SetTablemetaID(id)
@@ -330,6 +388,11 @@ func (tcu *TableColumnUpdate) check() error {
 			return &ValidationError{Name: "fill_mode", err: fmt.Errorf(`ent: validator failed for field "TableColumn.fill_mode": %w`, err)}
 		}
 	}
+	if v, ok := tcu.mutation.SourceType(); ok {
+		if err := tablecolumn.SourceTypeValidator(v); err != nil {
+			return &ValidationError{Name: "source_type", err: fmt.Errorf(`ent: validator failed for field "TableColumn.source_type": %w`, err)}
+		}
+	}
 	if tcu.mutation.TablemetaCleared() && len(tcu.mutation.TablemetaIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "TableColumn.tablemeta"`)
 	}
@@ -390,6 +453,18 @@ func (tcu *TableColumnUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if tcu.mutation.SourceCleared() {
 		_spec.ClearField(tablecolumn.FieldSource, field.TypeString)
 	}
+	if value, ok := tcu.mutation.SourceID(); ok {
+		_spec.SetField(tablecolumn.FieldSourceID, field.TypeString, value)
+	}
+	if tcu.mutation.SourceIDCleared() {
+		_spec.ClearField(tablecolumn.FieldSourceID, field.TypeString)
+	}
+	if value, ok := tcu.mutation.SourceType(); ok {
+		_spec.SetField(tablecolumn.FieldSourceType, field.TypeEnum, value)
+	}
+	if tcu.mutation.SourceTypeCleared() {
+		_spec.ClearField(tablecolumn.FieldSourceType, field.TypeEnum)
+	}
 	if value, ok := tcu.mutation.ContextLength(); ok {
 		_spec.SetField(tablecolumn.FieldContextLength, field.TypeInt, value)
 	}
@@ -418,6 +493,17 @@ func (tcu *TableColumnUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, tablecolumn.FieldLinkedContextColumns, value)
 		})
+	}
+	if value, ok := tcu.mutation.Options(); ok {
+		_spec.SetField(tablecolumn.FieldOptions, field.TypeJSON, value)
+	}
+	if value, ok := tcu.mutation.AppendedOptions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tablecolumn.FieldOptions, value)
+		})
+	}
+	if tcu.mutation.OptionsCleared() {
+		_spec.ClearField(tablecolumn.FieldOptions, field.TypeJSON)
 	}
 	if tcu.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -584,6 +670,46 @@ func (tcuo *TableColumnUpdateOne) ClearSource() *TableColumnUpdateOne {
 	return tcuo
 }
 
+// SetSourceID sets the "source_id" field.
+func (tcuo *TableColumnUpdateOne) SetSourceID(s string) *TableColumnUpdateOne {
+	tcuo.mutation.SetSourceID(s)
+	return tcuo
+}
+
+// SetNillableSourceID sets the "source_id" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableSourceID(s *string) *TableColumnUpdateOne {
+	if s != nil {
+		tcuo.SetSourceID(*s)
+	}
+	return tcuo
+}
+
+// ClearSourceID clears the value of the "source_id" field.
+func (tcuo *TableColumnUpdateOne) ClearSourceID() *TableColumnUpdateOne {
+	tcuo.mutation.ClearSourceID()
+	return tcuo
+}
+
+// SetSourceType sets the "source_type" field.
+func (tcuo *TableColumnUpdateOne) SetSourceType(tt tablecolumn.SourceType) *TableColumnUpdateOne {
+	tcuo.mutation.SetSourceType(tt)
+	return tcuo
+}
+
+// SetNillableSourceType sets the "source_type" field if the given value is not nil.
+func (tcuo *TableColumnUpdateOne) SetNillableSourceType(tt *tablecolumn.SourceType) *TableColumnUpdateOne {
+	if tt != nil {
+		tcuo.SetSourceType(*tt)
+	}
+	return tcuo
+}
+
+// ClearSourceType clears the value of the "source_type" field.
+func (tcuo *TableColumnUpdateOne) ClearSourceType() *TableColumnUpdateOne {
+	tcuo.mutation.ClearSourceType()
+	return tcuo
+}
+
 // SetContextLength sets the "context_length" field.
 func (tcuo *TableColumnUpdateOne) SetContextLength(i int) *TableColumnUpdateOne {
 	tcuo.mutation.ResetContextLength()
@@ -694,6 +820,24 @@ func (tcuo *TableColumnUpdateOne) AppendLinkedContextColumns(s []string) *TableC
 	return tcuo
 }
 
+// SetOptions sets the "options" field.
+func (tcuo *TableColumnUpdateOne) SetOptions(s []string) *TableColumnUpdateOne {
+	tcuo.mutation.SetOptions(s)
+	return tcuo
+}
+
+// AppendOptions appends s to the "options" field.
+func (tcuo *TableColumnUpdateOne) AppendOptions(s []string) *TableColumnUpdateOne {
+	tcuo.mutation.AppendOptions(s)
+	return tcuo
+}
+
+// ClearOptions clears the value of the "options" field.
+func (tcuo *TableColumnUpdateOne) ClearOptions() *TableColumnUpdateOne {
+	tcuo.mutation.ClearOptions()
+	return tcuo
+}
+
 // SetTablemetaID sets the "tablemeta" edge to the TableMeta entity by ID.
 func (tcuo *TableColumnUpdateOne) SetTablemetaID(id int) *TableColumnUpdateOne {
 	tcuo.mutation.SetTablemetaID(id)
@@ -782,6 +926,11 @@ func (tcuo *TableColumnUpdateOne) check() error {
 			return &ValidationError{Name: "fill_mode", err: fmt.Errorf(`ent: validator failed for field "TableColumn.fill_mode": %w`, err)}
 		}
 	}
+	if v, ok := tcuo.mutation.SourceType(); ok {
+		if err := tablecolumn.SourceTypeValidator(v); err != nil {
+			return &ValidationError{Name: "source_type", err: fmt.Errorf(`ent: validator failed for field "TableColumn.source_type": %w`, err)}
+		}
+	}
 	if tcuo.mutation.TablemetaCleared() && len(tcuo.mutation.TablemetaIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "TableColumn.tablemeta"`)
 	}
@@ -859,6 +1008,18 @@ func (tcuo *TableColumnUpdateOne) sqlSave(ctx context.Context) (_node *TableColu
 	if tcuo.mutation.SourceCleared() {
 		_spec.ClearField(tablecolumn.FieldSource, field.TypeString)
 	}
+	if value, ok := tcuo.mutation.SourceID(); ok {
+		_spec.SetField(tablecolumn.FieldSourceID, field.TypeString, value)
+	}
+	if tcuo.mutation.SourceIDCleared() {
+		_spec.ClearField(tablecolumn.FieldSourceID, field.TypeString)
+	}
+	if value, ok := tcuo.mutation.SourceType(); ok {
+		_spec.SetField(tablecolumn.FieldSourceType, field.TypeEnum, value)
+	}
+	if tcuo.mutation.SourceTypeCleared() {
+		_spec.ClearField(tablecolumn.FieldSourceType, field.TypeEnum)
+	}
 	if value, ok := tcuo.mutation.ContextLength(); ok {
 		_spec.SetField(tablecolumn.FieldContextLength, field.TypeInt, value)
 	}
@@ -887,6 +1048,17 @@ func (tcuo *TableColumnUpdateOne) sqlSave(ctx context.Context) (_node *TableColu
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, tablecolumn.FieldLinkedContextColumns, value)
 		})
+	}
+	if value, ok := tcuo.mutation.Options(); ok {
+		_spec.SetField(tablecolumn.FieldOptions, field.TypeJSON, value)
+	}
+	if value, ok := tcuo.mutation.AppendedOptions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, tablecolumn.FieldOptions, value)
+		})
+	}
+	if tcuo.mutation.OptionsCleared() {
+		_spec.ClearField(tablecolumn.FieldOptions, field.TypeJSON)
 	}
 	if tcuo.mutation.TablemetaCleared() {
 		edge := &sqlgraph.EdgeSpec{

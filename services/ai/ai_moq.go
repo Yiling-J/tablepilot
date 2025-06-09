@@ -25,6 +25,9 @@ var _ AiService = &AiServiceMock{}
 //			FunctionCallFunc: func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error) {
 //				panic("mock out the FunctionCall method")
 //			},
+//			GenerateListOptionsFunc: func(ctx context.Context, req GenerateListOptionsRequest) ([]string, error) {
+//				panic("mock out the GenerateListOptions method")
+//			},
 //			ImageGenFunc: func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error) {
 //				panic("mock out the ImageGen method")
 //			},
@@ -43,6 +46,9 @@ type AiServiceMock struct {
 
 	// FunctionCallFunc mocks the FunctionCall method.
 	FunctionCallFunc func(ctx context.Context, request *client.ChatRequest) (*client.FunctionCallResponse, error)
+
+	// GenerateListOptionsFunc mocks the GenerateListOptions method.
+	GenerateListOptionsFunc func(ctx context.Context, req GenerateListOptionsRequest) ([]string, error)
 
 	// ImageGenFunc mocks the ImageGen method.
 	ImageGenFunc func(ctx context.Context, request *client.ChatRequest) (*client.ImageGenResponse, error)
@@ -66,6 +72,13 @@ type AiServiceMock struct {
 			// Request is the request argument value.
 			Request *client.ChatRequest
 		}
+		// GenerateListOptions holds details about calls to the GenerateListOptions method.
+		GenerateListOptions []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Req is the req argument value.
+			Req GenerateListOptionsRequest
+		}
 		// ImageGen holds details about calls to the ImageGen method.
 		ImageGen []struct {
 			// Ctx is the ctx argument value.
@@ -79,10 +92,11 @@ type AiServiceMock struct {
 			Ctx context.Context
 		}
 	}
-	lockChat         sync.RWMutex
-	lockFunctionCall sync.RWMutex
-	lockImageGen     sync.RWMutex
-	lockListModels   sync.RWMutex
+	lockChat                sync.RWMutex
+	lockFunctionCall        sync.RWMutex
+	lockGenerateListOptions sync.RWMutex
+	lockImageGen            sync.RWMutex
+	lockListModels          sync.RWMutex
 }
 
 // Chat calls ChatFunc.
@@ -154,6 +168,42 @@ func (mock *AiServiceMock) FunctionCallCalls() []struct {
 	mock.lockFunctionCall.RLock()
 	calls = mock.calls.FunctionCall
 	mock.lockFunctionCall.RUnlock()
+	return calls
+}
+
+// GenerateListOptions calls GenerateListOptionsFunc.
+func (mock *AiServiceMock) GenerateListOptions(ctx context.Context, req GenerateListOptionsRequest) ([]string, error) {
+	if mock.GenerateListOptionsFunc == nil {
+		panic("AiServiceMock.GenerateListOptionsFunc: method is nil but AiService.GenerateListOptions was just called")
+	}
+	callInfo := struct {
+		Ctx context.Context
+		Req GenerateListOptionsRequest
+	}{
+		Ctx: ctx,
+		Req: req,
+	}
+	mock.lockGenerateListOptions.Lock()
+	mock.calls.GenerateListOptions = append(mock.calls.GenerateListOptions, callInfo)
+	mock.lockGenerateListOptions.Unlock()
+	return mock.GenerateListOptionsFunc(ctx, req)
+}
+
+// GenerateListOptionsCalls gets all the calls that were made to GenerateListOptions.
+// Check the length with:
+//
+//	len(mockedAiService.GenerateListOptionsCalls())
+func (mock *AiServiceMock) GenerateListOptionsCalls() []struct {
+	Ctx context.Context
+	Req GenerateListOptionsRequest
+} {
+	var calls []struct {
+		Ctx context.Context
+		Req GenerateListOptionsRequest
+	}
+	mock.lockGenerateListOptions.RLock()
+	calls = mock.calls.GenerateListOptions
+	mock.lockGenerateListOptions.RUnlock()
 	return calls
 }
 

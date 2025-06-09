@@ -41,6 +41,7 @@ func captureStdout(f func() error) (string, error) {
 }
 
 func TestIntegrationCLI_Basic(t *testing.T) {
+	t.Setenv("TABLEPILOT_SNAPSHOT_TEST", "test")
 	defer func() { _ = os.Remove("test.db") }()
 	root := &cobra.Command{
 		Use:   "",
@@ -169,6 +170,7 @@ VqXmZF	bar1	["ing-3","ing-4"]	15	cd1	2
 }
 
 func TestIntegrationCLI_Import(t *testing.T) {
+	t.Setenv("TABLEPILOT_SNAPSHOT_TEST", "test")
 	defer func() { _ = os.Remove("test.db") }()
 	root := &cobra.Command{
 		Use:   "",

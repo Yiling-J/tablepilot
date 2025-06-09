@@ -65,6 +65,23 @@ jobs:
         working-directory: ./ui
         run: pnpm test run
 
+  docker:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: yilingj
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: tablepilot:main
+
   test-tauri:
     strategy:
       fail-fast: false
@@ -149,7 +166,7 @@ jobs:
 
       - name: Build Server
         env:
-          GOARCH: ${{ matrix.go }}        
+          GOARCH: ${{ matrix.go }}
         run: |
           go build -o "build/tablepilot-${{matrix.rust}}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}" -tags noui
           ls build

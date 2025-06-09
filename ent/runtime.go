@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/model"
 	"github.com/Yiling-J/tablepilot/ent/provider"
 	"github.com/Yiling-J/tablepilot/ent/schema"
@@ -18,6 +19,29 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	datasetMixin := schema.Dataset{}.Mixin()
+	datasetMixinFields0 := datasetMixin[0].Fields()
+	_ = datasetMixinFields0
+	datasetFields := schema.Dataset{}.Fields()
+	_ = datasetFields
+	// datasetDescCreatedAt is the schema descriptor for created_at field.
+	datasetDescCreatedAt := datasetMixinFields0[0].Descriptor()
+	// dataset.DefaultCreatedAt holds the default value on creation for the created_at field.
+	dataset.DefaultCreatedAt = datasetDescCreatedAt.Default.(func() time.Time)
+	// datasetDescUpdatedAt is the schema descriptor for updated_at field.
+	datasetDescUpdatedAt := datasetMixinFields0[1].Descriptor()
+	// dataset.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	dataset.DefaultUpdatedAt = datasetDescUpdatedAt.Default.(func() time.Time)
+	// dataset.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	dataset.UpdateDefaultUpdatedAt = datasetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// datasetDescName is the schema descriptor for name field.
+	datasetDescName := datasetFields[0].Descriptor()
+	// dataset.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	dataset.NameValidator = datasetDescName.Validators[0].(func(string) error)
+	// datasetDescDescription is the schema descriptor for description field.
+	datasetDescDescription := datasetFields[2].Descriptor()
+	// dataset.DefaultDescription holds the default value on creation for the description field.
+	dataset.DefaultDescription = datasetDescDescription.Default.(string)
 	modelMixin := schema.Model{}.Mixin()
 	modelMixinFields0 := modelMixin[0].Fields()
 	_ = modelMixinFields0
@@ -84,27 +108,27 @@ func init() {
 	// tablecolumn.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tablecolumn.NameValidator = tablecolumnDescName.Validators[0].(func(string) error)
 	// tablecolumnDescContextLength is the schema descriptor for context_length field.
-	tablecolumnDescContextLength := tablecolumnFields[5].Descriptor()
+	tablecolumnDescContextLength := tablecolumnFields[7].Descriptor()
 	// tablecolumn.DefaultContextLength holds the default value on creation for the context_length field.
 	tablecolumn.DefaultContextLength = tablecolumnDescContextLength.Default.(int)
 	// tablecolumnDescRandom is the schema descriptor for random field.
-	tablecolumnDescRandom := tablecolumnFields[7].Descriptor()
+	tablecolumnDescRandom := tablecolumnFields[9].Descriptor()
 	// tablecolumn.DefaultRandom holds the default value on creation for the random field.
 	tablecolumn.DefaultRandom = tablecolumnDescRandom.Default.(bool)
 	// tablecolumnDescReplacement is the schema descriptor for replacement field.
-	tablecolumnDescReplacement := tablecolumnFields[8].Descriptor()
+	tablecolumnDescReplacement := tablecolumnFields[10].Descriptor()
 	// tablecolumn.DefaultReplacement holds the default value on creation for the replacement field.
 	tablecolumn.DefaultReplacement = tablecolumnDescReplacement.Default.(bool)
 	// tablecolumnDescRepeat is the schema descriptor for repeat field.
-	tablecolumnDescRepeat := tablecolumnFields[9].Descriptor()
+	tablecolumnDescRepeat := tablecolumnFields[11].Descriptor()
 	// tablecolumn.DefaultRepeat holds the default value on creation for the repeat field.
 	tablecolumn.DefaultRepeat = tablecolumnDescRepeat.Default.(int)
 	// tablecolumnDescLinkedColumn is the schema descriptor for linked_column field.
-	tablecolumnDescLinkedColumn := tablecolumnFields[10].Descriptor()
+	tablecolumnDescLinkedColumn := tablecolumnFields[12].Descriptor()
 	// tablecolumn.DefaultLinkedColumn holds the default value on creation for the linked_column field.
 	tablecolumn.DefaultLinkedColumn = tablecolumnDescLinkedColumn.Default.(string)
 	// tablecolumnDescLinkedContextColumns is the schema descriptor for linked_context_columns field.
-	tablecolumnDescLinkedContextColumns := tablecolumnFields[11].Descriptor()
+	tablecolumnDescLinkedContextColumns := tablecolumnFields[13].Descriptor()
 	// tablecolumn.DefaultLinkedContextColumns holds the default value on creation for the linked_context_columns field.
 	tablecolumn.DefaultLinkedContextColumns = tablecolumnDescLinkedContextColumns.Default.([]string)
 	tablemetaMixin := schema.TableMeta{}.Mixin()

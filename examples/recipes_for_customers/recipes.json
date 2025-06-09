@@ -1,13 +1,6 @@
 {
   "name": "recipes",
   "description": "As a renowned chef, you need to create a personalized recipe for each customer. The recipes should be tailored based on the customer's information.",
-  "sources": [
-    {
-      "name": "customer",
-      "type": "linked",
-      "table": "customers"
-    }
-  ],
   "columns": [
     {
       "name": "Name",
@@ -26,7 +19,8 @@
       "description": "The customer for whom this recipe is created",
       "type": "string",
       "fill_mode": "pick",
-      "source": "customer",
+      "source_type": "table",
+      "source_id": "customers",
       "linked_column": "Name",
       "linked_context_columns": [
         "Name",

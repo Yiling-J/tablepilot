@@ -26,17 +26,16 @@ import { ContextVariable } from "../ui/var-input";
 import { ColumnsForm } from "./columns-form";
 import { JsonPreview } from "./json-preview";
 import { NameDescriptionForm } from "./name-description-form";
-import { SourcesForm } from "./sources-form";
 
 const initialFormData: TableCreateRequest = {
   name: "",
   description: "",
-  sources: [],
   columns: [],
 };
 
 interface CreateTableFormProps {
   table?: string;
+  workflow?: string;
   close: () => void;
   form?: TableCreateRequest;
   rows?: JSONObject[];
@@ -72,7 +71,6 @@ export default function CreateTableForm({
 
   const handleNext = () => {
     if (activeTab === "step1") setActiveTab("step2");
-    else if (activeTab === "step2") setActiveTab("step3");
   };
 
   const handlePrevious = () => {
@@ -141,15 +139,9 @@ export default function CreateTableForm({
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="step1">Basic</TabsTrigger>
                 <TabsTrigger value="step2" disabled={!isStep1Valid || loading}>
-                  Sources
-                </TabsTrigger>
-                <TabsTrigger
-                  value="step3"
-                  disabled={!isStep1Valid || !isStep2Valid || loading}
-                >
                   Columns
                 </TabsTrigger>
               </TabsList>
@@ -161,14 +153,6 @@ export default function CreateTableForm({
                 />
               </TabsContent>
               <TabsContent value="step2">
-                <SourcesForm
-                  variables={variables}
-                  formData={formData}
-                  updateFormData={updateFormData}
-                  tables={tables}
-                />
-              </TabsContent>
-              <TabsContent value="step3">
                 <ColumnsForm
                   variables={variables}
                   formData={formData}
@@ -197,7 +181,7 @@ export default function CreateTableForm({
           >
             {showPreview ? "Hide" : "Show"} JSON
           </Button>
-          {activeTab !== "step3" ? (
+          {activeTab !== "step2" ? (
             <Button
               onClick={handleNext}
               disabled={

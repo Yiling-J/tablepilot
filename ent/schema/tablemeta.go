@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"encoding/json"
 	"regexp"
 
 	"entgo.io/ent"
@@ -28,7 +27,6 @@ func (TableMeta) Fields() []ent.Field {
 		field.String("name").Unique().NotEmpty().Match(regexp.MustCompile("^[a-zA-Z_][a-zA-Z0-9_]*$")),
 		field.String("description").Default(""),
 		field.String("model").Default(""),
-		field.JSON("sources", map[string]json.RawMessage{}).Optional(),
 	}
 }
 

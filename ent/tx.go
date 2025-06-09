@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Dataset is the client for interacting with the Dataset builders.
+	Dataset *DatasetClient
 	// Model is the client for interacting with the Model builders.
 	Model *ModelClient
 	// Provider is the client for interacting with the Provider builders.
@@ -155,6 +157,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Dataset = NewDatasetClient(tx.config)
 	tx.Model = NewModelClient(tx.config)
 	tx.Provider = NewProviderClient(tx.config)
 	tx.TableColumn = NewTableColumnClient(tx.config)
@@ -170,7 +173,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Model.QueryXXX(), the query will be executed
+// applies a query, for example: Dataset.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

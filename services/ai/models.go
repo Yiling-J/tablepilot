@@ -21,3 +21,9 @@ type ModelList struct {
 	DefaultModel      string          `json:"default_model"`
 	DefaultImageModel string          `json:"default_image_model"`
 }
+
+type GenerateListOptionsRequest struct {
+	Model   string   `json:"model"`
+	Prompt  string   `json:"prompt"`
+	Options []string `json:"options"`
+}

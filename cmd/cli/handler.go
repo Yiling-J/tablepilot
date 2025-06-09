@@ -16,13 +16,16 @@ import (
 	"strings"
 	"time"
 
+	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/ent/tablemeta"
 	"github.com/Yiling-J/tablepilot/services"
+	"github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/Yiling-J/tablepilot/services/workflow"
 	"github.com/Yiling-J/tablepilot/utils/tableprinter"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/gammazero/toposort"
 
 	"github.com/spf13/cast"
@@ -43,9 +46,27 @@ func NewHandler(backend *services.Backend) *Handler {
 	}
 }
 
+func parsePaths(paths []string) ([]string, error) {
+	fm := map[string]bool{}
+	results := []string{}
+	for _, p := range paths {
+		files, err := doublestar.FilepathGlob(p)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			if _, ok := fm[f]; !ok {
+				fm[f] = true
+				results = append(results, f)
+			}
+		}
+	}
+	return results, nil
+}
+
 func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 	for _, fileName := range args {
-		var req table.TableGenRequest
+		var req table.CLITableGenRequest
 		f, err := os.ReadFile(fileName)
 		if err != nil {
 			return err
@@ -54,7 +75,13 @@ func (h *Handler) Create(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		id, err := h.backend.TableService.Create(cmd.Context(), &req)
+		gen := &table.TableGenRequest{
+			Name:        req.Name,
+			Model:       req.Model,
+			Description: req.Description,
+			Columns:     req.Columns,
+		}
+		id, err := h.backend.TableService.Create(cmd.Context(), gen)
 		if err != nil {
 			return err
 		}
@@ -105,6 +132,307 @@ func (h *Handler) Show(cmd *cobra.Command, args []string) error {
 		tp.EndRow()
 	}
 	return tp.Render()
+}
+
+func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
+	name, err := cmd.Flags().GetString("name")
+	if err != nil {
+		return fmt.Errorf("error getting name flag: %w", err)
+	}
+	desc, err := cmd.Flags().GetString("desc")
+	if err != nil {
+		return fmt.Errorf("error getting desc flag: %w", err)
+	}
+	datasetType, err := cmd.Flags().GetString("type")
+	if err != nil {
+		return fmt.Errorf("error getting type flag: %w", err)
+	}
+
+	req := &dataset.CreateDatasetRequest{
+		Name:        name,
+		Description: desc,
+		Type:        db_dataset.Type(datasetType),
+	}
+
+	switch datasetType {
+	case "list":
+		filePaths, err := cmd.Flags().GetStringArray("path")
+		if err != nil {
+			return fmt.Errorf("error getting data flag for list type: %w", err)
+		}
+		if len(filePaths) == 0 {
+			return fmt.Errorf("at least one --path must be provided for type 'list'")
+		}
+		options := []string{}
+		files, err := parsePaths(filePaths)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			r, err := os.Open(f)
+			if err != nil {
+				return err
+			}
+			defer r.Close()
+			o, err := ReadLines(f)
+			if err != nil {
+				return fmt.Errorf("failed to read file %s: %w", f, err)
+			}
+			options = append(options, o...)
+		}
+		req.Data = options
+	case "csv":
+		filePaths, err := cmd.Flags().GetStringArray("path")
+		if err != nil {
+			return fmt.Errorf("error getting file flag for csv type: %w", err)
+		}
+		if len(filePaths) == 0 {
+			return fmt.Errorf("at least one --path must be provided for type 'csv'")
+		}
+		var readers []io.Reader
+		files, err := parsePaths(filePaths)
+		if err != nil {
+			return err
+		}
+		for _, f := range files {
+			file, err := os.Open(f)
+			if err != nil {
+				return fmt.Errorf("failed to open file %s: %w", f, err)
+			}
+			readers = append(readers, file)
+		}
+		req.Files = readers
+		defer func() {
+			for _, f := range readers {
+				if c, ok := f.(io.Closer); ok {
+					c.Close()
+				}
+			}
+		}()
+	}
+
+	nanoid, err := h.backend.DatasetService.Create(cmd.Context(), req)
+	if err != nil {
+		return fmt.Errorf("failed to create dataset: %w", err)
+	}
+
+	h.backend.Logger.Infow("Dataset created successfully", "id", nanoid, "name", name)
+	fmt.Printf("Dataset created successfully:\nID: %s\nName: %s\n", nanoid, name)
+	return nil
+}
+
+func (h *Handler) GetDataset(cmd *cobra.Command, args []string) error {
+	datasetIDOrName := args[0]
+	dsInfo, err := h.backend.DatasetService.Get(cmd.Context(), datasetIDOrName)
+	if err != nil {
+		return fmt.Errorf("failed to get dataset '%s': %w", datasetIDOrName, err)
+	}
+
+	tp := h.getPrinter()
+	tp.AddHeader([]string{"Name", "Type", "Description"})
+	tp.AddField(dsInfo.Name)
+	tp.AddField(dsInfo.Type)
+	tp.AddField(dsInfo.Description)
+	tp.EndRow()
+	return tp.Render()
+}
+
+func (h *Handler) ListDatasets(cmd *cobra.Command, args []string) error {
+	datasets, err := h.backend.DatasetService.List(cmd.Context())
+	if err != nil {
+		return fmt.Errorf("failed to list datasets: %w", err)
+	}
+
+	if len(datasets) == 0 {
+		fmt.Println("No datasets found.")
+		return nil
+	}
+
+	tp := h.getPrinter()
+	tp.AddHeader([]string{"Name", "Description", "Type", "Columns", "Values"})
+	for _, ds := range datasets {
+		tp.AddField(ds.Name)
+		tp.AddField(ds.Description)
+		tp.AddField(ds.Type)
+		tp.AddField(fmt.Sprintf("%d", ds.ColumnCount))
+		tp.AddField(fmt.Sprintf("%d", ds.ValueCount))
+		tp.EndRow()
+	}
+	return tp.Render()
+}
+
+func (h *Handler) UpdateDataset(cmd *cobra.Command, args []string) error {
+	ds, err := h.backend.DatasetService.Get(cmd.Context(), args[0])
+	if err != nil {
+		return err
+	}
+	fields := []string{}
+	for _, f := range []string{"name", "desc", "file"} {
+		if cmd.Flags().Changed(f) {
+			switch f {
+			case "name":
+				fields = append(fields, "name")
+			case "desc":
+				fields = append(fields, "description")
+			case "file":
+				fields = append(fields, "data")
+				fields = append(fields, "files")
+			}
+			fields = append(fields, f)
+		}
+	}
+	name, _ := cmd.Flags().GetString("name")
+	desc, _ := cmd.Flags().GetString("desc")
+
+	req := &dataset.UpdateDatasetRequest{
+		CreateDatasetRequest: dataset.CreateDatasetRequest{
+			Name:        name,
+			Description: desc,
+		},
+		Fields: fields,
+	}
+
+	switch ds.Type {
+	case "list":
+		filePaths, err := cmd.Flags().GetStringArray("file")
+		if err != nil {
+			return fmt.Errorf("error getting data flag for list type: %w", err)
+		}
+		options := []string{}
+		for _, fp := range filePaths {
+			o, err := ReadLines(fp)
+			if err != nil {
+				return fmt.Errorf("failed to read file %s: %w", fp, err)
+			}
+			options = append(options, o...)
+		}
+		req.Data = options
+	case "csv":
+		filePaths, err := cmd.Flags().GetStringArray("file")
+		if err != nil {
+			return fmt.Errorf("error getting file flag for csv type: %w", err)
+		}
+		if len(filePaths) == 0 {
+			return fmt.Errorf("at least one --file path must be provided for type 'csv'")
+		}
+		var files []io.Reader
+		for _, filePath := range filePaths {
+			file, err := os.Open(filePath)
+			if err != nil {
+				// Close already opened files if any
+				for _, f := range files {
+					if c, ok := f.(io.Closer); ok {
+						c.Close()
+					}
+				}
+				return fmt.Errorf("failed to open file %s: %w", filePath, err)
+			}
+			files = append(files, file)
+		}
+		req.Files = files
+		defer func() {
+			for _, f := range files {
+				if c, ok := f.(io.Closer); ok {
+					c.Close()
+				}
+			}
+		}()
+	}
+
+	err = h.backend.DatasetService.Update(cmd.Context(), args[0], req)
+	if err != nil {
+		return fmt.Errorf("failed to update dataset '%s': %w", args[0], err)
+	}
+
+	h.backend.Logger.Infow("Dataset updated successfully", "id_or_name", args[0])
+	return nil
+}
+
+func (h *Handler) DeleteDataset(cmd *cobra.Command, args []string) error {
+	datasetID := args[0]
+	err := h.backend.DatasetService.Delete(cmd.Context(), datasetID)
+	if err != nil {
+		return fmt.Errorf("failed to delete dataset '%s': %w", datasetID, err)
+	}
+	h.backend.Logger.Infow("Dataset deleted successfully", "id_or_name", datasetID)
+	return nil
+}
+
+func (h *Handler) PreviewDataset(cmd *cobra.Command, args []string) error {
+	datasetIDOrName := args[0]
+	previewData, err := h.backend.DatasetService.Preview(cmd.Context(), datasetIDOrName)
+	if err != nil {
+		return fmt.Errorf("failed to preview dataset '%s': %w", datasetIDOrName, err)
+	}
+
+	switch previewData.Type {
+	case db_dataset.TypeList:
+		if len(previewData.Data) == 0 {
+			fmt.Println("Dataset is empty.")
+		} else {
+			fmt.Println("Data items:")
+			for i, item := range previewData.Data {
+				fmt.Printf("%d: %s\n", i+1, item)
+			}
+		}
+	case db_dataset.TypeCsv:
+		if len(previewData.Rows) == 0 {
+			fmt.Println("Dataset is empty or has no rows to preview.")
+		} else {
+			tp := h.getPrinter()
+			var headers []string
+			if len(previewData.Rows) > 0 {
+				for key := range previewData.Rows[0] {
+					headers = append(headers, key)
+				}
+			}
+
+			if len(previewData.Rows) > 0 {
+				tempHeadersMap := make(map[string]bool)
+				for _, row := range previewData.Rows {
+					for k := range row {
+						tempHeadersMap[k] = true
+					}
+				}
+				for k := range tempHeadersMap { // This will be random order
+					headers = append(headers, k)
+				}
+
+				originalDsFull, dsErr := h.backend.DB.Dataset.Query().Where(
+					db_dataset.Or(db_dataset.Name(datasetIDOrName), db_dataset.Nanoid(datasetIDOrName)),
+				).Only(cmd.Context())
+
+				if dsErr == nil && len(originalDsFull.Indexer.ColumnNames) > 0 {
+					headers = originalDsFull.Indexer.ColumnNames
+				} else if len(previewData.Rows) > 0 {
+					inferredHeaders := []string{}
+					for k := range previewData.Rows[0] {
+						inferredHeaders = append(inferredHeaders, k)
+					}
+					headers = inferredHeaders
+				}
+			}
+
+			tp.AddHeader(headers)
+			for _, rowMap := range previewData.Rows {
+				for _, hKey := range headers {
+					tp.AddField(cellString(rowMap[hKey]))
+				}
+				tp.EndRow()
+			}
+			err = tp.Render()
+			if err != nil {
+				return fmt.Errorf("failed to render preview table: %w", err)
+			}
+			if len(previewData.Rows) >= 100 {
+				fmt.Println("(Preview limited to first 100 rows)")
+			}
+		}
+	default:
+		fmt.Printf("Unknown dataset type '%s' for preview.\n", previewData.Type)
+	}
+
+	return nil
 }
 
 func (h *Handler) List(cmd *cobra.Command, args []string) error {
@@ -695,16 +1023,6 @@ func (h *Handler) Builder(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Table Description: %s\n", tb.Description)
 		fmt.Println("")
 		for {
-			if len(info.Sources) > 0 {
-				fmt.Println("Here is the sources of the table in JSON format:")
-				for _, source := range info.Sources {
-					b, err := json.Marshal(source)
-					if err != nil {
-						return err
-					}
-					fmt.Println(string(b))
-				}
-			}
 			fmt.Println("Here is the columns of the table in JSON format:")
 			for _, column := range info.Columns {
 				b, err := json.Marshal(column)

@@ -17,13 +17,10 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import WorkflowBuilderDialog from "./builder";
 
-// Mock actions explicitly using a synchronous factory
 vi.mock("@/actions", () => ({
   createWorkflow: vi.fn(),
   updateWorkflow: vi.fn(),
   getTables: vi.fn(),
-  // Based on imports, only these three functions from actions.ts seem to be directly used as values (mocked)
-  // The other imports like *StepPayload and TableInfo are types.
 }));
 
 vi.mock(import("@/components/ui/var-input"), () => ({
@@ -567,9 +564,7 @@ describe("Workflow Description", () => {
     );
     await screen.findByText("Workflow Steps"); // Wait for dialog to load
 
-    expect(
-      screen.getByText("This is a test description."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("This is a test description.")).toBeInTheDocument();
   });
 
   it("should switch to edit mode and update description", async () => {
@@ -584,7 +579,9 @@ describe("Workflow Description", () => {
     );
     await screen.findByText("Workflow Steps");
 
-    const descriptionDisplay = screen.getByText("Enter workflow description...");
+    const descriptionDisplay = screen.getByText(
+      "Enter workflow description...",
+    );
     await userEvent.click(descriptionDisplay);
 
     const descriptionInput = screen.getByPlaceholderText(
@@ -613,7 +610,9 @@ describe("Workflow Description", () => {
     );
     await screen.findByText("Workflow Steps");
 
-    const descriptionDisplay = screen.getByText("Enter workflow description...");
+    const descriptionDisplay = screen.getByText(
+      "Enter workflow description...",
+    );
     await userEvent.click(descriptionDisplay);
     const descriptionInput = screen.getByPlaceholderText(
       "Enter workflow description",
@@ -652,10 +651,8 @@ describe("Workflow Description", () => {
       </TestProvider>,
     );
     await screen.findByText("Workflow Steps");
-    // Ensure existing name and description are loaded
-    expect(screen.getByText("Old Workflow Name")).toBeInTheDocument();
+    await screen.findByText("Old Workflow Name");
     expect(screen.getByText("Old description")).toBeInTheDocument();
-
 
     const descriptionDisplay = screen.getByText("Old description");
     await userEvent.click(descriptionDisplay);

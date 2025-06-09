@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Dataset is the predicate function for dataset builders.
+type Dataset func(*sql.Selector)
+
 // Model is the predicate function for model builders.
 type Model func(*sql.Selector)
 

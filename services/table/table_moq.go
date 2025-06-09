@@ -71,9 +71,6 @@ var _ TableService = &TableServiceMock{}
 //			RowsFunc: func(ctx context.Context, table string) (*Rows, error) {
 //				panic("mock out the Rows method")
 //			},
-//			SharedSourcesFunc: func(ctx context.Context) []*SharedSource {
-//				panic("mock out the SharedSources method")
-//			},
 //			TruncateFunc: func(ctx context.Context, table string) (int, error) {
 //				panic("mock out the Truncate method")
 //			},
@@ -140,9 +137,6 @@ type TableServiceMock struct {
 
 	// RowsFunc mocks the Rows method.
 	RowsFunc func(ctx context.Context, table string) (*Rows, error)
-
-	// SharedSourcesFunc mocks the SharedSources method.
-	SharedSourcesFunc func(ctx context.Context) []*SharedSource
 
 	// TruncateFunc mocks the Truncate method.
 	TruncateFunc func(ctx context.Context, table string) (int, error)
@@ -298,11 +292,6 @@ type TableServiceMock struct {
 			// Table is the table argument value.
 			Table string
 		}
-		// SharedSources holds details about calls to the SharedSources method.
-		SharedSources []struct {
-			// Ctx is the ctx argument value.
-			Ctx context.Context
-		}
 		// Truncate holds details about calls to the Truncate method.
 		Truncate []struct {
 			// Ctx is the ctx argument value.
@@ -344,7 +333,6 @@ type TableServiceMock struct {
 	lockPolishBuilderTable    sync.RWMutex
 	lockPolishBuilderTables   sync.RWMutex
 	lockRows                  sync.RWMutex
-	lockSharedSources         sync.RWMutex
 	lockTruncate              sync.RWMutex
 	lockUpdate                sync.RWMutex
 	lockValidate              sync.RWMutex
@@ -1007,38 +995,6 @@ func (mock *TableServiceMock) RowsCalls() []struct {
 	mock.lockRows.RLock()
 	calls = mock.calls.Rows
 	mock.lockRows.RUnlock()
-	return calls
-}
-
-// SharedSources calls SharedSourcesFunc.
-func (mock *TableServiceMock) SharedSources(ctx context.Context) []*SharedSource {
-	if mock.SharedSourcesFunc == nil {
-		panic("TableServiceMock.SharedSourcesFunc: method is nil but TableService.SharedSources was just called")
-	}
-	callInfo := struct {
-		Ctx context.Context
-	}{
-		Ctx: ctx,
-	}
-	mock.lockSharedSources.Lock()
-	mock.calls.SharedSources = append(mock.calls.SharedSources, callInfo)
-	mock.lockSharedSources.Unlock()
-	return mock.SharedSourcesFunc(ctx)
-}
-
-// SharedSourcesCalls gets all the calls that were made to SharedSources.
-// Check the length with:
-//
-//	len(mockedTableService.SharedSourcesCalls())
-func (mock *TableServiceMock) SharedSourcesCalls() []struct {
-	Ctx context.Context
-} {
-	var calls []struct {
-		Ctx context.Context
-	}
-	mock.lockSharedSources.RLock()
-	calls = mock.calls.SharedSources
-	mock.lockSharedSources.RUnlock()
 	return calls
 }
 

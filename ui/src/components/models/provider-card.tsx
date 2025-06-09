@@ -1,17 +1,19 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+    CheckCircle2,
     Edit3,
     PenOff,
     Power,
     PowerOff,
     Settings2,
     Trash2,
+    XCircle,
 } from "lucide-react";
 import { AddModelCard } from "./add-model-card";
-import { ModelCard } from "./model-card";
 
 import { Model, Provider } from "@/actions";
+import { CommonCard } from "@/components/ui/common-card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
@@ -99,16 +101,49 @@ export function ProviderCard({
         {provider.models.length > 0 || provider.editable ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {provider.models.map((model: Model) => (
-              <ModelCard
+              <CommonCard
                 key={model.model}
-                model={model}
-                onEdit={() => onEditModel(provider.id.toString(), model.model)}
-                onDelete={() =>
-                  onDeleteModel(provider.id.toString(), model.model)
+                name={model.alias || model.model}
+                onEdit={
+                  provider.editable && provider.enabled
+                    ? () => onEditModel(provider.id.toString(), model.model)
+                    : undefined
                 }
-                isProviderEditable={provider.editable}
-                isProviderEnabled={provider.enabled}
-              />
+                onDelete={
+                  provider.editable && provider.enabled
+                    ? () => onDeleteModel(provider.id.toString(), model.model)
+                    : undefined
+                }
+              >
+                <div className="flex-grow space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Max Tokens:</span>
+                    <span className="font-medium text-card-foreground">
+                      {(model.max_tokens ?? 6000) > 0
+                        ? (model.max_tokens ?? 0)
+                        : 6000}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">RPM Limit:</span>
+                    <span className="font-medium text-card-foreground">
+                      {(model.rpm ?? 0) > 0
+                        ? (model.rpm ?? 0).toLocaleString()
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">
+                      Image Generation Support:
+                    </span>
+                    {model.image ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    )}
+                  </div>
+                </div>
+              </CommonCard>
             ))}
             {provider.editable && (
               <AddModelCard

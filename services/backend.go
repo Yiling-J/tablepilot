@@ -1,12 +1,15 @@
 package services
 
 import (
+	"context"
 	"fmt"
+	"os"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/Yiling-J/tablepilot/services/ai"
+	"github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/Yiling-J/tablepilot/services/provider"
 	"github.com/Yiling-J/tablepilot/services/table"
 	"github.com/Yiling-J/tablepilot/services/workflow"
@@ -23,12 +26,23 @@ type Backend struct {
 	TableService    table.TableService
 	ProviderService provider.ProviderService
 	WorkflowService workflow.WorkflowService
+	DatasetService  dataset.DatasetService
 }
 
 func NewBackend(
 	config *config.Config, db *ent.Client,
-	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService, providerService provider.ProviderService, workflowService workflow.WorkflowService,
+	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
+	providerService provider.ProviderService, workflowService workflow.WorkflowService, datasetService dataset.DatasetService,
 ) *Backend {
+	insnaptest := len(os.Getenv("TABLEPILOT_SNAPSHOT_TEST")) > 0
+	insnaprecord := len(os.Getenv("TABLEPILOT_SNAPSHOT_RECORD")) > 0
+	if !insnaptest && !insnaprecord && config.ShouldCreateExampleTable {
+		// create example datasets and tables
+		err := createAppStartExample(context.Background(), tableService, datasetService, workflowService)
+		if err != nil {
+			logger.Warnw("create example failed", "error", err)
+		}
+	}
 	return &Backend{
 		Config:          config,
 		DB:              db,
@@ -37,6 +51,7 @@ func NewBackend(
 		TableService:    tableService,
 		ProviderService: providerService,
 		WorkflowService: workflowService,
+		DatasetService:  datasetService,
 	}
 }
 
@@ -97,6 +112,11 @@ func CreateBackend(cmd *cobra.Command, verbose bool) *Backend {
 	}
 
 	err = container.Provide(workflow.NewWorkflowService, dig.As(new((workflow.WorkflowService))))
+	if err != nil {
+		panic(err)
+	}
+
+	err = container.Provide(dataset.NewDatasetService, dig.As(new((dataset.DatasetService))))
 	if err != nil {
 		panic(err)
 	}

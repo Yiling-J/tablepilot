@@ -1,10 +1,11 @@
 import {
     Column,
-    LinkedSource,
-    SourceData,
+    DatasetInfo,
+    SourceType,
+    // LinkedSource, // Removed as unused
     TableCreateRequest,
     TableInfo,
-    getSources,
+    getDatasets,
     getTables,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
@@ -24,13 +25,22 @@ import { NumberInput } from "@/components/ui/number-input";
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Edit, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { CircleHelp, Edit, Plus, Trash2, Wand2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { FillModeHelpDialog } from "../dialog/fill-mode-help-dialog";
+import { GenerateOptionsDialog } from "../dialog/generate-options-dialog";
 import { ContextVariable, MentionInput } from "../ui/var-input";
 import { LinkedColumnSettings } from "./linked-column-settings";
 
@@ -56,7 +66,10 @@ export function ColumnsForm({
   const [contextLength, setContextLength] = useState<number | undefined>(
     undefined,
   );
-  const [source, setSource] = useState<string | undefined>(undefined);
+  const [sourceID, setSourceID] = useState<string | undefined>(undefined);
+  const [sourceType, setSourceType] = useState<SourceType | undefined>(
+    undefined,
+  );
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [random, setRandom] = useState(true);
@@ -64,11 +77,17 @@ export function ColumnsForm({
   const [repeat, setRepeat] = useState(1);
   const [selectedColumn, setSelectedColumn] = useState<string>("");
   const [tables, setTables] = useState<TableInfo[]>([]);
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [linkedTableColumns, setLinkedTableColumns] = useState<Column[]>([]);
   const [selectedContextColumns, setSelectedContextColumns] = useState<
     string[]
   >([]);
-  const sourcesRef = useRef<SourceData[]>([]);
+  const [listOptions, setListOptions] = useState("");
+  const [isGenerateOptionsDialogOpen, setIsGenerateOptionsDialogOpen] =
+    useState(false);
+  const [tabularSource, setTabularSource] = useState(false);
+  const [isFillModeHelpDialogOpen, setIsFillModeHelpDialogOpen] =
+    useState(false);
 
   const resetForm = () => {
     setColumnName("");
@@ -76,19 +95,23 @@ export function ColumnsForm({
     setColumnType("string");
     setFillMode("ai");
     setContextLength(undefined);
-    setSource(undefined);
+    setSourceID(undefined);
+    setSourceType(undefined);
     setEditIndex(null);
     setRandom(true);
     setReplacement(false);
     setRepeat(1);
     setSelectedColumn("");
     setSelectedContextColumns([]);
+    setListOptions("");
+    setTabularSource(false);
   };
 
   useEffect(() => {
     if (tables.length === 0) {
       fetchTables();
     }
+    fetchDatasets();
   }, []);
 
   // Fetch tables from API
@@ -98,16 +121,35 @@ export function ColumnsForm({
         setTables(tablesProp);
       } else {
         const resp = await getTables();
-        setTables(resp.tables);
+        setTables(resp.tables ?? []);
       }
-      const so = await getSources();
-      // if shared source has same name as form source, only keep form source
-      sourcesRef.current = so.filter(
-        (e) => formData.sources.find((s) => s.name == e.name) === undefined,
-      );
     } catch (error) {
       console.error("Error fetching tables:", error);
     }
+  };
+
+  const fetchDatasets = async () => {
+    try {
+      const ds = await getDatasets();
+      setDatasets(ds.datasets ?? []);
+    } catch (error) {
+      console.error("Error fetching datasets:", error);
+    }
+  };
+
+  const canSave = () => {
+    if (fillMode !== "pick") {
+      return true;
+    }
+    switch (sourceType) {
+      case "table":
+        return !!sourceID;
+      case "dataset":
+        return !!sourceID;
+      case "options":
+        return listOptions.length > 0;
+    }
+    return true;
   };
 
   const handleAddColumn = () => {
@@ -121,8 +163,10 @@ export function ColumnsForm({
       repeat: repeat,
       linked_column: selectedColumn,
       linked_context_columns: selectedContextColumns,
-      ...(contextLength ? { context_length: contextLength } : {}),
-      ...(source ? { source } : {}),
+      context_length: contextLength,
+      source_id: sourceID,
+      source_type: sourceType,
+      options: listOptions.split("\n").filter((i) => i !== ""),
     };
 
     let updatedColumns = [...formData.columns];
@@ -145,60 +189,75 @@ export function ColumnsForm({
     setColumnType(column.type);
     setFillMode(column.fill_mode);
     setContextLength(column.context_length);
-    setSource(column.source);
+    setSourceID(column.source_id);
+    setSourceType(column.source_type);
+    switch (column.source_type) {
+      case "table":
+        setTabularSource(true);
+        const table = tables.find((t) => t.id === column.source_id);
+        if (table) {
+          setLinkedTableColumns(table.columns);
+        }
+        break;
+      case "dataset":
+        const ds = datasets.find((t) => t.id === column.source_id);
+        if (ds && ds.type === "csv") {
+          setTabularSource(true);
+          setLinkedTableColumns(
+            ds.columns.map((c) => {
+              return {
+                id: c,
+                name: c,
+                description: "",
+                type: "string",
+                fill_mode: "ai",
+              };
+            }),
+          );
+        }
+        break;
+    }
     setEditIndex(index);
     setRandom(column.random);
     setReplacement(column.replacement);
     setRepeat(column.repeat);
     setSelectedColumn(column.linked_column);
     setSelectedContextColumns(column.linked_context_columns || []);
-    if (column.source) {
-      const source = formData.sources.find((s) => s.name == column.source);
-      if (source && source.type === "linked") {
-        const linkedSource = source as LinkedSource;
-        const table = tables.find((t) => t.name === linkedSource.table);
-        if (table) {
-          setLinkedTableColumns(table.columns);
-        }
-      }
-    }
+    setListOptions((column.options ?? []).join("\n"));
     setIsDialogOpen(true);
   };
 
   const handleSelectSource = (source: string | undefined) => {
-    setSource(source);
+    setSourceID(source);
     setSelectedColumn("");
     setSelectedContextColumns([]);
-    if (source) {
-      const ls = formData.sources.find((s) => s.name === source);
-      if (ls && ls.type === "linked") {
-        const linkedSource = ls as LinkedSource;
-        const table = tables.find((t) => t.name === linkedSource.table);
+    setTabularSource(false);
+
+    switch (sourceType) {
+      case "table":
+        setTabularSource(true);
+        const table = tables.find((t) => t.id === source);
         if (table) {
           setLinkedTableColumns(table.columns);
         }
-      }
-      if (!ls) {
-        // try find from shared sources
-        const ss = sourcesRef.current.find((s) => s.name === source);
-        if (ss && ss.data.type === "linked") {
-          const table = tables.find((t) => t.name === ss.data.table);
-          if (table) {
-            setLinkedTableColumns(table.columns);
-          }
-        }
-        if (ss && ss.data.type === "csv") {
+        break;
+      case "dataset":
+        const ds = datasets.find((t) => t.id === source);
+        if (ds && ds.type === "csv") {
+          setTabularSource(true);
           setLinkedTableColumns(
-            ss.columns.map((c) => ({
-              id: c,
-              name: c,
-              description: "",
-              type: "string",
-              fill_mode: "ai",
-            })),
+            ds.columns.map((c) => {
+              return {
+                id: c,
+                name: c,
+                description: "",
+                type: "string",
+                fill_mode: "ai",
+              };
+            }),
           );
         }
-      }
+        break;
     }
   };
 
@@ -211,7 +270,7 @@ export function ColumnsForm({
     <div className="space-y-4 py-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Table Columns</h3>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen}>
           <DialogTrigger asChild>
             <Button
               disabled={disabled}
@@ -223,7 +282,13 @@ export function ColumnsForm({
               <Plus className="mr-2 h-4 w-4" /> Add Column
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[530px] scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background">
+          <DialogContent
+            className="sm:max-w-[530px] scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background"
+            onInteractOutside={(e) => {
+              e.preventDefault();
+            }}
+            hideCloseButton={true}
+          >
             <DialogHeader>
               <DialogTitle>
                 {editIndex !== null ? "Edit Column" : "Add New Column"}
@@ -234,6 +299,10 @@ export function ColumnsForm({
             </DialogHeader>
             <div className="grid gap-4 py-4 px-2 max-h-[65vh] overflow-auto scrollbar-thin">
               <div className="grid gap-2">
+                <FillModeHelpDialog
+                  isOpen={isFillModeHelpDialogOpen}
+                  onOpenChange={setIsFillModeHelpDialogOpen}
+                />
                 <Label htmlFor="columnName">Column Name</Label>
                 <MentionInput
                   id="columnName"
@@ -272,14 +341,56 @@ export function ColumnsForm({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="fillMode">Fill Mode</Label>
-                <Select value={fillMode} onValueChange={setFillMode}>
+                <div className="flex flex-row items-center pb-2 justify-between">
+                  <Label htmlFor="fillMode">Fill Mode</Label>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="ml-2 size-5"
+                      onClick={() => setIsFillModeHelpDialogOpen(true)}
+                    >
+                      <CircleHelp />
+                    </Button>
+                  </DialogTrigger>
+                </div>
+                <Select
+                  value={fillMode === "ai" ? "ai" : `${fillMode}-${sourceType}`}
+                  onValueChange={(v) => {
+                    switch (v) {
+                      case "ai":
+                        setFillMode("ai");
+                        setSourceType(undefined);
+                        break;
+                      case "pick-table":
+                        setFillMode("pick");
+                        setSourceType("table");
+                        break;
+                      case "pick-dataset":
+                        setFillMode("pick");
+                        setSourceType("dataset");
+                        break;
+                      case "pick-options":
+                        setFillMode("pick");
+                        setSourceType("options");
+                        break;
+                    }
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select fill mode" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ai">AI Generated</SelectItem>
-                    <SelectItem value="pick">Pick from Source</SelectItem>
+                    <SelectItem value="pick-table">
+                      Select from Table
+                    </SelectItem>
+                    <SelectItem value="pick-dataset">
+                      Select from Dataset
+                    </SelectItem>
+                    <SelectItem value="pick-options">
+                      Select from Options
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -305,71 +416,41 @@ export function ColumnsForm({
                 </div>
               )}
 
-              {fillMode === "pick" && (
+              {fillMode === "pick" && sourceType === "table" && (
                 <div className="grid gap-2">
-                  <Label htmlFor="source">Source</Label>
+                  <Label htmlFor="source">Table</Label>
                   <Select
-                    value={source}
+                    value={sourceID}
                     onValueChange={handleSelectSource}
-                    disabled={
-                      formData.sources.length === 0 &&
-                      sourcesRef.current.length === 0
-                    }
+                    disabled={tables.length === 0}
                   >
                     <SelectTrigger>
                       <SelectValue
                         placeholder={
-                          formData.sources.length === 0 &&
-                          sourcesRef.current.length === 0
-                            ? "No sources available"
-                            : "Select source"
+                          tables.length === 0
+                            ? "No tables available"
+                            : "Select a table"
                         }
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.sources.map((src, index) => (
-                        <SelectItem key={index} value={src.name}>
-                          {src.name}
-                        </SelectItem>
-                      ))}
-                      {sourcesRef.current.map((src, index) => (
-                        <SelectItem key={index} value={src.name}>
-                          {src.name}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        {tables.map((tb, index) => (
+                          <SelectItem key={`shared-${index}`} value={tb.id}>
+                            {tb.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
 
-                  {formData.sources.find((s) => s.name === source)?.type ===
-                    "linked" && (
-                    <LinkedColumnSettings
-                      linkedTableColumns={linkedTableColumns}
-                      selectedColumn={selectedColumn}
-                      setSelectedColumn={setSelectedColumn}
-                      selectedContextColumns={selectedContextColumns}
-                      setSelectedContextColumns={setSelectedContextColumns}
-                    />
-                  )}
-                  {sourcesRef.current.find((s) => s.name === source)?.data
-                    .type === "linked" && (
-                    <LinkedColumnSettings
-                      linkedTableColumns={linkedTableColumns}
-                      selectedColumn={selectedColumn}
-                      setSelectedColumn={setSelectedColumn}
-                      selectedContextColumns={selectedContextColumns}
-                      setSelectedContextColumns={setSelectedContextColumns}
-                    />
-                  )}
-                  {sourcesRef.current.find((s) => s.name === source)?.data
-                    .type === "csv" && (
-                    <LinkedColumnSettings
-                      linkedTableColumns={linkedTableColumns}
-                      selectedColumn={selectedColumn}
-                      setSelectedColumn={setSelectedColumn}
-                      selectedContextColumns={selectedContextColumns}
-                      setSelectedContextColumns={setSelectedContextColumns}
-                    />
-                  )}
+                  <LinkedColumnSettings
+                    linkedTableColumns={linkedTableColumns}
+                    selectedColumn={selectedColumn}
+                    setSelectedColumn={setSelectedColumn}
+                    selectedContextColumns={selectedContextColumns}
+                    setSelectedContextColumns={setSelectedContextColumns}
+                  />
 
                   <div className="flex items-center space-x-2 pt-2">
                     <Switch
@@ -399,11 +480,159 @@ export function ColumnsForm({
                     />
                     <Label htmlFor="reppeat">Repeat selection</Label>
                   </div>
-                  {formData.sources.length === 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Add sources in the previous step to use this fill mode
-                    </p>
+                </div>
+              )}
+
+              {fillMode === "pick" && sourceType === "dataset" && (
+                <div className="grid gap-2">
+                  <Label htmlFor="source">Dataset</Label>
+                  <Select
+                    value={sourceID}
+                    onValueChange={handleSelectSource}
+                    disabled={datasets.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          datasets.length === 0
+                            ? "No datasets available"
+                            : "Select a dataset"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {datasets.map((ds, index) => (
+                          <SelectItem key={`shared-${index}`} value={ds.id}>
+                            <p>
+                              Name: {ds.name} Type: {ds.type}
+                            </p>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  {tabularSource && (
+                    <LinkedColumnSettings
+                      linkedTableColumns={linkedTableColumns}
+                      selectedColumn={selectedColumn}
+                      setSelectedColumn={setSelectedColumn}
+                      selectedContextColumns={selectedContextColumns}
+                      setSelectedContextColumns={setSelectedContextColumns}
+                    />
                   )}
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="random"
+                      checked={random}
+                      onCheckedChange={setRandom}
+                    />
+                    <Label htmlFor="random">Random Selection</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="replacement"
+                      checked={replacement}
+                      onCheckedChange={setReplacement}
+                    />
+                    <Label htmlFor="replacement">
+                      Selection with Replacement
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <NumberInput
+                      id="repeat"
+                      value={repeat > 0 ? repeat : 1}
+                      onValueChange={(v) => setRepeat(v ?? 1)}
+                    />
+                    <Label htmlFor="reppeat">Repeat selection</Label>
+                  </div>
+                </div>
+              )}
+
+              {fillMode === "pick" && sourceType === "options" && (
+                <div>
+                  <GenerateOptionsDialog
+                    isOpen={isGenerateOptionsDialogOpen}
+                    onClose={() => setIsGenerateOptionsDialogOpen(false)}
+                    datasetName={columnName}
+                    currentOptions={listOptions.split("\n")}
+                    datasetDescription={columnDescription}
+                    onGenerationComplete={(generatedOptions: string[]) => {
+                      if (generatedOptions.length > 0) {
+                        setListOptions((prevOptions) => {
+                          const currentOptions = prevOptions.trim();
+                          const newOptionsString = generatedOptions.join("\n");
+                          if (currentOptions === "") {
+                            return newOptionsString;
+                          }
+                          return currentOptions + "\n" + newOptionsString;
+                        });
+                      }
+                      setIsGenerateOptionsDialogOpen(false);
+                    }}
+                  />
+                  <Label htmlFor="list-options" className="text-right pt-2">
+                    Options
+                  </Label>
+                  <div className="col-span-3 relative">
+                    <MentionInput
+                      variables={variables}
+                      id="list-options"
+                      value={listOptions}
+                      onChange={(e) => {
+                        setListOptions(e.target.value);
+                      }}
+                      textarea={true}
+                      rows={4}
+                      placeholder="Each line will be treated as a separate option."
+                      className="pr-12 hide-scrollbar mt-2"
+                    />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            aria-label="wand-button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsGenerateOptionsDialogOpen(true)}
+                            className="absolute bottom-3 right-3 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
+                          >
+                            <Wand2 className="size-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Generate options with AI</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="random"
+                      checked={random}
+                      onCheckedChange={setRandom}
+                    />
+                    <Label htmlFor="random">Random Selection</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Switch
+                      id="replacement"
+                      checked={replacement}
+                      onCheckedChange={setReplacement}
+                    />
+                    <Label htmlFor="replacement">
+                      Selection with Replacement
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-2">
+                    <NumberInput
+                      id="repeat"
+                      value={repeat > 0 ? repeat : 1}
+                      onValueChange={(v) => setRepeat(v ?? 1)}
+                    />
+                    <Label htmlFor="reppeat">Repeat selection</Label>
+                  </div>
                 </div>
               )}
             </div>
@@ -411,10 +640,7 @@ export function ColumnsForm({
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleAddColumn}
-                disabled={fillMode === "pick" && !source}
-              >
+              <Button onClick={handleAddColumn} disabled={!canSave()}>
                 {editIndex !== null ? "Update" : "Add"}
               </Button>
             </DialogFooter>
@@ -460,11 +686,7 @@ export function ColumnsForm({
                   <div className="mb-1">{column.description}</div>
                   <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                     <span>Type: {column.type}</span>
-                    <span>Fill: {column.fill_mode}</span>
-                    {column.context_length && (
-                      <span>Context: {column.context_length}</span>
-                    )}
-                    {column.source && <span>Source: {column.source}</span>}
+                    <span>Fill Type: {column.fill_mode}</span>
                   </div>
                 </div>
               </CardContent>

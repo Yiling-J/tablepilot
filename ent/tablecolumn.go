@@ -35,6 +35,10 @@ type TableColumn struct {
 	FillMode tablecolumn.FillMode `json:"fill_mode,omitempty"`
 	// Source holds the value of the "source" field.
 	Source string `json:"source,omitempty"`
+	// SourceID holds the value of the "source_id" field.
+	SourceID string `json:"source_id,omitempty"`
+	// SourceType holds the value of the "source_type" field.
+	SourceType tablecolumn.SourceType `json:"source_type,omitempty"`
 	// ContextLength holds the value of the "context_length" field.
 	ContextLength int `json:"context_length,omitempty"`
 	// TableID holds the value of the "table_id" field.
@@ -49,6 +53,8 @@ type TableColumn struct {
 	LinkedColumn string `json:"linked_column,omitempty"`
 	// LinkedContextColumns holds the value of the "linked_context_columns" field.
 	LinkedContextColumns []string `json:"linked_context_columns,omitempty"`
+	// Options holds the value of the "options" field.
+	Options []string `json:"options,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TableColumnQuery when eager-loading is set.
 	Edges        TableColumnEdges `json:"edges"`
@@ -80,13 +86,13 @@ func (*TableColumn) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tablecolumn.FieldLinkedContextColumns:
+		case tablecolumn.FieldLinkedContextColumns, tablecolumn.FieldOptions:
 			values[i] = new([]byte)
 		case tablecolumn.FieldRandom, tablecolumn.FieldReplacement:
 			values[i] = new(sql.NullBool)
 		case tablecolumn.FieldID, tablecolumn.FieldContextLength, tablecolumn.FieldTableID, tablecolumn.FieldRepeat:
 			values[i] = new(sql.NullInt64)
-		case tablecolumn.FieldNanoid, tablecolumn.FieldName, tablecolumn.FieldDescription, tablecolumn.FieldType, tablecolumn.FieldFillMode, tablecolumn.FieldSource, tablecolumn.FieldLinkedColumn:
+		case tablecolumn.FieldNanoid, tablecolumn.FieldName, tablecolumn.FieldDescription, tablecolumn.FieldType, tablecolumn.FieldFillMode, tablecolumn.FieldSource, tablecolumn.FieldSourceID, tablecolumn.FieldSourceType, tablecolumn.FieldLinkedColumn:
 			values[i] = new(sql.NullString)
 		case tablecolumn.FieldCreatedAt, tablecolumn.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -159,6 +165,18 @@ func (tc *TableColumn) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				tc.Source = value.String
 			}
+		case tablecolumn.FieldSourceID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source_id", values[i])
+			} else if value.Valid {
+				tc.SourceID = value.String
+			}
+		case tablecolumn.FieldSourceType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field source_type", values[i])
+			} else if value.Valid {
+				tc.SourceType = tablecolumn.SourceType(value.String)
+			}
 		case tablecolumn.FieldContextLength:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field context_length", values[i])
@@ -201,6 +219,14 @@ func (tc *TableColumn) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &tc.LinkedContextColumns); err != nil {
 					return fmt.Errorf("unmarshal field linked_context_columns: %w", err)
+				}
+			}
+		case tablecolumn.FieldOptions:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field options", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &tc.Options); err != nil {
+					return fmt.Errorf("unmarshal field options: %w", err)
 				}
 			}
 		default:
@@ -268,6 +294,12 @@ func (tc *TableColumn) String() string {
 	builder.WriteString("source=")
 	builder.WriteString(tc.Source)
 	builder.WriteString(", ")
+	builder.WriteString("source_id=")
+	builder.WriteString(tc.SourceID)
+	builder.WriteString(", ")
+	builder.WriteString("source_type=")
+	builder.WriteString(fmt.Sprintf("%v", tc.SourceType))
+	builder.WriteString(", ")
 	builder.WriteString("context_length=")
 	builder.WriteString(fmt.Sprintf("%v", tc.ContextLength))
 	builder.WriteString(", ")
@@ -288,6 +320,9 @@ func (tc *TableColumn) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("linked_context_columns=")
 	builder.WriteString(fmt.Sprintf("%v", tc.LinkedContextColumns))
+	builder.WriteString(", ")
+	builder.WriteString("options=")
+	builder.WriteString(fmt.Sprintf("%v", tc.Options))
 	builder.WriteByte(')')
 	return builder.String()
 }

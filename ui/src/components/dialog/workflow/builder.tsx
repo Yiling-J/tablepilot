@@ -209,7 +209,6 @@ export default function WorkflowBuilderDialog({
             request: {
               name: "",
               description: "",
-              sources: [],
               columns: [],
             },
           },

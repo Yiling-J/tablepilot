@@ -2,14 +2,13 @@ package table
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"time"
 
 	// #nosec
 	"crypto/md5"
 	"encoding/base64"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,8 +25,7 @@ import (
 	"github.com/Yiling-J/tablepilot/services/ai"
 	"github.com/Yiling-J/tablepilot/services/ai/client"
 	"github.com/Yiling-J/tablepilot/services/ai/promptbuilder"
-	"github.com/Yiling-J/tablepilot/services/table/source"
-	"github.com/Yiling-J/tablepilot/services/table/source/huggingface"
+	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/Yiling-J/tablepilot/services/table/util"
 	"github.com/spf13/cast"
 
@@ -50,8 +48,6 @@ type AIRowsGenerator struct {
 	missingColumns      []*ent.TableColumn
 	missingImageColumns []*ent.TableColumn
 	contextColumns      []*ent.TableColumn
-	indexerMap          map[string]*source.Indexer
-	sourceMap           map[string]source.Source
 	generated           []map[string]*schema.CellValue
 	images              map[string]string
 	contextLength       int
@@ -59,6 +55,7 @@ type AIRowsGenerator struct {
 	temperature         float64
 	model               string
 	imageModel          string
+	indexers            map[string]*source.Indexer
 
 	total     int
 	batchSize int
@@ -80,8 +77,6 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 
 		total:       params.Count,
 		batchSize:   params.Batch,
-		indexerMap:  make(map[string]*source.Indexer),
-		sourceMap:   make(map[string]source.Source),
 		saveTo:      params.SaveTo,
 		temperature: params.Temperature,
 		model:       params.Model,
@@ -89,6 +84,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 		autofill:    params.Autofill,
 		offset:      params.Autofill.Offset,
 		images:      make(map[string]string),
+		indexers:    map[string]*source.Indexer{},
 	}
 	if params.sourceDataDir == "" {
 		params.sourceDataDir = "./"
@@ -106,13 +102,13 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 	if err != nil {
 		return nil, fmt.Errorf("table.NewRowsGenerator: querying table metadata: %w", err)
 	}
-	// add shared sources
-	if meta.Sources == nil {
-		meta.Sources = map[string]json.RawMessage{}
-	}
-	for name, source := range params.sharedSources {
-		if _, ok := meta.Sources[name]; !ok {
-			meta.Sources[name] = source
+	for _, col := range meta.Edges.Columns {
+		if col.FillMode == tablecolumn.FillModePick {
+			s, err := getSourceFromColumn(ctx, db, params.sourceDataDir, col)
+			if err != nil {
+				return nil, fmt.Errorf("table.NewRowsGenerator: get source from column: %w", err)
+			}
+			generator.indexers[col.Nanoid] = source.NewIndexer(s, col)
 		}
 	}
 
@@ -142,14 +138,6 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 			generator.contextLength = c.ContextLength
 		}
 		if c.FillMode == tablecolumn.FillModePick {
-			if len(c.Source) == 0 {
-				return nil, fmt.Errorf("table.NewRowsGenerator: invalid source for column %s", c.Name)
-			}
-			idx, err := generator.columnSourceIndexer(ctx, meta.Sources[c.Source], c)
-			if err != nil {
-				return nil, fmt.Errorf("table.NewRowsGenerator: creating source indexer for column %s: %w", c.Name, err)
-			}
-			generator.indexerMap[c.Nanoid] = idx
 			continue
 		}
 		if c.Type != tablecolumn.TypeImage {
@@ -340,7 +328,7 @@ func (g *AIRowsGenerator) prepareRows(ctx context.Context, batch int) error {
 		for n := range batch {
 			row := map[string]*schema.CellValue{}
 			for _, col := range g.table.Edges.Columns {
-				idx, ok := g.indexerMap[col.Nanoid]
+				idx, ok := g.indexers[col.Nanoid]
 				if ok {
 					v, err := idx.Next(ctx)
 					if err != nil {
@@ -389,7 +377,8 @@ func (g *AIRowsGenerator) chat(ctx context.Context) (*client.ChatResponse, error
 	required := []string{"__id__"}
 	for _, col := range g.missingColumns {
 		s := &jsonschema.Schema{
-			Type: col.Type.String(),
+			Type:        col.Type.String(),
+			Description: col.Description,
 		}
 		if s.Type == "array" {
 			s.Items = &jsonschema.Schema{Type: "string"}
@@ -456,102 +445,6 @@ func (g *AIRowsGenerator) imageGen(ctx context.Context) (*client.ImageGenRespons
 		Messages:    []*client.Message{input},
 		Model:       model,
 	})
-}
-
-func (g *AIRowsGenerator) columnSourceIndexer(ctx context.Context, raw json.RawMessage, column *ent.TableColumn) (*source.Indexer, error) {
-	if so, ok := g.sourceMap[column.Source]; ok {
-		return source.NewIndexer(so, column), nil
-	}
-	var so source.Source
-	sourceType := gjson.GetBytes(raw, "type").String()
-	switch sourceType {
-	case "list":
-		var ls source.ListSource
-		err := json.Unmarshal(raw, &ls)
-		if err != nil {
-			return nil, err
-		}
-		err = ls.Init(ctx, g.sourceDataDir)
-		if err != nil {
-			return nil, err
-		}
-		so = &ls
-	case "ai":
-		var ls source.AISource
-		err := json.Unmarshal(raw, &ls)
-		if err != nil {
-			return nil, err
-		}
-		err = ls.Init(ctx, g.ai, column, g.model)
-		if err != nil {
-			return nil, err
-		}
-		so = &ls
-	case "linked":
-		var ls source.LinkedSource
-		err := json.Unmarshal(raw, &ls)
-		if err != nil {
-			return nil, err
-		}
-		err = ls.Init(ctx, g.db)
-		if err != nil {
-			return nil, err
-		}
-		so = &ls
-	case "csv":
-		var ls source.CsvSource
-		err := json.Unmarshal(raw, &ls)
-		if err != nil {
-			return nil, err
-		}
-		err = ls.Init(ctx, g.logger, g.sourceDataDir)
-		if err != nil {
-			return nil, err
-		}
-		so = &ls
-	case "parquet":
-		var ls source.ParquetSource
-		err := json.Unmarshal(raw, &ls)
-		if err != nil {
-			return nil, err
-		}
-		var client huggingface.Client
-		if ls.Huggingface != nil {
-			if ls.Huggingface.Dataset == "" {
-				return nil, errors.New("dataset is empty")
-			}
-			if ls.Huggingface.Config == "" {
-				ls.Huggingface.Config = "default"
-			}
-			if ls.Huggingface.Split == "" {
-				ls.Huggingface.Split = "train"
-			}
-			client = huggingface.NewClient(
-				ls.Huggingface.Dataset, ls.Huggingface.Config, ls.Huggingface.Split,
-				g.logger,
-			)
-		}
-		err = ls.Init(ctx, client, g.logger, g.sourceDataDir)
-		if err != nil {
-			return nil, err
-		}
-		so = &ls
-	case "files":
-		var ls source.FilesSource
-		err := json.Unmarshal(raw, &ls)
-		if err != nil {
-			return nil, err
-		}
-		err = ls.Init(ctx, g.logger, g.sourceDataDir)
-		if err != nil {
-			return nil, err
-		}
-		so = &ls
-	default:
-		return nil, fmt.Errorf("unknow source type %s", sourceType)
-	}
-	g.sourceMap[column.Source] = so
-	return source.NewIndexer(so, column), nil
 }
 
 func (g *AIRowsGenerator) generate(ctx context.Context, batch int) ([]map[string]*schema.CellValue, error) {
