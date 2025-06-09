@@ -63,7 +63,7 @@ Pre-built binaries for various operating systems are available on the [Releases]
 Ensure that Go is installed on your system. Then run `go install github.com/Yiling-J/tablepilot@latest`. Only **CLI and API** are supported.
 
 #### Install from Source
-Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use. This includes **CLI and API**. To use the WebUI, you need to **build the frontend first, before running make install**. Ensure you have `pnpm`, `tsc` and `node` installed, then run `make build-ui`, Once built, you can start the server using `serve` command.
+Ensure that Go is installed on your system. Then, clone the repository and run `make install`. After installation, the `tablepilot` command should be available for use. This includes **CLI and API**. To use the WebUI, you need to **build the frontend first, before running make install**. Ensure you have `pnpm`, `tsc` and `node` installed, then run `make build-ui`.
 
 To build the Desktop App, you'll need everything required for the WebUI, plus Rust and Tauri. Once set up, run  `make tauri-dev`, this will build and launch the Tauri app in development mode.
 
@@ -73,17 +73,14 @@ To build the Desktop App, you'll need everything required for the WebUI, plus Ru
 tablepilot serve
 ```
 
+The serve command starts the backend server and, if the frontend has already been built, it will also serve the Web UI. Once running, you can access the interface at:
+http://localhost:8083
+
 #### CLI and API Documentation
 
-Tablepilot provides a full set of CLI commands, including `builder`, `create`, `update`, `autofill` and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI or App. Use `tablepilot serve` command to start API server and WebUI.
+Tablepilot provides a full set of CLI commands, including `builder`, `create`, `update`, `autofill` and many more. Most CLI commands have corresponding API endpoints, and most operations can also be performed through the WebUI or App.
 
-- For a complete list of CLI commands, see [this doc](CLI.md).
-- For all available API endpoints, see [this doc](API.md).
-- For workflow schema and CLI, see [this doc](Workflow.md).
-
-## Guide
-
-If you're using Tablepilot in **CLI**, the first step is to prepare a TOML config file. Below is an example `config.toml` file with `gemini-2.0-flash-001`. Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
+When using the API or CLI without the UI, you must first prepare a TOML config file specifying the model providers and models used by Tablepilot. Example:
 
 ```toml
 [[providers]]
@@ -97,8 +94,12 @@ provider = "gemini"
 rpm = 20
 ```
 
-> For more config details, check the [documentation](docs/config).
+- For more config details, check the [documentation](docs/config).
+- For a complete list of CLI commands, see [this doc](CLI.md).
+- For all available API endpoints, see [this doc](API.md).
+- For workflow schema and CLI, see [this doc](Workflow.md).
 
+## Guide
 
 Tablepilot has four core components: Models, Tables, Datasets, and Workflows.
 
