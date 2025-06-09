@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -33,7 +34,9 @@ func NewBackend(
 	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
 	providerService provider.ProviderService, workflowService workflow.WorkflowService, datasetService dataset.DatasetService,
 ) *Backend {
-	if config.ShouldCreateExampleTable {
+	insnaptest := len(os.Getenv("TABLEPILOT_SNAPSHOT_TEST")) > 0
+	insnaprecord := len(os.Getenv("TABLEPILOT_SNAPSHOT_RECORD")) > 0
+	if !insnaptest && !insnaprecord && config.ShouldCreateExampleTable {
 		// create example datasets and tables
 		err := createAppStartExample(context.Background(), tableService, datasetService)
 		if err != nil {
