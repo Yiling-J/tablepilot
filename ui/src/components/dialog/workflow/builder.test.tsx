@@ -651,8 +651,7 @@ describe("Workflow Description", () => {
       </TestProvider>,
     );
     await screen.findByText("Workflow Steps");
-    // Ensure existing name and description are loaded
-    expect(screen.getByText("Old Workflow Name")).toBeInTheDocument();
+    await screen.findByText("Old Workflow Name");
     expect(screen.getByText("Old description")).toBeInTheDocument();
 
     const descriptionDisplay = screen.getByText("Old description");
