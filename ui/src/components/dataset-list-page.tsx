@@ -4,8 +4,8 @@ import {
     deleteDataset,
     getDatasets,
     updateDataset,
-} from "@/actions"; // Added createDataset
-import { Button } from "@/components/ui/button"; // Import Button
+} from "@/actions";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -15,13 +15,12 @@ import {
 import { CommonCard } from "@/components/ui/common-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast"; // Import toast
-import { PlusIcon, QuestionMarkCircledIcon } from "@radix-ui/react-icons"; // Import QuestionMarkCircledIcon
+import { PlusIcon, QuestionMarkCircledIcon } from "@radix-ui/react-icons";
 import { useCallback, useEffect, useState } from "react";
-// import { useNavigate } from "react-router-dom"; // Removed unused import
 import { ModeToggle } from "./darkmode";
-import { CreateDatasetDialog } from "./dialog/dataset/dataset"; // Corrected Import path
-import { DatasetInfoDialog } from "./dialog/dataset/info"; // Import DatasetInfoDialog
-import { DatasetPreviewDialog } from "./dialog/dataset/preview"; // Import DatasetPreviewDialog
+import { CreateDatasetDialog } from "./dialog/dataset/dataset";
+import { DatasetInfoDialog } from "./dialog/dataset/info";
+import { DatasetPreviewDialog } from "./dialog/dataset/preview";
 import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 

@@ -104,7 +104,7 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                 </div>
               ) : data.type === "csv" && data.rows ? (
                 data.rows.length > 0 ? (
-                  <div className="overflow-x-auto max-h-[400px]">
+                  <div className="overflow-x-auto max-h-[400px] scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar scrollbar-thumb-stone-500 scrollbar-track-background">
                     {" "}
                     {/* Added max-h for vertical scroll too */}
                     <Table>

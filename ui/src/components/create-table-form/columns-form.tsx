@@ -355,10 +355,10 @@ export function ColumnsForm({
                   </DialogTrigger>
                 </div>
                 <Select
-                  value={`${fillMode}-${sourceType}`}
+                  value={fillMode === "ai" ? "ai" : `${fillMode}-${sourceType}`}
                   onValueChange={(v) => {
                     switch (v) {
-                      case "ai-undefined":
+                      case "ai":
                         setFillMode("ai");
                         setSourceType(undefined);
                         break;
@@ -381,7 +381,7 @@ export function ColumnsForm({
                     <SelectValue placeholder="Select fill mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ai-undefined">AI Generated</SelectItem>
+                    <SelectItem value="ai">AI Generated</SelectItem>
                     <SelectItem value="pick-table">
                       Select from Table
                     </SelectItem>
@@ -596,7 +596,7 @@ export function ColumnsForm({
                             variant="ghost"
                             size="icon"
                             onClick={() => setIsGenerateOptionsDialogOpen(true)}
-                            className="absolute bottom-7 right-3 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
+                            className="absolute bottom-3 right-3 p-1.5 h-auto w-auto rounded-md bg-gradient-to-r from-orange-400 to-orange-600 text-white hover:opacity-80 hover:scale-105 transform transition-all"
                           >
                             <Wand2 className="size-5" />
                           </Button>

@@ -960,6 +960,7 @@ func (t *TableServiceImpl) GetTableSchema(ctx context.Context, table string) (*T
 			LinkedContextColumns: col.LinkedContextColumns,
 			SourceID:             col.SourceID,
 			SourceType:           col.SourceType,
+			Options:              col.Options,
 		})
 	}
 	schema.Columns = columns
