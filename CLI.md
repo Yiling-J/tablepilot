@@ -146,11 +146,11 @@
   ```
 
 - **serve**
-  Start an API server. See [API.md](API.md) for available endpoints. If you installed Tablepilot from a binary release or built the frontend when installing from source, the WebUI will be accessible at the root URL, such as: http://127.0.0.1:8080/
+  Start an API server. See [API.md](API.md) for available endpoints. If you installed Tablepilot from a binary release or built the frontend when installing from source, the WebUI will be accessible at the root URL, such as: http://127.0.0.1:8083/
   ```console
   tablepilot serve
   ```
-  By default, the API server listens on `:8080`. You can customize the address by adding a `server` section to your TOML config:
+  By default, the API server listens on `:8083`. You can customize the address by adding a `server` section to your TOML config:
   ```
   [server]
   address = ":9901"

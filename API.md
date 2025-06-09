@@ -27,9 +27,6 @@ The JSON body of this API follows the same syntax as the CLI schema file. See [e
   "description": "all recipes",
   "columns": [
     {"name": "recipe_name", "description": "Name of the recipe", "type": "string", "fill_mode": "ai"}
-  ],
-  "sources": [
-    {"name": "cuisines"}
   ]
 }
 ```

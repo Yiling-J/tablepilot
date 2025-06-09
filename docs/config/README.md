@@ -1,6 +1,6 @@
 ## Configuration
 
-Tablepilot requires a TOML configuration file. The default config file is `config.toml`, but you can specify a custom config file using the `--config` flag.
+Tablepilot can use an optional TOML configuration file. You can specify a custom config file using the `--config` flag.
 
 > For experimental image generation and editing, see this [example](examples/recipes_with_image) for details.
 
@@ -58,7 +58,7 @@ base_url = "https://openrouter.ai/api/v1"
 
 This section configures the API server when running `tablepilot serve`.
 
-- **address**: TCP network address. Used in `http.ListenAndServe`. Default `:8080`.
+- **address**: TCP network address. Used in `http.ListenAndServe`. Default `:8083`.
 
 ```toml
 [server]
@@ -90,20 +90,4 @@ rpm = 20
 model = "gpt-4o"
 provider = "openai"
 rpm = 5
-```
-
-### Sources (Optional)
-
-You can also define shared sources here. These sources will be accessible to all tables. For more details on source definitions, see [Sources](#sources). Example:
-
-```toml
-[[sources]]
-name = "customers"
-type = "linked"
-table = "customers"
-
-[[sources]]
-name = "movies"
-type = "csv"
-paths = ["movies/*.csv"]
 ```
