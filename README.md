@@ -77,7 +77,7 @@ Tablepilot provides a full set of CLI commands, including `builder`, `create`, `
 
 ## Guide
 
-If you're using Tablepilot in CLI or WebUI mode, the first step is to prepare a TOML config file. Below is an example `config.toml` file using an SQLite3 database (`data.db`) and use `gemini-2.0-flash-001`. Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
+If you're using Tablepilot in CLI, the first step is to prepare a TOML config file. Below is an example `config.toml` file using an SQLite3 database (`data.db`) and use `gemini-2.0-flash-001`. Make sure to replace the `key` field with your actual Gemini API key before saving the file as `config.toml`.
 
 ```toml
 [database]
@@ -97,108 +97,90 @@ rpm = 20
 
 > For more config details, check the [documentation](docs/config).
 
-If you're using the Tablepilot desktop app, you **do not need a config file** to get started. Providers and models can be added dynamically through the UI, and the database file will be created automatically in the app's data directory.
 
-Tablepilot has two modes: generate and autofill. Use generate mode when you want to create new rows from scratch. Use autofill mode when you already have a table with data, and you’ve added new columns that needs to be filled in. Before diving into these two modes, let’s go over a few basic concepts.
+Now let's explore its four main components: Models, Tables, Datasets, Workflows.
 
-In Tablepilot, tables are defined using a JSON schema. You pass this JSON file via CLI, send it as a payload via API, or create it through the WebUI (which auto-generates the JSON under the hood). The schema format looks like this:
+
+### Models
+
+Models are LLMs (e.g., GPT-4o, Gemini Flash 2.5, Claude Sonnet 4) grouped under providers like OpenAI or Gemini. Tablepilot is designed to work flexibly with multiple models and providers.
+
+-   **Providers**: Define the AI service provider (e.g., Gemini, OpenAI).
+-   **Models**: Specify the particular model to use (e.g., `gemini-2.0-flash-001`), its provider, and other parameters like RPM (requests per minute).
+
+**Define models in config file**
+
+The example above already shows how to declare providers and models in the config toml.
+
+**Define models in UI**
+
+If you're using the Tablepilot web or desktop UI, you can manage providers and models on the Models page. The concept is the same: create a provider, then add models under it.
+
+
+---
+
+### Tables
+
+In Tablepilot, **tables** are the core units where AI generation or autofill takes place. Each table has a `name`, a `description`, and a list of `columns`.
+
+* In the **UI**, you can dynamically create tables using the builder.
+* In the **CLI**, you must first prepare a table schema JSON file:
+
 ```json
 {
   "name": "{name of the table}",
   "description": "{description of the table}",
-  "sources": [source objects],
   "columns": [column objects]
 }
 ```
-Let’s briefly review what each part means. Full definitions are available [here](docs/schema).
 
-### Sources
+The `name` and `description` fields are straightforward, but it's important to note that both are sent to the AI during data generation. You can include relevant context or background information in the `description` to help the model generate more accurate results.
 
-> See the [source config readme](docs/schema/source.md) for full details.
+The `columns` section is the core of the generation process.
 
-When generating a row, non-AI columns are filled first using data from **source**. These values are then passed as context to the LLM to generate the remaining columns.
-
-Sources are the core of Tablepilot's flexibility and support 6 types:
-
-- list
-- ai
-- files
-- linked
-- csv
-- parquet
-
-The first three act like lists of options. For example, a fruits list `["apple", "banana", "orange"]` and each row picks one value from it.
-
-- **list**: Options are predefined by you.
-- **ai**: If you don’t know the options, you can prompt the LLM to generate them.
-- **files**: Used for image columns, values are file paths like `["cat.png", "dog.png"]`.
-
-The remaining three are **tabular sources** containing multiple columns. For example, a `user` table might have Name, Age, and Job. You can select which column to use as the display value and which ones to use as context. See the next section for details.
-
-- **linked**: Pulls data from other Tablepilot tables.
-- **csv**: Uses local CSV files or remote Kaggle datasets.
-- **parquet**: Uses local Parquet files or remote Hugging Face datasets.
-
----
-
-### Columns
+**Columns:**
 
 > See the [column config readme](docs/schema/column.md) for full details.
 
-Each column has `name`, `description`, and `type`. You’ll also need to specify how the column should be populated, either by AI or from a source.
+Each column has `name`, `description`, and `type`. You also specify how the column should be populated using the `fill_mode` property.
 
 All column names and descriptions are sent to the AI model, regardless of whether the column is AI-generated. This helps the model better understand the overall table schema and generate more relevant content, so make your descriptions as clear and descriptive as possible.
 
-If the column is filled from a source, you can define how values are selected: randomly, randomly with replacement(same value can be selected more than once), or sequentially. For tabular sources (linked/CSV/Parquet), you must specify a `linked_column`, and you may optionally define `linked_context_columns`. You can control how often a value is reused using the `repeat` parameter. For example, if your recipe table has a `Tag` column with `repeat` set to 5, the "Vegan" tag will be used for 5 rows before moving on to the next value from the source.
+A column's `fill_mode` can be:
+
+-   **AI Generated**:
+    *   The content for this column is generated by an AI model.
+    *   The generation is based on the table schema, context from other columns (especially those marked as `linked_context_columns` from picked sources), and any previous values in this column (see `context_length`).
+
+-   **Pick from a Source**:
+    *   The content for this column is selected from a specified source. This is further defined by the `source_type` property:
+        *   **`source_type: "select from table"`**: Pulls data from another existing Tablepilot table.
+        *   **`source_type: "select from dataset"`**: Pulls data from an existing Dataset (e.g., an imported CSV or Parquet file).
+        *   **`source_type: "select from options"`**: Picks from a predefined list of values.
+
+If the column is filled from a source, you can define how values are selected: randomly, randomly with replacement(same value can be selected more than once), or sequentially. For tabular sources (table/CSV dataset), you must specify a `linked_column`, and you may optionally define `linked_context_columns`. You can control how often a value is reused using the `repeat` parameter. For example, if your recipe table has a `Tag` column with `repeat` set to 5, the "Vegan" tag will be used for 5 rows before moving on to the next value from the source.
 
 You can also configure the **context length**, which determines how many previous values from the column are passed to the AI during generation. For example, if the "Name" column has a context length of 20, the last 20 names will be included when generating the next row.
 
----
-### Builder Mode
+Tablepilot has two modes: generate and autofill. Use generate mode when you want to create new rows from scratch. Use autofill mode when you already have a table with data, and you’ve added new columns that needs to be filled in. Before diving into these two modes, let’s go over a few basic concepts.
 
-The builder command allows you to create tables interactively using natural language. You start by describing to Tablepilot what you want to build, and it will draft the initial tables for your system. Then, it will try generating detailed schemas for each table one by one.
+-   **Generate Mode**: Generate mode creates new rows for a table. You specify the table, the number of rows, and the batch size (how many rows per AI call). During generation, each column is populated according to its defined `fill_mode` – either by AI or by picking values from a specified source. If you expect large outputs per row (e.g., from AI-generated columns), use smaller batch sizes to avoid hitting the model’s maximum token limit. Larger batch sizes can improve consistency and token efficiency.
 
-After each table schema is generated, you’ll have the opportunity to review and modify it. Simply tell Tablepilot what you’d like to change or improve, and it will update the schema accordingly.
-
-Note: The builder command only helps you design and create tables. To generate the actual rows for your tables, you’ll still need to use the `generate` command via the CLI or Web UI.
-
-To start builder mode, simple run:
-
-```console
-tablepilot builder
-```
+-   **Autofill Mode**: Fill in missing values in existing columns of a table. Specify the columns to autofill and the columns to use as context. No new rows are created.
 
 ---
 
-### Generate Mode
+### Datasets
 
-Generate mode is simple: specify which table to generate, how many rows, and the batch size (how many rows per AI call). If you expect large outputs per row, use smaller batch sizes to avoid hitting the model’s maximum token limit. However, larger batch sizes can improve consistency and token efficiency.
+A dataset is a structured collection of data—such as a CSV file of customers or a list of recipe cuisines.
 
+The primary purpose of a dataset is to provide context when generating rows in a table. For example, when generating recipes, you can use a dataset to populate the cuisine column with real values instead of letting AI generate them freely. This ensures each recipe has a cuisine from the list (randomly or sequentially selected), which then guides the AI to generate other columns accordingly. This results in more diverse and controlled outputs.
 
-Example: generate 30 recipes, 5 per batch:
+Currently, two types of datasets are supported: CSV and List.
 
-```console
-tablepilot generate recipes -c=30 -b=5
-```
-
----
-
-### Autofill Mode
-
-Autofill mode fills in missing columns for an existing table. No new rows are created.
-
-You specify:
-
-- Which **columns** to autofill
-- Which **columns** to use as context
-
-Tablepilot then processes the table row by row.
-
-Example: autofill `ingredients` and `steps` using `name` and `meal` as context:
-
-```console
-tablepilot autofill recipes columns=ingredients columns=steps context_columns=name context_columns=meal -c=30 -b=5
-```
+- CSV Dataset: Upload CSV files with a consistent header/schema. You can select one column as the fill value and others as context data.
+- List Dataset: Manually input values or ask AI to help generate them.
+When defining table columns, set the fill mode to "Select from dataset" and choose your dataset. For example, if you're generating a sales plan using a customer dataset, you might use the Name column as the fill value, and Age, Job, and Salary as context fields to help the AI generate more relevant data.
 
 ---
 
