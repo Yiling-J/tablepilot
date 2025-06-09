@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Yiling-J/tablepilot/config"
@@ -32,6 +33,13 @@ func NewBackend(
 	logger *zap.SugaredLogger, aiService ai.AiService, tableService table.TableService,
 	providerService provider.ProviderService, workflowService workflow.WorkflowService, datasetService dataset.DatasetService,
 ) *Backend {
+	if config.ShouldCreateExampleTable {
+		// create example datasets and tables
+		err := createAppStartExample(context.Background(), tableService, datasetService)
+		if err != nil {
+			logger.Warnw("create example failed", "error", err)
+		}
+	}
 	return &Backend{
 		Config:          config,
 		DB:              db,

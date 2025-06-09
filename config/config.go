@@ -57,6 +57,9 @@ type Config struct {
 	Models    []Model
 	Providers []Provider
 	Sources   []map[string]any
+
+	// internal use only, create example tables/datasets if true
+	ShouldCreateExampleTable bool
 }
 
 func NewConfig(name string) (config *Config, err error) {

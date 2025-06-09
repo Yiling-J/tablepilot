@@ -1,9 +1,11 @@
 package db
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"log"
+	"strings"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -86,6 +88,16 @@ func NewDB(config *config.Config, logger *zap.SugaredLogger) (*ent.Client, error
 	client.Use(hook.On(NanoIDHook(), ent.OpCreate))
 	logger.Debug("database connected")
 	logger.Debug("stating migration")
+	bf := bytes.NewBuffer([]byte{})
+	err = client.Schema.WriteTo(context.TODO(), bf)
+	if err != nil {
+		return nil, err
+	}
+	sqls := bf.String()
+	cts := strings.Count(sqls, "CREATE TABLE")
+	if cts > 3 {
+		config.ShouldCreateExampleTable = true
+	}
 	if err := client.Schema.Create(context.TODO()); err != nil {
 		return nil, err
 	}
