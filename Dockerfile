@@ -1,31 +1,37 @@
-FROM golang:1.24-alpine AS builder
+# --- Frontend build stage ---
+FROM node:23-alpine AS frontend-builder
+
+WORKDIR /app/ui
+
+COPY ui/package.json ui/pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+
+COPY ui ./
+RUN pnpm build
+
+
+# --- Backend build stage ---
+FROM golang:1.24-alpine AS backend-builder
 
 WORKDIR /app
-
-RUN apt update && apt install curl -y
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-ENV NVM_DIR=/root/.nvm
-RUN bash -c "source $NVM_DIR/nvm.sh && nvm install 23.11.0
-
-RUN npm install -g pnpm
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
+COPY --from=frontend-builder /app/ui/dist /app/ui/dist
+
 RUN go build -o tablepilot main.go
 
-RUN cd ui && pnpm install && pnpm build
 
+# --- Final runtime image ---
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/tablepilot /app/tablepilot
-COPY --from=builder /app/ui/dist /app/ui/dist
-COPY --from=builder /app/config /app/config
+COPY --from=backend-builder /app/tablepilot /app/tablepilot
 
 EXPOSE 8083
 
-ENTRYPOINT ["tablepilot", "serve"]
+ENTRYPOINT ["./tablepilot", "serve"]
