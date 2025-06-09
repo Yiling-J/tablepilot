@@ -34,8 +34,6 @@ A workflow that extracts dishes from a menu image, adds an image column, autofil
 
 ---
 
-Tablepilot uses a declarative schema format to create tables. Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation.
-
 #### Capabilities and Model Requirements
 
 | Mode                         | Description                                                         | Available            | Model Requirements                                                      |
@@ -98,6 +96,8 @@ rpm = 20
 - For a complete list of CLI commands, see [this doc](CLI.md).
 - For all available API endpoints, see [this doc](API.md).
 - For workflow schema and CLI, see [this doc](Workflow.md).
+
+Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation.
 
 ## Guide
 
