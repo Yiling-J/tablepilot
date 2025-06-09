@@ -80,7 +80,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: tablepilot:main
+          tags: yilingj/tablepilot:main
 
   test-tauri:
     strategy:
