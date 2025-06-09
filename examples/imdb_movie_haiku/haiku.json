@@ -1,13 +1,6 @@
 {
   "name": "imdb_haiku",
   "description": "Haiku based on movie title and overview.",
-  "sources": [
-    {
-      "name": "movies",
-      "type": "csv",
-      "paths": ["movies/*.csv"]
-    }
-  ],
   "columns": [
     {
       "name": "Haiku",
@@ -20,7 +13,8 @@
       "description": "The movie for the haiku",
       "type": "string",
       "fill_mode": "pick",
-      "source": "movies",
+      "source_type": "dataset",
+      "source_id": "movies",
       "linked_column": "Series_Title",
       "linked_context_columns": ["Series_Title", "Overview"],
       "random": true

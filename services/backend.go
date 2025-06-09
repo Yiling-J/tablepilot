@@ -38,7 +38,7 @@ func NewBackend(
 	insnaprecord := len(os.Getenv("TABLEPILOT_SNAPSHOT_RECORD")) > 0
 	if !insnaptest && !insnaprecord && config.ShouldCreateExampleTable {
 		// create example datasets and tables
-		err := createAppStartExample(context.Background(), tableService, datasetService)
+		err := createAppStartExample(context.Background(), tableService, datasetService, workflowService)
 		if err != nil {
 			logger.Warnw("create example failed", "error", err)
 		}

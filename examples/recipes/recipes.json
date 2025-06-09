@@ -1,30 +1,6 @@
 {
   "name": "recipes",
   "description": "table of recipes",
-  "sources": [
-    {
-      "name": "cuisines",
-      "type": "ai",
-      "prompt": "Generate 20 recipe cuisines."
-    },
-    {
-      "name": "ingredients",
-      "type": "ai",
-      "prompt": "Generate 50 common ingredients."
-    },
-    {
-      "name": "meals",
-      "type": "list",
-      "options": [
-        "Dinner",
-        "Breakfast",
-        "Lunch",
-        "Desserts",
-        "Appetizers",
-        "Drinks"
-      ]
-    }
-  ],
   "columns": [
     {
       "name": "Name",
@@ -38,7 +14,8 @@
       "description": "the first ingredient recipe must include",
       "type": "string",
       "fill_mode": "pick",
-      "source": "ingredients",
+      "source_type": "dataset",
+      "source_id": "ings",
       "random": true,
       "replacement": false
     },
@@ -47,7 +24,8 @@
       "description": "the second ingredient recipe must include",
       "type": "string",
       "fill_mode": "pick",
-      "source": "ingredients",
+      "source_type": "dataset",
+      "source_id": "ings",
       "random": true,
       "replacement": false
     },
@@ -64,20 +42,19 @@
       "fill_mode": "ai"
     },
     {
-      "name": "Cuisine",
-      "description": "type of cuisine",
-      "type": "string",
-      "fill_mode": "pick",
-      "source": "cuisines",
-      "random": true,
-      "replacement": false
-    },
-    {
       "name": "Meal",
       "description": "meal of the recipe",
       "type": "string",
       "fill_mode": "pick",
-      "source": "meals",
+      "source_type": "options",
+      "options": [
+        "Dinner",
+        "Breakfast",
+        "Lunch",
+        "Desserts",
+        "Appetizers",
+        "Drinks"
+      ],
       "random": true,
       "replacement": true
     },
@@ -86,6 +63,7 @@
       "description": "difficulty level of the recipe (1-5)",
       "type": "integer",
       "fill_mode": "ai"
-    }
+    },
+    {}
   ]
 }
