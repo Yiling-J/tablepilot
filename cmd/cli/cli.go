@@ -45,7 +45,7 @@ func BuildCLI(root *cobra.Command) *CLI {
 	cli := &CLI{}
 
 	cmd := root
-	cmd.PersistentFlags().StringVar(&configPath, "config", "config.toml", "path to the config file")
+	cmd.PersistentFlags().StringVar(&configPath, "config", "", "path to the config file")
 
 	var verbose bool
 	cmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output (default: false)")
