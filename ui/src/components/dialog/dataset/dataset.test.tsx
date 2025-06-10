@@ -1,11 +1,44 @@
 import { TestProvider } from "@/test/helpers/test-provider";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react"; // Added waitFor
+import { render, screen, within, waitFor } from "@testing-library/react"; // Added waitFor, within
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
 import { beforeEach, describe, expect, it, MockedFunction, vi } from "vitest";
 import type { CreateDatasetDialogProps } from "./dataset";
 import { CreateDatasetDialog } from "./dataset";
+
+let capturedOnDragEnd: any;
+
+vi.mock("react-beautiful-dnd", async () => {
+  const actual = await vi.importActual("react-beautiful-dnd");
+  return {
+    ...actual,
+    DragDropContext: vi.fn(({ children, onDragEnd }) => {
+      capturedOnDragEnd = onDragEnd;
+      return children;
+    }),
+    Droppable: vi.fn(({ children }) =>
+      children(
+        {
+          innerRef: vi.fn(),
+          droppableProps: { "data-testid": "droppable-area" },
+          placeholder: null,
+        },
+        {},
+      ),
+    ),
+    Draggable: vi.fn(({ children, draggableId }) =>
+      children(
+        {
+          innerRef: vi.fn(),
+          draggableProps: { "data-testid": `draggable-${draggableId}` },
+          dragHandleProps: {},
+        },
+        {},
+      ),
+    ),
+  };
+});
 
 vi.mock("../generate-options-dialog", () => ({
   GenerateOptionsDialog: vi.fn((props) => {
@@ -37,6 +70,8 @@ const mockOnUpdate = vi.fn();
 
 describe("CreateDatasetDialog", () => {
   beforeEach(async () => {
+    mockOnCreate.mockClear();
+    mockOnUpdate.mockClear();
     vi.mock("react-router-dom");
     vi.mocked(useNavigate).mockReturnValue(vi.fn());
     render(
@@ -121,6 +156,197 @@ describe("CreateDatasetDialog", () => {
       type: "csv",
       files: [testFile1, testFile2],
     });
+  });
+
+  it("should display persisted files, allow replacement, and update correctly", async () => {
+    const user = userEvent.setup();
+    mockOnCreate.mockClear(); // Clear mocks for this specific test context if needed
+    mockOnUpdate.mockClear();
+
+    const existingDataset = {
+      id: "csv1",
+      name: "Persisted CSVs",
+      description: "Test persisted",
+      type: "csv" as "list" | "csv",
+      data: ["old1.csv", "old2.csv"],
+      columns: [], // Added to satisfy DatasetInfo type
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    render(
+      <TestProvider>
+        <CreateDatasetDialog
+          isOpen={true}
+          onClose={() => {}}
+          onCreate={mockOnCreate}
+          onUpdate={mockOnUpdate}
+          dataset={existingDataset}
+        />
+      </TestProvider>,
+    );
+
+    await screen.findByText("old1.csv (persisted)");
+    expect(screen.getByText("old2.csv (persisted)")).toBeInTheDocument();
+
+    const fileInput = screen.getByLabelText("CSV Files") as HTMLInputElement;
+    const newFile = new File(["new data"], "new.csv", { type: "text/csv" });
+    await user.upload(fileInput, newFile);
+
+    await screen.findByText(/new.csv \(\d+\.\d{2} KB\)/);
+    expect(screen.queryByText("old1.csv (persisted)")).not.toBeInTheDocument();
+    expect(screen.queryByText("old2.csv (persisted)")).not.toBeInTheDocument();
+
+    const updateButton = screen.getByRole("button", { name: "Update" });
+    await user.click(updateButton);
+
+    expect(mockOnUpdate).toHaveBeenCalledWith(
+      "csv1",
+      expect.objectContaining({
+        name: "Persisted CSVs",
+        type: "csv",
+        files: [newFile],
+      }),
+    );
+  });
+
+  it("should allow deleting a selected CSV file", async () => {
+    const user = userEvent.setup();
+    // Using the global render from beforeEach, but clear mocks to be safe
+    mockOnCreate.mockClear();
+    mockOnUpdate.mockClear();
+
+    // Re-render or ensure component is in a clean state for this test if beforeEach setup is not ideal
+    // For this case, we assume the beforeEach setup is sufficient as we are testing creation.
+    // If issues arise, a dedicated render for this test might be needed.
+
+    await user.type(screen.getByLabelText("Name"), "Delete Test");
+    await user.click(screen.getByLabelText("CSV"));
+
+    const fileInput = screen.getByLabelText("CSV Files") as HTMLInputElement;
+    const file1 = new File(["content1"], "file1.csv", { type: "text/csv" }); // Approx 0.01KB
+    const file2 = new File(["content2"], "file2.csv", { type: "text/csv" }); // Approx 0.01KB
+    await user.upload(fileInput, [file1, file2]);
+
+    const file1Matcher = /file1.csv \(0\.01 KB\)/;
+    const file2Matcher = /file2.csv \(0\.01 KB\)/;
+
+    await screen.findByText(file1Matcher);
+    expect(screen.getByText(file2Matcher)).toBeInTheDocument();
+
+    // Corrected selector for the draggable element containing file1
+    const file1Draggable = screen.getByText(file1Matcher).closest(`div[data-testid="draggable-${file1.name}-${file1.size}"]`) as HTMLElement;
+    if (!file1Draggable) throw new Error(`Draggable for ${file1.name} not found`);
+    const deleteButton = within(file1Draggable).getByRole('button', { name: new RegExp(`Remove ${file1.name.replace('.', '\\.')}`, 'i') });
+    await user.click(deleteButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText(file1Matcher)).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(file2Matcher)).toBeInTheDocument();
+
+    const createButton = screen.getByRole("button", { name: "Create" });
+    await user.click(createButton);
+    expect(mockOnCreate).toHaveBeenCalledWith(expect.objectContaining({
+      files: [file2],
+    }));
+  });
+
+  it("should call onUpdate without files field if no files were selected/changed", async () => {
+    const user = userEvent.setup();
+    mockOnCreate.mockClear();
+    mockOnUpdate.mockClear();
+
+    const existingDataset = {
+      id: "csv2",
+      name: "No File Change",
+      description: "Desc",
+      type: "csv" as "list" | "csv",
+      data: ["existing.csv"],
+      columns: [], // Added to satisfy DatasetInfo type
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    render(
+      <TestProvider>
+        <CreateDatasetDialog
+          isOpen={true}
+          onClose={() => {}}
+          onCreate={mockOnCreate}
+          onUpdate={mockOnUpdate}
+          dataset={existingDataset}
+        />
+      </TestProvider>,
+    );
+
+    await screen.findByText("existing.csv (persisted)");
+    // Update the name field only
+    const nameInput = screen.getByLabelText("Name");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Updated Name Only");
+
+    const updateButton = screen.getByRole("button", { name: "Update" });
+    await user.click(updateButton);
+
+    expect(mockOnUpdate).toHaveBeenCalledWith(
+      "csv2",
+      expect.objectContaining({
+        name: "Updated Name Only",
+        description: "Desc",
+        type: "csv",
+      }),
+    );
+    // Check that the 'files' property is not present
+    const calledWithData = mockOnUpdate.mock.calls[0][1];
+    expect(calledWithData.hasOwnProperty("files")).toBe(false);
+  });
+
+  it("should reorder selected files using mocked onDragEnd", async () => {
+    const user = userEvent.setup();
+    // Using the global render from beforeEach, but clear mocks to be safe
+    mockOnCreate.mockClear();
+    mockOnUpdate.mockClear();
+
+    await user.type(screen.getByLabelText("Name"), "Reorder Test");
+    await user.click(screen.getByLabelText("CSV"));
+
+    const fileInput = screen.getByLabelText("CSV Files") as HTMLInputElement;
+    const fileA = new File(["contentA"], "fileA.csv", { type: "text/csv" });
+    const fileB = new File(["contentBB"], "fileB.csv", { type: "text/csv" });
+    const fileC = new File(["contentCCC"], "fileC.csv", { type: "text/csv" });
+    await user.upload(fileInput, [fileA, fileB, fileC]);
+
+    // Using more specific matchers for file sizes (0.01 KB for tiny files)
+    await screen.findByText(/fileA.csv \(0\.01 KB\)/);
+    screen.getByText(/fileB.csv \(0\.01 KB\)/);
+    screen.getByText(/fileC.csv \(0\.01 KB\)/);
+
+    const mockDropResult = {
+      source: { index: 0, droppableId: "selected-csv-files" },
+      destination: { index: 2, droppableId: "selected-csv-files" },
+    };
+
+    if (typeof capturedOnDragEnd === "function") {
+      capturedOnDragEnd(mockDropResult);
+    } else {
+      throw new Error("onDragEnd was not captured or is not a function");
+    }
+
+    await waitFor(() => {
+      const droppable = screen.getByTestId("droppable-area");
+      const draggables = within(droppable).getAllByText(/\(0\.01 KB\)/);
+      // After dragging fileA (index 0) to index 2: Expected order B, C, A
+      expect(draggables[0].textContent).toMatch(/fileB.csv/);
+      expect(draggables[1].textContent).toMatch(/fileC.csv/);
+      expect(draggables[2].textContent).toMatch(/fileA.csv/);
+    });
+
+    const createButton = screen.getByRole("button", { name: "Create" });
+    await user.click(createButton);
+    expect(mockOnCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        files: [fileB, fileC, fileA],
+      }),
+    );
   });
 });
 

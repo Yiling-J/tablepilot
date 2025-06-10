@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/tooltip";
 import { Wand2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "react-beautiful-dnd";
 import { GenerateOptionsDialog } from "../generate-options-dialog";
 
 export interface CreateDatasetDialogProps {
@@ -61,6 +67,7 @@ export function CreateDatasetDialog({
   const [type, setType] = useState<DatasetType>("list");
   const [listOptions, setListOptions] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [persistedFileNames, setPersistedFileNames] = useState<string[]>([]);
   const [isGenerateOptionsDialogOpen, setIsGenerateOptionsDialogOpen] =
     useState(false);
 
@@ -76,9 +83,19 @@ export function CreateDatasetDialog({
       setName(dataset.name);
       setDescription(dataset.description);
       setType(dataset.type);
-      if (dataset.data) {
+      if (dataset.type === "list" && dataset.data) {
         setListOptions(dataset.data.join("\n"));
+        setPersistedFileNames([]); // Clear persisted names if it's a list
+      } else if (dataset.type === "csv" && dataset.data && dataset.data.length > 0) {
+        setPersistedFileNames(dataset.data);
+        setSelectedFiles([]); // Clear any selected File objects
+      } else {
+        // Not a list, or CSV without data, or other types
+        setPersistedFileNames([]);
       }
+    } else {
+      // No dataset provided (e.g., creating new)
+      setPersistedFileNames([]);
     }
   }, [isOpen]);
 
@@ -88,6 +105,7 @@ export function CreateDatasetDialog({
     setType("list");
     setListOptions("");
     setSelectedFiles([]);
+    setPersistedFileNames([]);
     setNameError("");
     setListOptionsError("");
     setFilesError("");
@@ -145,7 +163,7 @@ export function CreateDatasetDialog({
           name,
           description,
           type,
-          files: selectedFiles,
+          ...(selectedFiles.length > 0 && { files: selectedFiles }),
         });
       }
     } else {
@@ -171,28 +189,73 @@ export function CreateDatasetDialog({
     handleDialogShouldClose();
   };
 
+  const onDragEnd = (result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination) {
+      return;
+    }
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    setSelectedFiles((prevFiles) => {
+      const newFiles = Array.from(prevFiles);
+      const [removed] = newFiles.splice(source.index, 1);
+      newFiles.splice(destination.index, 0, removed);
+      return newFiles;
+    });
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
+      setPersistedFileNames([]); // Clear persisted names on new selection
       const filesArray = Array.from(event.target.files);
       const csvFiles = filesArray.filter(
         (file) => file.type === "text/csv" || file.name.endsWith(".csv"),
       );
+
       if (csvFiles.length !== filesArray.length) {
         setFilesError("Only CSV files are allowed.");
       } else {
         setFilesError("");
       }
-      setSelectedFiles((prev) =>
-        [...prev, ...csvFiles].filter(
-          (f, i, self) =>
-            self.findIndex((t) => t.name === f.name && t.size === f.size) === i,
-        ),
+
+      // Filter out non-CSV files from the selection before updating state
+      // and ensure no duplicates are added from the new selection itself
+      const newUniqueCsvFiles = csvFiles.filter(
+        (file, index, self) =>
+          index === self.findIndex((f) => f.name === file.name && f.size === file.size)
       );
+
+      setSelectedFiles((prevFiles) => {
+        const updatedFiles = [...prevFiles];
+        newUniqueCsvFiles.forEach((newFile) => {
+          const existingFileIndex = updatedFiles.findIndex(
+            (existingFile) =>
+              existingFile.name === newFile.name &&
+              existingFile.size === newFile.size,
+          );
+          if (existingFileIndex === -1) {
+            updatedFiles.push(newFile);
+          }
+        });
+        return updatedFiles;
+      });
+      // Clear the file input after processing
+      event.target.value = "";
     }
   };
 
-  const removeFile = (fileName: string) => {
-    setSelectedFiles((prev) => prev.filter((file) => file.name !== fileName));
+  const removeFile = (fileToRemove: File) => {
+    setSelectedFiles((prevFiles) =>
+      prevFiles.filter(
+        (file) =>
+          file.name !== fileToRemove.name || file.size !== fileToRemove.size,
+      ),
+    );
   };
 
   return (
@@ -332,33 +395,72 @@ export function CreateDatasetDialog({
                 {filesError && (
                   <p className="text-xs text-red-500 mt-1 mb-2">{filesError}</p>
                 )}
-                {selectedFiles.length > 0 && (
-                  <ScrollArea className="h-32 w-full rounded-md border p-2">
-                    <div className="space-y-1">
-                      {selectedFiles.map((file) => (
+                <ScrollArea className="h-32 w-full rounded-md border">
+                  {selectedFiles.length > 0 ? (
+                    <DragDropContext onDragEnd={onDragEnd}>
+                      <Droppable droppableId="selected-csv-files">
+                        {(provided) => (
+                          <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="p-2 space-y-1"
+                          >
+                            {selectedFiles.map((file, index) => (
+                              <Draggable
+                                key={`${file.name}-${file.size}`}
+                                draggableId={`${file.name}-${file.size}`}
+                                index={index}
+                              >
+                                {(provided) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className="flex justify-between items-center text-sm pl-2 p-1 bg-muted/50 rounded"
+                                  >
+                                    <span className="truncate max-w-[80%]">
+                                      {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                                    </span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeFile(file)}
+                                      aria-label={`Remove ${file.name}`}
+                                    >
+                                      &times;
+                                    </Button>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  ) : persistedFileNames.length > 0 ? (
+                    <div className="p-2 space-y-1">
+                      {persistedFileNames.map((fileName) => (
                         <div
-                          key={file.name + file.size}
+                          key={fileName}
                           className="flex justify-between items-center text-sm pl-2 p-1 bg-muted/50 rounded"
                         >
-                          <span className="truncate max-w-[80%]">
-                            {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                          <span className="truncate max-w-[90%]">
+                            {fileName} (persisted)
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(file.name)}
-                            aria-label={`Remove ${file.name}`}
-                          >
-                            &times;
-                          </Button>
+                          {/* No remove button for persisted files */}
                         </div>
                       ))}
                     </div>
-                  </ScrollArea>
-                )}
+                  ) : (
+                    <div className="p-4 text-sm text-center text-muted-foreground">
+                      No CSV files selected.
+                    </div>
+                  )}
+                </ScrollArea>
                 <p className="text-xs text-muted-foreground mt-1">
                   {dataset
-                    ? "Select one or more CSV files to REPLACE original data or leave it empty if you don't wan t to change."
+                    ? "Select new CSV files to replace existing ones, or drag to reorder."
                     : "Select one or more CSV files."}
                 </p>
               </div>
