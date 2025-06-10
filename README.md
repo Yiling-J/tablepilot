@@ -50,6 +50,36 @@ A workflow that extracts dishes from a menu image, adds an image column, autofil
 
 > OpenAI Chat Completion API refers to any API compatible with OpenAI, such as Gemini, vLLM, Ollama, and xAI.
 
+#### Install with Docker (WebUI)
+
+Create a directory called `tablepilot`. Make `tablepilot` your current working directory:
+
+```console
+mkdir tablepilot
+cd tablepilot
+```
+
+Copy and paste the following commands into your command line to start the Docker container:
+
+```console
+docker run --name tablepilot -d -v $(pwd):/app/data -p 8083:8083 yilingj/tablepilot:latest
+```
+
+Verify that your containers are running:
+
+```console
+docker container ls
+```
+
+You should see something similar to the following:
+
+```console
+CONTAINER ID   IMAGE                       COMMAND                CREATED         STATUS         PORTS                    NAMES
+acf9d361460c   yilingj/tablepilot:latest   "./tablepilot serve"   7 seconds ago   Up 7 seconds   0.0.0.0:8083->8083/tcp   tablepilot
+```
+
+Open your browser and go to http://127.0.0.1:8083 You should see the Tablepilot web interface, including a built-in example table of recipes.
+
 #### Download Binary Release
 
 Pre-built binaries for various operating systems are available on the [Releases](https://github.com/Yiling-J/tablepilot/releases) page.
