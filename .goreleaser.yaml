@@ -26,3 +26,15 @@ archives:
     ids: [windows]
     formats: [zip]
     name_template: "{{ .ProjectName }}_cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+homebrew_casks:
+  - name: tablepilot
+    repository:
+      owner: Yiling-J
+      name: homebrew-tablepilot
+    homepage: https://github.com/Yiling-J/tablepilot
+    conflicts:
+      - formula: tablepilot
+    commit_author:
+      name: Yiling-J
+    skip_upload: auto

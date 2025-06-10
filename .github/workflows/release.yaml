@@ -11,6 +11,8 @@ permissions:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
