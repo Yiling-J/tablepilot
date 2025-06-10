@@ -19,25 +19,25 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Wand2, GripVertical } from "lucide-react"; // Added GripVertical for drag handle
+import {
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Wand2 } from "lucide-react"; // Added GripVertical for drag handle
 import React, { useEffect, useRef, useState } from "react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { GenerateOptionsDialog } from "../generate-options-dialog";
 
 interface FileItem {
@@ -47,32 +47,28 @@ interface FileItem {
 }
 
 export interface CreateDatasetDialogProps {
-  // Added export
   dataset?: DatasetInfo;
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (payload: { // Renamed 'data' to 'payload' for clarity
+  onCreate: (payload: {
     name: string;
     description: string;
     type: "list" | "csv";
-    options?: string[]; // For list type
-    data?: string[];    // For csv type (ordered file names)
-    files?: File[];     // For csv type (actual File objects for new files)
+    data?: string[];
+    files?: File[];
   }) => void;
   onUpdate: (
     id: string,
-    payload: { // Renamed 'data' to 'payload' for clarity
+    payload: {
       name: string;
       description: string;
       type: "list" | "csv";
-      options?: string[]; // For list type
-      data?: string[];    // For csv type (ordered file names)
-      files?: File[];     // For csv type (actual File objects for new/changed files)
+      data?: string[];
+      files?: File[];
     },
   ) => void;
 }
 
-// 2. Create SortableFileItem component
 interface SortableFileItemProps {
   item: FileItem;
   onRemove: (id: string) => void;
@@ -85,14 +81,13 @@ function SortableFileItem({ item, onRemove }: SortableFileItemProps) {
     setNodeRef,
     transform,
     transition,
-    isDragging, // Can be used for styling if needed
+    isDragging,
   } = useSortable({ id: item.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.8 : 1, // Example: reduce opacity when dragging
-    // zIndex: isDragging ? 100 : 'auto', // Example: ensure dragging item is on top
+    opacity: isDragging ? 0.8 : 1,
   };
 
   return (
@@ -100,15 +95,23 @@ function SortableFileItem({ item, onRemove }: SortableFileItemProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      className={`flex justify-between items-center text-sm pl-1 pr-1 py-1 bg-muted/50 rounded mb-1 ${isDragging ? 'shadow-lg border border-primary' : ''}`}
+      className={`flex justify-between items-center text-sm pl-1 pr-1 py-1 bg-muted/50 rounded mb-1 ${isDragging ? "shadow-lg border border-primary" : ""}`}
     >
       <div className="flex items-center flex-grow truncate">
-        <button {...listeners} className="p-1 cursor-grab mr-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded" aria-label="Drag to reorder">
+        <button
+          {...listeners}
+          className="p-1 cursor-grab mr-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+          aria-label="Drag to reorder"
+        >
           <GripVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         </button>
-        <span className="truncate max-w-[calc(100%-4rem)]" title={item.name}> {/* Adjust max-width if needed */}
+        <span className="truncate max-w-[calc(100%-4rem)]" title={item.name}>
+          {" "}
+          {/* Adjust max-width if needed */}
           {item.name}{" "}
-          {item.file ? `(${(item.file.size / 1024).toFixed(2)} KB)` : "(existing)"}
+          {item.file
+            ? `(${(item.file.size / 1024).toFixed(2)} KB)`
+            : "(existing)"}
         </span>
       </div>
       <Button
@@ -116,7 +119,7 @@ function SortableFileItem({ item, onRemove }: SortableFileItemProps) {
         size="sm"
         onClick={() => onRemove(item.id)}
         aria-label={`Remove ${item.name}`}
-        className="p-1 h-auto" // Adjusted padding and height for a smaller button
+        className="p-1 h-auto"
       >
         &times;
       </Button>
@@ -124,8 +127,7 @@ function SortableFileItem({ item, onRemove }: SortableFileItemProps) {
   );
 }
 
-
-type DatasetType = "list" | "csv";
+type DatasetType = "list" | "csv" | "image";
 
 export function CreateDatasetDialog({
   dataset,
@@ -153,16 +155,16 @@ export function CreateDatasetDialog({
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   // DnD Drag End Handler
   function handleDragEnd(event: DragEndEvent) {
-    const {active, over} = event;
+    const { active, over } = event;
     if (over && active.id !== over.id) {
       setFileItems((items) => {
-        const oldIndex = items.findIndex(item => item.id === active.id);
-        const newIndex = items.findIndex(item => item.id === over.id);
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
@@ -174,28 +176,32 @@ export function CreateDatasetDialog({
       setName(dataset.name);
       setDescription(dataset.description);
       setType(dataset.type);
-      if (dataset.type === "csv" && dataset.data && Array.isArray(dataset.data)) {
+      if (
+        dataset.type === "csv" &&
+        dataset.data &&
+        Array.isArray(dataset.data)
+      ) {
         const initialFileItems = dataset.data.map((fileName, index) => ({
           id: `${dataset.id}-${fileName}-${index}`,
           name: fileName as string,
           file: undefined,
         }));
         setFileItems(initialFileItems);
-      } else if (dataset.type === "list" && dataset.data && Array.isArray(dataset.data)) {
+      } else if (
+        dataset.type === "list" &&
+        dataset.data &&
+        Array.isArray(dataset.data)
+      ) {
         setListOptions(dataset.data.join("\n"));
       } else {
-        // Clear if not matching conditions (e.g. new dataset, or existing non-csv/list with no specific data handling here)
         setFileItems([]);
-        if (dataset.type === "list") { // only clear listOptions if it's a list type
+        if (dataset.type === "list") {
           setListOptions("");
         }
       }
     } else {
-      // This 'else' corresponds to '!dataset', meaning we are creating a new entity.
-      // resetForm() is already called at the beginning of useEffect,
-      // so fileItems and listOptions will be in their initial empty state.
     }
-  }, [isOpen, dataset]); // Ensure dataset is in the dependency array
+  }, [isOpen, dataset]);
 
   const resetForm = () => {
     setName("");
@@ -250,15 +256,17 @@ export function CreateDatasetDialog({
           name,
           description,
           type,
-          options: listOptions
+          data: listOptions
             .split("\n")
             .map((opt) => opt.trim())
             .map((opt) => opt.trim())
             .filter((opt) => opt),
         });
       } else if (type === "csv") {
-        const orderedFileNames = fileItems.map(item => item.name);
-        const newFiles = fileItems.filter(item => item.file).map(item => item.file as File);
+        const orderedFileNames = fileItems.map((item) => item.name);
+        const newFiles = fileItems
+          .filter((item) => item.file)
+          .map((item) => item.file as File);
 
         onUpdate(dataset.id, {
           name,
@@ -275,21 +283,17 @@ export function CreateDatasetDialog({
           name,
           description,
           type,
-          options: listOptions
+          data: listOptions
             .split("\n")
             .map((opt) => opt.trim())
             .filter((opt) => opt),
         });
       } else if (type === "csv") {
-        const orderedFileNames = fileItems.map(item => item.name);
-        // For creation, all files in fileItems should ideally be new files.
-        // If a fileItem lacks a .file, it implies an issue upstream or an edge case not handled,
-        // as new items should always have a .file.
-        const newFiles = fileItems.filter(item => item.file).map(item => item.file as File);
+        const orderedFileNames = fileItems.map((item) => item.name);
+        const newFiles = fileItems
+          .filter((item) => item.file)
+          .map((item) => item.file as File);
 
-        // It's crucial that for creation, if fileItems has entries, newFiles should also have entries.
-        // The existing validation `if (type === "csv" && dataset === undefined && fileItems.length === 0)`
-        // should prevent submission if no files are selected at all.
         onCreate({
           name,
           description,
@@ -311,28 +315,38 @@ export function CreateDatasetDialog({
 
       if (csvFiles.length !== filesArray.length) {
         setFilesError("Only CSV files are allowed.");
-        // Do not proceed to add non-CSV files
       } else {
-        setFilesError(""); // Clear error if all files are CSVs or no files selected initially
+        setFilesError("");
+        const newFileItems: FileItem[] = [];
+        const replaced = new Map();
+        // replace existing files
+        fileItems.forEach((f) => {
+          const cf = csvFiles.find((e) => e.name === f.name);
+          if (cf) {
+            replaced.set(cf.name, true);
+            // replace existing file
+            newFileItems.push({
+              id: `${cf.name}-${cf.size}`,
+              name: cf.name,
+              file: cf,
+            });
+          } else {
+            newFileItems.push(f);
+          }
+        });
 
-        const newFileItems: FileItem[] = csvFiles
-          .map((file) => ({
-            id: `${file.name}-${file.size}-${Date.now()}`, // Unique ID
-            name: file.name,
-            file: file,
-          }))
-          .filter( // Prevent adding duplicates based on name and file size
-            (newItem) =>
-              !fileItems.some(
-                (existingItem) =>
-                  existingItem.name === newItem.name &&
-                  existingItem.file?.size === newItem.file?.size
-              )
-          );
+        csvFiles.forEach((cf) => {
+          if (replaced.get(cf.name) === undefined) {
+            newFileItems.push({
+              id: `${cf.name}-${cf.size}`,
+              name: cf.name,
+              file: cf,
+            });
+          }
+        });
 
         if (newFileItems.length > 0) {
-          setFileItems((prevItems) => [...prevItems, ...newFileItems]);
-          // If the specific error "Please select at least one CSV file" was shown, clear it.
+          setFileItems(newFileItems);
           if (filesError === "Please select at least one CSV file") {
             setFilesError("");
           }
@@ -341,8 +355,11 @@ export function CreateDatasetDialog({
     }
   };
 
-  const removeFile = (idToRemove: string) => { // Changed parameter to id
-    setFileItems((prevItems) => prevItems.filter((item) => item.id !== idToRemove));
+  const removeFile = (idToRemove: string) => {
+    // Changed parameter to id
+    setFileItems((prevItems) =>
+      prevItems.filter((item) => item.id !== idToRemove),
+    );
   };
 
   return (
@@ -359,7 +376,7 @@ export function CreateDatasetDialog({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>
             {dataset ? "Update Dataset" : "Create New Dataset"}
@@ -489,13 +506,19 @@ export function CreateDatasetDialog({
                     onDragEnd={handleDragEnd}
                   >
                     <SortableContext
-                      items={fileItems.map(item => item.id)}
+                      items={fileItems.map((item) => item.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <ScrollArea className="h-32 w-full rounded-md border p-2">
-                        <div className="space-y-1"> {/* This div helps with spacing between SortableFileItem */}
+                      <ScrollArea className="max-h-[280px] w-full rounded-md border p-2 overflow-y-auto">
+                        <div className="space-y-1">
+                          {" "}
+                          {/* This div helps with spacing between SortableFileItem */}
                           {fileItems.map((item) => (
-                            <SortableFileItem key={item.id} item={item} onRemove={removeFile} />
+                            <SortableFileItem
+                              key={item.id}
+                              item={item}
+                              onRemove={removeFile}
+                            />
                           ))}
                         </div>
                       </ScrollArea>
@@ -503,7 +526,7 @@ export function CreateDatasetDialog({
                   </DndContext>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {dataset && type === 'csv'
+                  {dataset && type === "csv"
                     ? "Add new CSV files to replace existing ones. Leave empty to keep current files. You can reorder files by dragging."
                     : "Select one or more CSV files."}
                 </p>

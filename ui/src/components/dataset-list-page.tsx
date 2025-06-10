@@ -75,28 +75,27 @@ function DatasetList() {
     fetchDatasets();
   }, [fetchDatasets]);
 
-  const handleCreateDataset = async (data: {
+  const handleCreateDataset = async (payload: {
     name: string;
     description: string;
-    type: "list" | "csv";
-    options?: string[];
+    type: "list" | "csv" | "image";
+    data?: string[];
     files?: File[];
   }) => {
     try {
       const requestPayload = {
-        name: data.name,
-        description: data.description,
-        type: data.type,
-        data: data.type === "list" ? data.options || [] : [],
-        files: data.type === "csv" ? data.files || [] : [],
-        private: false, // Added private field
+        name: payload.name,
+        description: payload.description,
+        type: payload.type,
+        data: payload.data ?? [],
+        files: payload.files ?? [],
       };
 
       await createDataset(requestPayload);
 
       toast({
         title: "Success",
-        description: `Dataset "${data.name}" created successfully.`,
+        description: `Dataset "${payload.name}" created successfully.`,
       });
       setIsCreateDialogOpen(false);
       fetchDatasets();
