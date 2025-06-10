@@ -1,23 +1,6 @@
 {
   "name": "recipes",
   "description": "table of creative recipes",
-  "sources": [
-    {
-      "name": "cuisines",
-      "type": "ai",
-      "prompt": "Generate 20 recipe cuisines."
-    },
-    {
-      "name": "ingredients",
-      "type": "ai",
-      "prompt": "Generate 50 common ingredients."
-    },
-    {
-      "name": "meals",
-      "type": "list",
-      "options": ["Dinner", "Lunch", "Desserts", "Appetizers"]
-    }
-  ],
   "columns": [
     {
       "name": "Name",
@@ -37,7 +20,8 @@
       "description": "the ingredient recipe must include",
       "type": "string",
       "fill_mode": "pick",
-      "source": "ingredients",
+      "source_type": "dataset",
+      "source_id": "ingredients",
       "random": true,
       "replacement": false
     },
@@ -64,7 +48,17 @@
       "description": "type of cuisine",
       "type": "string",
       "fill_mode": "pick",
-      "source": "cuisines",
+      "source_type": "options",
+      "options": [
+        "Italian",
+        "Chinese",
+        "Mexican",
+        "Indian",
+        "Japanese",
+        "Thai",
+        "French",
+        "Spanish"
+      ],
       "random": true,
       "replacement": false
     },
@@ -73,7 +67,8 @@
       "description": "meal of the recipe",
       "type": "string",
       "fill_mode": "pick",
-      "source": "meals",
+      "source_type": "options",
+      "options": ["Dinner", "Lunch", "Desserts", "Appetizers"],
       "random": true,
       "replacement": true
     },

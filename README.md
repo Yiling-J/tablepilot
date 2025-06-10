@@ -97,7 +97,7 @@ rpm = 20
 - For all available API endpoints, see [this doc](API.md).
 - For workflow schema and CLI, see [this doc](Workflow.md).
 
-Check out the [examples folder](examples) for many interesting use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation.
+Check out the [examples folder](examples) for some CLI use cases. The syntax is simple and intuitive, you can easily understand how it works without reading the full documentation.
 
 ## Guide
 
