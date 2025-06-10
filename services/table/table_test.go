@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
-	"io"
 	"os"
 	"strings"
 	"testing"
@@ -586,7 +585,10 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 					Name:        "s1",
 					Description: "ds",
 					Type:        dataset.TypeCsv,
-					Files:       []io.Reader{b},
+					Files: []dataset_service.CreateDatasetFile{{
+						Name:   "file",
+						Reader: b,
+					}},
 				})
 				require.NoError(t, err)
 				dsid = id
@@ -922,9 +924,12 @@ func TestTableService_ImportLinked(t *testing.T) {
 	require.NoError(t, writer.Error())
 	ds := dataset_service.NewDatasetService(db, &config.Config{})
 	did, err := ds.Create(t.Context(), &dataset_service.CreateDatasetRequest{
-		Name:  "ds",
-		Type:  dataset.TypeCsv,
-		Files: []io.Reader{b},
+		Name: "ds",
+		Type: dataset.TypeCsv,
+		Files: []dataset_service.CreateDatasetFile{{
+			Name:   "file",
+			Reader: b,
+		}},
 	})
 	require.NoError(t, err)
 

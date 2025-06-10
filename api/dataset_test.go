@@ -72,7 +72,7 @@ func TestAPI_CreateDatasetWithFiles(t *testing.T) {
 			require.Equal(t, expectedRequest.Description, req.Description)
 			require.Equal(t, expectedRequest.Type, req.Type)
 			require.Equal(t, 1, len(req.Files))
-			data, err := io.ReadAll(req.Files[0])
+			data, err := io.ReadAll(req.Files[0].Reader)
 			require.NoError(t, err)
 			require.Equal(t, "header1,header2,header3\nr1c1,r1c2,r1c3\n", string(data))
 			return "new_dataset_id", nil

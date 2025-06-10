@@ -803,6 +803,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, request ImportRequest) (s
 			}
 			switch ds.Type {
 			case dataset.TypeList:
+			case dataset.TypeImage:
 			case dataset.TypeCsv:
 				ts := &source.CsvSource{
 					RandomCSV: &csvindexer.CSVIndexer{
@@ -918,6 +919,11 @@ func getSourceFromColumn(ctx context.Context, db *ent.Client, dataDir string, co
 					FS:         os.DirFS(filepath.Join(dataDir, ds.Path)),
 					CSVIndexer: ds.Indexer,
 				},
+			}
+			so = ls
+		case dataset.TypeImage:
+			ls := &source.FilesSource{
+				Paths: []string{filepath.Join(dataDir, ds.Path)},
 			}
 			so = ls
 		}
