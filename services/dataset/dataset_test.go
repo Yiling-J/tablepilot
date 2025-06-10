@@ -23,7 +23,7 @@ func TestDatasetService_Get(t *testing.T) {
 	testDir := "./dstest_get_" + uuid.NewString()
 	cfg := &config.Config{
 		Common: config.Common{
-			SourceDataDir: testDir,
+			DataDir: testDir,
 		},
 	}
 	srv := NewDatasetService(db, cfg)
@@ -94,7 +94,7 @@ func TestDatasetService_List(t *testing.T) {
 	testDir := "./dstest_list_" + uuid.NewString()
 	cfg := &config.Config{
 		Common: config.Common{
-			SourceDataDir: testDir,
+			DataDir: testDir,
 		},
 	}
 	srv := NewDatasetService(db, cfg)
@@ -166,7 +166,7 @@ func TestDatasetService_Create(t *testing.T) {
 	db := db.NewTestDB()
 	srv := NewDatasetService(db, &config.Config{
 		Common: config.Common{
-			SourceDataDir: "./dstest",
+			DataDir: "./dstest",
 		},
 	})
 
@@ -231,7 +231,7 @@ func TestDatasetService_Update(t *testing.T) {
 
 		cfg := &config.Config{
 			Common: config.Common{
-				SourceDataDir: specificTestDir,
+				DataDir: specificTestDir,
 			},
 		}
 		return NewDatasetService(db, cfg)
@@ -429,7 +429,7 @@ func TestDatasetService_Delete(t *testing.T) {
 
 		cfg := &config.Config{
 			Common: config.Common{
-				SourceDataDir: specificTestDir,
+				DataDir: specificTestDir,
 			},
 		}
 		return NewDatasetService(db, cfg), specificTestDir
@@ -510,7 +510,7 @@ func TestDatasetService_Preview(t *testing.T) {
 	db := db.NewTestDB()
 	srv := NewDatasetService(db, &config.Config{
 		Common: config.Common{
-			SourceDataDir: "./dstest",
+			DataDir: "./dstest",
 		},
 	})
 

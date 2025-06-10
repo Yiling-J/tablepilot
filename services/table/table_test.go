@@ -602,7 +602,7 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 				Exec(ctx)
 			require.NoError(t, err)
 
-			srv, err := NewTableService(&config.Config{Common: config.Common{SourceDataDir: "./"}}, db, nil, nil, zap.NewNop().Sugar())
+			srv, err := NewTableService(&config.Config{Common: config.Common{DataDir: "./"}}, db, nil, nil, zap.NewNop().Sugar())
 			require.NoError(t, err)
 			records := [][]string{
 				{"string"},
@@ -897,7 +897,7 @@ func TestTableService_ImportLinked(t *testing.T) {
 	defer func() { _ = os.RemoveAll("datasets") }()
 	db := db.NewTestDB()
 	ctx := context.Background()
-	srv, err := NewTableService(&config.Config{Common: config.Common{SourceDataDir: "./"}}, db, nil, nil, zap.NewNop().Sugar())
+	srv, err := NewTableService(&config.Config{Common: config.Common{DataDir: "./"}}, db, nil, nil, zap.NewNop().Sugar())
 	require.NoError(t, err)
 
 	tid, err := srv.Create(ctx, &TableGenRequest{Name: "lt", Columns: []*TableGenColumn{

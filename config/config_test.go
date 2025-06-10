@@ -47,11 +47,11 @@ func TestConfig_NewDefault(t *testing.T) {
 	cfg, err := NewConfig("")
 	require.NoError(t, err)
 	require.Equal(t, &Config{
-		Common: Common{SourceDataDir: "./"},
+		Common: Common{DataDir: "./data"},
 		Server: Server{Address: ":8083"},
 		Database: &Database{
 			Driver: "sqlite3",
-			DSN:    "data.db?_pragma=foreign_keys(1)",
+			DSN:    "data/data.db?_pragma=foreign_keys(1)",
 		},
 	}, cfg)
 }

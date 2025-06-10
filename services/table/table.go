@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Yiling-J/tablepilot/config"
@@ -391,7 +392,7 @@ func (t *TableServiceImpl) GetTableDetail(ctx context.Context, table string) (*T
 }
 
 func (t *TableServiceImpl) Genetate(ctx context.Context, params GenerateRowsRequest) (RowsGenerator, error) {
-	params.sourceDataDir = t.config.Common.SourceDataDir
+	params.sourceDataDir = t.config.Common.DataDir
 	generator, err := NewRowsGenerator(ctx, params, t.db, t.ai, t.logger)
 	if err != nil {
 		return nil, fmt.Errorf("table.Genetate: creating rows generator: %w", err)
@@ -805,7 +806,7 @@ func (t *TableServiceImpl) Import(ctx context.Context, request ImportRequest) (s
 			case dataset.TypeCsv:
 				ts := &source.CsvSource{
 					RandomCSV: &csvindexer.CSVIndexer{
-						FS:         os.DirFS(ds.Path),
+						FS:         os.DirFS(filepath.Join(t.config.Common.DataDir, ds.Path)),
 						CSVIndexer: ds.Indexer,
 					},
 				}
@@ -886,7 +887,7 @@ func (t *TableServiceImpl) CreateRows(ctx context.Context, table string, rows []
 	return tx.Commit()
 }
 
-func getSourceFromColumn(ctx context.Context, db *ent.Client, sourceDataDir string, column *ent.TableColumn) (source.Source, error) {
+func getSourceFromColumn(ctx context.Context, db *ent.Client, dataDir string, column *ent.TableColumn) (source.Source, error) {
 	var so source.Source
 	switch column.SourceType {
 	case tablecolumn.SourceTypeTable:
@@ -906,7 +907,7 @@ func getSourceFromColumn(ctx context.Context, db *ent.Client, sourceDataDir stri
 		switch ds.Type {
 		case dataset.TypeList:
 			ls := &source.ListSource{Options: ds.Values}
-			err = ls.Init(ctx, sourceDataDir)
+			err = ls.Init(ctx, dataDir)
 			if err != nil {
 				return nil, fmt.Errorf("table.parseLinkedSource: initializing list source: %w", err)
 			}
@@ -914,7 +915,7 @@ func getSourceFromColumn(ctx context.Context, db *ent.Client, sourceDataDir stri
 		case dataset.TypeCsv:
 			ls := &source.CsvSource{
 				RandomCSV: &csvindexer.CSVIndexer{
-					FS:         os.DirFS(ds.Path),
+					FS:         os.DirFS(filepath.Join(dataDir, ds.Path)),
 					CSVIndexer: ds.Indexer,
 				},
 			}
@@ -922,7 +923,7 @@ func getSourceFromColumn(ctx context.Context, db *ent.Client, sourceDataDir stri
 		}
 	case tablecolumn.SourceTypeOptions:
 		ls := &source.ListSource{Options: column.Options}
-		err := ls.Init(ctx, sourceDataDir)
+		err := ls.Init(ctx, dataDir)
 		if err != nil {
 			return nil, fmt.Errorf("table.parseLinkedSource: initializing options source: %w", err)
 		}

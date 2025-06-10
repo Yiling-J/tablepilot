@@ -3,12 +3,14 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
 
 type Common struct {
-	SourceDataDir string `mapstructure:"source_data_dir"`
+	DataDir string `mapstructure:"data_dir"`
 }
 
 type Database struct {
@@ -108,13 +110,17 @@ func NewConfig(name string) (config *Config, err error) {
 	if config.Server.Address == "" {
 		config.Server.Address = ":8083"
 	}
-	if config.Common.SourceDataDir == "" {
-		config.Common.SourceDataDir = "./"
+	if config.Common.DataDir == "" {
+		config.Common.DataDir = "./data"
+	}
+	err = os.MkdirAll(config.Common.DataDir, os.ModePerm)
+	if err != nil {
+		return nil, err
 	}
 	if config.Database == nil {
 		config.Database = &Database{
 			Driver: "sqlite3",
-			DSN:    "data.db?_pragma=foreign_keys(1)",
+			DSN:    filepath.Join(config.Common.DataDir, "data.db?_pragma=foreign_keys(1)"),
 		}
 	}
 	return config, nil

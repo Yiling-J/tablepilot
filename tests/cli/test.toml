@@ -1,5 +1,3 @@
-source_data_dir = "tests/cli/"
-
 [database]
 driver = "sqlite3"
 dsn = "test.db?_pragma=foreign_keys(1)"

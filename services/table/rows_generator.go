@@ -65,8 +65,8 @@ type AIRowsGenerator struct {
 	rows    []map[string]*schema.CellValue
 	builder *promptbuilder.RowsBuilder
 
-	autofill      AutofillRequest
-	sourceDataDir string
+	autofill AutofillRequest
+	dataDir  string
 }
 
 func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.Client, ai ai.AiService, logger *zap.SugaredLogger) (*AIRowsGenerator, error) {
@@ -92,7 +92,7 @@ func NewRowsGenerator(ctx context.Context, params GenerateRowsRequest, db *ent.C
 	if generator.batchSize == 0 {
 		generator.batchSize = 1
 	}
-	generator.sourceDataDir = params.sourceDataDir
+	generator.dataDir = params.sourceDataDir
 	meta, err := db.TableMeta.Query().WithColumns(func(tcq *ent.TableColumnQuery) {
 		tcq.Order(ent.Asc(tablecolumn.FieldID))
 	}).Where(tablemeta.Or(
@@ -248,11 +248,7 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 		return raw, nil
 	}
 	// try load image file
-	root, err := os.OpenRoot(g.sourceDataDir)
-	if err != nil {
-		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: opening source data directory: %w", err)
-	}
-	f, err := root.Open(raw)
+	f, err := os.Open(raw)
 	if err != nil {
 		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: opening file %s: %w", raw, err)
 	}
@@ -589,12 +585,12 @@ func (g *AIRowsGenerator) generateImages(ctx context.Context, rows []map[string]
 	for id, data := range resp.Images {
 		tmp := strings.Split(id, "-")
 		row, column := tmp[0], tmp[1]
-		imagesDir := filepath.Join(g.sourceDataDir, "tablepilot_images", g.table.Nanoid)
+		imagesDir := filepath.Join(g.dataDir, "tablepilot_images", g.table.Nanoid)
 		if err := os.MkdirAll(imagesDir, 0755); err != nil {
 			return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: creating directory %q: %w", imagesDir, err)
 		}
 		if index, ok := idMap[row]; ok {
-			root, err := os.OpenRoot(g.sourceDataDir)
+			root, err := os.OpenRoot(g.dataDir)
 			if err != nil {
 				return nil, fmt.Errorf("table.AIRowsGenerator.generateImages: opening source data directory: %w", err)
 			}

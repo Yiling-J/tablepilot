@@ -946,7 +946,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 			Random: false,
 		})
 		generator := &AIRowsGenerator{
-			sourceDataDir: "./",
+			dataDir: "./",
 			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
@@ -977,7 +977,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 			Random: false,
 		})
 		generator := &AIRowsGenerator{
-			sourceDataDir: "./",
+			dataDir: "./",
 			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
@@ -1008,7 +1008,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 			Random: false,
 		})
 		generator := &AIRowsGenerator{
-			sourceDataDir: "./",
+			dataDir: "./",
 			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
@@ -1077,7 +1077,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 				Columns:        []string{"c0"},
 				ContextColumns: []string{"c1"},
 			},
-			sourceDataDir: "./",
+			dataDir: "./",
 			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},
@@ -1140,7 +1140,7 @@ func TestRowsGenerator_PrepareImageRows(t *testing.T) {
 				Columns:        []string{"c0"},
 				ContextColumns: []string{"c1"},
 			},
-			sourceDataDir: "./",
+			dataDir: "./",
 			indexers: map[string]*source.Indexer{
 				"c1": idx,
 			},

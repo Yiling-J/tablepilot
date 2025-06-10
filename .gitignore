@@ -17,6 +17,7 @@ ui/dist/*
 !ui/dist/placeholder
 dist-ssr
 *.local
+data/*
 
 # Editor directories and files
 .vscode/*

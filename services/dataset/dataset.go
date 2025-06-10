@@ -42,7 +42,7 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 	switch req.Type {
 	case db_dataset.TypeCsv:
 		relativePath := filepath.Join("datasets/shared", sr.Nanoid)
-		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, relativePath)
+		dirPath := filepath.Join(s.cfg.Common.DataDir, relativePath)
 		err := os.MkdirAll(dirPath, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
@@ -173,7 +173,7 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 
 	if processDataRebuild {
 		if originalPath != "" {
-			oldDirPath := filepath.Join(s.cfg.Common.SourceDataDir, originalPath)
+			oldDirPath := filepath.Join(s.cfg.Common.DataDir, originalPath)
 			if _, statErr := os.Stat(oldDirPath); !os.IsNotExist(statErr) {
 				if removeErr := os.RemoveAll(oldDirPath); removeErr != nil {
 					return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, removeErr))
@@ -207,7 +207,7 @@ func (s *DatasetServiceImpl) Delete(ctx context.Context, dataset string) error {
 	}
 
 	if ds.Type == db_dataset.TypeCsv && ds.Path != "" {
-		dirPath := filepath.Join(s.cfg.Common.SourceDataDir, ds.Path)
+		dirPath := filepath.Join(s.cfg.Common.DataDir, ds.Path)
 		if _, err := os.Stat(dirPath); !os.IsNotExist(err) {
 			if err := os.RemoveAll(dirPath); err != nil {
 				return ent.Rollback(tx, fmt.Errorf("dataset.Delete: failed to remove directory %s: %w", dirPath, err))
@@ -252,7 +252,7 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 	}
 	switch sr.Type {
 	case db_dataset.TypeCsv:
-		dir := fmt.Sprintf("%s/datasets/shared/%s", s.cfg.Common.SourceDataDir, sr.Nanoid)
+		dir := fmt.Sprintf("%s/datasets/shared/%s", s.cfg.Common.DataDir, sr.Nanoid)
 		s := &source.CsvSource{RandomCSV: &csvindexer.CSVIndexer{
 			FS:         os.DirFS(dir),
 			CSVIndexer: sr.Indexer,
