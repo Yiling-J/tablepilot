@@ -19,6 +19,6 @@ snapshots:
 tauri-dev:
 	go build -o "build/tablepilot-$(shell go run host/host.go)" -tags noui
 	cd ui && pnpm tauri dev
-tauri-build:
+build-tauri:
 	go build -o "build/tablepilot-$(shell go run host/host.go)" -tags noui
 	cd ui && pnpm tauri build
