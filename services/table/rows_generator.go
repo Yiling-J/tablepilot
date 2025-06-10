@@ -248,7 +248,11 @@ func (g *AIRowsGenerator) imageURL(ctx context.Context, raw string) (string, err
 		return raw, nil
 	}
 	// try load image file
-	f, err := os.Open(raw)
+	root, err := os.OpenRoot(g.dataDir)
+	if err != nil {
+		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: opening source data directory: %w", err)
+	}
+	f, err := root.Open(raw)
 	if err != nil {
 		return "", fmt.Errorf("table.AIRowsGenerator.imageURL: opening file %s: %w", raw, err)
 	}

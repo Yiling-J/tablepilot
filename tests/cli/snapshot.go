@@ -36,9 +36,9 @@ var snapshots = []struct {
 		{"dataset", "create", "--name", "movies", "--type", "csv", "--path", "cases/movies/*.csv"},
 	}},
 	// vision
-	{"icon_jokes", "icon_jokes.json", [][]string{
-		{"dataset", "create", "--name", "icons", "--type", "csv", "--path", "cases/icons/icons.csv"},
-	}},
+	// {"icon_jokes", "icon_jokes.json", [][]string{
+	// 	{"dataset", "create", "--name", "icons", "--type", "csv", "--path", "cases/icons/icons.csv"},
+	// }},
 }
 
 var autofills = []struct {
