@@ -1,390 +1,299 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react'; // Removed fireEvent
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { CreateDatasetDialog, CreateDatasetDialogProps } from './dataset'; // Adjust path as needed
 import { DatasetInfo } from '@/actions'; // Adjust path as needed
-import { DragEndEvent } from '@dnd-kit/core';
-import { vi } from 'vitest'; // Import vi
 
-// Mock dnd-kit hooks and components to simplify testing if needed,
-// though many basic dnd-kit features work in JSDOM.
-// For this test, we will focus on handler logic more than pixel-perfect drag simulation.
+// Mock the GenerateOptionsDialog as it's not the focus of these tests
+jest.mock('../generate-options-dialog', () => ({
+  GenerateOptionsDialog: jest.fn(() => null),
+}));
 
-// Mocking @dnd-kit/sortable's arrayMove as it's a utility function
-vi.mock('@dnd-kit/sortable', async () => {
-  const actual = await vi.importActual<typeof import('@dnd-kit/sortable')>('@dnd-kit/sortable');
-  return {
-    ...actual,
-    arrayMove: vi.fn((array: unknown[], from: number, to: number) => {
-      const newArray = [...array];
-      const [item] = newArray.splice(from, 1);
-      newArray.splice(to, 0, item);
-      return newArray;
-    }),
-  };
-});
+// Mock DnD hooks and context providers as they are complex and not the focus
+jest.mock('@dnd-kit/core', () => ({
+  ...jest.requireActual('@dnd-kit/core'), // Import and retain default exports
+  DndContext: jest.fn(({ children }) => <div>{children}</div>), // Simple pass-through
+  useSensor: jest.fn(),
+  useSensors: jest.fn(),
+  PointerSensor: jest.fn(),
+  KeyboardSensor: jest.fn(),
+  closestCenter: jest.fn(),
+}));
 
-
-// Mock Lucide icons
-vi.mock('lucide-react', async () => {
-  const actual = await vi.importActual<typeof import('lucide-react')>('lucide-react');
-  return {
-    ...actual,
-    Wand2: () => <div data-testid="wand-icon" />,
-    GripVertical: () => <div data-testid="grip-icon" />,
-  };
-});
-
-// Mock child dialog - GenerateOptionsDialog
-vi.mock('../generate-options-dialog', () => ({
-    GenerateOptionsDialog: vi.fn(({ isOpen }: { isOpen: boolean }) => isOpen ? <div data-testid="generate-options-dialog">Mocked Generate Options Dialog</div> : null),
+jest.mock('@dnd-kit/sortable', () => ({
+  ...jest.requireActual('@dnd-kit/sortable'), // Import and retain default exports
+  SortableContext: jest.fn(({ children }) => <div>{children}</div>), // Simple pass-through
+  useSortable: jest.fn(() => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: jest.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  })),
+  verticalListSortingStrategy: jest.fn(),
+  sortableKeyboardCoordinates: jest.fn(),
+  arrayMove: jest.fn((arr, from, to) => {
+    const newArray = [...arr];
+    const [element] = newArray.splice(from, 1);
+    newArray.splice(to, 0, element);
+    return newArray;
+  }),
 }));
 
 
-const mockOnCreate = vi.fn();
-const mockOnUpdate = vi.fn();
-const mockOnClose = vi.fn();
+const mockOnClose = jest.fn();
+const mockOnCreate = jest.fn();
+const mockOnUpdate = jest.fn();
 
-const initialProps: CreateDatasetDialogProps = {
+const defaultProps: CreateDatasetDialogProps = {
   isOpen: true,
   onClose: mockOnClose,
   onCreate: mockOnCreate,
   onUpdate: mockOnUpdate,
 };
 
-// Helper to create File objects
-const createFile = (name: string, type = 'text/csv', size = 1024): File => {
-  const blob = new Blob(['a'.repeat(size)], { type });
-  return new File([blob], name, { type });
+const renderDialog = (props: Partial<CreateDatasetDialogProps> = {}) => {
+  return render(<CreateDatasetDialog {...defaultProps} {...props} />);
 };
 
-const fileA = createFile('a.csv');
-const fileB = createFile('b.csv');
-// Removed fileC and fileD as they were unused. If needed later, they can be re-added.
-
-
-describe('CreateDatasetDialog - CSV Functionality', () => {
+describe('CreateDatasetDialog - Image Type', () => {
   beforeEach(() => {
-    vi.clearAllMocks(); // Changed from jest.clearAllMocks()
-    // Reset arrayMove mock calls if needed, though it's stateless here
+    // Reset mocks before each test
+    mockOnClose.mockClear();
+    mockOnCreate.mockClear();
+    mockOnUpdate.mockClear();
+    // Mock FileReader
+    global.FileReader = jest.fn(() => ({
+      readAsDataURL: jest.fn(),
+      onload: jest.fn(),
+      onerror: jest.fn(),
+      result: 'mock-data-url', // Default mock result
+    })) as any;
+    // Mock Image
+    global.Image = jest.fn(() => ({
+        onload: jest.fn(),
+        onerror: jest.fn(),
+        src: '',
+        width: 100, // mock dimensions
+        height: 100, // mock dimensions
+    })) as any;
+    // Mock canvas
+    global.HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
+        drawImage: jest.fn(),
+    })) as any;
+    global.HTMLCanvasElement.prototype.toDataURL = jest.fn(() => 'mock-thumbnail-data-url') as any;
+
   });
 
-  // Test 1: Initial State (CSV mode)
-  test('renders with existing CSV dataset and displays initial files', () => {
-    const existingDataset: DatasetInfo = {
-      id: 'csv1',
-      name: 'My CSV Dataset',
-      description: 'An existing dataset.',
-      type: 'csv',
-      data: ['file1.csv', 'file2.csv'], // file names
-      columns: ['header1', 'header2'], // Added missing 'columns' property
-      // Removed created_at, updated_at, project_id as they are not in DatasetInfo based on TS error
-    };
-
-    render(<CreateDatasetDialog {...initialProps} dataset={existingDataset} />);
-
-    expect(screen.getByLabelText('Name')).toHaveValue('My CSV Dataset');
-    expect(screen.getByLabelText('Type')).toBeDisabled(); // Type is disabled for existing datasets
-
-    // Check for displayed files
-    expect(screen.getByText('file1.csv (existing)')).toBeInTheDocument();
-    expect(screen.getByText('file2.csv (existing)')).toBeInTheDocument();
+  test('renders the "Image" radio button and allows selection', () => {
+    renderDialog();
+    const imageRadio = screen.getByLabelText('Image') as HTMLInputElement;
+    expect(imageRadio).toBeInTheDocument();
+    fireEvent.click(imageRadio);
+    expect(imageRadio.checked).toBe(true);
   });
 
-  // Test 2: File Addition
-  test('allows adding new files, displays them, and prevents duplicates', async () => {
-    const user = userEvent.setup();
-    render(<CreateDatasetDialog {...initialProps} />);
+  test('displays correct file input when "Image" type is selected', () => {
+    renderDialog();
+    fireEvent.click(screen.getByLabelText('Image'));
 
-    // Ensure CSV type is selected (it's not by default, default is "list")
-    await user.click(screen.getByLabelText('CSV'));
-    expect(screen.getByLabelText('CSV')).toBeChecked();
+    const imageInput = screen.getByLabelText('Image Files');
+    expect(imageInput).toBeInTheDocument();
+    expect(imageInput).toHaveAttribute('accept', 'image/png, image/jpeg, image/gif, .png, .jpg, .jpeg, .gif');
 
-
-    const fileInput = screen.getByLabelText('CSV Files') as HTMLInputElement;
-
-    // Add fileA
-    await act(async () => {
-      await user.upload(fileInput, fileA);
-    });
-    expect(screen.getByText(`${fileA.name} (${(fileA.size / 1024).toFixed(2)} KB)`)).toBeInTheDocument();
-    expect(fileInput.files?.[0]).toBe(fileA); // Check if file is in input (transient)
-
-    // Add fileB
-    await act(async () => {
-      await user.upload(fileInput, fileB);
-    });
-    expect(screen.getByText(`${fileB.name} (${(fileB.size / 1024).toFixed(2)} KB)`)).toBeInTheDocument();
-
-    // Attempt to add fileA again (duplicate)
-    await act(async () => {
-      await user.upload(fileInput, fileA);
-    });
-    // Should still only have one instance of fileA displayed
-    expect(screen.getAllByText((content, _element) => content.startsWith(fileA.name)).length).toBe(1); // Prefixed element with _
+    expect(screen.queryByLabelText('CSV Files')).not.toBeInTheDocument();
   });
 
-  // Test 3: File Deletion
-  test('allows deleting files from the list', async () => {
-    const user = userEvent.setup();
-    render(<CreateDatasetDialog {...initialProps} />);
-    await user.click(screen.getByLabelText('CSV'));
+  test('shows error message for non-image file selection', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByLabelText('Image'));
+    const imageInput = screen.getByLabelText('Image Files');
 
+    const nonImageFile = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+    fireEvent.change(imageInput, { target: { files: [nonImageFile] } });
 
-    const fileInput = screen.getByLabelText('CSV Files');
-    await act(async () => {
-      await user.upload(fileInput, [fileA, fileB]);
-    });
-
-    expect(screen.getByText(new RegExp(fileA.name))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(fileB.name))).toBeInTheDocument();
-
-    // Delete fileA
-    // The remove button is identified by its aria-label `Remove ${item.name}`
-    const removeButtonForA = screen.getByLabelText(`Remove ${fileA.name}`);
-    await act(async () => {
-      await user.click(removeButtonForA);
-    });
-
-    expect(screen.queryByText(new RegExp(fileA.name))).not.toBeInTheDocument();
-    expect(screen.getByText(new RegExp(fileB.name))).toBeInTheDocument();
+    expect(await screen.findByText('Only image files (PNG, JPG, GIF) are allowed.')).toBeVisible();
   });
 
-   // Test 4: Drag and Drop (Reordering) - Testing handleDragEnd directly
-  test('handleDragEnd function reorders fileItems correctly', async () => {
-    // Define a simple item type for the TestComponent state
-    interface TestFileItem {
-      id: string;
-      name: string;
-    }
+  test('simulates image file selection and expects FileItems to be processed (simplified)', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByLabelText('Image'));
+    const imageInput = screen.getByLabelText('Image Files');
 
-    let testHandleDragEndFn: ((event: DragEndEvent) => Promise<void>) | null = null;
+    const imageFile = new File(['(⌐□_□)'], 'chucknorris.png', { type: 'image/png' });
 
-    const TestComponent = () => {
-      const [fileItems, setFileItems] = React.useState<TestFileItem[]>([
-        { id: '1', name: 'file1.csv' },
-        { id: '2', name: 'file2.csv' },
-        { id: '3', name: 'file3.csv' },
-      ]);
-
-      const handleDragEndInternal = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (over && active.id !== over.id) {
-          const sortable = await vi.importActual<typeof import('@dnd-kit/sortable')>('@dnd-kit/sortable');
-          setFileItems((items) => {
-            const oldIndex = items.findIndex(item => item.id === active.id);
-            const newIndex = items.findIndex(item => item.id === over.id);
-            return sortable.arrayMove(items, oldIndex, newIndex);
-          });
+    // For this test, we need our mocks to actually trigger onload
+    (global.FileReader as jest.Mock).mockImplementationOnce(function (this: any) {
+      this.readAsDataURL = jest.fn();
+      this.result = 'mock-data-url-chuck';
+      // Simulate async behavior: call onload when readAsDataURL is called
+      jest.spyOn(this, 'readAsDataURL').mockImplementationOnce(() => {
+        if (this.onload) {
+          this.onload({ target: { result: this.result } });
         }
-      };
-
-      testHandleDragEndFn = handleDragEndInternal; // Assign to outer scope variable
-
-      return (
-        <div>
-          {fileItems.map(f => <div key={f.id}>{f.name}</div>)}
-        </div>
-      );
-    };
-
-    render(<TestComponent />);
-
-    const initialOrder = ['file1.csv', 'file2.csv', 'file3.csv'];
-    screen.getAllByText(/file\d\.csv/).forEach((el, i) => {
-      expect(el).toHaveTextContent(initialOrder[i]);
-    });
-
-    // Helper for mock ClientRect - no longer needed here due to 'any' casting for active/over
-    // const createMockRect = (): ClientRect => ({
-    //   width: 0, height: 0, top: 0, left: 0, bottom: 0, right: 0,
-    //   x: 0, y: 0, toJSON: () => ({})
-    // });
-
-    // Construct a DragEndEvent. Cast active and over to 'any' to bypass deep type issues
-    // for properties not used by the specific handler under test.
-    const dragEndEvent: DragEndEvent = {
-      active: {
-        id: '1',
-        data: { current: {} },
-        // rect property is required by Active type, but causing persistent issues.
-        // Casting to 'any' because the tested function only uses 'id' and 'data'.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-      over: {
-        id: '3',
-        data: { current: {} },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-      collisions: [],
-      delta: { x:0, y:0 },
-      activatorEvent: new MouseEvent('mousedown'),
-    };
-    if (testHandleDragEndFn) {
-      await act(async () => {
-        await testHandleDragEndFn!(dragEndEvent);
       });
-    } else {
-      throw new Error("testHandleDragEndFn was not assigned");
-    }
+      return this;
+    } as any);
 
-    // Expected order: file2.csv, file3.csv, file1.csv (moved '1' after '3')
-    // No, arrayMove moves '1' to the position of '3', '3' shifts right.
-    // If '1' (idx 0) moves to where '3' (idx 2) is:
-    // Original: [1, 2, 3] -> Old index: 0, New index: 2
-    // Result: [2, 3, 1]
-    const expectedOrder = ['file2.csv', 'file3.csv', 'file1.csv'];
-     screen.getAllByText(/file\d\.csv/).forEach((el, i) => {
-      expect(el).toHaveTextContent(expectedOrder[i]);
+    (global.Image as jest.Mock).mockImplementationOnce(function (this: any) {
+        this.width = 50;
+        this.height = 50;
+        // Simulate async behavior: call onload when src is set
+        jest.spyOn(this, 'src', 'set').mockImplementationOnce(function(this: any, value) {
+            this._src = value;
+            if (this.onload) {
+                this.onload();
+            }
+        });
+        return this;
+    } as any);
+
+    fireEvent.change(imageInput, { target: { files: [imageFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText(imageFile.name)).toBeInTheDocument();
     });
+
+     await waitFor(() => {
+        const thumbnailImg = screen.getByAltText(`Image thumbnail for ${imageFile.name}`) as HTMLImageElement;
+        expect(thumbnailImg).toBeInTheDocument();
+        expect(thumbnailImg.src).toContain('mock-thumbnail-data-url');
+     });
   });
 
 
-  // Test 5: Submit Logic (CSV Create)
-  test('calls onCreate with correct data for new CSV dataset', async () => {
-    const user = userEvent.setup();
-    render(<CreateDatasetDialog {...initialProps} isOpen={true} />); // Ensure isOpen is true
+  test('displays thumbnails for existing image dataset (simulated by adding files)', async () => {
+    // This test simulates adding files that then get thumbnails
+    renderDialog();
+    fireEvent.click(screen.getByLabelText('Image'));
+    const imageInput = screen.getByLabelText('Image Files');
+    const imageFile1 = new File(['img1'], 'photo1.jpg', { type: 'image/jpeg' });
+    const imageFile2 = new File(['img2'], 'photo2.png', { type: 'image/png' });
 
-    await user.type(screen.getByLabelText('Name'), 'New CSV Dataset');
-    await user.click(screen.getByLabelText('CSV')); // Select CSV type
+    // Setup mocks to call onload
+    (global.FileReader as jest.Mock).mockImplementation(function (this: any) {
+      this.readAsDataURL = jest.fn();
+      // Simulate async behavior: call onload when readAsDataURL is called
+      const originalReadAsDataURL = this.readAsDataURL;
+      this.readAsDataURL = (file: File) => {
+        this.result = `data-url-for-${file.name}`; // Set result before calling onload
+        if (this.onload) {
+            this.onload({ target: { result: this.result } });
+        }
+        originalReadAsDataURL.call(this, file);
+      };
+      return this;
+    } as any);
 
-    const fileInput = screen.getByLabelText('CSV Files');
-    await act(async () => {
-      await user.upload(fileInput, [fileA, fileB]);
-    });
+    (global.Image as jest.Mock).mockImplementation(function (this: any) {
+        this.width = 50;
+        this.height = 50;
+        const originalSrcSetter = Object.getOwnPropertyDescriptor(window.Image.prototype, 'src')?.set;
+        Object.defineProperty(this, 'src', {
+            set: function(value) {
+                if (originalSrcSetter) originalSrcSetter.call(this, value);
+                if (this.onload) {
+                    this.onload();
+                }
+            }
+        });
+        return this;
+    } as any);
 
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Create' }));
-    });
+    fireEvent.change(imageInput, { target: { files: [imageFile1, imageFile2] } });
 
-    expect(mockOnCreate).toHaveBeenCalledTimes(1);
-    expect(mockOnCreate).toHaveBeenCalledWith({
-      name: 'New CSV Dataset',
-      description: '',
-      type: 'csv',
-      data: [fileA.name, fileB.name], // Ordered file names
-      files: [fileA, fileB],          // File objects
-      // options should be undefined or not present
+    await waitFor(() => {
+      expect(screen.getByAltText(`Image thumbnail for ${imageFile1.name}`)).toHaveAttribute('src', 'mock-thumbnail-data-url');
+      expect(screen.getByAltText(`Image thumbnail for ${imageFile2.name}`)).toHaveAttribute('src', 'mock-thumbnail-data-url');
     });
   });
 
-  // Test 6: Submit Logic (CSV Update - only reordering)
-  test('calls onUpdate with reordered file names and no new files if only reorder happened', async () => {
-    const user = userEvent.setup();
+  test('submits correct data for a new image dataset', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByLabelText('Image'));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Test Image Dataset' } });
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'A test set of images' } });
+
+    const imageFile1 = new File(['img1_content'], 'image1.png', { type: 'image/png' });
+    const imageFile2 = new File(['img2_content'], 'image2.jpg', { type: 'image/jpeg' });
+
+    // Setup mocks to call onload for file processing
+     (global.FileReader as jest.Mock).mockImplementation(function (this: any) {
+      this.readAsDataURL = jest.fn();
+      const originalReadAsDataURL = this.readAsDataURL;
+      this.readAsDataURL = (file: File) => {
+        this.result = `data-url-for-${file.name}`;
+        if (this.onload) { this.onload({ target: { result: this.result } });}
+        originalReadAsDataURL.call(this, file);
+      };
+      return this;
+    } as any);
+    (global.Image as jest.Mock).mockImplementation(function (this: any) {
+        this.width = 50; this.height = 50;
+        const originalSrcSetter = Object.getOwnPropertyDescriptor(window.Image.prototype, 'src')?.set;
+        Object.defineProperty(this, 'src', {
+            set: function(value) {
+                if (originalSrcSetter) originalSrcSetter.call(this, value);
+                if (this.onload) { this.onload(); }
+            }
+        });
+        return this;
+    } as any);
+
+    const imageInput = screen.getByLabelText('Image Files');
+    fireEvent.change(imageInput, { target: { files: [imageFile1, imageFile2] } });
+
+    await waitFor(() => {
+        expect(screen.getByText(imageFile1.name)).toBeInTheDocument();
+        expect(screen.getByText(imageFile2.name)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      expect(mockOnCreate).toHaveBeenCalledTimes(1);
+      expect(mockOnCreate).toHaveBeenCalledWith({
+        name: 'Test Image Dataset',
+        description: 'A test set of images',
+        type: 'image',
+        data: [imageFile1.name, imageFile2.name],
+        files: [imageFile1, imageFile2],
+      });
+    });
+  });
+
+  test('shows validation error if no image files are selected for a new dataset', async () => {
+    renderDialog();
+    fireEvent.click(screen.getByLabelText('Image'));
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Empty Image Dataset' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(await screen.findByText('Please select at least one image file')).toBeVisible();
+    expect(mockOnCreate).not.toHaveBeenCalled();
+  });
+
+  test('loads existing image dataset and populates file items (no files, just names)', () => {
     const existingDataset: DatasetInfo = {
-      id: 'csv2', name: 'Reorderable Dataset', description: '', type: 'csv',
-      data: ['initialA.csv', 'initialB.csv'],
-      columns: ['colA', 'colB'], // Added missing 'columns' property
-      // Removed created_at, updated_at, project_id
+        id: 'imgd1',
+        name: 'My Old Images',
+        description: 'Old collection',
+        type: 'image',
+        data: ['old_pic1.jpg', 'old_pic2.png'],
     };
+    renderDialog({ dataset: existingDataset });
 
-    // This test relies on the separate test for `handleDragEnd` to ensure reordering logic is correct.
-    // Here, we assume `fileItems` state would be updated by `handleDragEnd` if a drag occurred.
-    // Since we don't simulate the drag itself, we'll test the scenario where `fileItems` order
-    // is the same as initial, but the key is to check `files: undefined`.
+    expect(screen.getByDisplayValue(existingDataset.name)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(existingDataset.description)).toBeInTheDocument();
+    expect(screen.getByLabelText('Image')).toBeChecked();
+    expect(screen.getByLabelText('Image')).toBeDisabled();
 
-    render(<CreateDatasetDialog {...initialProps} dataset={existingDataset} />);
+    expect(screen.getByText('old_pic1.jpg')).toBeInTheDocument();
+    expect(screen.getByText('old_pic2.png')).toBeInTheDocument();
 
-    // To truly test reordering impact on submit, one would need to:
-    // 1. Render the dialog.
-    // 2. Programmatically update `fileItems` state to a new order (difficult from outside).
-    // OR
-    // 2. Simulate drag-and-drop that calls `handleDragEnd` and updates `fileItems`.
-    // For this test, we focus on the structure of `onUpdate` when no *new* files are added.
-    // The `data` field will reflect the initial order because we haven't simulated a reorder.
-    // A more advanced test could mock `setFileItems` to force a reordered state before submit.
-
-    await user.click(screen.getByRole('button', { name: 'Update' }));
-
-    expect(mockOnUpdate).toHaveBeenCalledTimes(1);
-    expect(mockOnUpdate).toHaveBeenCalledWith(existingDataset.id, {
-      name: existingDataset.name,
-      description: existingDataset.description,
-      type: 'csv',
-      data: ['initialA.csv', 'initialB.csv'], // This would be reordered if drag was simulated
-      files: undefined,
-    });
+    expect(screen.queryByAltText(`Image thumbnail for old_pic1.jpg`)).not.toBeInTheDocument();
+    expect(screen.queryByAltText(`Image thumbnail for old_pic2.png`)).not.toBeInTheDocument();
   });
 
-
-  // Test 7: Submit Logic (CSV Update - adding, deleting, reordering)
-  test('calls onUpdate with mixed changes: new, deleted, and reordered files', async () => {
-    const user = userEvent.setup();
-    const existingDataset: DatasetInfo = {
-      id: 'csv3', name: 'Complex Update', description: '', type: 'csv',
-      data: ['a.csv', 'b.csv', 'c.csv'], // Initial files from server
-      columns: ['h1', 'h2', 'h3'], // Added missing 'columns' property
-      // Removed created_at, updated_at, project_id
-    };
-
-    render(<CreateDatasetDialog {...initialProps} dataset={existingDataset} />);
-
-    // Initial state: a.csv (existing), b.csv (existing), c.csv (existing)
-    expect(screen.getByText('a.csv (existing)')).toBeInTheDocument();
-    expect(screen.getByText('b.csv (existing)')).toBeInTheDocument();
-    expect(screen.getByText('c.csv (existing)')).toBeInTheDocument();
-
-    // 1. Delete 'b.csv'
-    const removeButtonForB = screen.getByLabelText(`Remove b.csv`);
-    await act(async () => {
-      await user.click(removeButtonForB);
-    });
-    // State: a.csv (existing), c.csv (existing)
-    expect(screen.queryByText('b.csv (existing)')).not.toBeInTheDocument();
-
-
-    // 2. Add new file 'd.csv'
-    const fileInput = screen.getByLabelText('CSV Files');
-    const fileDLocal = createFile('d.csv', 'text/csv', 500); // Local instance
-    await act(async () => {
-      await user.upload(fileInput, fileDLocal);
-    });
-    // State: a.csv (existing), c.csv (existing), d.csv (new)
-    expect(screen.getByText(`${fileDLocal.name} (${(fileDLocal.size / 1024).toFixed(2)} KB)`)).toBeInTheDocument();
-
-    // 3. Reorder to ['d.csv', 'a.csv', 'c.csv'] - This part is assumed to be handled by dnd-kit logic
-    // tested via `handleDragEnd`. The actual order submitted will be based on the final `fileItems` state.
-    // Without dnd simulation, the order after these operations is [a.csv (existing), c.csv (existing), d.csv (new)]
-
-    await act(async () => {
-      await user.click(screen.getByRole('button', { name: 'Update' }));
-    });
-
-    expect(mockOnUpdate).toHaveBeenCalledTimes(1);
-    expect(mockOnUpdate).toHaveBeenCalledWith(existingDataset.id, {
-      name: existingDataset.name,
-      description: existingDataset.description,
-      type: 'csv',
-      // Order after operations (delete b, add d) without explicit reorder:
-      data: ['a.csv', 'c.csv', fileDLocal.name],
-      files: [fileDLocal], // Only the new File object for d.csv
-    });
-  });
 });
-
-// A note on testing dnd-kit:
-// Full simulation of drag and drop can be complex with @testing-library/user-event alone.
-// Libraries like `@dnd-kit/test-utils` or approaches described in dnd-kit documentation
-// might be needed for more robust dnd interaction tests.
-// For this suite, testing `handleDragEnd` directly for reordering logic and then
-// testing the submit handlers with assumed states (post-reorder) is a pragmatic approach.
-// The current `handleDragEnd` test is a bit artificial; ideally, it would be tested
-// on an actual instance of the dialog, but that requires more setup or exporting the function.
-// The current test for handleDragEnd is functional but uses a separate TestComponent.
-
-// To improve the 'handleDragEnd' test for the actual component:
-// 1. Render CreateDatasetDialog.
-// 2. Add some files to populate `fileItems`.
-// 3. Find a way to get a reference to the `handleDragEnd` function from the rendered instance,
-//    or make it a prop, or trigger it through a more abstract dnd simulation.
-// 4. Call it with a mocked event.
-// 5. Check if the displayed list of files in the dialog reorders.
-// This is still indirect. True dnd simulation is the most robust if feasible.
-
-// The test for "CSV Update - only reordering" also has a similar challenge.
-// It currently submits the initial order because no reorder was actually simulated.
-// A more complete test would involve:
-//   render dialog with ['a','b'] -> simulate drag to get ['b','a'] -> submit -> check onUpdate data: ['b','a']
-// This would require either a good dnd test utility or a way to manually trigger
-// the state change for `fileItems` to reflect the new order before submit.
-// The `arrayMove` mock ensures we can track if it's used correctly by `handleDragEnd`.

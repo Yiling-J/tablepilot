@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
@@ -47,10 +48,6 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 
-		if len(req.Files) == 0 {
-			return errors.New("dataset.Create: files should not be empty")
-		}
-
 		for _, file := range req.Files {
 			outFile, err := os.Create(filepath.Join(dirPath, file.Name))
 			if err != nil {
@@ -80,9 +77,6 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 
-		if len(req.Files) == 0 {
-			return errors.New("dataset.Create: files should not be empty")
-		}
 		for _, file := range req.Files {
 			outFile, err := os.Create(filepath.Join(dirPath, file.Name))
 			if err != nil {
@@ -178,8 +172,11 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 		case "description":
 			updater.SetDescription(req.Description)
 		case "data", "files":
-			processDataRebuild = true
-			updater.ClearIndexer().ClearPath().SetValues(nil)
+			// new files or data slice change
+			if len(req.Files) > 0 || !slices.Equal(req.Data, ds.Values) {
+				processDataRebuild = true
+				updater.ClearIndexer().ClearPath().SetValues(nil)
+			}
 		}
 	}
 

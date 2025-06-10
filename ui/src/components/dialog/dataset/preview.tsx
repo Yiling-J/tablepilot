@@ -50,10 +50,8 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
       previewDataset(datasetId)
         .then((res) => {
           setData(res);
-          console.log("Data loaded successfully", res);
         })
         .catch((err) => {
-          console.error("Error fetching dataset preview:", err);
           setError(err.message || "An unexpected error occurred.");
         })
         .finally(() => {

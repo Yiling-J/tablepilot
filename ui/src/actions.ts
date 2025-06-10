@@ -699,7 +699,7 @@ export async function deleteWorkflow(id: string) {
   }
 }
 
-export type DatasetType = "list" | "csv";
+export type DatasetType = "list" | "csv" | "image";
 
 export interface DatasetInfo {
   id: string;

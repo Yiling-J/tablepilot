@@ -115,8 +115,8 @@ function DatasetList() {
     data: {
       name: string;
       description: string;
-      type: "list" | "csv";
-      options?: string[];
+      type: "list" | "csv" | "image";
+      data?: string[];
       files?: File[];
     },
   ) => {
@@ -125,9 +125,8 @@ function DatasetList() {
         name: data.name,
         description: data.description,
         type: data.type,
-        data: data.type === "list" ? data.options || [] : [],
-        files: data.type === "csv" ? data.files || [] : [],
-        private: false, // Added private field
+        data: data.data ?? [],
+        files: data.files ?? [],
       };
 
       await updateDataset(id, requestPayload);

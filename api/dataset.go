@@ -25,7 +25,7 @@ func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 		Data:        apiReq.Data,
 	}
 
-	if apiReq.Type == "csv" {
+	if apiReq.Type == "csv" || apiReq.Type == "image" {
 		if len(apiReq.Files) == 0 {
 			errorResponse(ctx, http.StatusBadRequest, errors.New("at least one file is required for CSV dataset type"))
 			return
