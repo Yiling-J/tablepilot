@@ -39,28 +39,26 @@ func NewDatasetService(db *ent.Client, cfg *config.Config) *DatasetServiceImpl {
 }
 
 func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *CreateDatasetRequest, sr *ent.Dataset) error {
+	relativePath := filepath.Join("datasets/shared", sr.Nanoid)
+	dirPath := filepath.Join(s.cfg.Common.DataDir, relativePath)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	for _, file := range req.Files {
+		outFile, err := os.Create(filepath.Join(dirPath, file.Name))
+		if err != nil {
+			return fmt.Errorf("failed to create file %w", err)
+		}
+		defer outFile.Close()
+		_, err = io.Copy(outFile, file.Reader)
+		if err != nil {
+			return fmt.Errorf("failed to write to file %w", err)
+		}
+	}
 	switch req.Type {
 	case db_dataset.TypeCsv:
-		relativePath := filepath.Join("datasets/shared", sr.Nanoid)
-		dirPath := filepath.Join(s.cfg.Common.DataDir, relativePath)
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-
-		for _, file := range req.Files {
-			outFile, err := os.Create(filepath.Join(dirPath, file.Name))
-			if err != nil {
-				return fmt.Errorf("failed to create file %w", err)
-			}
-			defer outFile.Close()
-			_, err = io.Copy(outFile, file.Reader)
-			if err != nil {
-				return fmt.Errorf("failed to write to file %w", err)
-			}
-		}
-
-		// build index
 		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), req.Data)
 		if err != nil {
 			return fmt.Errorf("table.Create: build csv index: %w", err)
@@ -70,24 +68,6 @@ func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *Crea
 			return fmt.Errorf("table.Create: update dataset metadata: %w", err)
 		}
 	case db_dataset.TypeImage:
-		relativePath := filepath.Join("datasets/shared", sr.Nanoid)
-		dirPath := filepath.Join(s.cfg.Common.DataDir, relativePath)
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-
-		for _, file := range req.Files {
-			outFile, err := os.Create(filepath.Join(dirPath, file.Name))
-			if err != nil {
-				return fmt.Errorf("failed to create file %w", err)
-			}
-			defer outFile.Close()
-			_, err = io.Copy(outFile, file.Reader)
-			if err != nil {
-				return fmt.Errorf("failed to write to file %w", err)
-			}
-		}
 		err = sr.Update().SetPath(relativePath).SetValues(req.Data).Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("table.Create: update dataset metadata: %w", err)

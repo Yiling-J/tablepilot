@@ -191,6 +191,7 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 		}
 		var readers []dataset.CreateDatasetFile
 		files, err := parsePaths(filePaths)
+		names := []string{}
 		if err != nil {
 			return err
 		}
@@ -203,8 +204,10 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 				Name:   filepath.Base(f),
 				Reader: file,
 			})
+			names = append(names, filepath.Base(f))
 		}
 		req.Files = readers
+		req.Data = names
 		defer func() {
 			for _, f := range readers {
 				if c, ok := f.Reader.(io.Closer); ok {

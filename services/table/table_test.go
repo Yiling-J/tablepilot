@@ -539,6 +539,7 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 		{"list", tablecolumn.SourceTypeDataset},
 		{"table", tablecolumn.SourceTypeTable},
 		{"csv", tablecolumn.SourceTypeDataset},
+		{"image", tablecolumn.SourceTypeDataset},
 	}
 
 	for _, tc := range cases {
@@ -589,6 +590,28 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 						Name:   "file",
 						Reader: b,
 					}},
+					Data: []string{"file"},
+				})
+				require.NoError(t, err)
+				dsid = id
+			case "image":
+				var buf []byte
+				b := bytes.NewBuffer(buf)
+				writer := csv.NewWriter(b)
+				require.NoError(t, writer.Write([]string{"col"}))
+				require.NoError(t, writer.Write([]string{"bar"}))
+				writer.Flush()
+				require.NoError(t, writer.Error())
+				dsv := dataset_service.NewDatasetService(db, &config.Config{})
+				id, err := dsv.Create(t.Context(), &dataset_service.CreateDatasetRequest{
+					Name:        "s1",
+					Description: "ds",
+					Type:        dataset.TypeImage,
+					Files: []dataset_service.CreateDatasetFile{{
+						Name:   "file",
+						Reader: b,
+					}},
+					Data: []string{"file"},
 				})
 				require.NoError(t, err)
 				dsid = id
@@ -642,6 +665,11 @@ func TestTableService_ImportSourceColumn(t *testing.T) {
 						"data":        "bar",
 						"description": "c1d",
 					}},
+				}, cell)
+			case "image":
+				require.Equal(t, &schema.CellValue{
+					Value:        "bar",
+					ContextValue: nil,
 				}, cell)
 			default:
 				require.Equal(t, &schema.CellValue{
@@ -930,6 +958,7 @@ func TestTableService_ImportLinked(t *testing.T) {
 			Name:   "file",
 			Reader: b,
 		}},
+		Data: []string{"file"},
 	})
 	require.NoError(t, err)
 
