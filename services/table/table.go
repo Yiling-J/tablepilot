@@ -922,8 +922,12 @@ func getSourceFromColumn(ctx context.Context, db *ent.Client, dataDir string, co
 			}
 			so = ls
 		case dataset.TypeImage:
+			cs := []string{}
+			for _, v := range ds.Values {
+				cs = append(cs, filepath.Join("datasets/shared", ds.Nanoid, v))
+			}
 			ls := &source.FilesSource{
-				Paths: []string{filepath.Join(dataDir, ds.Path)},
+				Files: cs,
 			}
 			so = ls
 		}

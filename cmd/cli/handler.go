@@ -187,7 +187,7 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("error getting file flag for csv type: %w", err)
 		}
 		if len(filePaths) == 0 {
-			return fmt.Errorf("at least one --path must be provided for type 'csv'")
+			return fmt.Errorf("at least one --path must be provided")
 		}
 		var readers []dataset.CreateDatasetFile
 		files, err := parsePaths(filePaths)
