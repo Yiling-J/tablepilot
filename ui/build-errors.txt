@@ -1,0 +1,19 @@
+
+> tablepilot@0.0.0 build /app/ui
+> tsc && vite build
+
+vite v5.4.19 building for production...
+transforming...
+✓ 1721 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                        1.35 kB │ gzip:   0.54 kB
+dist/assets/material-symbols-rounded-k2lZy6x4.woff2  485.11 kB
+dist/assets/index-DSUdZw7h.css                        54.45 kB │ gzip:  10.25 kB
+dist/assets/index-C5NzbqWl.js                        861.07 kB │ gzip: 269.71 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 8.50s

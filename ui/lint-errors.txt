@@ -1,0 +1,3 @@
+
+> tablepilot@0.0.0 lint /app/ui
+> eslint . --report-unused-disable-directives --max-warnings 0 --ignore-pattern 'src-tauri/*'

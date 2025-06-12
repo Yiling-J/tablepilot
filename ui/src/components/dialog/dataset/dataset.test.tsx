@@ -88,60 +88,85 @@ describe('CreateDatasetDialog Management', () => {
     mockOnCreate = vi.fn();
     mockOnUpdate = vi.fn();
 
-    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
-        drawImage: vi.fn(),
-        toDataURL: vi.fn(() => 'mock-data-url-canvas'),
-    })) as unknown as () => Partial<CanvasRenderingContext2D> | null;
-
-    const MockedFileReader = vi.fn((): FileReader => {
-      const self = {
-        // Properties
-        error: null as DOMException | null,
-        readyState: 0 as 0 | 1 | 2, // EMPTY
-        result: null as string | ArrayBuffer | null,
-
-        // Event handlers
-        onabort: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
-        onerror: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
-        onload: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
-        onloadend: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
-        onloadstart: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
-        onprogress: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
-
-        // Methods
-        abort: vi.fn<() => void>(),
-        readAsArrayBuffer: vi.fn<(blob: Blob) => void>(),
-        readAsBinaryString: vi.fn<(blob: Blob) => void>(),
-        readAsDataURL: vi.fn((_blob: Blob): void => { // Ensure explicit void return for readAsDataURL
-          const useFake = vi.isMockFunction(setTimeout) && (setTimeout as unknown as { clock: unknown }).clock;
-          const delayFn = useFake ? setTimeout : (fn: () => void) => Promise.resolve().then(fn);
-
-          self.readyState = 1; // LOADING
-          delayFn(() => {
-            self.result = 'mock-data-url-filereader';
-            self.readyState = 2; // DONE
-            if (self.onload) {
-              self.onload.call(self as FileReader, { target: self } as unknown as ProgressEvent<FileReader>);
-            }
-          }, 0);
-        }),
-        readAsText: vi.fn<(blob: Blob, encoding?: string) => void>(),
-
-        // EventTarget methods
-        addEventListener: vi.fn(), // Simpler typing
-        removeEventListener: vi.fn(), // Simpler typing
-        dispatchEvent: vi.fn<(event: Event) => boolean>(),
-      };
-      return self as unknown as FileReader;
+    // Mock for HTMLCanvasElement.prototype.getContext
+    const mockGetContext = vi.fn((contextType: string) => {
+      if (contextType === '2d') {
+        return {
+          drawImage: vi.fn(),
+          toDataURL: vi.fn(() => 'mock-data-url-canvas'),
+          canvas: document.createElement('canvas'),
+          fillRect: vi.fn(),
+          strokeRect: vi.fn(),
+          clearRect: vi.fn(),
+          beginPath: vi.fn(),
+          moveTo: vi.fn(),
+          lineTo: vi.fn(),
+          stroke: vi.fn(),
+          fill: vi.fn(),
+          closePath: vi.fn(),
+          fillText: vi.fn(),
+          measureText: vi.fn(() => ({ width: 0 })),
+          save: vi.fn(),
+          restore: vi.fn(),
+          scale: vi.fn(),
+          rotate: vi.fn(),
+          translate: vi.fn(),
+          transform: vi.fn(),
+          setTransform: vi.fn(),
+          globalAlpha: 1.0,
+          globalCompositeOperation: 'source-over',
+          // Add any other properties that are accessed by the component under test
+        } as unknown as CanvasRenderingContext2D;
+      }
+      return null; // Return null for other context types
     });
-    // Attach static properties to the mock constructor
-    Object.defineProperty(MockedFileReader, 'EMPTY', { value: 0, writable: false });
-    Object.defineProperty(MockedFileReader, 'LOADING', { value: 1, writable: false });
-    Object.defineProperty(MockedFileReader, 'DONE', { value: 2, writable: false });
+    HTMLCanvasElement.prototype.getContext = mockGetContext as any;
 
-    vi.spyOn(window, 'FileReader').mockImplementation(MockedFileReader as unknown as typeof FileReader);
+    // Mock for FileReader
+    class MockedFileReaderClass {
+      static readonly EMPTY: 0 = 0;
+      static readonly LOADING: 1 = 1;
+      static readonly DONE: 2 = 2;
 
-    // @ts-expect-error window.Image is not available in a test environment
+      // Instance properties - make them writable for mocking purposes if needed by tests
+      error: DOMException | null = null;
+      readyState: typeof MockedFileReaderClass.EMPTY | typeof MockedFileReaderClass.LOADING | typeof MockedFileReaderClass.DONE = MockedFileReaderClass.EMPTY;
+      result: string | ArrayBuffer | null = null;
+
+      onabort: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+      onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+      onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+      onloadend: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+      onloadstart: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+      onprogress: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null;
+
+      abort = vi.fn<() => void>();
+      readAsArrayBuffer = vi.fn<(blob: Blob) => void>();
+      readAsBinaryString = vi.fn<(blob: Blob) => void>();
+      readAsDataURL = vi.fn((_blob: Blob): void => {
+        const useFake = vi.isMockFunction(setTimeout) && (setTimeout as unknown as { clock: unknown }).clock;
+        const delayFn = useFake ? setTimeout : (fn: () => void) => Promise.resolve().then(fn);
+
+        this.readyState = MockedFileReaderClass.LOADING;
+        delayFn(() => {
+          this.result = 'mock-data-url-filereader';
+          (this as any).readyState = MockedFileReaderClass.DONE; // Use any for assignment if readyState were readonly
+          if (this.onload) {
+            // Use a type assertion for 'this' if necessary, and for the event object
+            this.onload.call(this as unknown as FileReader, { target: this } as unknown as ProgressEvent<FileReader>);
+          }
+        }, 0);
+      });
+      readAsText = vi.fn<(blob: Blob, encoding?: string) => void>();
+
+      // EventTarget methods (simplified)
+      addEventListener = vi.fn();
+      removeEventListener = vi.fn();
+      dispatchEvent = vi.fn<(event: Event) => boolean>();
+    }
+
+    window.FileReader = MockedFileReaderClass as unknown as typeof FileReader;
+
     window.Image = vi.fn(function() {
       const img = new OriginalImage();
       let _src = '';
