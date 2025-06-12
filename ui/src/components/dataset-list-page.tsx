@@ -38,26 +38,25 @@ export function DatasetListPage() {
     setIsCreateDialogOpen(true);
   };
 
-  const handleCreateDataset = async (data: {
+  const handleCreateDataset = async (payload: {
     name: string;
     description: string;
-    type: "list" | "csv";
-    options?: string[];
+    type: "list" | "csv" | "image";
+    data?: string[];
     files?: File[];
   }) => {
     try {
       const requestPayload = {
-        name: data.name,
-        description: data.description,
-        type: data.type,
-        data: data.type === "list" ? data.options || [] : [],
-        files: data.type === "csv" ? data.files || [] : [],
-        private: false,
+        name: payload.name,
+        description: payload.description,
+        type: payload.type,
+        data: payload.data ?? [],
+        files: payload.files ?? [],
       };
       await createDataset(requestPayload);
       toast({
         title: "Success",
-        description: `Dataset "${data.name}" created successfully.`,
+        description: `Dataset "${payload.name}" created successfully.`,
       });
       setIsCreateDialogOpen(false);
       fetchDatasetsCallback(); // This will update refreshKey, triggering child list refresh
@@ -77,8 +76,8 @@ export function DatasetListPage() {
     data: {
       name: string;
       description: string;
-      type: "list" | "csv";
-      options?: string[];
+      type: "list" | "csv" | "image";
+      data?: string[];
       files?: File[];
     },
   ) => {
@@ -87,9 +86,8 @@ export function DatasetListPage() {
         name: data.name,
         description: data.description,
         type: data.type,
-        data: data.type === "list" ? data.options || [] : [],
-        files: data.type === "csv" ? data.files || [] : [],
-        private: false,
+        data: data.data ?? [],
+        files: data.files ?? [],
       };
       await updateDataset(id, requestPayload);
       toast({
@@ -220,26 +218,26 @@ function DatasetList({
             .filter((dataset) =>
               dataset.name.toLowerCase().includes(searchQuery.toLowerCase()),
             )
-              .map((dataset) => (
-                <CommonCard
-                  key={dataset.id}
-                  name={dataset.name}
-                  onClick={() => {
-                    setSelectedDatasetId(dataset.id);
-                    setIsPreviewDialogOpen(true);
-                  }}
-                  onEdit={() => onEditDataset(dataset)}
-                  onDelete={async () => {
-                    setLoading(true);
-                    await deleteDataset(dataset.id);
-                    await fetchDatasets();
-                    setLoading(false);
-                  }}
-                  badgeText={dataset.type}
-                >
-                  <p className="line-clamp-4">{dataset.description}</p>
-                </CommonCard>
-              ))}
+            .map((dataset) => (
+              <CommonCard
+                key={dataset.id}
+                name={dataset.name}
+                onClick={() => {
+                  setSelectedDatasetId(dataset.id);
+                  setIsPreviewDialogOpen(true);
+                }}
+                onEdit={() => onEditDataset(dataset)}
+                onDelete={async () => {
+                  setLoading(true);
+                  await deleteDataset(dataset.id);
+                  await fetchDatasets();
+                  setLoading(false);
+                }}
+                badgeText={dataset.type}
+              >
+                <p className="line-clamp-4">{dataset.description}</p>
+              </CommonCard>
+            ))}
       </div>
       <DatasetPreviewDialog
         isOpen={isPreviewDialogOpen}

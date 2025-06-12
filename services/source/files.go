@@ -11,7 +11,7 @@ import (
 type FilesSource struct {
 	BasicSource
 	Paths []string `json:"paths"`
-	files []string
+	Files []string
 }
 
 func (f *FilesSource) getRoot(ctx context.Context, logger *zap.SugaredLogger, dir string) (*os.Root, string, error) {
@@ -31,7 +31,7 @@ func (f *FilesSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir s
 		return err
 	}
 	fileSystem := root.FS()
-	f.files, err = parsePaths(fileSystem, f.Paths)
+	f.Files, err = parsePaths(fileSystem, f.Paths)
 	if err != nil {
 		return err
 	}
@@ -39,9 +39,9 @@ func (f *FilesSource) Init(ctx context.Context, logger *zap.SugaredLogger, dir s
 }
 
 func (f *FilesSource) Next(ctx context.Context, idx int) (*schema.CellValue, error) {
-	return &schema.CellValue{Value: f.files[idx]}, nil
+	return &schema.CellValue{Value: f.Files[idx]}, nil
 }
 
 func (f *FilesSource) Total() int {
-	return len(f.files)
+	return len(f.Files)
 }

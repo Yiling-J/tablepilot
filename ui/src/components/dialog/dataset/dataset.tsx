@@ -19,35 +19,127 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Wand2 } from "lucide-react";
+import { imageUrl } from "@/urls";
+import {
+    closestCenter,
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Wand2 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { GenerateOptionsDialog } from "../generate-options-dialog";
 
+interface FileItem {
+  id: string;
+  name: string;
+  file?: File;
+  thumbnail?: string;
+}
+
 export interface CreateDatasetDialogProps {
-  // Added export
   dataset?: DatasetInfo;
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: {
+  onCreate: (payload: {
     name: string;
     description: string;
-    type: "list" | "csv";
-    options?: string[];
+    type: "list" | "csv" | "image";
+    data?: string[];
     files?: File[];
   }) => void;
   onUpdate: (
     id: string,
-    data: {
+    payload: {
       name: string;
       description: string;
-      type: "list" | "csv";
-      options?: string[];
+      type: "list" | "csv" | "image";
+      data?: string[];
       files?: File[];
     },
   ) => void;
 }
 
-type DatasetType = "list" | "csv";
+interface SortableFileItemProps {
+  item: FileItem;
+  datasetType: DatasetType;
+  onRemove: (id: string) => void;
+}
+
+function SortableFileItem({
+  item,
+  datasetType,
+  onRemove,
+}: SortableFileItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      className={`flex justify-between items-center text-sm pl-1 pr-1 py-1 bg-muted/50 rounded mb-1 ${isDragging ? "shadow-lg border border-primary" : ""}`}
+    >
+      <div className="flex items-center flex-grow truncate">
+        <button
+          {...listeners}
+          className="p-1 cursor-grab mr-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        </button>
+        {item.thumbnail && datasetType === "image" && (
+          <img
+            src={item.thumbnail}
+            alt={`Image thumbnail for ${item.name}`}
+            className="h-8 w-8 object-cover mr-2 rounded-sm"
+          />
+        )}
+        <span className="truncate max-w-[calc(100%-4rem)]" title={item.name}>
+          {item.name}
+          {item.file
+            ? `(${(item.file.size / 1024).toFixed(2)} KB)`
+            : "(existing)"}
+        </span>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onRemove(item.id)}
+        aria-label={`Remove ${item.name}`}
+        className="p-1 h-auto"
+      >
+        &times;
+      </Button>
+    </div>
+  );
+}
+
+type DatasetType = "list" | "csv" | "image";
 
 export function CreateDatasetDialog({
   dataset,
@@ -60,7 +152,7 @@ export function CreateDatasetDialog({
   const [description, setDescription] = useState("");
   const [type, setType] = useState<DatasetType>("list");
   const [listOptions, setListOptions] = useState("");
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileItems, setFileItems] = useState<FileItem[]>([]);
   const [isGenerateOptionsDialogOpen, setIsGenerateOptionsDialogOpen] =
     useState(false);
 
@@ -70,14 +162,45 @@ export function CreateDatasetDialog({
 
   const internalCloseInitiatedRef = useRef(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setFileItems((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
+
   useEffect(() => {
     resetForm();
     if (dataset) {
       setName(dataset.name);
       setDescription(dataset.description);
       setType(dataset.type);
-      if (dataset.data) {
-        setListOptions(dataset.data.join("\n"));
+      switch (dataset.type) {
+        case "csv":
+        case "image":
+          const initialFileItems = dataset.data.map((fileName, index) => ({
+            id: `${dataset.id}-${fileName}-${index}`,
+            name: fileName as string,
+            file: undefined,
+            thumbnail: imageUrl(
+              `datasets/shared/${dataset.id}/${fileName}?key=${Date.now()}`,
+            ),
+          }));
+          setFileItems(initialFileItems);
+          break;
+        case "list":
+          setListOptions(dataset.data.join("\n"));
       }
     }
   }, [isOpen]);
@@ -87,7 +210,7 @@ export function CreateDatasetDialog({
     setDescription("");
     setType("list");
     setListOptions("");
-    setSelectedFiles([]);
+    setFileItems([]);
     setNameError("");
     setListOptionsError("");
     setFilesError("");
@@ -115,8 +238,15 @@ export function CreateDatasetDialog({
       setListOptionsError("");
     }
 
-    if (type === "csv" && dataset === undefined && selectedFiles.length === 0) {
+    if (type === "csv" && dataset === undefined && fileItems.length === 0) {
       setFilesError("Please select at least one CSV file");
+      isValid = false;
+    } else if (
+      type === "image" &&
+      dataset === undefined &&
+      fileItems.length === 0
+    ) {
+      setFilesError("Please select at least one image file");
       isValid = false;
     } else {
       setFilesError("");
@@ -135,36 +265,74 @@ export function CreateDatasetDialog({
           name,
           description,
           type,
-          options: listOptions
+          data: listOptions
             .split("\n")
+            .map((opt) => opt.trim())
             .map((opt) => opt.trim())
             .filter((opt) => opt),
         });
       } else if (type === "csv") {
+        const orderedFileNames = fileItems.map((item) => item.name);
+        const newFiles = fileItems
+          .filter((item) => item.file)
+          .map((item) => item.file as File);
+
         onUpdate(dataset.id, {
           name,
           description,
           type,
-          files: selectedFiles,
+          data: orderedFileNames,
+          files: newFiles.length > 0 ? newFiles : undefined,
+        });
+      } else if (type === "image") {
+        const orderedFileNames = fileItems.map((item) => item.name);
+        const newFiles = fileItems
+          .filter((item) => item.file)
+          .map((item) => item.file as File);
+        onUpdate(dataset.id, {
+          name,
+          description,
+          type,
+          data: orderedFileNames,
+          files: newFiles.length > 0 ? newFiles : undefined,
         });
       }
     } else {
+      // Creating a new dataset
       if (type === "list") {
         onCreate({
           name,
           description,
           type,
-          options: listOptions
+          data: listOptions
             .split("\n")
             .map((opt) => opt.trim())
             .filter((opt) => opt),
         });
       } else if (type === "csv") {
+        const orderedFileNames = fileItems.map((item) => item.name);
+        const newFiles = fileItems
+          .filter((item) => item.file)
+          .map((item) => item.file as File);
+
         onCreate({
           name,
           description,
           type,
-          files: selectedFiles,
+          data: orderedFileNames,
+          files: newFiles,
+        });
+      } else if (type === "image") {
+        const orderedFileNames = fileItems.map((item) => item.name);
+        const newFiles = fileItems
+          .filter((item) => item.file)
+          .map((item) => item.file as File);
+        onCreate({
+          name,
+          description,
+          type,
+          data: orderedFileNames,
+          files: newFiles,
         });
       }
     }
@@ -174,25 +342,150 @@ export function CreateDatasetDialog({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      const csvFiles = filesArray.filter(
-        (file) => file.type === "text/csv" || file.name.endsWith(".csv"),
-      );
-      if (csvFiles.length !== filesArray.length) {
-        setFilesError("Only CSV files are allowed.");
+      let processedFiles: File[] = [];
+      let errorMessage = "";
+
+      if (type === "csv") {
+        processedFiles = filesArray.filter(
+          (file) => file.type === "text/csv" || file.name.endsWith(".csv"),
+        );
+        if (processedFiles.length !== filesArray.length) {
+          errorMessage = "Only CSV files are allowed.";
+        }
+      } else if (type === "image") {
+        const imageMimeTypes = ["image/png", "image/jpeg", "image/gif"];
+        const imageExtensions = [".png", ".jpg", ".jpeg", ".gif"];
+        processedFiles = filesArray.filter(
+          (file) =>
+            imageMimeTypes.includes(file.type) ||
+            imageExtensions.some((ext) =>
+              file.name.toLowerCase().endsWith(ext),
+            ),
+        );
+        if (processedFiles.length !== filesArray.length) {
+          errorMessage = "Only image files (PNG, JPG, GIF) are allowed.";
+        }
+      } else {
+        processedFiles = filesArray;
+      }
+
+      if (errorMessage) {
+        setFilesError(errorMessage);
       } else {
         setFilesError("");
+        const preliminaryFileItems: FileItem[] = [];
+        const replaced = new Map();
+
+        // Process existing files: replace if new one with same name is uploaded
+        fileItems.forEach((f) => {
+          const newFile = processedFiles.find((pf) => pf.name === f.name);
+          if (newFile) {
+            replaced.set(newFile.name, true);
+            preliminaryFileItems.push({
+              id: `${newFile.name}-${newFile.size}`,
+              name: newFile.name,
+              file: newFile,
+              thumbnail: type === "image" ? undefined : f.thumbnail,
+            });
+          } else {
+            preliminaryFileItems.push(f);
+          }
+        });
+
+        // Add new files that weren't replacements
+        processedFiles.forEach((pf) => {
+          if (!replaced.get(pf.name)) {
+            preliminaryFileItems.push({
+              id: `${pf.name}-${pf.size}`,
+              name: pf.name,
+              file: pf,
+              thumbnail: type === "image" ? undefined : undefined,
+            });
+          }
+        });
+
+        if (type === "image") {
+          const thumbnailPromises = preliminaryFileItems.map((item) => {
+            if (item.file && item.file.type.startsWith("image/")) {
+              return new Promise<FileItem>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const img = new Image();
+                  img.onload = () => {
+                    const MAX_WIDTH = 50;
+                    const MAX_HEIGHT = 50;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                      if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                      }
+                    } else {
+                      if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                      }
+                    }
+
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    if (ctx) {
+                      ctx.drawImage(img, 0, 0, width, height);
+                      item.thumbnail = canvas.toDataURL(
+                        item.file?.type || "image/png",
+                      );
+                    } else {
+                      item.thumbnail = undefined;
+                    }
+                    resolve(item);
+                  };
+                  img.onerror = () => {
+                    item.thumbnail = undefined;
+                    resolve(item);
+                  };
+                  img.src = e.target?.result as string;
+                };
+                reader.onerror = () => {
+                  item.thumbnail = undefined;
+                  resolve(item);
+                };
+                if (item.file) {
+                  reader.readAsDataURL(item.file);
+                }
+              });
+            }
+            return Promise.resolve(item);
+          });
+
+          Promise.all(thumbnailPromises).then((updatedFileItems) => {
+            setFileItems(updatedFileItems);
+            if (filesError === "Please select at least one image file") {
+              setFilesError("");
+            }
+          });
+        } else {
+          // For CSV or other types, set items directly
+          setFileItems(preliminaryFileItems);
+          if (
+            type === "csv" &&
+            filesError === "Please select at least one CSV file"
+          ) {
+            setFilesError("");
+          }
+        }
       }
-      setSelectedFiles((prev) =>
-        [...prev, ...csvFiles].filter(
-          (f, i, self) =>
-            self.findIndex((t) => t.name === f.name && t.size === f.size) === i,
-        ),
-      );
     }
   };
 
-  const removeFile = (fileName: string) => {
-    setSelectedFiles((prev) => prev.filter((file) => file.name !== fileName));
+  const removeFile = (idToRemove: string) => {
+    // Changed parameter to id
+    setFileItems((prevItems) =>
+      prevItems.filter((item) => item.id !== idToRemove),
+    );
   };
 
   return (
@@ -209,7 +502,7 @@ export function CreateDatasetDialog({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>
             {dataset ? "Update Dataset" : "Create New Dataset"}
@@ -266,6 +559,10 @@ export function CreateDatasetDialog({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="csv" id="type-csv" />
                 <Label htmlFor="type-csv">CSV</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="image" id="type-image" />
+                <Label htmlFor="type-image">Image</Label>
               </div>
             </RadioGroup>
           </div>
@@ -332,34 +629,86 @@ export function CreateDatasetDialog({
                 {filesError && (
                   <p className="text-xs text-red-500 mt-1 mb-2">{filesError}</p>
                 )}
-                {selectedFiles.length > 0 && (
-                  <ScrollArea className="h-32 w-full rounded-md border p-2">
-                    <div className="space-y-1">
-                      {selectedFiles.map((file) => (
-                        <div
-                          key={file.name + file.size}
-                          className="flex justify-between items-center text-sm pl-2 p-1 bg-muted/50 rounded"
-                        >
-                          <span className="truncate max-w-[80%]">
-                            {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(file.name)}
-                            aria-label={`Remove ${file.name}`}
-                          >
-                            &times;
-                          </Button>
+                {fileItems.length > 0 && (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={fileItems.map((item) => item.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <ScrollArea className="max-h-[280px] w-full rounded-md border p-2 overflow-y-auto">
+                        <div className="space-y-1">
+                          {fileItems.map((item) => (
+                            <SortableFileItem
+                              datasetType={type}
+                              key={item.id}
+                              item={item}
+                              onRemove={removeFile}
+                            />
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
+                      </ScrollArea>
+                    </SortableContext>
+                  </DndContext>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {dataset
-                    ? "Select one or more CSV files to REPLACE original data or leave it empty if you don't wan t to change."
+                  {dataset && type === "csv"
+                    ? "Add new CSV files to replace existing ones. Leave empty to keep current files. You can reorder files by dragging."
                     : "Select one or more CSV files."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {type === "image" && (
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="image-files" className="text-right pt-2">
+                Image Files
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="image-files"
+                  type="file"
+                  multiple
+                  accept="image/png, image/jpeg, image/gif, .png, .jpg, .jpeg, .gif"
+                  onChange={handleFileChange}
+                  className="mb-2"
+                />
+                {filesError && (
+                  <p className="text-xs text-red-500 mt-1 mb-2">{filesError}</p>
+                )}
+                {fileItems.length > 0 && (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext
+                      items={fileItems.map((item) => item.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <ScrollArea className="max-h-[280px] w-full rounded-md border p-2 overflow-y-auto">
+                        <div className="space-y-1">
+                          {fileItems.map((item) => (
+                            <SortableFileItem
+                              datasetType={type}
+                              key={item.id}
+                              item={item}
+                              onRemove={removeFile}
+                            />
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </SortableContext>
+                  </DndContext>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {dataset && type === "image"
+                    ? "Add new image files to replace existing ones. Leave empty to keep current files. You can reorder files by dragging."
+                    : "Select one or more image files (PNG, JPG, GIF)."}
                 </p>
               </div>
             </div>

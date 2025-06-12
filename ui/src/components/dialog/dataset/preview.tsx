@@ -1,6 +1,7 @@
 import { previewDataset } from "@/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -19,10 +20,11 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { JSONObject } from "@/json";
+import { imageUrl } from "@/urls";
 import React, { useEffect, useState } from "react";
 
 interface PreviewData {
-  type: "list" | "csv" | string;
+  type: "list" | "csv" | "image" | string;
   data?: string[];
   rows?: JSONObject[];
 }
@@ -50,17 +52,15 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
       previewDataset(datasetId)
         .then((res) => {
           setData(res);
-          console.log("Data loaded successfully", res);
         })
         .catch((err) => {
-          console.error("Error fetching dataset preview:", err);
           setError(err.message || "An unexpected error occurred.");
         })
         .finally(() => {
           setIsLoading(false);
         });
     }
-  }, [isOpen, datasetId]);
+  }, [isOpen]);
 
   const handleClose = () => {
     setError(null);
@@ -138,10 +138,36 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                 ) : (
                   <div>CSV has no rows to display.</div>
                 )
+              ) : data.type === "image" && Array.isArray(data.data) ? (
+                <div className="flex flex-wrap justify-center p-4">
+                  {(data.data as string[]).map((item, index) => {
+                    const filename = item.substring(item.lastIndexOf("/") + 1);
+                    return (
+                      <Card key={`image-${index}`} className="m-2 w-48">
+                        <img
+                          key={Date.now()}
+                          src={imageUrl(
+                            `datasets/shared/${datasetId}/${item}?key=${Date.now()}`,
+                          )}
+                          alt={`Preview ${index + 1}`}
+                          className="object-contain h-40 w-full rounded-t-lg"
+                        />
+                        <CardContent className="p-2">
+                          <p
+                            className="text-sm text-center mt-1 truncate"
+                            title={filename}
+                          >
+                            {filename}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               ) : (
                 <div>
-                  Data loaded. Preview for this data type is not yet implemented
-                  or data is empty.
+                  Preview for this data type is not yet implemented or the data
+                  is empty/invalid.
                 </div>
               )}
             </>

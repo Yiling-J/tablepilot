@@ -29,7 +29,7 @@ func TestSource_Files(t *testing.T) {
 		"parquet/test_data/3.parquet", "parquet/test_data/4.parquet", "parquet/test_data/5.parquet",
 		"parquet/test_data/6.parquet", "parquet/test_data/7.parquet", "parquet/test_data/8.parquet",
 		"parquet/test_data/9.parquet", tmpFile.Name()[2:],
-	}, so.files)
+	}, so.Files)
 	indexer := NewIndexer(so, &ent.TableColumn{Random: false})
 	v, err := indexer.Next(ctx)
 	require.NoError(t, err)

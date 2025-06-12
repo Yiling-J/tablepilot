@@ -17,7 +17,7 @@ var (
 		{Name: "name", Type: field.TypeString, Unique: true},
 		{Name: "path", Type: field.TypeString, Nullable: true},
 		{Name: "description", Type: field.TypeString, Default: ""},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"list", "csv"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"list", "csv", "image"}},
 		{Name: "indexer", Type: field.TypeJSON, Nullable: true},
 		{Name: "values", Type: field.TypeJSON, Nullable: true},
 	}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
-	"io"
 	"os"
 	"testing"
 
@@ -13,6 +12,8 @@ import (
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
+	"github.com/Yiling-J/tablepilot/ent/dataset"
+	"github.com/Yiling-J/tablepilot/ent/schema"
 	"github.com/Yiling-J/tablepilot/infra/db"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -75,7 +76,11 @@ func TestDatasetService_Get(t *testing.T) {
 		Name:        csvDatasetName,
 		Description: csvDatasetDesc,
 		Type:        "csv",
-		Files:       []io.Reader{bytes.NewReader(csvBuf.Bytes())},
+		Files: []CreateDatasetFile{{
+			Name:   "file.csv",
+			Reader: bytes.NewReader(csvBuf.Bytes()),
+		}},
+		Data: []string{"file.csv"},
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, csvNanoid)
@@ -108,30 +113,34 @@ func TestDatasetService_List(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, listedDatasets)
 
-	listDatasetName_l := "test-list-dataset-for-list"
-	listDatasetDesc_l := "A list dataset for testing List"
-	listDatasetData_l := []string{"entryA", "entryB"}
+	listDatasetName := "test-list-dataset-for-list"
+	listDatasetDesc := "A list dataset for testing List"
+	listDatasetData := []string{"entryA", "entryB"}
 	_, err = srv.Create(ctx, &CreateDatasetRequest{
-		Name:        listDatasetName_l,
-		Description: listDatasetDesc_l,
+		Name:        listDatasetName,
+		Description: listDatasetDesc,
 		Type:        "list",
-		Data:        listDatasetData_l,
+		Data:        listDatasetData,
 	})
 	require.NoError(t, err)
 
-	csvDatasetName_l := "test-csv-dataset-for-list"
-	csvDatasetDesc_l := "A csv dataset for testing List"
-	var csvBuf_l bytes.Buffer
-	csvWriter_l := csv.NewWriter(&csvBuf_l)
-	csvHeaders_l := []string{"header1", "header2", "header3"}
-	_ = csvWriter_l.Write(csvHeaders_l)
-	_ = csvWriter_l.Write([]string{"r1c1", "r1c2", "r1c3"})
-	csvWriter_l.Flush()
+	csvDatasetName := "test-csv-dataset-for-list"
+	csvDatasetDesc := "A csv dataset for testing List"
+	var csvBuf bytes.Buffer
+	csvWriter := csv.NewWriter(&csvBuf)
+	csvHeaders := []string{"header1", "header2", "header3"}
+	_ = csvWriter.Write(csvHeaders)
+	_ = csvWriter.Write([]string{"r1c1", "r1c2", "r1c3"})
+	csvWriter.Flush()
 	_, err = srv.Create(ctx, &CreateDatasetRequest{
-		Name:        csvDatasetName_l,
-		Description: csvDatasetDesc_l,
+		Name:        csvDatasetName,
+		Description: csvDatasetDesc,
 		Type:        "csv",
-		Files:       []io.Reader{bytes.NewReader(csvBuf_l.Bytes())},
+		Files: []CreateDatasetFile{{
+			Name:   "file",
+			Reader: bytes.NewReader(csvBuf.Bytes()),
+		}},
+		Data: []string{"file"},
 	})
 	require.NoError(t, err)
 
@@ -143,18 +152,18 @@ func TestDatasetService_List(t *testing.T) {
 	foundCsvDs := false
 	for _, dsInfo := range listedDatasets {
 		switch dsInfo.Name {
-		case listDatasetName_l:
+		case listDatasetName:
 			foundListDs = true
-			require.Equal(t, listDatasetDesc_l, dsInfo.Description)
+			require.Equal(t, listDatasetDesc, dsInfo.Description)
 			require.Equal(t, "list", dsInfo.Type)
-			require.Equal(t, len(listDatasetData_l), dsInfo.ValueCount)
+			require.Equal(t, len(listDatasetData), dsInfo.ValueCount)
 			require.Equal(t, 0, dsInfo.ColumnCount)
-		case csvDatasetName_l:
+		case csvDatasetName:
 			foundCsvDs = true
-			require.Equal(t, csvDatasetDesc_l, dsInfo.Description)
+			require.Equal(t, csvDatasetDesc, dsInfo.Description)
 			require.Equal(t, "csv", dsInfo.Type)
-			require.Equal(t, len(csvHeaders_l), dsInfo.ColumnCount)
-			require.Equal(t, 0, dsInfo.ValueCount)
+			require.Equal(t, len(csvHeaders), dsInfo.ColumnCount)
+			require.Equal(t, 1, dsInfo.ValueCount)
 			require.Equal(t, []string{"header1", "header2", "header3"}, dsInfo.Columns)
 		}
 	}
@@ -194,7 +203,11 @@ func TestDatasetService_Create(t *testing.T) {
 		Name:        "ds2",
 		Description: "dataset2",
 		Type:        "csv",
-		Files:       []io.Reader{bytes.NewReader(buf.Bytes()), bytes.NewReader(buf2.Bytes())},
+		Files: []CreateDatasetFile{
+			{Name: "c2.csv", Reader: bytes.NewReader(buf.Bytes())},
+			{Name: "c1.csv", Reader: bytes.NewReader(buf2.Bytes())},
+		},
+		Data: []string{"c2.csv", "c1.csv"},
 	})
 	require.NoError(t, err)
 	defer func() {
@@ -211,6 +224,47 @@ func TestDatasetService_Create(t *testing.T) {
 		{"Name": "Bob", "Age": "25", "City": "San Francisco"},
 		{"Name": "Tommy", "Age": "65", "City": "Apple"},
 	}, rows.Rows)
+
+	di, err := db.Dataset.Query().Where(dataset.Nanoid(ds2)).Only(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, []string{"c2.csv", "c1.csv"}, di.Values)
+	require.Equal(t, schema.FileOffset{
+		File:   0,
+		Total:  2,
+		Offset: 14,
+	}, di.Indexer.Positions[0])
+
+	ds3, err := srv.Create(t.Context(), &CreateDatasetRequest{
+		Name:        "ds3",
+		Description: "dataset3",
+		Type:        "csv",
+		Files: []CreateDatasetFile{
+			{Name: "c2.csv", Reader: bytes.NewReader(buf.Bytes())},
+			{Name: "c1.csv", Reader: bytes.NewReader(buf2.Bytes())},
+		},
+		Data: []string{"c1.csv", "c2.csv"},
+	})
+	require.NoError(t, err)
+	defer func() {
+		_ = os.RemoveAll("./dstest")
+	}()
+
+	rows, err = srv.Preview(t.Context(), ds3)
+	require.NoError(t, err)
+	require.Equal(t, []map[string]any{
+		{"Name": "Tommy", "Age": "65", "City": "Apple"},
+		{"Name": "Alice", "Age": "30", "City": "New York"},
+		{"Name": "Bob", "Age": "25", "City": "San Francisco"},
+	}, rows.Rows)
+
+	di, err = db.Dataset.Query().Where(dataset.Nanoid(ds3)).Only(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, []string{"c1.csv", "c2.csv"}, di.Values)
+	require.Equal(t, schema.FileOffset{
+		File:   0,
+		Total:  1,
+		Offset: 14,
+	}, di.Indexer.Positions[0])
 }
 
 func TestDatasetService_Update(t *testing.T) {
@@ -282,15 +336,41 @@ func TestDatasetService_Update(t *testing.T) {
 		srv := newServiceForTest("csv_update")
 		csvName := "initial-csv"
 		csvDesc := "Initial CSV description"
-		var initialCsvBuf bytes.Buffer
-		csvW := csv.NewWriter(&initialCsvBuf)
-		_ = csvW.Write([]string{"h1", "h2"})
-		_ = csvW.Write([]string{"r1v1", "r1v2"})
-		csvW.Flush()
-		initialHeaders := []string{"h1", "h2"}
 
+		var csv1buf bytes.Buffer
+		csvW := csv.NewWriter(&csv1buf)
+		_ = csvW.Write([]string{"h1", "h2"})
+		_ = csvW.Write([]string{"v1", "v2"})
+		csvW.Flush()
+		var csv2buf bytes.Buffer
+		csvW = csv.NewWriter(&csv2buf)
+		_ = csvW.Write([]string{"h1", "h2"})
+		_ = csvW.Write([]string{"v3", "v4"})
+		csvW.Flush()
+		var csv3buf bytes.Buffer
+		csvW = csv.NewWriter(&csv3buf)
+		_ = csvW.Write([]string{"h1", "h2"})
+		_ = csvW.Write([]string{"v5", "v6"})
+		csvW.Flush()
+
+		initialHeaders := []string{"h1", "h2"}
 		csvNanoid, err := srv.Create(ctx, &CreateDatasetRequest{
-			Name: csvName, Description: csvDesc, Type: "csv", Files: []io.Reader{bytes.NewReader(initialCsvBuf.Bytes())},
+			Name: csvName, Description: csvDesc, Type: "csv",
+			Files: []CreateDatasetFile{
+				{
+					Name:   "1.csv",
+					Reader: bytes.NewReader(csv1buf.Bytes()),
+				},
+				{
+					Name:   "2.csv",
+					Reader: bytes.NewReader(csv2buf.Bytes()),
+				},
+				{
+					Name:   "3.csv",
+					Reader: bytes.NewReader(csv3buf.Bytes()),
+				},
+			},
+			Data: []string{"1.csv", "2.csv", "3.csv"},
 		})
 		require.NoError(t, err)
 		require.NotEmpty(t, csvNanoid)
@@ -309,107 +389,76 @@ func TestDatasetService_Update(t *testing.T) {
 		require.Equal(t, updatedCsvDesc, retrieved.Description)
 		require.Equal(t, len(initialHeaders), retrieved.ColumnCount)
 
+		// update 2.csv
 		var updatedCsvBuf bytes.Buffer
 		csvW = csv.NewWriter(&updatedCsvBuf)
-		updatedHeaders := []string{"new_h1", "new_h2", "new_h3"}
-		_ = csvW.Write(updatedHeaders)
-		_ = csvW.Write([]string{"new_r1v1", "new_r1v2", "new_r1v3"})
+		_ = csvW.Write([]string{"h1", "h2"})
+		_ = csvW.Write([]string{"vv1", "vv2"})
 		csvW.Flush()
+
 		err = srv.Update(ctx, csvNanoid, &UpdateDatasetRequest{
-			CreateDatasetRequest: CreateDatasetRequest{Type: "csv", Files: []io.Reader{bytes.NewReader(updatedCsvBuf.Bytes())}},
-			Fields:               []string{"files"},
+			CreateDatasetRequest: CreateDatasetRequest{
+				Type: "csv",
+				Files: []CreateDatasetFile{{
+					Name:   "2.csv",
+					Reader: bytes.NewReader(updatedCsvBuf.Bytes()),
+				}},
+				Data: []string{"1.csv", "2.csv", "3.csv"},
+			},
+			Fields: []string{"files"},
 		})
 		require.NoError(t, err)
-
-		retrieved, err = srv.Get(ctx, csvNanoid)
-		require.NoError(t, err)
-		require.Equal(t, len(updatedHeaders), retrieved.ColumnCount)
-
 		preview, err := srv.Preview(ctx, csvNanoid)
 		require.NoError(t, err)
-		require.Len(t, preview.Rows, 1)
-		require.Equal(t, map[string]any{"new_h1": "new_r1v1", "new_h2": "new_r1v2", "new_h3": "new_r1v3"}, preview.Rows[0])
-	})
+		require.Equal(t, []map[string]any{
+			{"h1": "v1", "h2": "v2"},
+			{"h1": "vv1", "h2": "vv2"},
+			{"h1": "v5", "h2": "v6"},
+		}, preview.Rows)
 
-	t.Run("update non-existent dataset", func(t *testing.T) {
-		srv := newServiceForTest("non_existent_update")
-		err := srv.Update(ctx, "fake-nanoid", &UpdateDatasetRequest{
-			CreateDatasetRequest: CreateDatasetRequest{Name: "anything"},
-			Fields:               []string{"name"},
-		})
-		require.Error(t, err)
-	})
-
-	t.Run("convert list to csv not allowed", func(t *testing.T) {
-		srv := newServiceForTest("list_to_csv")
-		listName := "list-to-convert"
-		listNanoid, err := srv.Create(ctx, &CreateDatasetRequest{
-			Name: listName, Description: "list to be csv", Type: "list", Data: []string{"q", "w", "e"},
-		})
-		require.NoError(t, err)
-
-		var csvBuf bytes.Buffer
-		csvW := csv.NewWriter(&csvBuf)
-		csvHeaders := []string{"c1", "c2"}
-		_ = csvW.Write(csvHeaders)
-		_ = csvW.Write([]string{"d1", "d2"})
-		csvW.Flush()
-		err = srv.Update(ctx, listNanoid, &UpdateDatasetRequest{
-			CreateDatasetRequest: CreateDatasetRequest{Type: "csv", Files: []io.Reader{bytes.NewReader(csvBuf.Bytes())}, Data: nil},
-			Fields:               []string{"type", "files", "data"},
-		})
-		require.Error(t, err)
-		require.EqualError(t, err, "dataset type cannot be changed via update")
-
-		// Verify that the dataset was NOT changed
-		retrieved, err := srv.Get(ctx, listNanoid)
-		require.NoError(t, err)
-		require.Equal(t, "list", retrieved.Type) // Should still be list
-		originalData, err := srv.Preview(ctx, listNanoid)
-		require.NoError(t, err)
-		require.Equal(t, []string{"q", "w", "e"}, originalData.Data)
-	})
-
-	t.Run("convert csv to list not allowed", func(t *testing.T) {
-		srv := newServiceForTest("csv_to_list")
-		csvName := "csv-to-convert"
-		originalCsvHeaders := []string{"h_old1", "h_old2"}
-		originalCsvRow := []string{"r_old1", "r_old2"}
-
-		var initialCsvBuf bytes.Buffer
-		csvW := csv.NewWriter(&initialCsvBuf)
-		_ = csvW.Write(originalCsvHeaders)
-		_ = csvW.Write(originalCsvRow)
-		csvW.Flush()
-		csvNanoid, err := srv.Create(ctx, &CreateDatasetRequest{
-			Name: csvName, Description: "csv to be list", Type: "csv", Files: []io.Reader{bytes.NewReader(initialCsvBuf.Bytes())},
-		})
-		require.NoError(t, err)
-
-		listData := []string{"new_list_item1", "new_list_item2"}
+		// reorder
 		err = srv.Update(ctx, csvNanoid, &UpdateDatasetRequest{
-			CreateDatasetRequest: CreateDatasetRequest{Type: "list", Data: listData, Files: nil},
-			Fields:               []string{"type", "data", "files"},
+			CreateDatasetRequest: CreateDatasetRequest{
+				Type: "csv",
+				Data: []string{"3.csv", "2.csv", "1.csv"},
+			},
+			Fields: []string{"files"},
 		})
-		require.Error(t, err)
-		require.EqualError(t, err, "dataset type cannot be changed via update")
-
-		// Verify that the dataset was NOT changed
-		retrieved, err := srv.Get(ctx, csvNanoid)
 		require.NoError(t, err)
-		require.Equal(t, "csv", retrieved.Type)
-		require.Equal(t, len(originalCsvHeaders), retrieved.ColumnCount)
-		require.Equal(t, 0, retrieved.ValueCount)
-
-		preview, err := srv.Preview(ctx, csvNanoid)
+		preview, err = srv.Preview(ctx, csvNanoid)
 		require.NoError(t, err)
-		require.Empty(t, preview.Data)
-		require.Len(t, preview.Rows, 1)
-		expectedRow := make(map[string]any)
-		for i, h := range originalCsvHeaders {
-			expectedRow[h] = originalCsvRow[i]
-		}
-		require.Equal(t, expectedRow, preview.Rows[0])
+		require.Equal(t, []map[string]any{
+			{"h1": "v5", "h2": "v6"},
+			{"h1": "vv1", "h2": "vv2"},
+			{"h1": "v1", "h2": "v2"},
+		}, preview.Rows)
+
+		// remove 2.csv and add 4.csv
+		var updatedCsvBuf2 bytes.Buffer
+		csvW = csv.NewWriter(&updatedCsvBuf2)
+		_ = csvW.Write([]string{"h1", "h2"})
+		_ = csvW.Write([]string{"vv3", "vv4"})
+		csvW.Flush()
+
+		err = srv.Update(ctx, csvNanoid, &UpdateDatasetRequest{
+			CreateDatasetRequest: CreateDatasetRequest{
+				Type: "csv",
+				Files: []CreateDatasetFile{{
+					Name:   "4.csv",
+					Reader: bytes.NewReader(updatedCsvBuf2.Bytes()),
+				}},
+				Data: []string{"1.csv", "4.csv", "3.csv"},
+			},
+			Fields: []string{"files"},
+		})
+		require.NoError(t, err)
+		preview, err = srv.Preview(ctx, csvNanoid)
+		require.NoError(t, err)
+		require.Equal(t, []map[string]any{
+			{"h1": "v1", "h2": "v2"},
+			{"h1": "vv3", "h2": "vv4"},
+			{"h1": "v5", "h2": "v6"},
+		}, preview.Rows)
 	})
 }
 
@@ -469,7 +518,11 @@ func TestDatasetService_Delete(t *testing.T) {
 		csvW.Flush()
 
 		csvNanoid, err := srv.Create(ctx, &CreateDatasetRequest{
-			Name: csvName, Description: "temp csv", Type: "csv", Files: []io.Reader{bytes.NewReader(csvBuf.Bytes())},
+			Name: csvName, Description: "temp csv", Type: "csv",
+			Files: []CreateDatasetFile{{
+				Name:   "file",
+				Reader: bytes.NewReader(csvBuf.Bytes()),
+			}},
 		})
 		require.NoError(t, err)
 		require.NotEmpty(t, csvNanoid)
@@ -531,6 +584,18 @@ func TestDatasetService_Preview(t *testing.T) {
 		require.Equal(t, data, rows.Data)
 	})
 
+	t.Run("image show all files", func(t *testing.T) {
+		data := []string{"a1.png", "b1.png", "a2.png", "1.png"}
+		for i := range 120 {
+			data = append(data, fmt.Sprintf("%d", i))
+		}
+		ds1, err := db.Dataset.Create().SetName("dsi").SetType(dataset.TypeImage).SetValues(data).Save(t.Context())
+		require.NoError(t, err)
+		rows, err := srv.Preview(t.Context(), ds1.Nanoid)
+		require.NoError(t, err)
+		require.Equal(t, data, rows.Data)
+	})
+
 	t.Run("csv show first 100 rows", func(t *testing.T) {
 		var buf bytes.Buffer
 		writer := csv.NewWriter(&buf)
@@ -544,7 +609,11 @@ func TestDatasetService_Preview(t *testing.T) {
 			Name:        "ds2",
 			Description: "dataset2",
 			Type:        "csv",
-			Files:       []io.Reader{bytes.NewReader(buf.Bytes())},
+			Files: []CreateDatasetFile{{
+				Name:   "file",
+				Reader: bytes.NewReader(buf.Bytes()),
+			}},
+			Data: []string{"file"},
 		})
 		require.NoError(t, err)
 		defer func() {

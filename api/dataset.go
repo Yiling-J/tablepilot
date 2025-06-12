@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/Yiling-J/tablepilot/ent"
@@ -11,8 +10,6 @@ import (
 	services_dataset "github.com/Yiling-J/tablepilot/services/dataset"
 	"github.com/gin-gonic/gin"
 )
-
-// Dataset-related handlers
 
 func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 	var apiReq services_dataset.DatasetAPIRequest
@@ -28,19 +25,22 @@ func (hs *HTTPServer) CreateDataset(ctx *gin.Context) {
 		Data:        apiReq.Data,
 	}
 
-	if apiReq.Type == "csv" {
+	if apiReq.Type == "csv" || apiReq.Type == "image" {
 		if len(apiReq.Files) == 0 {
 			errorResponse(ctx, http.StatusBadRequest, errors.New("at least one file is required for CSV dataset type"))
 			return
 		}
-		var readers []io.Reader
+		var readers []services_dataset.CreateDatasetFile
 		for _, fh := range apiReq.Files {
 			f, err := fh.Open()
 			if err != nil {
 				errorResponse(ctx, http.StatusBadRequest, err)
 				return
 			}
-			readers = append(readers, f)
+			readers = append(readers, services_dataset.CreateDatasetFile{
+				Name:   fh.Filename,
+				Reader: f,
+			})
 		}
 		serviceReq.Files = readers
 	}
@@ -107,19 +107,22 @@ func (hs *HTTPServer) UpdateDataset(ctx *gin.Context) {
 	}
 
 	if apiReq.Files != nil {
-		var readers []io.Reader
+		var readers []services_dataset.CreateDatasetFile
 		for _, fh := range apiReq.Files {
 			f, err := fh.Open()
 			if err != nil {
 				errorResponse(ctx, http.StatusBadRequest, err)
 				return
 			}
-			readers = append(readers, f)
+			readers = append(readers, services_dataset.CreateDatasetFile{
+				Name:   fh.Filename,
+				Reader: f,
+			})
 		}
 		serviceReq.Files = readers
 		serviceReq.Fields = append(serviceReq.Fields, "files")
 	} else {
-		serviceReq.Files = []io.Reader{}
+		serviceReq.Files = []services_dataset.CreateDatasetFile{}
 	}
 
 	err := hs.DatasetService.Update(ctx.Request.Context(), datasetID, serviceReq)

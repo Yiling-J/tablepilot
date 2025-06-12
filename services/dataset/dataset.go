@@ -7,13 +7,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/Yiling-J/tablepilot/config"
 	"github.com/Yiling-J/tablepilot/ent"
 	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
 	"github.com/Yiling-J/tablepilot/services/source"
 	"github.com/Yiling-J/tablepilot/services/source/csvindexer"
-	"github.com/Yiling-J/tablepilot/utils"
 )
 
 //go:generate moq -rm -out dataset_moq.go . DatasetService
@@ -39,56 +39,43 @@ func NewDatasetService(db *ent.Client, cfg *config.Config) *DatasetServiceImpl {
 }
 
 func (s DatasetServiceImpl) buildCreateDatasetReq(ctx context.Context, req *CreateDatasetRequest, sr *ent.Dataset) error {
+	relativePath := filepath.Join("datasets/shared", sr.Nanoid)
+	dirPath := filepath.Join(s.cfg.Common.DataDir, relativePath)
+	err := os.MkdirAll(dirPath, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create directory: %w", err)
+	}
+
+	for _, file := range req.Files {
+		outFile, err := os.Create(filepath.Join(dirPath, file.Name))
+		if err != nil {
+			return fmt.Errorf("failed to create file %w", err)
+		}
+		defer outFile.Close()
+		_, err = io.Copy(outFile, file.Reader)
+		if err != nil {
+			return fmt.Errorf("failed to write to file %w", err)
+		}
+	}
 	switch req.Type {
 	case db_dataset.TypeCsv:
-		relativePath := filepath.Join("datasets/shared", sr.Nanoid)
-		dirPath := filepath.Join(s.cfg.Common.DataDir, relativePath)
-		err := os.MkdirAll(dirPath, os.ModePerm)
-		if err != nil {
-			return fmt.Errorf("failed to create directory: %w", err)
-		}
-
-		if len(req.Files) == 0 {
-			return errors.New("dataset.Create: files should not be empty")
-		}
-		filePath := filepath.Join(dirPath, "data.csv")
-		outFile, err := os.Create(filePath)
-		if err != nil {
-			return fmt.Errorf("failed to create file %s: %w", filePath, err)
-		}
-		for i, file := range req.Files {
-			// skip csv headers
-			if i > 0 {
-				reader := utils.NewCsvReader(file)
-				_, err = reader.Read()
-				if err != nil {
-					return fmt.Errorf("failed to read csv %w", err)
-				}
-				offset := reader.InputOffset()
-				_, err = file.(io.ReadSeeker).Seek(offset, io.SeekStart)
-				if err != nil {
-					return fmt.Errorf("failed to seek csv file %w", err)
-				}
-			}
-			_, err = io.Copy(outFile, file)
-			if err != nil {
-				return fmt.Errorf("failed to write to file %s: %w", filePath, err)
-			}
-		}
-		outFile.Close()
-		// build index
-		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), []string{"data.csv"})
+		indexer, err := csvindexer.NewCSVIndexer(os.DirFS(dirPath), req.Data)
 		if err != nil {
 			return fmt.Errorf("table.Create: build csv index: %w", err)
 		}
-		err = sr.Update().SetPath(relativePath).SetIndexer(indexer.CSVIndexer).Exec(ctx)
+		err = sr.Update().SetPath(relativePath).SetIndexer(indexer.CSVIndexer).SetValues(req.Data).Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("table.Create: update dataset metadata: %w", err) // Clarified error
+			return fmt.Errorf("table.Create: update dataset metadata: %w", err)
+		}
+	case db_dataset.TypeImage:
+		err = sr.Update().SetPath(relativePath).SetValues(req.Data).Exec(ctx)
+		if err != nil {
+			return fmt.Errorf("table.Create: update dataset metadata: %w", err)
 		}
 	case db_dataset.TypeList:
 		err := sr.Update().SetValues(req.Data).Exec(ctx)
 		if err != nil {
-			return fmt.Errorf("table.Create: update dataset values: %w", err) // Clarified error
+			return fmt.Errorf("table.Create: update dataset values: %w", err)
 		}
 	}
 	return nil
@@ -119,6 +106,10 @@ func (s *DatasetServiceImpl) List(ctx context.Context) ([]*DatasetInfo, error) {
 	}
 	datasetInfos := []*DatasetInfo{}
 	for _, ds := range datasets {
+		// backward compatible
+		if ds.Type == db_dataset.TypeCsv && len(ds.Values) == 0 {
+			ds.Values = []string{"data.csv"}
+		}
 		datasetInfos = append(datasetInfos, &DatasetInfo{
 			ID:          ds.Nanoid,
 			Name:        ds.Name,
@@ -161,22 +152,38 @@ func (s *DatasetServiceImpl) Update(ctx context.Context, dataset string, req *Up
 		case "description":
 			updater.SetDescription(req.Description)
 		case "data", "files":
-			processDataRebuild = true
-			updater.ClearIndexer().ClearPath().SetValues(nil)
+			// new files or data slice change
+			if len(req.Files) > 0 || !slices.Equal(req.Data, ds.Values) {
+				processDataRebuild = true
+				updater.ClearIndexer().ClearPath().SetValues(nil)
+			}
 		}
 	}
 
 	updatedDsEntity, err := updater.Save(ctx)
 	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Update: save changes: %w", err)) // Clarified error
+		return ent.Rollback(tx, fmt.Errorf("dataset.Update: save changes: %w", err))
 	}
 
 	if processDataRebuild {
 		if originalPath != "" {
 			oldDirPath := filepath.Join(s.cfg.Common.DataDir, originalPath)
 			if _, statErr := os.Stat(oldDirPath); !os.IsNotExist(statErr) {
-				if removeErr := os.RemoveAll(oldDirPath); removeErr != nil {
-					return ent.Rollback(tx, fmt.Errorf("dataset.Update: failed to remove old directory %s: %w", oldDirPath, removeErr))
+				keep := map[string]bool{}
+				for _, file := range req.Data {
+					keep[file] = true
+				}
+				entries, err := os.ReadDir(oldDirPath)
+				if err != nil {
+					return ent.Rollback(tx, fmt.Errorf("dataset.Update: read dir: %w", err))
+				}
+				for _, e := range entries {
+					if _, ok := keep[e.Name()]; !ok {
+						err = os.Remove(filepath.Join(oldDirPath, e.Name()))
+						if err != nil {
+							return ent.Rollback(tx, fmt.Errorf("dataset.Update: remove file: %w", err))
+						}
+					}
 				}
 			}
 		}
@@ -217,7 +224,7 @@ func (s *DatasetServiceImpl) Delete(ctx context.Context, dataset string) error {
 
 	err = tx.Dataset.DeleteOne(ds).Exec(ctx)
 	if err != nil {
-		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: execute delete: %w", err)) // Clarified error
+		return ent.Rollback(tx, fmt.Errorf("dataset.Delete: execute delete: %w", err))
 	}
 
 	return tx.Commit()
@@ -229,7 +236,7 @@ func (s *DatasetServiceImpl) Get(ctx context.Context, source string) (*DatasetIn
 		db_dataset.Nanoid(source),
 	)).Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("dataset.Get: query dataset: %w", err) // Clarified error
+		return nil, fmt.Errorf("dataset.Get: query dataset: %w", err)
 	}
 	return &DatasetInfo{
 		Name:        sr.Name,
@@ -275,6 +282,11 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 		return &DatasetRows{
 			Type: sr.Type,
 			Rows: rows,
+		}, nil
+	case db_dataset.TypeImage:
+		return &DatasetRows{
+			Type: sr.Type,
+			Data: sr.Values,
 		}, nil
 	case db_dataset.TypeList:
 		return &DatasetRows{

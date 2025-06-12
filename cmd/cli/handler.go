@@ -181,16 +181,17 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 			options = append(options, o...)
 		}
 		req.Data = options
-	case "csv":
+	case "csv", "image":
 		filePaths, err := cmd.Flags().GetStringArray("path")
 		if err != nil {
 			return fmt.Errorf("error getting file flag for csv type: %w", err)
 		}
 		if len(filePaths) == 0 {
-			return fmt.Errorf("at least one --path must be provided for type 'csv'")
+			return fmt.Errorf("at least one --path must be provided")
 		}
-		var readers []io.Reader
+		var readers []dataset.CreateDatasetFile
 		files, err := parsePaths(filePaths)
+		names := []string{}
 		if err != nil {
 			return err
 		}
@@ -199,12 +200,17 @@ func (h *Handler) CreateDataset(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				return fmt.Errorf("failed to open file %s: %w", f, err)
 			}
-			readers = append(readers, file)
+			readers = append(readers, dataset.CreateDatasetFile{
+				Name:   filepath.Base(f),
+				Reader: file,
+			})
+			names = append(names, filepath.Base(f))
 		}
 		req.Files = readers
+		req.Data = names
 		defer func() {
 			for _, f := range readers {
-				if c, ok := f.(io.Closer); ok {
+				if c, ok := f.Reader.(io.Closer); ok {
 					c.Close()
 				}
 			}
@@ -307,7 +313,7 @@ func (h *Handler) UpdateDataset(cmd *cobra.Command, args []string) error {
 			options = append(options, o...)
 		}
 		req.Data = options
-	case "csv":
+	case "csv", "image":
 		filePaths, err := cmd.Flags().GetStringArray("file")
 		if err != nil {
 			return fmt.Errorf("error getting file flag for csv type: %w", err)
@@ -315,24 +321,21 @@ func (h *Handler) UpdateDataset(cmd *cobra.Command, args []string) error {
 		if len(filePaths) == 0 {
 			return fmt.Errorf("at least one --file path must be provided for type 'csv'")
 		}
-		var files []io.Reader
+		var files []dataset.CreateDatasetFile
 		for _, filePath := range filePaths {
 			file, err := os.Open(filePath)
 			if err != nil {
-				// Close already opened files if any
-				for _, f := range files {
-					if c, ok := f.(io.Closer); ok {
-						c.Close()
-					}
-				}
 				return fmt.Errorf("failed to open file %s: %w", filePath, err)
 			}
-			files = append(files, file)
+			files = append(files, dataset.CreateDatasetFile{
+				Name:   filepath.Base(filePath),
+				Reader: file,
+			})
 		}
 		req.Files = files
 		defer func() {
 			for _, f := range files {
-				if c, ok := f.(io.Closer); ok {
+				if c, ok := f.Reader.(io.Closer); ok {
 					c.Close()
 				}
 			}

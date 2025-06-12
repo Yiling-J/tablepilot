@@ -7,12 +7,17 @@ import (
 	db_dataset "github.com/Yiling-J/tablepilot/ent/dataset"
 )
 
+type CreateDatasetFile struct {
+	Name   string
+	Reader io.Reader
+}
+
 type CreateDatasetRequest struct {
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Type        db_dataset.Type `json:"type"`
-	Data        []string        `json:"data"`  // for list type
-	Files       []io.Reader     `json:"files"` // for csv type
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
+	Type        db_dataset.Type     `json:"type"`
+	Data        []string            `json:"data"`  // for list type
+	Files       []CreateDatasetFile `json:"files"` // for csv type
 }
 
 type UpdateDatasetRequest struct {
@@ -21,14 +26,16 @@ type UpdateDatasetRequest struct {
 }
 
 type DatasetInfo struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Type        string   `json:"type"`
-	ColumnCount int      `json:"column_count"`
-	ValueCount  int      `json:"value_count"`
-	Data        []string `json:"data"`
-	Columns     []string `json:"columns"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`
+	ColumnCount int    `json:"column_count"`
+	ValueCount  int    `json:"value_count"`
+	// for list type, data is the available options
+	// for files type, data is the files in the dataset dir
+	Data    []string `json:"data"`
+	Columns []string `json:"columns"`
 }
 
 type DatasetRows struct {

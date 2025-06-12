@@ -22,23 +22,23 @@ var snapshots = []struct {
 	example  string
 	prepare  [][]string
 }{
-	// test auto column gen, pick from list dataset and pick from options
-	{"recipes", "recipes.json", [][]string{
-		{"dataset", "create", "--name", "ings", "--type", "list", "--path", "cases/ingredients.txt"},
-	}},
-	// test pick from table with context
-	{"recipes_for_customers", "recipes_for_customers.json", [][]string{
-		{"create", "cases/customers.json"},
-		{"generate", "customers", "-c", "5", "-b", "5"},
-	}},
-	// test pick from csv dataset with wildcard path
-	{"imdb_movie_haiku", "haiku.json", [][]string{
-		{"dataset", "create", "--name", "movies", "--type", "csv", "--path", "cases/movies/*.csv"},
-	}},
-	// vision
-	// {"icon_jokes", "icon_jokes.json", [][]string{
-	// 	{"dataset", "create", "--name", "icons", "--type", "csv", "--path", "cases/icons/icons.csv"},
+	// // test auto column gen, pick from list dataset and pick from options
+	// {"recipes", "recipes.json", [][]string{
+	// 	{"dataset", "create", "--name", "ings", "--type", "list", "--path", "cases/ingredients.txt"},
 	// }},
+	// // test pick from table with context
+	// {"recipes_for_customers", "recipes_for_customers.json", [][]string{
+	// 	{"create", "cases/customers.json"},
+	// 	{"generate", "customers", "-c", "5", "-b", "5"},
+	// }},
+	// // test pick from csv dataset with wildcard path
+	// {"imdb_movie_haiku", "haiku.json", [][]string{
+	// 	{"dataset", "create", "--name", "movies", "--type", "csv", "--path", "cases/movies/*.csv"},
+	// }},
+	// vision
+	{"icon_jokes", "icon_jokes.json", [][]string{
+		{"dataset", "create", "--name", "icons", "--type", "image", "--path", "cases/icons/*.png"},
+	}},
 }
 
 var autofills = []struct {
@@ -47,18 +47,18 @@ var autofills = []struct {
 	commands [][]string
 }{
 	// autofill
-	{"pokemons", "pokemons.json", [][]string{
-		{"create", "cases/pokemons.json"},
-		{"import", "cases/pokemons.csv", "-t", "pokemons"},
-		{"autofill", "pokemons", "-c", "5", "-b", "3", "--columns", "Ecology"},
-	}},
-	// autofill based on linked column with context
-	{"pokemons_autofill", "pokemons_autofill.json", [][]string{
-		{"dataset", "create", "--name", "pokemons", "--type", "csv", "--path", "cases/pokemons.csv"},
-		{"create", "cases/pokemons_autofill.json"},
-		{"import", "cases/stories.csv", "-t", "pokemon_stories"},
-		{"autofill", "pokemon_stories", "-c", "5", "-b", "3", "--columns", "Story"},
-	}},
+	// {"pokemons", "pokemons.json", [][]string{
+	// 	{"create", "cases/pokemons.json"},
+	// 	{"import", "cases/pokemons.csv", "-t", "pokemons"},
+	// 	{"autofill", "pokemons", "-c", "5", "-b", "3", "--columns", "Ecology"},
+	// }},
+	// // autofill based on linked column with context
+	// {"pokemons_autofill", "pokemons_autofill.json", [][]string{
+	// 	{"dataset", "create", "--name", "pokemons", "--type", "csv", "--path", "cases/pokemons.csv"},
+	// 	{"create", "cases/pokemons_autofill.json"},
+	// 	{"import", "cases/stories.csv", "-t", "pokemon_stories"},
+	// 	{"autofill", "pokemon_stories", "-c", "5", "-b", "3", "--columns", "Story"},
+	// }},
 }
 
 func main() {

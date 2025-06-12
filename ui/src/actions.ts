@@ -699,7 +699,7 @@ export async function deleteWorkflow(id: string) {
   }
 }
 
-export type DatasetType = "list" | "csv";
+export type DatasetType = "list" | "csv" | "image";
 
 export interface DatasetInfo {
   id: string;
@@ -735,7 +735,6 @@ export interface CreateDatasetRequest {
   type: DatasetType;
   data: string[];
   files: File[];
-  private: boolean;
   table?: string;
   workflow?: string;
 }
@@ -746,7 +745,6 @@ export async function createDataset(
   const formData = new FormData();
   formData.append("name", req.name);
   formData.append("description", req.description);
-  formData.append("private", JSON.stringify(req.private));
   formData.append("type", req.type);
   if (req.data.length > 0) {
     req.data.forEach((v) => formData.append("data", v));
