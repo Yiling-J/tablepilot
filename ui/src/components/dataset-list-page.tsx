@@ -6,6 +6,7 @@ import {
     updateDataset,
 } from "@/actions";
 import { Button } from "@/components/ui/button";
+import { useDelayedLoading } from "@/hooks/use-delayed-loading";
 import {
     Card,
     CardContent,
@@ -189,7 +190,8 @@ function DatasetList({
   searchQuery,
   refreshKey,
 }: DatasetListProps) {
-  const [loading, setLoading] = useState(true);
+  const [actualLoading, setActualLoading] = useState(true);
+  const loading = useDelayedLoading(actualLoading, 500); // Using 500ms delay
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(
@@ -197,7 +199,7 @@ function DatasetList({
   );
 
   const fetchDatasetsInternal = useCallback(async () => {
-    setLoading(true);
+    setActualLoading(true);
     try {
       const resp = await getDatasets();
       setDatasets(resp.datasets ?? []);
@@ -205,7 +207,7 @@ function DatasetList({
       console.error("Failed to fetch datasets in DatasetList:", error);
       setDatasets([]);
     } finally {
-      setLoading(false);
+      setActualLoading(false);
     }
   }, []);
 
@@ -245,10 +247,10 @@ function DatasetList({
                   }}
                   onEdit={() => onEditDataset(dataset)}
                   onDelete={async () => {
-                    setLoading(true);
+                    setActualLoading(true);
                     await deleteDataset(dataset.id);
                     await fetchDatasets();
-                    setLoading(false);
+                    setActualLoading(false);
                   }}
                   badgeText={dataset.type}
                 >

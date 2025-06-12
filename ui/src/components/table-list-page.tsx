@@ -9,6 +9,7 @@ import {
 import { CommonCard } from "@/components/ui/common-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateTableDialog } from "@/context/create-table";
+import { useDelayedLoading } from "@/hooks/use-delayed-loading";
 import { useTables } from "@/context/tables";
 import { JSONObject } from "@/json.ts";
 import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
@@ -96,20 +97,21 @@ interface TableListProps {
 }
 
 function TableList({ searchQuery }: TableListProps) {
-  const [loading, setLoading] = useState(true);
+  const [actualLoading, setActualLoading] = useState(true);
+  const loading = useDelayedLoading(actualLoading, 500); // Using 500ms delay
   const { openNewTableDialog, withForm, withTable, withSubmitCallback } =
     useCreateTableDialog();
   const { tables, refreshTables } = useTables();
   const navigate = useNavigate();
 
   const fetchTables = useCallback(async () => {
-    setLoading(true);
+    setActualLoading(true);
     try {
       await refreshTables();
     } catch (error) {
       console.error("Failed to fetch tables:", error);
     } finally {
-      setLoading(false);
+      setActualLoading(false);
     }
   }, [refreshTables]);
 

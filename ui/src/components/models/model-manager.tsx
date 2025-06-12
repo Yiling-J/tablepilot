@@ -12,6 +12,7 @@ import { ProviderCard } from "@/components/models/provider-card";
 import { ProviderFormDialog } from "@/components/models/provider-form-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDelayedLoading } from "@/hooks/use-delayed-loading";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,7 +25,8 @@ import { ScrollArea } from "../ui/scroll-area";
 export function ModelManager() {
   const { toast } = useToast();
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [actualIsLoading, setActualIsLoading] = useState(true);
+  const isLoading = useDelayedLoading(actualIsLoading, 500); // Using 500ms delay
   const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog states
@@ -47,14 +49,14 @@ export function ModelManager() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      setActualIsLoading(true);
       try {
         const fetchedProviders = await getProviders();
         setProviders(fetchedProviders);
       } catch (error) {
         console.error("Failed to fetch providers:", error);
       } finally {
-        setIsLoading(false);
+        setActualIsLoading(false);
       }
     };
     fetchData();
@@ -106,10 +108,10 @@ export function ModelManager() {
         });
       }
       setEditingProvider(null);
-      setIsLoading(true);
+      setActualIsLoading(true);
       getProviders()
         .then(setProviders)
-        .finally(() => setIsLoading(false));
+        .finally(() => setActualIsLoading(false));
     } catch (error) {
       console.error("Failed to save provider:", error);
     }
@@ -122,10 +124,10 @@ export function ModelManager() {
         title: "Provider Deleted",
         description: "The provider has been removed.",
       });
-      setIsLoading(true);
+      setActualIsLoading(true);
       getProviders()
         .then(setProviders)
-        .finally(() => setIsLoading(false));
+        .finally(() => setActualIsLoading(false));
     } catch (error) {
       console.error("Failed to delete provider:", error);
       toast({

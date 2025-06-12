@@ -257,7 +257,7 @@ describe('DatasetListPage Create, Delete and Refresh', () => {
     // Note: Mocked CommonCard's onDelete is called directly, no confirmation dialog step here.
 
     await waitFor(() => expect(screen.queryByText('Dataset Alpha')).not.toBeInTheDocument(), { timeout: 2000 });
-    expect(screen.getByText('Dataset Beta')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Dataset Beta')).toBeInTheDocument());
 
     expect(mockDeleteDataset).toHaveBeenCalledWith('1');
     await waitFor(() => expect(mockGetDatasets).toHaveBeenCalledTimes(2)); // Initial load + load after delete

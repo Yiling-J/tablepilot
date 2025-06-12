@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { CommonCard } from "@/components/ui/common-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDelayedLoading } from "@/hooks/use-delayed-loading";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useCallback, useEffect, useState } from "react";
 import { ModeToggle } from "./darkmode";
@@ -25,14 +26,15 @@ import { ScrollArea } from "./ui/scroll-area";
 
 export function WorkflowListPage() {
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [actualLoading, setActualLoading] = useState(true);
+  const loading = useDelayedLoading(actualLoading, 500); // Using 500ms delay
   const [searchQuery, setSearchQuery] = useState("");
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
   const [runWorkflowOpen, setRunWorkflowOpen] = useState(false);
   const [WorkflowBuilderOpen, setRunWorkflowBuilderOpen] = useState(false);
 
   const refreshWorkflows = useCallback(async () => {
-    setLoading(true);
+    setActualLoading(true);
     try {
       const wf = await getWorkflows();
       setWorkflows(wf.workflows ?? []);
@@ -40,7 +42,7 @@ export function WorkflowListPage() {
       console.error("Failed to fetch workflows:", error);
       setWorkflows([]);
     } finally {
-      setLoading(false);
+      setActualLoading(false);
     }
   }, []);
 
