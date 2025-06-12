@@ -140,7 +140,7 @@ export function DatasetListPage() {
     <div className="grow h-full flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="datasets" />
-      <div className="bg-background sticky top-0 z-10 pt-4 pb-2 border-b">
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-1"> {/* Changed pb-2 to pb-1 and removed border-b */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end space-x-2">
           <Button
             variant="outline"

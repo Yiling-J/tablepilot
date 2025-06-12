@@ -50,7 +50,7 @@ export function WorkflowListPage() {
     <div className="grow h-full flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="workflows" />
-      <div className="bg-background sticky top-0 z-10 py-4 border-b">
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-1"> {/* Changed py-4 to pt-4 pb-1 and removed border-b */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
           <Button
             variant="outline"
