@@ -19,7 +19,6 @@ import { useNavigate } from "react-router-dom";
 import { Mock, vi } from "vitest";
 import { ModelManagerPageWrapper } from "./model-manager-page-wrapper";
 
-// Define sample data at the top level for the vi.mock factory
 const topLevelSampleModels: Model[] = [
   {
     model: "gpt-3.5-turbo",
@@ -102,7 +101,6 @@ const mockedCreateProvider = createProvider as Mock;
 const mockedUpdateProvider = updateProvider as Mock;
 const mockedDeleteProvider = deleteProvider as Mock;
 
-// Use copies of the top-level data for tests to avoid modification issues
 const sampleModels: Model[] = JSON.parse(JSON.stringify(topLevelSampleModels));
 const sampleProviders: Provider[] = JSON.parse(
   JSON.stringify(topLevelSampleProviders),
@@ -125,7 +123,6 @@ describe("ModelManager", () => {
     vi.clearAllMocks();
     vi.mock("react-router-dom");
     vi.mocked(useNavigate).mockReturnValue(vi.fn());
-    // Reset to fresh copies for each test run
     mockedGetProviders.mockResolvedValue(
       JSON.parse(JSON.stringify(sampleProviders)),
     );
@@ -156,9 +153,6 @@ describe("ModelManager", () => {
       await screen.findByText("OpenAI Provider", {}, { timeout: 5000 }),
     ).toBeInTheDocument();
     expect(screen.getByText("Anthropic Provider")).toBeInTheDocument();
-    // The DOM snapshot from previous failures showed "Model Providers" was not present.
-    // This assertion is removed as it was causing the test to fail after data loaded.
-    // expect(screen.getByRole('heading', { name: /Providers/i })).toBeInTheDocument();
     expect(mockedGetProviders).toHaveBeenCalledTimes(1);
   });
 
@@ -198,7 +192,7 @@ describe("ModelManager", () => {
     expect(await screen.findByText("OpenAI Provider")).toBeInTheDocument();
 
     await userEvent.click(
-      screen.getByRole("button", { name: /Add Provider/i }),
+      screen.getByRole("button", { name: "Add New Provider" }),
     );
     await screen.findByText("Create New Provider");
     await userEvent.type(
@@ -333,7 +327,7 @@ describe("ModelManager", () => {
     await userEvent.click(
       within(providerCard).getByRole("button", { name: "Delete Provider" }),
     );
-    await screen.findByText("Confirm Provider Deletion"); // Updated title
+    await screen.findByText("Confirm Provider Deletion");
     await userEvent.click(screen.getByRole("button", { name: /Confirm/i }));
 
     expect(mockedDeleteProvider).toHaveBeenCalledWith(
@@ -520,7 +514,6 @@ describe("ModelManager", () => {
     if (!modelContainer)
       throw new Error("Model container not found for deletion");
     await userEvent.click(within(modelContainer).getByTitle("Delete"));
-    // CommonCard dialog text
     expect(await screen.findByText("Are you sure?")).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -558,6 +551,174 @@ describe("ModelManager", () => {
     expect(mockedUpdateProvider).toHaveBeenCalledWith("1", {
       ...sampleProviders[0],
       models: [sampleProviders[0].models[1]],
+    });
+  });
+});
+
+describe("ModelManager Search Functionality", () => {
+  const searchSampleProviders: Provider[] = [
+    {
+      id: 1,
+      name: "OpenAI SearchCo",
+      type: "openai",
+      key: "OpenAI" as ProviderType,
+      base_url: "",
+      models: [
+        { model: "gpt-s1", alias: "SearchModel One", max_tokens: 4096, rpm: 0, image: false },
+        { model: "gpt-s2", alias: "SearchModel Two", max_tokens: 8192, rpm: 0, image: false },
+      ],
+      editable: true,
+      enabled: true,
+    },
+    {
+      id: 2,
+      name: "Anthropic SearchServices",
+      type: "anthropic",
+      key: "Anthropic" as ProviderType,
+      base_url: "",
+      models: [{ model: "claude-s1", alias: "Claude SearchAlpha", max_tokens: 100000, rpm: 0, image: false }],
+      editable: true,
+      enabled: true,
+    },
+    {
+      id: 3,
+      name: "Provider OnlyMatch",
+      type: "openai",
+      key: "Other" as ProviderType,
+      base_url: "",
+      models: [{model: "other-m1", alias: "NonMatching Model", max_tokens: 1000, rpm: 0, image: false}],
+      editable: true,
+      enabled: true,
+    }
+  ];
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    vi.mock("react-router-dom", async (importOriginal) => {
+        const actual = await importOriginal();
+        return {
+            ...(typeof actual === 'object' && actual !== null ? actual : {}),
+            useNavigate: vi.fn(() => vi.fn()),
+            useLocation: vi.fn(() => ({ pathname: '/models', search: '', hash: '', state: null, key: 'searchTestKey' })),
+        };
+    });
+     vi.mocked(useToast).mockReturnValue({
+      toast: vi.fn(),
+      dismiss: vi.fn(),
+      toasts: [],
+    });
+
+
+    (getProviders as Mock).mockResolvedValue(JSON.parse(JSON.stringify(searchSampleProviders)));
+
+    render(
+      <TestProvider>
+        <ModelManagerPageWrapper />
+      </TestProvider>
+    );
+
+    await screen.findByText("OpenAI SearchCo");
+    await screen.findByText("Anthropic SearchServices");
+    await screen.findByText("Provider OnlyMatch");
+    await screen.findByText("SearchModel One");
+  });
+
+  it("should render all providers and their models initially", () => {
+    expect(screen.getByText("OpenAI SearchCo")).toBeInTheDocument();
+    expect(screen.getByText("SearchModel One")).toBeInTheDocument();
+    expect(screen.getByText("SearchModel Two")).toBeInTheDocument();
+    expect(screen.getByText("Anthropic SearchServices")).toBeInTheDocument();
+    expect(screen.getByText("Claude SearchAlpha")).toBeInTheDocument();
+    expect(screen.getByText("Provider OnlyMatch")).toBeInTheDocument();
+    expect(screen.getByText("NonMatching Model")).toBeInTheDocument();
+  });
+
+  it("should filter by provider name (case-insensitive) and show all its models", async () => {
+    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    await userEvent.type(searchInput, "openaI searchco");
+
+    await waitFor(() => {
+      expect(screen.getByText("OpenAI SearchCo")).toBeInTheDocument();
+      expect(screen.getByText("SearchModel One")).toBeInTheDocument();
+      expect(screen.getByText("SearchModel Two")).toBeInTheDocument();
+      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(screen.queryByText("Provider OnlyMatch")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should filter by model alias (case-insensitive) and show only matching models within that provider", async () => {
+    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    await userEvent.type(searchInput, "searchmodel one");
+
+    await waitFor(async () => {
+      const openAICard = await findProviderCard("OpenAI SearchCo");
+      expect(openAICard).toBeInTheDocument();
+      expect(within(openAICard).getByText("SearchModel One")).toBeInTheDocument();
+      expect(within(openAICard).queryByText("SearchModel Two")).not.toBeInTheDocument();
+
+      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(screen.queryByText("Provider OnlyMatch")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should filter by model ID (case-insensitive) and show only matching models", async () => {
+    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    await userEvent.type(searchInput, "gpt-s2");
+
+    await waitFor(async () => {
+      const openAICard = await findProviderCard("OpenAI SearchCo");
+      expect(openAICard).toBeInTheDocument();
+      expect(within(openAICard).queryByText("SearchModel One")).not.toBeInTheDocument();
+      expect(within(openAICard).getByText("SearchModel Two")).toBeInTheDocument();
+
+      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(screen.queryByText("Provider OnlyMatch")).not.toBeInTheDocument();
+    });
+  });
+
+
+  it("should show 'No providers or models found' message for no matches", async () => {
+    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    await userEvent.type(searchInput, "NonExistentName");
+
+    await waitFor(() => {
+      expect(screen.getByText("No providers or models found matching your search.")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("OpenAI SearchCo")).not.toBeInTheDocument();
+    expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+  });
+
+  it("should show all providers and models when search query is cleared", async () => {
+    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    await userEvent.type(searchInput, "OpenAI SearchCo");
+
+    await waitFor(() => {
+      expect(screen.getByText("OpenAI SearchCo")).toBeInTheDocument();
+      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+    });
+
+    await userEvent.clear(searchInput);
+
+    await waitFor(() => {
+      expect(screen.getByText("OpenAI SearchCo")).toBeInTheDocument();
+      expect(screen.getByText("SearchModel One")).toBeInTheDocument();
+      expect(screen.getByText("Anthropic SearchServices")).toBeInTheDocument();
+      expect(screen.getByText("Claude SearchAlpha")).toBeInTheDocument();
+      expect(screen.getByText("Provider OnlyMatch")).toBeInTheDocument();
+      expect(screen.getByText("NonMatching Model")).toBeInTheDocument();
+    });
+  });
+   it("should show provider if only its name matches, along with all its models", async () => {
+    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    await userEvent.type(searchInput, "Provider OnlyMatch");
+
+    await waitFor(async () => {
+      const providerCard = await findProviderCard("Provider OnlyMatch");
+      expect(providerCard).toBeInTheDocument();
+      expect(within(providerCard).getByText("NonMatching Model")).toBeInTheDocument();
+
+      expect(screen.queryByText("OpenAI SearchCo")).not.toBeInTheDocument();
+      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
     });
   });
 });
