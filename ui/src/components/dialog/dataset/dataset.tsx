@@ -371,7 +371,7 @@ export function CreateDatasetDialog({
         setFilesError(errorMessage);
       } else {
         setFilesError("");
-        let preliminaryFileItems: FileItem[] = [];
+        const preliminaryFileItems: FileItem[] = [];
         const replaced = new Map();
 
         // Process existing files: replace if new one with same name is uploaded
