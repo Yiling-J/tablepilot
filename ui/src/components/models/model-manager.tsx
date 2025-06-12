@@ -10,8 +10,7 @@ import { ConfirmationDialog } from "@/components/models/confirmation-dialog";
 import { ModelFormDialog } from "@/components/models/model-form-dialog";
 import { ProviderCard } from "@/components/models/provider-card";
 import { ProviderFormDialog } from "@/components/models/provider-form-dialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { IconSpinner } from "@/components/ui/icons";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -345,70 +344,6 @@ export function ModelManager() {
     setIsProviderFormOpen(true);
   };
 
-  const ProviderCardSkeleton = () => (
-    <Card className="mb-6">
-      <CardHeader className="flex flex-row items-center justify-between py-4 px-6">
-        <div>
-          <Skeleton className="h-6 w-32 mb-2" />{" "}
-          <Skeleton className="h-4 w-24" />
-        </div>
-        <div className="flex space-x-2">
-          <Skeleton className="h-9 w-20 rounded-md" />
-          <Skeleton className="h-9 w-9 rounded-md" />
-        </div>
-      </CardHeader>
-      <CardContent className="px-6 pb-6">
-        <div className="flex justify-between items-center mb-3">
-          <Skeleton className="h-5 w-28" />
-          <Skeleton className="h-9 w-32 rounded-md" />
-        </div>
-        {[1, 2].map((i) => (
-          <div key={i} className="p-3 border rounded-md mb-3 bg-background">
-            <div className="flex justify-between items-center mb-2">
-              <Skeleton className="h-5 w-4/12" />
-              <Skeleton className="h-8 w-8 rounded-md" />
-            </div>
-            <div className="space-y-1.5">
-              <Skeleton className="h-3 w-10/12" />
-              <Skeleton className="h-3 w-8/12" />
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-
-  if (isLoading) {
-    return (
-      <div>
-        <ProviderCardSkeleton />
-        <ProviderCardSkeleton />
-        <ProviderCardSkeleton />
-      </div>
-    );
-  }
-
-  if (providers.length === 0 && !searchQuery) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <ProviderFormDialog
-          isOpen={isProviderFormOpen}
-          onOpenChange={setIsProviderFormOpen}
-          onSubmit={handleProviderSubmit}
-          initialData={editingProvider}
-        />
-        <div
-          className="border border-muted rounded-2xl p-12 bg-transparent text-muted-foreground flex flex-col items-center gap-3 hover:bg-muted-foreground/5 cursor-pointer"
-          onClick={openAddProviderDialogInternal}
-          aria-label="Add provider"
-        >
-          <PlusCircle className="w-8 h-8 mb-4" />
-          <p>Create a new provider</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="grow h-screen flex flex-col">
       <ModeToggle hide={true} />
@@ -432,8 +367,25 @@ export function ModelManager() {
       </div>
 
       <ScrollArea className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {filteredProviders.length === 0 && searchQuery ? (
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 relative min-h-[300px]">
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm z-20">
+              <IconSpinner className="w-10 h-10 text-primary" />
+            </div>
+          ) : providers.length === 0 && !searchQuery ? (
+            <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+              {!isProviderFormOpen && (
+                <div
+                  className="border border-muted rounded-2xl p-12 bg-transparent text-muted-foreground flex flex-col items-center gap-3 hover:bg-muted-foreground/5 cursor-pointer"
+                  onClick={openAddProviderDialogInternal}
+                  aria-label="Add provider"
+                >
+                  <PlusCircle className="w-8 h-8 mb-4" />
+                  <p>Create a new provider</p>
+                </div>
+              )}
+            </div>
+          ) : filteredProviders.length === 0 && searchQuery ? (
             <div className="text-center text-muted-foreground py-10">
               No providers or models found matching your search.
             </div>
