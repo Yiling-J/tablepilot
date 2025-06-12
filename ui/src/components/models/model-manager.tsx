@@ -364,10 +364,25 @@ export function ModelManager() {
   }
 
   return (
-    <>
-      <div>
-        {providers.map((provider, i) => (
-          <ProviderCard
+    <div className="flex flex-col h-full">
+      <div className="bg-background sticky top-0 z-10 py-4 border-b">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => {
+              openAddProviderDialogInternal();
+            }}
+            // aria-label="Add new provider" // Removed to allow name to be derived from text content
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add New Provider
+          </Button>
+        </div>
+      </div>
+      <div className="flex-grow overflow-auto">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          {providers.map((provider, i) => (
+            <ProviderCard
             key={provider.id === 0 ? `pv_${i.toString()}` : provider.id}
             provider={provider}
             onAddModel={openAddModelDialog}
@@ -380,7 +395,10 @@ export function ModelManager() {
             onToggleEnabled={handleToggleProviderEnabled}
           />
         ))}
-      </div>
+        </div> {/* Closes max-w-6xl div */}
+      </div> {/* Closes flex-grow overflow-auto div */}
+
+      {/* Dialogs should be outside the scrollable content div, but inside the main component div */}
       <ProviderFormDialog
         isOpen={isProviderFormOpen}
         onOpenChange={setIsProviderFormOpen}
@@ -405,16 +423,7 @@ export function ModelManager() {
         title={`Confirm Provider Deletion`}
         description={`Are you sure you want to delete this provider? This action cannot be undone.`}
       />
-
-      <Button
-        onClick={() => {
-          openAddProviderDialogInternal();
-        }}
-        className="fixed h-15 w-15 bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg"
-        aria-label="Add provider"
-      >
-        <PlusIcon className="h-6 w-6" />
-      </Button>
-    </>
+      {/* Removed the two stray closing divs from here, dialogs are now correctly placed */}
+    </div>
   );
 }

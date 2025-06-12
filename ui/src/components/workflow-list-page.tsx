@@ -20,6 +20,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "./ui/button"; // Import Button
 
 export function WorkflowListPage() {
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
@@ -46,25 +47,39 @@ export function WorkflowListPage() {
   }, [refreshWorkflows]);
 
   return (
-    <div className="grow overflow-auto h-full flex flex-col">
+    <div className="grow h-full flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="workflows" />
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
+      <div className="bg-background sticky top-0 z-10 py-4 border-b">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setWorkflow(undefined);
+              setRunWorkflowBuilderOpen(true);
+            }}
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add New Workflow
+          </Button>
+        </div>
+      </div>
+      <WorkflowExecutionDialog
+        workflow={workflow}
+        open={runWorkflowOpen}
+        onOpenChange={setRunWorkflowOpen}
+      />
+      <WorkflowBuilderDialog
+        id={workflow?.id}
+        workflow={workflow}
+        open={WorkflowBuilderOpen}
+        onOpenChange={setRunWorkflowBuilderOpen}
+        onSave={refreshWorkflows}
+      />
+      <ScrollArea className="flex-grow">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="tab-content-container">
-            <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <WorkflowExecutionDialog
-                workflow={workflow}
-                open={runWorkflowOpen}
-                onOpenChange={setRunWorkflowOpen}
-              />
-              <WorkflowBuilderDialog
-                id={workflow?.id}
-                workflow={workflow}
-                open={WorkflowBuilderOpen}
-                onOpenChange={setRunWorkflowBuilderOpen}
-                onSave={refreshWorkflows}
-              />
+            <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
               {loading
                 ? Array.from({ length: 4 }).map((_, index) => (
                     <Card key={index} className="w-80">
@@ -102,18 +117,7 @@ export function WorkflowListPage() {
                       <p className="line-clamp-4">{wf.description}</p>
                     </CommonCard>
                   ))}
-              <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
-                <div
-                  className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1"
-                  onClick={() => {
-                    setWorkflow(undefined);
-                    setRunWorkflowBuilderOpen(true);
-                  }}
-                >
-                  <PlusIcon className="w-5 h-5 mr-2 mb-2" />
-                  <span>Add New Workflow</span>
-                </div>
-              </Card>
+              {/* The Add New Workflow Card has been removed */}
             </div>
           </div>
         </div>

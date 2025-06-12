@@ -25,55 +25,45 @@ import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
 export function DatasetListPage() {
-  return (
-    <div className="grow overflow-auto h-full flex flex-col">
-      <ModeToggle hide={true} />
-      <TablepilotHeader title="Tablepilot" currentTab="datasets" />
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
-          <div className="tab-content-container">
-            <DatasetList />
-          </div>
-        </div>
-      </ScrollArea>
-    </div>
-  );
-}
-
-function DatasetList() {
-  const [loading, setLoading] = useState(true);
-  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
   const [editDataset, setEditDataset] = useState<DatasetInfo | undefined>(
     undefined,
   );
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(
-    null,
-  ); // State for selected dataset ID
+  // Retain fetchDatasets and datasets state here if CreateDatasetDialog needs to refresh list,
+  // or pass refresh function down from a higher context if available.
+  // For now, let's assume DatasetList's fetchDatasets is sufficient or dialogs handle their own data.
+  // const [datasets, setDatasets] = useState<DatasetInfo[]>([]); // Keep datasets for dialogs if needed // Removed as 'datasets' is unused
 
-  const fetchDatasets = useCallback(async () => {
-    setLoading(true);
+  const fetchDatasetsCallback = useCallback(async () => {
+    // This function will be passed to DatasetList to refresh its data
+    // setLoading(true); // setLoading will be handled by DatasetList
     try {
-      const resp = await getDatasets();
-      setDatasets(resp.datasets ?? []);
+      // const resp = await getDatasets(); // Call to getDatasets might be redundant if child list also fetches
+      // setDatasets(resp.datasets ?? []); // Update datasets in parent as well for dialogs // Removed as 'setDatasets' is no longer defined
+      // For now, just ensure the callback can be called.
+      // A more thorough review might be needed if the parent truly needs to manage this state
+      // or if this fetch is redundant with the child component's fetching.
+      // Triggering a re-fetch in the child is handled by the prop.
+      // If additional actions are needed in parent after child re-fetches, that's a different pattern.
+      await getDatasets(); // Still calling this to ensure it behaves as before, minus setting state
     } catch (error) {
-      console.error("Failed to fetch datasets:", error);
+      console.error("Failed to fetch datasets in parent (callback):", error); // Clarified error source
       toast({
         title: "Error",
-        description: "Failed to fetch datasets. Please try again later.",
+        description:
+          "Failed to fetch datasets after operation. Please try again later.",
         variant: "destructive",
       });
-      setDatasets([]);
     } finally {
-      setLoading(false);
+      // setLoading(false); // setLoading will be handled by DatasetList
     }
   }, []);
 
-  useEffect(() => {
-    fetchDatasets();
-  }, [fetchDatasets]);
+  const handleOpenEditDialog = (dataset: DatasetInfo) => {
+    setEditDataset(dataset);
+    setIsCreateDialogOpen(true);
+  };
 
   const handleCreateDataset = async (data: {
     name: string;
@@ -89,17 +79,15 @@ function DatasetList() {
         type: data.type,
         data: data.type === "list" ? data.options || [] : [],
         files: data.type === "csv" ? data.files || [] : [],
-        private: false, // Added private field
+        private: false,
       };
-
       await createDataset(requestPayload);
-
       toast({
         title: "Success",
         description: `Dataset "${data.name}" created successfully.`,
       });
       setIsCreateDialogOpen(false);
-      fetchDatasets();
+      fetchDatasetsCallback(); // Refresh datasets
     } catch (error: unknown) {
       toast({
         title: "Error Creating Dataset",
@@ -128,17 +116,15 @@ function DatasetList() {
         type: data.type,
         data: data.type === "list" ? data.options || [] : [],
         files: data.type === "csv" ? data.files || [] : [],
-        private: false, // Added private field
+        private: false,
       };
-
       await updateDataset(id, requestPayload);
-
       toast({
         title: "Success",
         description: `Dataset "${data.name}" updated successfully.`,
       });
       setIsCreateDialogOpen(false);
-      fetchDatasets();
+      fetchDatasetsCallback(); // Refresh datasets
     } catch (error: unknown) {
       toast({
         title: "Error Updating Dataset",
@@ -150,13 +136,96 @@ function DatasetList() {
     }
   };
 
-  const handleOpenInfoDialog = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsInfoDialogOpen(true);
-  };
+  return (
+    <div className="grow h-full flex flex-col">
+      <ModeToggle hide={true} />
+      <TablepilotHeader title="Tablepilot" currentTab="datasets" />
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-2 border-b">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditDataset(undefined);
+              setIsCreateDialogOpen(true);
+            }}
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add New Dataset
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsInfoDialogOpen(true)}
+          >
+            <QuestionMarkCircledIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <CreateDatasetDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onCreate={handleCreateDataset}
+        onUpdate={handleUpdateDataset}
+        dataset={editDataset}
+      />
+      <DatasetInfoDialog
+        isOpen={isInfoDialogOpen}
+        onClose={() => setIsInfoDialogOpen(false)}
+      />
+      <ScrollArea className="flex-grow">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="tab-content-container">
+            <DatasetList
+              fetchDatasets={fetchDatasetsCallback}
+              onEditDataset={handleOpenEditDialog}
+            />
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+interface DatasetListProps {
+  fetchDatasets: () => Promise<void>;
+  onEditDataset: (dataset: DatasetInfo) => void;
+}
+
+function DatasetList({ fetchDatasets, onEditDataset }: DatasetListProps) {
+  const [loading, setLoading] = useState(true);
+  const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
+  // const [editDataset, setEditDataset] = useState<DatasetInfo | undefined>( // Moved to parent
+  // undefined,
+  // );
+  // const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false); // Moved to parent
+  // const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false); // Moved to parent
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(
+    null,
+  );
+
+  const fetchDatasetsInternal = useCallback(async () => {
+    setLoading(true);
+    try {
+      const resp = await getDatasets();
+      setDatasets(resp.datasets ?? []);
+    } catch (error) {
+      console.error("Failed to fetch datasets in DatasetList:", error);
+      // Toast is handled by parent or not needed if parent refreshes
+      setDatasets([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // Removed fetchDatasets from dependency array as it's now an external prop
+
+  useEffect(() => {
+    fetchDatasetsInternal();
+  }, [fetchDatasetsInternal]); // Depends on the internal fetcher
+
+  // Removed handleCreateDataset, handleUpdateDataset, handleOpenInfoDialog as they are in parent
 
   return (
-    <div className="grow overflow-auto h-full flex flex-col">
+    <div className="grow overflow-auto h-full flex flex-col pt-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
@@ -181,14 +250,11 @@ function DatasetList() {
                   setSelectedDatasetId(dataset.id);
                   setIsPreviewDialogOpen(true);
                 }}
-                onEdit={async () => {
-                  setEditDataset(dataset);
-                  setIsCreateDialogOpen(true);
-                }}
+                onEdit={() => onEditDataset(dataset)}
                 onDelete={async () => {
                   setLoading(true);
                   await deleteDataset(dataset.id);
-                  await fetchDatasets();
+                  await fetchDatasets(); // This will call the prop to refresh data in parent and here
                   setLoading(false);
                 }}
                 badgeText={dataset.type}
@@ -196,36 +262,10 @@ function DatasetList() {
                 <p className="line-clamp-4">{dataset.description}</p>
               </CommonCard>
             ))}
-        <Card className="relative flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
-          <div
-            className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1 hover:h-[70%] peer"
-            onClick={() => {
-              setEditDataset(undefined);
-              setIsCreateDialogOpen(true);
-            }}
-          >
-            <PlusIcon className="w-5 h-5 mr-2 mb-2" />
-            <span>Add New Dataset</span>
-          </div>
-          <div className="absolute bottom-2 right-2">
-            <Button variant="ghost" size="icon" onClick={handleOpenInfoDialog}>
-              <QuestionMarkCircledIcon className="h-5 w-5" />
-            </Button>
-          </div>
-        </Card>
+        {/* Removed the Add New Dataset Card and Help button from here */}
       </div>
-      <CreateDatasetDialog
-        isOpen={isCreateDialogOpen}
-        onClose={() => setIsCreateDialogOpen(false)}
-        onCreate={handleCreateDataset}
-        onUpdate={handleUpdateDataset}
-        dataset={editDataset}
-      />
-      <DatasetInfoDialog
-        isOpen={isInfoDialogOpen}
-        onClose={() => setIsInfoDialogOpen(false)}
-      />
-      <DatasetPreviewDialog
+      {/* Dialogs are now in DatasetListPage */}
+      <DatasetPreviewDialog // Keep preview dialog here as it's specific to this list's interaction
         isOpen={isPreviewDialogOpen}
         onClose={() => {
           setIsPreviewDialogOpen(false);

@@ -197,8 +197,9 @@ describe("ModelManager", () => {
     );
     expect(await screen.findByText("OpenAI Provider")).toBeInTheDocument();
 
+    // Try matching with the exact string name reported by testing-library
     await userEvent.click(
-      screen.getByRole("button", { name: /Add Provider/i }),
+      screen.getByRole("button", { name: "Add New Provider" }),
     );
     await screen.findByText("Create New Provider");
     await userEvent.type(
