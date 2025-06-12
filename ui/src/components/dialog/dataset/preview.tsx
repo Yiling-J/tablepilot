@@ -139,7 +139,7 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                   <div>CSV has no rows to display.</div>
                 )
               ) : data.type === "image" && Array.isArray(data.data) ? (
-                <div className="flex flex-wrap justify-center p-4">
+                <div className="flex flex-wrap justify-center p-4 max-h-[70vh] overflow-auto">
                   {(data.data as string[]).map((item, index) => {
                     const filename = item.substring(item.lastIndexOf("/") + 1);
                     return (

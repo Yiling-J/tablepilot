@@ -58,6 +58,16 @@ const topLevelSampleProviders: Provider[] = [
     editable: true,
     enabled: true,
   },
+  {
+    id: 3,
+    name: "Gemini Provider",
+    type: "anthropic",
+    key: "Anthropic" as ProviderType,
+    base_url: "",
+    models: [],
+    editable: true,
+    enabled: true,
+  },
 ];
 
 const topLevelMockTableInfoResponse: TableInfo = {
@@ -442,6 +452,54 @@ describe("ModelManager", () => {
     });
   });
 
+  it("should allow adding a new model to a no-model provider and call updateProvider", async () => {
+    const providerName = sampleProviders[2].name;
+    render(
+      <TestProvider>
+        <ModelManagerPageWrapper />
+      </TestProvider>,
+    );
+    expect(
+      await screen.findByText(providerName, {}, { timeout: 2000 }),
+    ).toBeInTheDocument();
+
+    const providerCard = await findProviderCard(providerName);
+    await userEvent.click(within(providerCard).getByText("Add New Model"));
+    await screen.findByText(/Add a new model to/i);
+    const newModelData = {
+      model: "new-model-id",
+      alias: "New Model Alias",
+      max_tokens: "2048",
+    };
+    await userEvent.type(screen.getByLabelText("Name"), newModelData.model);
+    await userEvent.type(screen.getByLabelText("Alias"), newModelData.alias);
+    await userEvent.clear(screen.getByLabelText("Max Tokens"));
+    await userEvent.type(
+      screen.getByLabelText("Max Tokens"),
+      newModelData.max_tokens,
+    );
+    fireEvent.submit(screen.getByRole("button", { name: "Add Model" }));
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: "Model Added" }),
+    );
+    expect(
+      await within(providerCard).findByText(newModelData.alias),
+    ).toBeInTheDocument();
+    expect(mockedUpdateProvider).toHaveBeenCalledWith("3", {
+      ...sampleProviders[2],
+      models: [
+        ...sampleProviders[2].models,
+        {
+          model: newModelData.model,
+          alias: newModelData.alias,
+          max_tokens: 2048,
+          image: false,
+          rpm: 10,
+        },
+      ],
+    });
+  });
+
   it("should allow editing an existing model and call updateProvider", async () => {
     const providerToEdit = sampleProviders[0];
     const modelToEdit = providerToEdit.models[0];
@@ -564,8 +622,20 @@ describe("ModelManager Search Functionality", () => {
       key: "OpenAI" as ProviderType,
       base_url: "",
       models: [
-        { model: "gpt-s1", alias: "SearchModel One", max_tokens: 4096, rpm: 0, image: false },
-        { model: "gpt-s2", alias: "SearchModel Two", max_tokens: 8192, rpm: 0, image: false },
+        {
+          model: "gpt-s1",
+          alias: "SearchModel One",
+          max_tokens: 4096,
+          rpm: 0,
+          image: false,
+        },
+        {
+          model: "gpt-s2",
+          alias: "SearchModel Two",
+          max_tokens: 8192,
+          rpm: 0,
+          image: false,
+        },
       ],
       editable: true,
       enabled: true,
@@ -576,7 +646,15 @@ describe("ModelManager Search Functionality", () => {
       type: "anthropic",
       key: "Anthropic" as ProviderType,
       base_url: "",
-      models: [{ model: "claude-s1", alias: "Claude SearchAlpha", max_tokens: 100000, rpm: 0, image: false }],
+      models: [
+        {
+          model: "claude-s1",
+          alias: "Claude SearchAlpha",
+          max_tokens: 100000,
+          rpm: 0,
+          image: false,
+        },
+      ],
       editable: true,
       enabled: true,
     },
@@ -586,35 +664,50 @@ describe("ModelManager Search Functionality", () => {
       type: "openai",
       key: "Other" as ProviderType,
       base_url: "",
-      models: [{model: "other-m1", alias: "NonMatching Model", max_tokens: 1000, rpm: 0, image: false}],
+      models: [
+        {
+          model: "other-m1",
+          alias: "NonMatching Model",
+          max_tokens: 1000,
+          rpm: 0,
+          image: false,
+        },
+      ],
       editable: true,
       enabled: true,
-    }
+    },
   ];
 
   beforeEach(async () => {
     vi.clearAllMocks();
     vi.mock("react-router-dom", async (importOriginal) => {
-        const actual = await importOriginal();
-        return {
-            ...(typeof actual === 'object' && actual !== null ? actual : {}),
-            useNavigate: vi.fn(() => vi.fn()),
-            useLocation: vi.fn(() => ({ pathname: '/models', search: '', hash: '', state: null, key: 'searchTestKey' })),
-        };
+      const actual = await importOriginal();
+      return {
+        ...(typeof actual === "object" && actual !== null ? actual : {}),
+        useNavigate: vi.fn(() => vi.fn()),
+        useLocation: vi.fn(() => ({
+          pathname: "/models",
+          search: "",
+          hash: "",
+          state: null,
+          key: "searchTestKey",
+        })),
+      };
     });
-     vi.mocked(useToast).mockReturnValue({
+    vi.mocked(useToast).mockReturnValue({
       toast: vi.fn(),
       dismiss: vi.fn(),
       toasts: [],
     });
 
-
-    (getProviders as Mock).mockResolvedValue(JSON.parse(JSON.stringify(searchSampleProviders)));
+    (getProviders as Mock).mockResolvedValue(
+      JSON.parse(JSON.stringify(searchSampleProviders)),
+    );
 
     render(
       <TestProvider>
         <ModelManagerPageWrapper />
-      </TestProvider>
+      </TestProvider>,
     );
 
     await screen.findByText("OpenAI SearchCo");
@@ -634,67 +727,96 @@ describe("ModelManager Search Functionality", () => {
   });
 
   it("should filter by provider name (case-insensitive) and show all its models", async () => {
-    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    const searchInput = screen.getByPlaceholderText(
+      "Search providers or models...",
+    );
     await userEvent.type(searchInput, "openaI searchco");
 
     await waitFor(() => {
       expect(screen.getByText("OpenAI SearchCo")).toBeInTheDocument();
       expect(screen.getByText("SearchModel One")).toBeInTheDocument();
       expect(screen.getByText("SearchModel Two")).toBeInTheDocument();
-      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Anthropic SearchServices"),
+      ).not.toBeInTheDocument();
       expect(screen.queryByText("Provider OnlyMatch")).not.toBeInTheDocument();
     });
   });
 
   it("should filter by model alias (case-insensitive) and show only matching models within that provider", async () => {
-    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    const searchInput = screen.getByPlaceholderText(
+      "Search providers or models...",
+    );
     await userEvent.type(searchInput, "searchmodel one");
 
     await waitFor(async () => {
       const openAICard = await findProviderCard("OpenAI SearchCo");
       expect(openAICard).toBeInTheDocument();
-      expect(within(openAICard).getByText("SearchModel One")).toBeInTheDocument();
-      expect(within(openAICard).queryByText("SearchModel Two")).not.toBeInTheDocument();
+      expect(
+        within(openAICard).getByText("SearchModel One"),
+      ).toBeInTheDocument();
+      expect(
+        within(openAICard).queryByText("SearchModel Two"),
+      ).not.toBeInTheDocument();
 
-      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Anthropic SearchServices"),
+      ).not.toBeInTheDocument();
       expect(screen.queryByText("Provider OnlyMatch")).not.toBeInTheDocument();
     });
   });
 
   it("should filter by model ID (case-insensitive) and show only matching models", async () => {
-    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    const searchInput = screen.getByPlaceholderText(
+      "Search providers or models...",
+    );
     await userEvent.type(searchInput, "gpt-s2");
 
     await waitFor(async () => {
       const openAICard = await findProviderCard("OpenAI SearchCo");
       expect(openAICard).toBeInTheDocument();
-      expect(within(openAICard).queryByText("SearchModel One")).not.toBeInTheDocument();
-      expect(within(openAICard).getByText("SearchModel Two")).toBeInTheDocument();
+      expect(
+        within(openAICard).queryByText("SearchModel One"),
+      ).not.toBeInTheDocument();
+      expect(
+        within(openAICard).getByText("SearchModel Two"),
+      ).toBeInTheDocument();
 
-      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Anthropic SearchServices"),
+      ).not.toBeInTheDocument();
       expect(screen.queryByText("Provider OnlyMatch")).not.toBeInTheDocument();
     });
   });
 
-
   it("should show 'No providers or models found' message for no matches", async () => {
-    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    const searchInput = screen.getByPlaceholderText(
+      "Search providers or models...",
+    );
     await userEvent.type(searchInput, "NonExistentName");
 
     await waitFor(() => {
-      expect(screen.getByText("No providers or models found matching your search.")).toBeInTheDocument();
+      expect(
+        screen.getByText("No providers or models found matching your search."),
+      ).toBeInTheDocument();
     });
     expect(screen.queryByText("OpenAI SearchCo")).not.toBeInTheDocument();
-    expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Anthropic SearchServices"),
+    ).not.toBeInTheDocument();
   });
 
   it("should show all providers and models when search query is cleared", async () => {
-    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+    const searchInput = screen.getByPlaceholderText(
+      "Search providers or models...",
+    );
     await userEvent.type(searchInput, "OpenAI SearchCo");
 
     await waitFor(() => {
       expect(screen.getByText("OpenAI SearchCo")).toBeInTheDocument();
-      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Anthropic SearchServices"),
+      ).not.toBeInTheDocument();
     });
 
     await userEvent.clear(searchInput);
@@ -708,17 +830,23 @@ describe("ModelManager Search Functionality", () => {
       expect(screen.getByText("NonMatching Model")).toBeInTheDocument();
     });
   });
-   it("should show provider if only its name matches, along with all its models", async () => {
-    const searchInput = screen.getByPlaceholderText("Search providers or models...");
+  it("should show provider if only its name matches, along with all its models", async () => {
+    const searchInput = screen.getByPlaceholderText(
+      "Search providers or models...",
+    );
     await userEvent.type(searchInput, "Provider OnlyMatch");
 
     await waitFor(async () => {
       const providerCard = await findProviderCard("Provider OnlyMatch");
       expect(providerCard).toBeInTheDocument();
-      expect(within(providerCard).getByText("NonMatching Model")).toBeInTheDocument();
+      expect(
+        within(providerCard).getByText("NonMatching Model"),
+      ).toBeInTheDocument();
 
       expect(screen.queryByText("OpenAI SearchCo")).not.toBeInTheDocument();
-      expect(screen.queryByText("Anthropic SearchServices")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Anthropic SearchServices"),
+      ).not.toBeInTheDocument();
     });
   });
 });

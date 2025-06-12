@@ -169,10 +169,10 @@ export function ModelManager() {
 
     let newModels;
     if (currentModelIndex.current !== null) {
-      newModels = [...currentProviderForModel.models];
+      newModels = [...(currentProviderForModel.models ?? [])];
       newModels[currentModelIndex.current] = model;
     } else {
-      newModels = [...currentProviderForModel.models, model];
+      newModels = [...(currentProviderForModel.models ?? []), model];
     }
 
     const updatedProviderData = {
