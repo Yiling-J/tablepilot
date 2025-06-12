@@ -1,6 +1,7 @@
 import { previewDataset } from "@/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -9,12 +10,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Card,
-    CardContent,
-    // CardMedia, // Not available, will use img directly
-    CardTitle,
-} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
@@ -25,6 +20,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { JSONObject } from "@/json";
+import { imageUrl } from "@/urls";
 import React, { useEffect, useState } from "react";
 
 interface PreviewData {
@@ -145,19 +141,19 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
               ) : data.type === "image" && Array.isArray(data.data) ? (
                 <div className="flex flex-wrap justify-center p-4">
                   {(data.data as string[]).map((item, index) => {
-                    const isBase64 = item.startsWith("data:image");
-                    const filename = isBase64
-                      ? `Image ${index + 1}`
-                      : item.substring(item.lastIndexOf("/") + 1);
+                    const filename = item.substring(item.lastIndexOf("/") + 1);
                     return (
                       <Card key={`image-${index}`} className="m-2 w-48">
                         <img
-                          src={item}
+                          src={imageUrl(item)}
                           alt={`Preview ${index + 1}`}
                           className="object-contain h-40 w-full rounded-t-lg"
                         />
                         <CardContent className="p-2">
-                          <p className="text-sm text-center mt-1 truncate" title={filename}>
+                          <p
+                            className="text-sm text-center mt-1 truncate"
+                            title={filename}
+                          >
                             {filename}
                           </p>
                         </CardContent>
