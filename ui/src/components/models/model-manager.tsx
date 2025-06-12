@@ -14,13 +14,18 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, PlusIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ModeToggle } from "../darkmode";
+import { TablepilotHeader } from "../header";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { ScrollArea } from "../ui/scroll-area";
 
 export function ModelManager() {
   const { toast } = useToast();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog states
   const [isProviderFormOpen, setIsProviderFormOpen] = useState(false);
@@ -40,26 +45,54 @@ export function ModelManager() {
 
   const currentModelIndex = useRef<number | null>(null);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const providers = await getProviders();
-      setProviders(providers);
-    } catch (error) {
-      console.error("Failed to fetch providers:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedProviders = await getProviders();
+        setProviders(fetchedProviders);
+      } catch (error) {
+        console.error("Failed to fetch providers:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     fetchData();
   }, []);
+
+  const filteredProviders = useMemo(() => {
+    if (!searchQuery) {
+      return providers.map((p) => ({ ...p, displayModels: p.models }));
+    }
+    const lowerSearchQuery = searchQuery.toLowerCase();
+    return providers
+      .map((provider) => {
+        const providerNameMatches = provider.name
+          .toLowerCase()
+          .includes(lowerSearchQuery);
+        const matchingModels = provider.models.filter(
+          (model) =>
+            (model.alias &&
+              model.alias.toLowerCase().includes(lowerSearchQuery)) ||
+            model.model.toLowerCase().includes(lowerSearchQuery),
+        );
+
+        if (providerNameMatches || matchingModels.length > 0) {
+          return {
+            ...provider,
+            displayModels: providerNameMatches
+              ? provider.models
+              : matchingModels,
+          };
+        }
+        return null;
+      })
+      .filter((p): p is Provider & { displayModels: Model[] } => p !== null);
+  }, [providers, searchQuery]);
 
   const handleProviderSubmit = async (providerData: Provider) => {
     try {
       if (editingProvider && editingProvider.id !== 0) {
-        // Update existing provider
         await updateProvider(editingProvider.id.toString(), providerData);
         toast({
           title: "Provider Updated",
@@ -73,7 +106,10 @@ export function ModelManager() {
         });
       }
       setEditingProvider(null);
-      await fetchData();
+      setIsLoading(true);
+      getProviders()
+        .then(setProviders)
+        .finally(() => setIsLoading(false));
     } catch (error) {
       console.error("Failed to save provider:", error);
     }
@@ -82,99 +118,113 @@ export function ModelManager() {
   const handleDeleteProvider = async (providerId: string) => {
     try {
       await deleteProvider(providerId);
-      setProviders((prev) =>
-        prev.filter((p) => p.id.toString() !== providerId),
-      );
       toast({
         title: "Provider Deleted",
         description: "The provider has been removed.",
       });
-      await fetchData();
+      setIsLoading(true);
+      getProviders()
+        .then(setProviders)
+        .finally(() => setIsLoading(false));
     } catch (error) {
       console.error("Failed to delete provider:", error);
       toast({
         variant: "destructive",
         title: "Error Deleting Provider",
         description:
-          (error as Error).message ||
+          (error instanceof Error ? error.message : "Unknown error") ||
           "Could not delete provider. Please try again.",
       });
     }
   };
 
   const handleToggleProviderEnabled = async (providerId: string) => {
-    const updatedProviders = await Promise.all(
-      providers.map(async (p) => {
-        if (p.id.toString() === providerId) {
-          const updated = { ...p, enabled: !p.enabled };
-          await updateProvider(updated.id.toString(), updated);
-          return updated;
-        }
-        return p;
-      }),
-    );
-
-    setProviders(updatedProviders);
-
-    const updatedProvider = updatedProviders.find(
+    const providerToUpdate = providers.find(
       (p) => p.id.toString() === providerId,
     );
-    if (updatedProvider) {
+    if (!providerToUpdate) return;
+
+    const updatedProviderData = {
+      ...providerToUpdate,
+      enabled: !providerToUpdate.enabled,
+    };
+
+    try {
+      await updateProvider(providerId, updatedProviderData);
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.id.toString() === providerId ? updatedProviderData : p,
+        ),
+      );
       toast({
-        title: `Provider ${updatedProvider.enabled ? "Enabled" : "Disabled"}`,
-        description: `${updatedProvider.name} has been ${updatedProvider.enabled ? "enabled" : "disabled"}.`,
+        title: `Provider ${updatedProviderData.enabled ? "Enabled" : "Disabled"}`,
+        description: `${updatedProviderData.name} has been ${updatedProviderData.enabled ? "enabled" : "disabled"}.`,
       });
+    } catch (error) {
+      console.error("Failed to toggle provider state:", error);
     }
   };
 
   const handleModelSubmit = async (model: Model) => {
     if (!currentProviderForModel) return;
 
-    const updatedProviders = await Promise.all(
-      providers.map(async (p) => {
-        if (p.id === currentProviderForModel.id) {
-          let newModels;
-          if (currentModelIndex.current !== null) {
-            newModels = [...p.models];
-            newModels[currentModelIndex.current] = model;
-          } else {
-            newModels = [...p.models, model];
-          }
-          currentModelIndex.current = null;
-          const updated = { ...p, models: newModels };
-          await updateProvider(updated.id.toString(), updated);
-          return updated;
-        }
-        return p;
-      }),
-    );
+    let newModels;
+    if (currentModelIndex.current !== null) {
+      newModels = [...currentProviderForModel.models];
+      newModels[currentModelIndex.current] = model;
+    } else {
+      newModels = [...currentProviderForModel.models, model];
+    }
 
-    setProviders(updatedProviders);
-    setEditingModel(null);
-    setCurrentProviderForModel(null);
+    const updatedProviderData = {
+      ...currentProviderForModel,
+      models: newModels,
+    };
+
+    try {
+      await updateProvider(
+        currentProviderForModel.id.toString(),
+        updatedProviderData,
+      );
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.id === currentProviderForModel.id ? updatedProviderData : p,
+        ),
+      );
+      toast({ title: editingModel ? "Model Updated" : "Model Added" });
+      setEditingModel(null);
+      setCurrentProviderForModel(null);
+      currentModelIndex.current = null;
+    } catch (error) {
+      console.error("Failed to save model:", error);
+    }
   };
 
   const handleDeleteModel = async (providerId: string, modelId: string) => {
-    const updatedProviders = await Promise.all(
-      providers.map(async (p) => {
-        if (p.id.toString() === providerId) {
-          const updated = {
-            ...p,
-            models: p.models.filter((m: Model) => m.model !== modelId),
-          };
-          await updateProvider(updated.id.toString(), updated);
-          return updated;
-        }
-        return p;
-      }),
+    const providerToUpdate = providers.find(
+      (p) => p.id.toString() === providerId,
     );
+    if (!providerToUpdate) return;
 
-    setProviders(updatedProviders);
+    const newModels = providerToUpdate.models.filter(
+      (m: Model) => m.model !== modelId,
+    );
+    const updatedProviderData = { ...providerToUpdate, models: newModels };
 
-    toast({
-      title: "Model Deleted",
-      description: "The model has been removed from the provider.",
-    });
+    try {
+      await updateProvider(providerId, updatedProviderData);
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.id.toString() === providerId ? updatedProviderData : p,
+        ),
+      );
+      toast({
+        title: "Model Deleted",
+        description: "The model has been removed from the provider.",
+      });
+    } catch (error) {
+      console.error("Failed to delete model:", error);
+    }
   };
 
   const openEditProviderDialog = (providerId: string) => {
@@ -190,6 +240,7 @@ export function ModelManager() {
     if (provider && provider.enabled) {
       setCurrentProviderForModel(provider);
       setEditingModel(null);
+      currentModelIndex.current = null; // Ensure this is reset for add
       setIsModelFormOpen(true);
     } else if (provider && !provider.enabled) {
       toast({
@@ -202,15 +253,17 @@ export function ModelManager() {
 
   const openEditModelDialog = (providerId: string, modelId: string) => {
     const provider = providers.find((p) => p.id.toString() === providerId);
-    const model = provider?.models.find((m, i) => {
-      if (m.model === modelId) {
-        currentModelIndex.current = i;
-      }
-      return m.model === modelId;
-    });
-    if (provider && model && provider.enabled) {
+    const modelIndex = provider?.models.findIndex((m) => m.model === modelId);
+
+    if (
+      provider &&
+      modelIndex !== undefined &&
+      modelIndex !== -1 &&
+      provider.enabled
+    ) {
       setCurrentProviderForModel(provider);
-      setEditingModel(model);
+      setEditingModel(provider.models[modelIndex]);
+      currentModelIndex.current = modelIndex;
       setIsModelFormOpen(true);
     } else if (provider && !provider.enabled) {
       toast({
@@ -273,13 +326,10 @@ export function ModelManager() {
       return;
     }
 
-    // Only handle provider type here. Model deletion will use its own dialog.
     if (type === "provider") {
       setProviderToDeleteId(id);
       setIsProviderDeleteConfirmOpen(true);
     }
-    // No longer setting deleteAction for models here
-    // setIsConfirmDeleteDialogOpen(true); // This was for the shared dialog
   };
 
   const executeProviderDelete = () => {
@@ -290,13 +340,11 @@ export function ModelManager() {
     setIsProviderDeleteConfirmOpen(false);
   };
 
-  // Function to open the "Add Provider" dialog internally, used by parent via prop
   const openAddProviderDialogInternal = () => {
     setEditingProvider(null);
     setIsProviderFormOpen(true);
   };
 
-  // Skeleton Component for ProviderCard
   const ProviderCardSkeleton = () => (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between py-4 px-6">
@@ -318,7 +366,7 @@ export function ModelManager() {
           <div key={i} className="p-3 border rounded-md mb-3 bg-background">
             <div className="flex justify-between items-center mb-2">
               <Skeleton className="h-5 w-4/12" />
-              <Skeleton className="h-8 w-8 rounded-md" />{" "}
+              <Skeleton className="h-8 w-8 rounded-md" />
             </div>
             <div className="space-y-1.5">
               <Skeleton className="h-3 w-10/12" />
@@ -340,7 +388,7 @@ export function ModelManager() {
     );
   }
 
-  if (providers.length === 0) {
+  if (providers.length === 0 && !searchQuery) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
         <ProviderFormDialog
@@ -351,9 +399,7 @@ export function ModelManager() {
         />
         <div
           className="border border-muted rounded-2xl p-12 bg-transparent text-muted-foreground flex flex-col items-center gap-3 hover:bg-muted-foreground/5 cursor-pointer"
-          onClick={() => {
-            openAddProviderDialogInternal();
-          }}
+          onClick={openAddProviderDialogInternal}
           aria-label="Add provider"
         >
           <PlusCircle className="w-8 h-8 mb-4" />
@@ -364,23 +410,52 @@ export function ModelManager() {
   }
 
   return (
-    <>
-      <div>
-        {providers.map((provider, i) => (
-          <ProviderCard
-            key={provider.id === 0 ? `pv_${i.toString()}` : provider.id}
-            provider={provider}
-            onAddModel={openAddModelDialog}
-            onEditModel={openEditModelDialog}
-            onDeleteModel={handleDeleteModel}
-            onEditProvider={openEditProviderDialog}
-            onDeleteProvider={(providerId) =>
-              openConfirmDeleteDialog("provider", providerId)
-            }
-            onToggleEnabled={handleToggleProviderEnabled}
+    <div className="grow h-screen flex flex-col">
+      <ModeToggle hide={true} />
+      <TablepilotHeader title="Tablepilot" currentTab="models" />
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center space-x-4">
+          <Input
+            type="text"
+            placeholder="Search providers or models..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm h-9 rounded-full"
           />
-        ))}
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={openAddProviderDialogInternal}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add New Provider
+            </Button>
+          </div>
+        </div>
       </div>
+
+      <ScrollArea className="flex-grow">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          {filteredProviders.length === 0 && searchQuery ? (
+            <div className="text-center text-muted-foreground py-10">
+              No providers or models found matching your search.
+            </div>
+          ) : (
+            filteredProviders.map((provider, i) => (
+              <ProviderCard
+                key={provider.id === 0 ? `pv_${i.toString()}` : provider.id}
+                provider={{ ...provider, models: provider.displayModels }}
+                onAddModel={openAddModelDialog}
+                onEditModel={openEditModelDialog}
+                onDeleteModel={handleDeleteModel}
+                onEditProvider={openEditProviderDialog}
+                onDeleteProvider={(providerId) =>
+                  openConfirmDeleteDialog("provider", providerId)
+                }
+                onToggleEnabled={handleToggleProviderEnabled}
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
+
       <ProviderFormDialog
         isOpen={isProviderFormOpen}
         onOpenChange={setIsProviderFormOpen}
@@ -397,7 +472,6 @@ export function ModelManager() {
           initialData={editingModel}
         />
       )}
-      {/* Provider Deletion Confirmation Dialog (existing) */}
       <ConfirmationDialog
         isOpen={isProviderDeleteConfirmOpen}
         onOpenChange={setIsProviderDeleteConfirmOpen}
@@ -405,16 +479,6 @@ export function ModelManager() {
         title={`Confirm Provider Deletion`}
         description={`Are you sure you want to delete this provider? This action cannot be undone.`}
       />
-
-      <Button
-        onClick={() => {
-          openAddProviderDialogInternal();
-        }}
-        className="fixed h-15 w-15 bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-lg"
-        aria-label="Add provider"
-      >
-        <PlusIcon className="h-6 w-6" />
-      </Button>
-    </>
+    </div>
   );
 }

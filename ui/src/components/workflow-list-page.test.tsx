@@ -13,7 +13,7 @@ import { TestProvider } from "@/test/helpers/test-provider";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
-import { vi } from "vitest";
+import { vi, Mock } from "vitest"; // Added Mock import
 import { WorkflowListPage } from "./workflow-list-page";
 
 const sampleWorkflows: WorkflowInfo[] = [
@@ -66,7 +66,7 @@ describe("WorkflowListPage", () => {
         <WorkflowListPage />
       </TestProvider>,
     );
-    await screen.findByText("Workflow One"); // Wait for initial data to load
+    await screen.findByText("Workflow One");
   });
 
   it("should display a list of workflows", () => {
@@ -105,10 +105,9 @@ describe("WorkflowListPage", () => {
     });
     const mockedGetWorkflow = vi.mocked(getWorkflow);
     mockedGetWorkflow.mockResolvedValue(sampleWorkflowDetail);
-    // Find the card for "Workflow One"
     const workflowOneCard = screen
       .getByText("Workflow One")
-      .closest('div[class*="h-60"]'); // Target the parent Card element
+      .closest('div[class*="h-60"]');
     if (!workflowOneCard)
       throw new Error("Workflow card not found for 'Workflow One'");
 
@@ -131,10 +130,9 @@ describe("WorkflowListPage", () => {
     const mockedDeleteWorkflow = vi.mocked(deleteWorkflow);
     mockedDeleteWorkflow.mockResolvedValue();
 
-    // Find the card for "Workflow One"
     const workflowOneCard = screen
       .getByText("Workflow One")
-      .closest('div[class*="h-60"]'); // Target the parent Card element
+      .closest('div[class*="h-60"]');
     if (!workflowOneCard)
       throw new Error("Workflow card not found for 'Workflow One'");
 
@@ -148,14 +146,109 @@ describe("WorkflowListPage", () => {
       "Delete",
     );
     await userEvent.click(deleteButton);
-    // Click the delete button in the confirmation dialog
     await userEvent.click(screen.getByText("Delete"));
 
     expect(mockedDeleteWorkflow).toHaveBeenCalledWith("wf1");
 
-    // Check if getWorkflows was called again after delete (due to refreshWorkflows)
     await waitFor(() => {
       expect(mockedGetWorkflows).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+describe("WorkflowListPage Search Functionality", () => {
+  const searchSampleWorkflows: WorkflowInfo[] = [
+    { id: "sw1", name: "Alpha Workflow", description: "Description Alpha" },
+    { id: "sw2", name: "Beta Workflow", description: "Description Beta" },
+    { id: "sw3", name: "Workflow Gamma", description: "Description Gamma" },
+  ];
+
+  beforeEach(async () => {
+    vi.resetAllMocks();
+    vi.mock("react-router-dom", async (importOriginal) => {
+        const actual = await importOriginal();
+        return {
+            ...(typeof actual === 'object' && actual !== null ? actual : {}),
+            useNavigate: vi.fn(() => vi.fn()),
+            useLocation: vi.fn(() => ({ pathname: '/workflows', search: '', hash: '', state: null, key: 'testKey' })),
+        };
+    });
+    vi.mock("@/actions");
+
+    (getWorkflows as Mock).mockResolvedValue({
+      workflows: searchSampleWorkflows,
+      total: searchSampleWorkflows.length,
+    });
+    (getWorkflow as Mock).mockResolvedValue(sampleWorkflowDetail);
+    (deleteWorkflow as Mock).mockResolvedValue({});
+    (getModels as Mock).mockResolvedValue({ default_model: "test", models: [] });
+    (getProviders as Mock).mockResolvedValue([]);
+    (getTables as Mock).mockResolvedValue({ tables: [], total: 0 });
+
+
+    render(
+      <TestProvider>
+        <WorkflowListPage />
+      </TestProvider>
+    );
+    await screen.findByText("Alpha Workflow");
+    await screen.findByText("Beta Workflow");
+    await screen.findByText("Workflow Gamma");
+  });
+
+  it("should render all workflows initially", () => {
+    expect(screen.getByText("Alpha Workflow")).toBeInTheDocument();
+    expect(screen.getByText("Beta Workflow")).toBeInTheDocument();
+    expect(screen.getByText("Workflow Gamma")).toBeInTheDocument();
+  });
+
+  it("should filter workflows based on search query", async () => {
+    const searchInput = screen.getByPlaceholderText("Search workflows...");
+    await userEvent.type(searchInput, "Alpha");
+
+    await waitFor(() => {
+      expect(screen.getByText("Alpha Workflow")).toBeInTheDocument();
+      expect(screen.queryByText("Beta Workflow")).not.toBeInTheDocument();
+      expect(screen.queryByText("Workflow Gamma")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should be case-insensitive", async () => {
+    const searchInput = screen.getByPlaceholderText("Search workflows...");
+    await userEvent.type(searchInput, "gamma");
+
+    await waitFor(() => {
+      expect(screen.queryByText("Alpha Workflow")).not.toBeInTheDocument();
+      expect(screen.queryByText("Beta Workflow")).not.toBeInTheDocument();
+      expect(screen.getByText("Workflow Gamma")).toBeInTheDocument();
+    });
+  });
+
+  it("should show 'No workflows found' message if search matches nothing", async () => {
+    const searchInput = screen.getByPlaceholderText("Search workflows...");
+    await userEvent.type(searchInput, "NonExistentWorkflow");
+
+    await waitFor(() => {
+      expect(screen.getByText("No workflows found matching your search.")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Alpha Workflow")).not.toBeInTheDocument();
+    expect(screen.queryByText("Beta Workflow")).not.toBeInTheDocument();
+    expect(screen.queryByText("Workflow Gamma")).not.toBeInTheDocument();
+  });
+
+  it("should show all workflows when search query is cleared", async () => {
+    const searchInput = screen.getByPlaceholderText("Search workflows...");
+    await userEvent.type(searchInput, "Alpha");
+
+    await waitFor(() => expect(screen.getByText("Alpha Workflow")).toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("Beta Workflow")).not.toBeInTheDocument());
+
+    await userEvent.clear(searchInput);
+
+    await waitFor(() => {
+      expect(screen.getByText("Alpha Workflow")).toBeInTheDocument();
+      expect(screen.getByText("Beta Workflow")).toBeInTheDocument();
+      expect(screen.getByText("Workflow Gamma")).toBeInTheDocument();
     });
   });
 });

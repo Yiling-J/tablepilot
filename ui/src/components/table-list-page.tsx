@@ -16,17 +16,74 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header.tsx";
+import { Button } from "./ui/button.tsx";
+import { Input } from "./ui/input.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
 export function TableListPage() {
+  const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
+  const [importCSVOpen, setImportCSVOpen] = useState(false);
+  const { tables, refreshTables } = useTables();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchTables = useCallback(async () => {
+    // No setLoading as TableList will handle its own loading state
+    try {
+      await refreshTables();
+    } catch (error) {
+      console.error("Failed to fetch tables:", error);
+    }
+  }, [refreshTables]);
+
+  useEffect(() => {
+    fetchTables();
+  }, [fetchTables]);
+
   return (
-    <div className="grow overflow-auto h-full flex flex-col">
+    <div className="grow h-screen flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="tables" />
-      <ScrollArea className="h-[calc(100vh-120px)]">
-        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8 py-12">
+      <ImportFileDialog
+        isOpen={importCSVOpen}
+        setIsOpen={setImportCSVOpen}
+        tables={tables}
+        onNext={(form: TableCreateRequest, rows: JSONObject[]) => {
+          withForm(form);
+          withRows(rows);
+          setImportCSVOpen(false);
+          openNewTableDialog();
+        }}
+      />
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center space-x-4">
+          <Input
+            type="text"
+            placeholder="Search tables..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm h-9 rounded-full"
+          />
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                openNewTableDialog();
+              }}
+            >
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Add New Table
+            </Button>
+            <Button variant="outline" onClick={() => setImportCSVOpen(true)}>
+              <FileIcon className="w-4 h-4 mr-2" />
+              Import
+            </Button>
+          </div>
+        </div>
+      </div>
+      <ScrollArea className="flex-grow">
+        <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="tab-content-container">
-            <TableList />
+            <TableList searchQuery={searchQuery} />
           </div>
         </div>
       </ScrollArea>
@@ -34,16 +91,14 @@ export function TableListPage() {
   );
 }
 
-function TableList() {
+interface TableListProps {
+  searchQuery: string;
+}
+
+function TableList({ searchQuery }: TableListProps) {
   const [loading, setLoading] = useState(true);
-  const {
-    openNewTableDialog,
-    withForm,
-    withRows,
-    withTable,
-    withSubmitCallback,
-  } = useCreateTableDialog();
-  const [importCSVOpen, setImportCSVOpen] = useState(false);
+  const { openNewTableDialog, withForm, withTable, withSubmitCallback } =
+    useCreateTableDialog();
   const { tables, refreshTables } = useTables();
   const navigate = useNavigate();
 
@@ -56,7 +111,7 @@ function TableList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshTables]);
 
   useEffect(() => {
     fetchTables();
@@ -77,18 +132,7 @@ function TableList() {
   };
 
   return (
-    <div className="grow overflow-auto h-full flex flex-col">
-      <ImportFileDialog
-        isOpen={importCSVOpen}
-        setIsOpen={setImportCSVOpen}
-        tables={tables}
-        onNext={(form: TableCreateRequest, rows: JSONObject[]) => {
-          withForm(form);
-          withRows(rows);
-          setImportCSVOpen(false);
-          openNewTableDialog();
-        }}
-      />
+    <div className="grow overflow-auto h-full flex flex-col pt-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
@@ -105,45 +149,25 @@ function TableList() {
                 </CardFooter>
               </Card>
             ))
-          : tables.map((table) => (
-              <CommonCard
-                key={table.id}
-                name={table.name}
-                onClick={() => navigate(`/tables/${table.id}`)}
-                onEdit={() => handleEditTableClick(table.id)}
-                onDelete={async () => {
-                  await deleteTable(table.id);
-                  await fetchTables();
-                  refreshTables();
-                }}
-              >
-                <p className="line-clamp-4">{table.description}</p>
-              </CommonCard>
-            ))}
-        <Card className="flex flex-col cursor-pointer h-60 min-w-72 border-dashed overflow-hidden">
-          <div
-            className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-full flex-1 hover:h-[70%] peer"
-            onClick={() => {
-              openNewTableDialog();
-            }}
-          >
-            <PlusIcon className="w-5 h-5 mr-2 mb-2" />
-            <span>Add New Table</span>
-          </div>
-
-          <div
-            className="flex flex-col items-center justify-center hover:bg-muted-foreground/5 transition-all w-full h-[30%] peer-hover:h-[30%] hover:h-[70%] border-t rounded-t-xl"
-            onClick={() => setImportCSVOpen(true)}
-          >
-            <div className="flex items-center">
-              <FileIcon className="w-4 h-4 mr-2" />
-              <span>Import</span>
-            </div>
-            <p className="text-xs pt-2 text-gray-500">
-              formats: csv, png, jpg, jpeg
-            </p>
-          </div>
-        </Card>
+          : tables
+              .filter((table) =>
+                table.name.toLowerCase().includes(searchQuery.toLowerCase()),
+              )
+              .map((table) => (
+                <CommonCard
+                  key={table.id}
+                  name={table.name}
+                  onClick={() => navigate(`/tables/${table.id}`)}
+                  onEdit={() => handleEditTableClick(table.id)}
+                  onDelete={async () => {
+                    await deleteTable(table.id);
+                    await fetchTables();
+                    refreshTables();
+                  }}
+                >
+                  <p className="line-clamp-4">{table.description}</p>
+                </CommonCard>
+              ))}
       </div>
     </div>
   );
