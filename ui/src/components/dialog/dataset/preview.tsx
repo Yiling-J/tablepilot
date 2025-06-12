@@ -60,7 +60,7 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
           setIsLoading(false);
         });
     }
-  }, [isOpen, datasetId]);
+  }, [isOpen]);
 
   const handleClose = () => {
     setError(null);
@@ -145,7 +145,10 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                     return (
                       <Card key={`image-${index}`} className="m-2 w-48">
                         <img
-                          src={imageUrl(item)}
+                          key={Date.now()}
+                          src={imageUrl(
+                            `datasets/shared/${datasetId}/${item}?key=${Date.now()}`,
+                          )}
                           alt={`Preview ${index + 1}`}
                           className="object-contain h-40 w-full rounded-t-lg"
                         />

@@ -584,6 +584,18 @@ func TestDatasetService_Preview(t *testing.T) {
 		require.Equal(t, data, rows.Data)
 	})
 
+	t.Run("image show all files", func(t *testing.T) {
+		data := []string{"a1.png", "b1.png", "a2.png", "1.png"}
+		for i := range 120 {
+			data = append(data, fmt.Sprintf("%d", i))
+		}
+		ds1, err := db.Dataset.Create().SetName("dsi").SetType(dataset.TypeImage).SetValues(data).Save(t.Context())
+		require.NoError(t, err)
+		rows, err := srv.Preview(t.Context(), ds1.Nanoid)
+		require.NoError(t, err)
+		require.Equal(t, data, rows.Data)
+	})
+
 	t.Run("csv show first 100 rows", func(t *testing.T) {
 		var buf bytes.Buffer
 		writer := csv.NewWriter(&buf)

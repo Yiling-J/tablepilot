@@ -193,7 +193,9 @@ export function CreateDatasetDialog({
             id: `${dataset.id}-${fileName}-${index}`,
             name: fileName as string,
             file: undefined,
-            thumbnail: imageUrl(`datasets/shared/${dataset.id}/${fileName}`),
+            thumbnail: imageUrl(
+              `datasets/shared/${dataset.id}/${fileName}?key=${Date.now()}`,
+            ),
           }));
           setFileItems(initialFileItems);
           break;

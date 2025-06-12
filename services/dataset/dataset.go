@@ -284,22 +284,9 @@ func (s *DatasetServiceImpl) Preview(ctx context.Context, dataset string) (*Data
 			Rows: rows,
 		}, nil
 	case db_dataset.TypeImage:
-		dir := fmt.Sprintf("%s/datasets/shared/%s", s.cfg.Common.DataDir, sr.Nanoid)
-		entries, err := os.ReadDir(dir)
-		if err != nil {
-			return nil, fmt.Errorf("dataset.Preview: read images dir: %w", err)
-		}
-		images := []string{}
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				images = append(
-					images, fmt.Sprintf("datasets/shared/%s/%s", sr.Nanoid, entry.Name()),
-				)
-			}
-		}
 		return &DatasetRows{
 			Type: sr.Type,
-			Data: images,
+			Data: sr.Values,
 		}, nil
 	case db_dataset.TypeList:
 		return &DatasetRows{
