@@ -7,14 +7,8 @@ import {
 } from "@/actions";
 import WorkflowBuilderDialog from "@/components/dialog/workflow/builder";
 import WorkflowExecutionDialog from "@/components/dialog/workflow/workflow";
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-} from "@/components/ui/card";
 import { CommonCard } from "@/components/ui/common-card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { IconSpinner } from "@/components/ui/icons";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { useCallback, useEffect, useState } from "react";
 import { ModeToggle } from "./darkmode";
@@ -90,58 +84,49 @@ export function WorkflowListPage() {
       <ScrollArea className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="tab-content-container">
-            <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-              {loading &&
-                Array.from({ length: 4 }).map((_, index) => (
-                  <Card key={index} className="w-80">
-                    <CardHeader>
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                    </CardHeader>
-                    <CardContent>
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-4 w-full" />
-                    </CardContent>
-                    <CardFooter>
-                      <Skeleton className="h-4 w-1/4" />
-                    </CardFooter>
-                  </Card>
-                ))}
-              {!loading &&
-                workflows
-                  .filter((wf) =>
+            <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 relative min-h-[300px]">
+              {loading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm z-20 col-span-full">
+                  <IconSpinner className="w-10 h-10 text-primary" />
+                </div>
+              ) : (
+                <>
+                  {workflows
+                    .filter((wf) =>
+                      wf.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                    )
+                    .map((wf) => (
+                      <CommonCard
+                        key={wf.id}
+                        name={wf.name}
+                        onClick={async () => {
+                          const w = await getWorkflow(wf.id);
+                          setWorkflow(w);
+                          setRunWorkflowOpen(true);
+                        }}
+                        onEdit={async () => {
+                          const w = await getWorkflow(wf.id);
+                          setWorkflow(w);
+                          setRunWorkflowBuilderOpen(true);
+                        }}
+                        onDelete={async () => {
+                          await deleteWorkflow(wf.id);
+                          await refreshWorkflows();
+                        }}
+                      >
+                        <p className="line-clamp-4">{wf.description}</p>
+                      </CommonCard>
+                    ))}
+                  {workflows.filter((wf) =>
                     wf.name.toLowerCase().includes(searchQuery.toLowerCase()),
-                  )
-                  .map((wf) => (
-                    <CommonCard
-                      key={wf.id}
-                      name={wf.name}
-                      onClick={async () => {
-                        const w = await getWorkflow(wf.id);
-                        setWorkflow(w);
-                        setRunWorkflowOpen(true);
-                      }}
-                      onEdit={async () => {
-                        const w = await getWorkflow(wf.id);
-                        setWorkflow(w);
-                        setRunWorkflowBuilderOpen(true);
-                      }}
-                      onDelete={async () => {
-                        await deleteWorkflow(wf.id);
-                        await refreshWorkflows();
-                      }}
-                    >
-                      <p className="line-clamp-4">{wf.description}</p>
-                    </CommonCard>
-                  ))}
-              {!loading &&
-                workflows.filter((wf) =>
-                  wf.name.toLowerCase().includes(searchQuery.toLowerCase()),
-                ).length === 0 &&
-                searchQuery && (
-                  <div className="col-span-full text-center text-muted-foreground py-10">
-                    No workflows found matching your search.
-                  </div>
-                )}
+                  ).length === 0 &&
+                    searchQuery && (
+                      <div className="col-span-full text-center text-muted-foreground py-10">
+                        No workflows found matching your search.
+                      </div>
+                    )}
+                </>
+              )}
             </div>
           </div>
         </div>
