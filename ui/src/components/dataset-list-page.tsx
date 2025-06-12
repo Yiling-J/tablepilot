@@ -21,8 +21,8 @@ import { ModeToggle } from "./darkmode";
 import { CreateDatasetDialog } from "./dialog/dataset/dataset";
 import { DatasetInfoDialog } from "./dialog/dataset/info";
 import { DatasetPreviewDialog } from "./dialog/dataset/preview";
-import { Input } from "./ui/input.tsx";
 import { TablepilotHeader } from "./header.tsx";
+import { Input } from "./ui/input.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
 export function DatasetListPage() {
@@ -36,7 +36,7 @@ export function DatasetListPage() {
 
   const fetchDatasetsCallback = useCallback(async () => {
     // This callback signals to DatasetList that it needs to re-fetch its data.
-    setRefreshKey(prevKey => prevKey + 1);
+    setRefreshKey((prevKey) => prevKey + 1);
   }, []);
 
   const handleOpenEditDialog = (dataset: DatasetInfo) => {
@@ -116,7 +116,7 @@ export function DatasetListPage() {
   };
 
   return (
-    <div className="grow h-full flex flex-col">
+    <div className="grow h-screen flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="datasets" />
       <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
@@ -126,7 +126,7 @@ export function DatasetListPage() {
             placeholder="Search datasets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm h-9"
+            className="max-w-sm h-9 rounded-full"
           />
           <div className="flex space-x-2">
             <Button
@@ -238,23 +238,23 @@ function DatasetList({
               .map((dataset) => (
                 <CommonCard
                   key={dataset.id}
-                name={dataset.name}
-                onClick={() => {
-                  setSelectedDatasetId(dataset.id);
-                  setIsPreviewDialogOpen(true);
-                }}
-                onEdit={() => onEditDataset(dataset)}
-                onDelete={async () => {
-                  setLoading(true);
-                  await deleteDataset(dataset.id);
-                  await fetchDatasets();
-                  setLoading(false);
-                }}
-                badgeText={dataset.type}
-              >
-                <p className="line-clamp-4">{dataset.description}</p>
-              </CommonCard>
-            ))}
+                  name={dataset.name}
+                  onClick={() => {
+                    setSelectedDatasetId(dataset.id);
+                    setIsPreviewDialogOpen(true);
+                  }}
+                  onEdit={() => onEditDataset(dataset)}
+                  onDelete={async () => {
+                    setLoading(true);
+                    await deleteDataset(dataset.id);
+                    await fetchDatasets();
+                    setLoading(false);
+                  }}
+                  badgeText={dataset.type}
+                >
+                  <p className="line-clamp-4">{dataset.description}</p>
+                </CommonCard>
+              ))}
       </div>
       <DatasetPreviewDialog // Keep preview dialog here as it's specific to this list's interaction
         isOpen={isPreviewDialogOpen}

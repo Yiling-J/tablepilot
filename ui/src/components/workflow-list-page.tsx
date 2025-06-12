@@ -19,9 +19,9 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { useCallback, useEffect, useState } from "react";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header";
-import { ScrollArea } from "./ui/scroll-area";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { ScrollArea } from "./ui/scroll-area";
 
 export function WorkflowListPage() {
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
@@ -49,7 +49,7 @@ export function WorkflowListPage() {
   }, [refreshWorkflows]);
 
   return (
-    <div className="grow h-full flex flex-col">
+    <div className="grow h-screen flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="workflows" />
       <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
@@ -59,7 +59,7 @@ export function WorkflowListPage() {
             placeholder="Search workflows..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm h-9"
+            className="max-w-sm h-9 rounded-full"
           />
           <div className="flex space-x-2">
             <Button

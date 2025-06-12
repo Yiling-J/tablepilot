@@ -15,17 +15,13 @@ import { FileIcon, PlusIcon } from "@radix-ui/react-icons";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
+import { TablepilotHeader } from "./header.tsx";
 import { Button } from "./ui/button.tsx";
 import { Input } from "./ui/input.tsx";
-import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
 export function TableListPage() {
-  const {
-    openNewTableDialog,
-    withForm,
-    withRows,
-  } = useCreateTableDialog();
+  const { openNewTableDialog, withForm, withRows } = useCreateTableDialog();
   const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { tables, refreshTables } = useTables();
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,7 +40,7 @@ export function TableListPage() {
   }, [fetchTables]);
 
   return (
-    <div className="grow h-full flex flex-col">
+    <div className="grow h-screen flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="tables" />
       <ImportFileDialog
@@ -65,7 +61,7 @@ export function TableListPage() {
             placeholder="Search tables..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm h-9"
+            className="max-w-sm h-9 rounded-full"
           />
           <div className="flex space-x-2">
             <Button
@@ -101,12 +97,8 @@ interface TableListProps {
 
 function TableList({ searchQuery }: TableListProps) {
   const [loading, setLoading] = useState(true);
-  const {
-    openNewTableDialog,
-    withForm,
-    withTable,
-    withSubmitCallback,
-  } = useCreateTableDialog();
+  const { openNewTableDialog, withForm, withTable, withSubmitCallback } =
+    useCreateTableDialog();
   const { tables, refreshTables } = useTables();
   const navigate = useNavigate();
 
@@ -164,18 +156,18 @@ function TableList({ searchQuery }: TableListProps) {
               .map((table) => (
                 <CommonCard
                   key={table.id}
-                name={table.name}
-                onClick={() => navigate(`/tables/${table.id}`)}
-                onEdit={() => handleEditTableClick(table.id)}
-                onDelete={async () => {
-                  await deleteTable(table.id);
-                  await fetchTables();
-                  refreshTables();
-                }}
-              >
-                <p className="line-clamp-4">{table.description}</p>
-              </CommonCard>
-            ))}
+                  name={table.name}
+                  onClick={() => navigate(`/tables/${table.id}`)}
+                  onEdit={() => handleEditTableClick(table.id)}
+                  onDelete={async () => {
+                    await deleteTable(table.id);
+                    await fetchTables();
+                    refreshTables();
+                  }}
+                >
+                  <p className="line-clamp-4">{table.description}</p>
+                </CommonCard>
+              ))}
       </div>
     </div>
   );

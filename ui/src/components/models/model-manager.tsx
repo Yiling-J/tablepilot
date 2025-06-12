@@ -15,8 +15,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ModeToggle } from "../darkmode";
+import { TablepilotHeader } from "../header";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { ScrollArea } from "../ui/scroll-area";
 
 export function ModelManager() {
   const { toast } = useToast();
@@ -69,7 +72,8 @@ export function ModelManager() {
           .includes(lowerSearchQuery);
         const matchingModels = provider.models.filter(
           (model) =>
-            (model.alias && model.alias.toLowerCase().includes(lowerSearchQuery)) ||
+            (model.alias &&
+              model.alias.toLowerCase().includes(lowerSearchQuery)) ||
             model.model.toLowerCase().includes(lowerSearchQuery),
         );
 
@@ -103,7 +107,9 @@ export function ModelManager() {
       }
       setEditingProvider(null);
       setIsLoading(true);
-      getProviders().then(setProviders).finally(() => setIsLoading(false));
+      getProviders()
+        .then(setProviders)
+        .finally(() => setIsLoading(false));
     } catch (error) {
       console.error("Failed to save provider:", error);
     }
@@ -117,7 +123,9 @@ export function ModelManager() {
         description: "The provider has been removed.",
       });
       setIsLoading(true);
-      getProviders().then(setProviders).finally(() => setIsLoading(false));
+      getProviders()
+        .then(setProviders)
+        .finally(() => setIsLoading(false));
     } catch (error) {
       console.error("Failed to delete provider:", error);
       toast({
@@ -131,22 +139,29 @@ export function ModelManager() {
   };
 
   const handleToggleProviderEnabled = async (providerId: string) => {
-    const providerToUpdate = providers.find(p => p.id.toString() === providerId);
+    const providerToUpdate = providers.find(
+      (p) => p.id.toString() === providerId,
+    );
     if (!providerToUpdate) return;
 
-    const updatedProviderData = { ...providerToUpdate, enabled: !providerToUpdate.enabled };
+    const updatedProviderData = {
+      ...providerToUpdate,
+      enabled: !providerToUpdate.enabled,
+    };
 
     try {
       await updateProvider(providerId, updatedProviderData);
-      setProviders(prev =>
-        prev.map(p => p.id.toString() === providerId ? updatedProviderData : p)
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.id.toString() === providerId ? updatedProviderData : p,
+        ),
       );
       toast({
         title: `Provider ${updatedProviderData.enabled ? "Enabled" : "Disabled"}`,
         description: `${updatedProviderData.name} has been ${updatedProviderData.enabled ? "enabled" : "disabled"}.`,
       });
     } catch (error) {
-       console.error("Failed to toggle provider state:", error);
+      console.error("Failed to toggle provider state:", error);
     }
   };
 
@@ -161,12 +176,20 @@ export function ModelManager() {
       newModels = [...currentProviderForModel.models, model];
     }
 
-    const updatedProviderData = { ...currentProviderForModel, models: newModels };
+    const updatedProviderData = {
+      ...currentProviderForModel,
+      models: newModels,
+    };
 
     try {
-      await updateProvider(currentProviderForModel.id.toString(), updatedProviderData);
-      setProviders(prev =>
-        prev.map(p => p.id === currentProviderForModel.id ? updatedProviderData : p)
+      await updateProvider(
+        currentProviderForModel.id.toString(),
+        updatedProviderData,
+      );
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.id === currentProviderForModel.id ? updatedProviderData : p,
+        ),
       );
       toast({ title: editingModel ? "Model Updated" : "Model Added" });
       setEditingModel(null);
@@ -178,23 +201,29 @@ export function ModelManager() {
   };
 
   const handleDeleteModel = async (providerId: string, modelId: string) => {
-    const providerToUpdate = providers.find(p => p.id.toString() === providerId);
+    const providerToUpdate = providers.find(
+      (p) => p.id.toString() === providerId,
+    );
     if (!providerToUpdate) return;
 
-    const newModels = providerToUpdate.models.filter((m: Model) => m.model !== modelId);
+    const newModels = providerToUpdate.models.filter(
+      (m: Model) => m.model !== modelId,
+    );
     const updatedProviderData = { ...providerToUpdate, models: newModels };
 
     try {
       await updateProvider(providerId, updatedProviderData);
-       setProviders(prev =>
-        prev.map(p => p.id.toString() === providerId ? updatedProviderData : p)
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.id.toString() === providerId ? updatedProviderData : p,
+        ),
       );
       toast({
         title: "Model Deleted",
         description: "The model has been removed from the provider.",
       });
     } catch (error) {
-       console.error("Failed to delete model:", error);
+      console.error("Failed to delete model:", error);
     }
   };
 
@@ -224,9 +253,14 @@ export function ModelManager() {
 
   const openEditModelDialog = (providerId: string, modelId: string) => {
     const provider = providers.find((p) => p.id.toString() === providerId);
-    const modelIndex = provider?.models.findIndex(m => m.model === modelId);
+    const modelIndex = provider?.models.findIndex((m) => m.model === modelId);
 
-    if (provider && modelIndex !== undefined && modelIndex !== -1 && provider.enabled) {
+    if (
+      provider &&
+      modelIndex !== undefined &&
+      modelIndex !== -1 &&
+      provider.enabled
+    ) {
       setCurrentProviderForModel(provider);
       setEditingModel(provider.models[modelIndex]);
       currentModelIndex.current = modelIndex;
@@ -314,15 +348,30 @@ export function ModelManager() {
   const ProviderCardSkeleton = () => (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between py-4 px-6">
-        <div><Skeleton className="h-6 w-32 mb-2" /> <Skeleton className="h-4 w-24" /></div>
-        <div className="flex space-x-2"><Skeleton className="h-9 w-20 rounded-md" /><Skeleton className="h-9 w-9 rounded-md" /></div>
+        <div>
+          <Skeleton className="h-6 w-32 mb-2" />{" "}
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <div className="flex space-x-2">
+          <Skeleton className="h-9 w-20 rounded-md" />
+          <Skeleton className="h-9 w-9 rounded-md" />
+        </div>
       </CardHeader>
       <CardContent className="px-6 pb-6">
-        <div className="flex justify-between items-center mb-3"><Skeleton className="h-5 w-28" /><Skeleton className="h-9 w-32 rounded-md" /></div>
+        <div className="flex justify-between items-center mb-3">
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </div>
         {[1, 2].map((i) => (
           <div key={i} className="p-3 border rounded-md mb-3 bg-background">
-            <div className="flex justify-between items-center mb-2"><Skeleton className="h-5 w-4/12" /><Skeleton className="h-8 w-8 rounded-md" /></div>
-            <div className="space-y-1.5"><Skeleton className="h-3 w-10/12" /><Skeleton className="h-3 w-8/12" /></div>
+            <div className="flex justify-between items-center mb-2">
+              <Skeleton className="h-5 w-4/12" />
+              <Skeleton className="h-8 w-8 rounded-md" />
+            </div>
+            <div className="space-y-1.5">
+              <Skeleton className="h-3 w-10/12" />
+              <Skeleton className="h-3 w-8/12" />
+            </div>
           </div>
         ))}
       </CardContent>
@@ -361,7 +410,9 @@ export function ModelManager() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="grow h-screen flex flex-col">
+      <ModeToggle hide={true} />
+      <TablepilotHeader title="Tablepilot" currentTab="models" />
       <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center space-x-4">
           <Input
@@ -369,20 +420,18 @@ export function ModelManager() {
             placeholder="Search providers or models..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm h-9"
+            className="max-w-sm h-9 rounded-full"
           />
           <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              onClick={openAddProviderDialogInternal}
-            >
+            <Button variant="outline" onClick={openAddProviderDialogInternal}>
               <PlusIcon className="h-4 w-4 mr-2" />
               Add New Provider
             </Button>
           </div>
         </div>
       </div>
-      <div className="flex-grow overflow-auto">
+
+      <ScrollArea className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           {filteredProviders.length === 0 && searchQuery ? (
             <div className="text-center text-muted-foreground py-10">
@@ -405,7 +454,7 @@ export function ModelManager() {
             ))
           )}
         </div>
-      </div>
+      </ScrollArea>
 
       <ProviderFormDialog
         isOpen={isProviderFormOpen}
