@@ -9,6 +9,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Card,
+    CardContent,
+    // CardMedia, // Not available, will use img directly
+    CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Table,
@@ -22,7 +28,7 @@ import { JSONObject } from "@/json";
 import React, { useEffect, useState } from "react";
 
 interface PreviewData {
-  type: "list" | "csv" | string;
+  type: "list" | "csv" | "image" | string;
   data?: string[];
   rows?: JSONObject[];
 }
@@ -136,10 +142,33 @@ export const DatasetPreviewDialog: React.FC<DatasetPreviewDialogProps> = ({
                 ) : (
                   <div>CSV has no rows to display.</div>
                 )
+              ) : data.type === "image" && Array.isArray(data.data) ? (
+                <div className="flex flex-wrap justify-center p-4">
+                  {(data.data as string[]).map((item, index) => {
+                    const isBase64 = item.startsWith("data:image");
+                    const filename = isBase64
+                      ? `Image ${index + 1}`
+                      : item.substring(item.lastIndexOf("/") + 1);
+                    return (
+                      <Card key={`image-${index}`} className="m-2 w-48">
+                        <img
+                          src={item}
+                          alt={`Preview ${index + 1}`}
+                          className="object-contain h-40 w-full rounded-t-lg"
+                        />
+                        <CardContent className="p-2">
+                          <p className="text-sm text-center mt-1 truncate" title={filename}>
+                            {filename}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               ) : (
                 <div>
-                  Data loaded. Preview for this data type is not yet implemented
-                  or data is empty.
+                  Preview for this data type is not yet implemented or the data
+                  is empty/invalid.
                 </div>
               )}
             </>
