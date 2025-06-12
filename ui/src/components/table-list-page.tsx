@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ModeToggle } from "./darkmode";
 import { Button } from "./ui/button.tsx";
+import { Input } from "./ui/input.tsx";
 import { TablepilotHeader } from "./header.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 
@@ -24,11 +25,10 @@ export function TableListPage() {
     openNewTableDialog,
     withForm,
     withRows,
-    // withTable, // Removed as unused
-    // withSubmitCallback, // Removed as unused
   } = useCreateTableDialog();
-  const [importCSVOpen, setImportCSVOpen] = useState(false); // This is used by ImportFileDialog
+  const [importCSVOpen, setImportCSVOpen] = useState(false);
   const { tables, refreshTables } = useTables();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchTables = useCallback(async () => {
     // No setLoading as TableList will handle its own loading state
@@ -58,27 +58,36 @@ export function TableListPage() {
           openNewTableDialog();
         }}
       />
-      <div className="bg-background sticky top-0 z-10 pt-4 pb-1"> {/* Changed pb-2 to pb-1 and removed border-b */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              openNewTableDialog();
-            }}
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Add New Table
-          </Button>
-          <Button variant="outline" onClick={() => setImportCSVOpen(true)}>
-            <FileIcon className="w-4 h-4 mr-2" />
-            Import
-          </Button>
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center space-x-4">
+          <Input
+            type="text"
+            placeholder="Search tables..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm h-9"
+          />
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                openNewTableDialog();
+              }}
+            >
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Add New Table
+            </Button>
+            <Button variant="outline" onClick={() => setImportCSVOpen(true)}>
+              <FileIcon className="w-4 h-4 mr-2" />
+              Import
+            </Button>
+          </div>
         </div>
       </div>
       <ScrollArea className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="tab-content-container">
-            <TableList />
+            <TableList searchQuery={searchQuery} />
           </div>
         </div>
       </ScrollArea>
@@ -86,16 +95,18 @@ export function TableListPage() {
   );
 }
 
-function TableList() {
+interface TableListProps {
+  searchQuery: string;
+}
+
+function TableList({ searchQuery }: TableListProps) {
   const [loading, setLoading] = useState(true);
   const {
     openNewTableDialog,
     withForm,
-    // withRows, // Removed as unused in TableList's instance
     withTable,
     withSubmitCallback,
   } = useCreateTableDialog();
-  // const [importCSVOpen, setImportCSVOpen] = useState(false); // Removed as unused in TableList
   const { tables, refreshTables } = useTables();
   const navigate = useNavigate();
 
@@ -108,7 +119,7 @@ function TableList() {
     } finally {
       setLoading(false);
     }
-  }, [refreshTables]); // Added refreshTables to dependency array
+  }, [refreshTables]);
 
   useEffect(() => {
     fetchTables();
@@ -130,7 +141,6 @@ function TableList() {
 
   return (
     <div className="grow overflow-auto h-full flex flex-col pt-6">
-      {/* Removed ImportFileDialog from here */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading
           ? Array.from({ length: 4 }).map((_, index) => (
@@ -147,9 +157,13 @@ function TableList() {
                 </CardFooter>
               </Card>
             ))
-          : tables.map((table) => (
-              <CommonCard
-                key={table.id}
+          : tables
+              .filter((table) =>
+                table.name.toLowerCase().includes(searchQuery.toLowerCase()),
+              )
+              .map((table) => (
+                <CommonCard
+                  key={table.id}
                 name={table.name}
                 onClick={() => navigate(`/tables/${table.id}`)}
                 onEdit={() => handleEditTableClick(table.id)}
@@ -162,7 +176,6 @@ function TableList() {
                 <p className="line-clamp-4">{table.description}</p>
               </CommonCard>
             ))}
-        {/* The Add New Table and Import buttons/card has been removed from here */}
       </div>
     </div>
   );

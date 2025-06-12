@@ -20,11 +20,13 @@ import { useCallback, useEffect, useState } from "react";
 import { ModeToggle } from "./darkmode";
 import { TablepilotHeader } from "./header";
 import { ScrollArea } from "./ui/scroll-area";
-import { Button } from "./ui/button"; // Import Button
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 export function WorkflowListPage() {
   const [workflows, setWorkflows] = useState<WorkflowInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [workflow, setWorkflow] = useState<undefined | Workflow>(undefined);
   const [runWorkflowOpen, setRunWorkflowOpen] = useState(false);
   const [WorkflowBuilderOpen, setRunWorkflowBuilderOpen] = useState(false);
@@ -33,10 +35,10 @@ export function WorkflowListPage() {
     setLoading(true);
     try {
       const wf = await getWorkflows();
-      setWorkflows(wf.workflows ?? []); // Ensure workflows is an array
+      setWorkflows(wf.workflows ?? []);
     } catch (error) {
       console.error("Failed to fetch workflows:", error);
-      setWorkflows([]); // Set to empty array on error
+      setWorkflows([]);
     } finally {
       setLoading(false);
     }
@@ -50,18 +52,27 @@ export function WorkflowListPage() {
     <div className="grow h-full flex flex-col">
       <ModeToggle hide={true} />
       <TablepilotHeader title="Tablepilot" currentTab="workflows" />
-      <div className="bg-background sticky top-0 z-10 pt-4 pb-1"> {/* Changed py-4 to pt-4 pb-1 and removed border-b */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-end">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setWorkflow(undefined);
-              setRunWorkflowBuilderOpen(true);
-            }}
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Add New Workflow
-          </Button>
+      <div className="bg-background sticky top-0 z-10 pt-4 pb-1">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center space-x-4">
+          <Input
+            type="text"
+            placeholder="Search workflows..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm h-9"
+          />
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setWorkflow(undefined);
+                setRunWorkflowBuilderOpen(true);
+              }}
+            >
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Add New Workflow
+            </Button>
+          </div>
         </div>
       </div>
       <WorkflowExecutionDialog
@@ -80,22 +91,27 @@ export function WorkflowListPage() {
         <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="tab-content-container">
             <div className="max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-              {loading
-                ? Array.from({ length: 4 }).map((_, index) => (
-                    <Card key={index} className="w-80">
-                      <CardHeader>
-                        <Skeleton className="h-6 w-3/4 mb-2" />
-                      </CardHeader>
-                      <CardContent>
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                      </CardContent>
-                      <CardFooter>
-                        <Skeleton className="h-4 w-1/4" />
-                      </CardFooter>
-                    </Card>
-                  ))
-                : workflows.map((wf) => (
+              {loading &&
+                Array.from({ length: 4 }).map((_, index) => (
+                  <Card key={index} className="w-80">
+                    <CardHeader>
+                      <Skeleton className="h-6 w-3/4 mb-2" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                    <CardFooter>
+                      <Skeleton className="h-4 w-1/4" />
+                    </CardFooter>
+                  </Card>
+                ))}
+              {!loading &&
+                workflows
+                  .filter((wf) =>
+                    wf.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                  )
+                  .map((wf) => (
                     <CommonCard
                       key={wf.id}
                       name={wf.name}
@@ -117,7 +133,15 @@ export function WorkflowListPage() {
                       <p className="line-clamp-4">{wf.description}</p>
                     </CommonCard>
                   ))}
-              {/* The Add New Workflow Card has been removed */}
+              {!loading &&
+                workflows.filter((wf) =>
+                  wf.name.toLowerCase().includes(searchQuery.toLowerCase()),
+                ).length === 0 &&
+                searchQuery && (
+                  <div className="col-span-full text-center text-muted-foreground py-10">
+                    No workflows found matching your search.
+                  </div>
+                )}
             </div>
           </div>
         </div>

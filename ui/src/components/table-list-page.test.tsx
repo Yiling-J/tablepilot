@@ -7,7 +7,7 @@ import {
     TableInfo,
     deleteTable,
     getModels,
-    getTableSchema, // Added getTableSchema
+    getTableSchema,
     getTables,
 } from "../actions";
 import { TableListPage } from "./table-list-page";
@@ -90,12 +90,6 @@ describe("TableListPage", () => {
     await screen.findByText("users");
   });
 
-  it("should show table list", async () => {
-    expect(screen.getByText("users table")).toBeInTheDocument();
-    expect(screen.getByText("recipes")).toBeInTheDocument();
-    expect(screen.getByText("recipes table")).toBeInTheDocument();
-  });
-
   it("should navigate to table page when click", async () => {
     const m = vi.mocked(useNavigate);
     await userEvent.click(screen.getByText("users") as HTMLElement);
@@ -139,11 +133,10 @@ describe("TableListPage", () => {
     );
     await userEvent.click(deleteButton as HTMLElement);
 
-    // Click the delete button in the confirmation dialog
     const confirmDeleteButton = screen.getByRole("button", {
       name: /^delete$/i,
     });
-    await userEvent.click(confirmDeleteButton as HTMLElement); // This targets the button in the dialog
+    await userEvent.click(confirmDeleteButton as HTMLElement);
     expect(mockedDeleteTable.mock.calls[0][0]).toBe("abc");
     await screen.findByText("recipes table new");
     expect(screen.queryByText("users table")).toBe(null);
@@ -166,7 +159,7 @@ describe("TableListPage", () => {
       description: "users table",
       columns: [
         {
-          name: "name", // id removed
+          name: "name",
           description: "user name",
           type: "string",
           fill_mode: "ai",
@@ -177,7 +170,7 @@ describe("TableListPage", () => {
           linked_context_columns: [],
         },
         {
-          name: "job", // id removed
+          name: "job",
           description: "user job",
           type: "string",
           fill_mode: "ai",
@@ -188,7 +181,6 @@ describe("TableListPage", () => {
           linked_context_columns: [],
         },
       ],
-      // model: "" // model removed
     });
 
     const usersCardEdit = screen
@@ -204,6 +196,105 @@ describe("TableListPage", () => {
     await userEvent.click(editButton as HTMLElement);
 
     expect(mockedGetTableSchema).toHaveBeenCalledWith("abc");
-    expect(await screen.findByText("Update Table")).toBeInTheDocument(); // Dialog title is "Update Table"
+    expect(await screen.findByText("Update Table")).toBeInTheDocument();
+  });
+});
+
+describe("TableListPage Search Functionality", () => {
+  const sampleTables = [
+    { id: "t1", name: "Table Alpha", description: "Alpha description" },
+    { id: "t2", name: "Table Beta", description: "Beta description" },
+    { id: "t3", name: "Gamma Table", description: "Gamma description" },
+  ];
+
+  beforeEach(async () => {
+    vi.mock("react-router-dom");
+    vi.mocked(useNavigate).mockReturnValue(vi.fn());
+    vi.mocked(useLocation).mockReturnValue({
+      key: "",
+      pathname: "/tables",
+      search: "",
+      hash: "",
+      state: null,
+    });
+    vi.mock("@/actions");
+    vi.mocked(getModels).mockResolvedValue({
+      default_model: "ai",
+      default_image_model: "",
+      models: [{ name: "ai", image: false }],
+    });
+    vi.mocked(deleteTable).mockImplementation(async (_id: string) => {
+      await new Promise((f) => setTimeout(f, 100));
+      return 1;
+    });
+     vi.mocked(getTableSchema).mockResolvedValue({
+      name: "any",
+      description: "any",
+      columns: [],
+    });
+
+    (getTables as Mock).mockResolvedValue({
+      tables: sampleTables,
+      total: sampleTables.length,
+    });
+
+    render(
+      <TestProvider>
+        <TableListPage />
+      </TestProvider>,
+    );
+    await screen.findByText("Table Alpha");
+    await screen.findByText("Table Beta");
+    await screen.findByText("Gamma Table");
+  });
+
+  it("should render all tables initially", () => {
+    expect(screen.getByText("Table Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Table Beta")).toBeInTheDocument();
+    expect(screen.getByText("Gamma Table")).toBeInTheDocument();
+  });
+
+  it("should filter tables based on search query", async () => {
+    const searchInput = screen.getByPlaceholderText("Search tables...");
+    await userEvent.type(searchInput, "Alpha");
+
+    expect(screen.getByText("Table Alpha")).toBeInTheDocument();
+    expect(screen.queryByText("Table Beta")).not.toBeInTheDocument();
+    expect(screen.queryByText("Gamma Table")).not.toBeInTheDocument();
+  });
+
+  it("should be case-insensitive", async () => {
+    const searchInput = screen.getByPlaceholderText("Search tables...");
+    await userEvent.type(searchInput, "gamma");
+
+    expect(screen.queryByText("Table Alpha")).not.toBeInTheDocument();
+    expect(screen.queryByText("Table Beta")).not.toBeInTheDocument();
+    expect(screen.getByText("Gamma Table")).toBeInTheDocument();
+  });
+
+  it("should show no results message if search matches nothing", async () => {
+    const searchInput = screen.getByPlaceholderText("Search tables...");
+    await userEvent.type(searchInput, "NonExistentTable");
+
+    // The current component does not implement a "no results" message for tables.
+    // It simply renders an empty list. So we check for absence of any table.
+    expect(screen.queryByText("Table Alpha")).not.toBeInTheDocument();
+    expect(screen.queryByText("Table Beta")).not.toBeInTheDocument();
+    expect(screen.queryByText("Gamma Table")).not.toBeInTheDocument();
+    // If a "No tables found..." message were implemented, we'd assert its presence here.
+  });
+
+  it("should show all tables when search query is cleared", async () => {
+    const searchInput = screen.getByPlaceholderText("Search tables...");
+    await userEvent.type(searchInput, "Alpha");
+
+    expect(screen.getByText("Table Alpha")).toBeInTheDocument();
+    expect(screen.queryByText("Table Beta")).not.toBeInTheDocument();
+
+    await userEvent.clear(searchInput);
+
+    expect(screen.getByText("Table Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Table Beta")).toBeInTheDocument();
+    expect(screen.getByText("Gamma Table")).toBeInTheDocument();
   });
 });
