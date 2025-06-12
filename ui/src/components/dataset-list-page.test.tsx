@@ -15,11 +15,17 @@ vi.mock('react-router-dom', async () => {
     useLocation: vi.fn(),
   };
 });
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: vi.fn(() => ({
-    toast: vi.fn(),
-  })),
-}));
+
+import * as ActualToastHook from '@/hooks/use-toast';
+vi.mock('@/hooks/use-toast', async (importOriginal) => {
+  const actual = await importOriginal<typeof ActualToastHook>();
+  return {
+    ...actual,
+    useToast: vi.fn(() => ({
+      toast: vi.fn(),
+    })),
+  };
+});
 
 
 describe('DatasetListPage Search Functionality', () => {
@@ -118,5 +124,142 @@ describe('DatasetListPage Search Functionality', () => {
         expect(screen.getByText('Dataset Beta')).toBeInTheDocument();
         expect(screen.getByText('Gamma Dataset')).toBeInTheDocument();
     });
+  });
+});
+
+vi.mock('@/components/dialog/dataset/dataset', () => ({
+  CreateDatasetDialog: vi.fn(({ isOpen, onClose, onCreate, dataset }: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (!isOpen) return null;
+    return (
+      <div data-testid="mock-create-dataset-dialog">
+        <button
+          data-testid="mock-create-dataset-submit"
+          onClick={() => {
+            const type = dataset?.type || 'csv';
+            onCreate({
+              name: dataset?.name || 'New Mocked Dataset',
+              description: dataset?.description || 'Mocked description',
+              type: type,
+              files: type === 'csv' ? [new File([''], 'mock.csv', { type: 'text/csv' })] : undefined,
+              options: type === 'list' ? ['opt1'] : undefined,
+            });
+          }}
+        >
+          Create/Update
+        </button>
+        <button data-testid="mock-create-dataset-close" onClick={onClose}>Close</button>
+      </div>
+    );
+  }),
+}));
+vi.mock('@/components/dialog/dataset/info', () => ({
+  DatasetInfoDialog: vi.fn(() => <div data-testid="mock-dataset-info-dialog" />),
+}));
+vi.mock('@/components/dialog/dataset/preview', () => ({
+  DatasetPreviewDialog: vi.fn(() => <div data-testid="mock-dataset-preview-dialog" />),
+}));
+
+vi.mock('@/components/ui/common-card', () => ({
+  CommonCard: vi.fn(({ name, children, onDelete, onEdit, onClick, badgeText }: {
+    name: string;
+    children: React.ReactNode;
+    onDelete?: () => void;
+    onEdit?: () => void;
+    onClick: () => void;
+    badgeText?: string;
+  }) => (
+    <div data-testid={`common-card-${name.replace(/\s+/g, "-")}`}>
+      <button onClick={onClick} data-testid={`view-${name.replace(/\s+/g, "-")}`}>{name}</button>
+      <div>{children}</div>
+      {badgeText && <span>{badgeText}</span>}
+      {onDelete && <button onClick={onDelete} data-testid={`delete-${name.replace(/\s+/g, "-")}`}>Delete</button>}
+      {onEdit && <button onClick={onEdit} data-testid={`edit-${name.replace(/\s+/g, "-")}`}>Edit</button>}
+    </div>
+  )),
+}));
+
+
+describe('DatasetListPage Create, Delete and Refresh', () => {
+  const initialDatasets = [
+    { id: '1', name: 'Dataset Alpha', description: 'First one', type: 'csv' as const },
+    { id: '2', name: 'Dataset Beta', description: 'Second one', type: 'list' as const },
+  ];
+
+  const newDataset = { id: '3', name: 'New Mocked Dataset', description: 'Mocked description', type: 'csv' as const };
+
+  const mockGetDatasets = actions.getDatasets as Mock;
+  const mockCreateDataset = actions.createDataset as Mock;
+  const mockDeleteDataset = actions.deleteDataset as Mock;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    (useNavigate as Mock).mockReturnValue(vi.fn());
+    (useLocation as Mock).mockReturnValue({
+        key: 'testKeyCUD',
+        pathname: '/datasets',
+        search: '',
+        hash: '',
+        state: null,
+    });
+
+    mockCreateDataset.mockResolvedValue({ ...newDataset });
+    mockDeleteDataset.mockResolvedValue(undefined);
+  });
+
+  it('should refresh the list after creating a new dataset', async () => {
+    mockGetDatasets
+      .mockResolvedValueOnce({ datasets: initialDatasets })
+      .mockResolvedValueOnce({ datasets: [...initialDatasets, newDataset] });
+
+    render(
+      <MemoryRouter>
+        <TestProvider>
+          <DatasetListPage />
+        </TestProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText('Dataset Alpha')).toBeInTheDocument());
+    expect(screen.getByText('Dataset Beta')).toBeInTheDocument();
+
+    const addNewButton = screen.getByRole('button', { name: /Add New Dataset/i });
+    await userEvent.click(addNewButton);
+
+    await waitFor(() => expect(screen.getByTestId('mock-create-dataset-dialog')).toBeInTheDocument());
+
+    const submitButton = screen.getByTestId('mock-create-dataset-submit');
+    await userEvent.click(submitButton);
+
+    await waitFor(() => expect(screen.getByText('New Mocked Dataset')).toBeInTheDocument(), { timeout: 2000 });
+
+    expect(mockCreateDataset).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockGetDatasets).toHaveBeenCalledTimes(2)); // Initial load + load after create
+  });
+
+  it('should refresh the list after deleting a dataset', async () => {
+    mockGetDatasets
+      .mockResolvedValueOnce({ datasets: initialDatasets })
+      .mockResolvedValueOnce({ datasets: [initialDatasets[1]] }); // Dataset Alpha (id: '1') is removed
+
+    render(
+      <MemoryRouter>
+        <TestProvider>
+          <DatasetListPage />
+        </TestProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(screen.getByText('Dataset Alpha')).toBeInTheDocument());
+    expect(screen.getByText('Dataset Beta')).toBeInTheDocument();
+
+    const deleteButtonAlpha = screen.getByTestId('delete-Dataset-Alpha');
+    await userEvent.click(deleteButtonAlpha);
+    // Note: Mocked CommonCard's onDelete is called directly, no confirmation dialog step here.
+
+    await waitFor(() => expect(screen.queryByText('Dataset Alpha')).not.toBeInTheDocument(), { timeout: 2000 });
+    expect(screen.getByText('Dataset Beta')).toBeInTheDocument();
+
+    expect(mockDeleteDataset).toHaveBeenCalledWith('1');
+    await waitFor(() => expect(mockGetDatasets).toHaveBeenCalledTimes(2)); // Initial load + load after delete
   });
 });

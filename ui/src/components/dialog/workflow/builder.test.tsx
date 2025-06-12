@@ -13,7 +13,7 @@ import {
     updateWorkflow, // Added updateWorkflow here
 } from "@/actions";
 import { TestProvider } from "@/test/helpers/test-provider";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, waitFor } from "@testing-library/react"; // Added waitFor
 import userEvent from "@testing-library/user-event";
 import WorkflowBuilderDialog from "./builder";
 
@@ -302,6 +302,10 @@ describe("Workflow Builder", () => {
     const fileVarSelect = screen.getByRole("combobox", { name: /file/i });
     await userEvent.click(fileVarSelect);
     const fileVarListbox = await screen.findByRole("listbox");
+    // Wait for the option to appear before trying to click it
+    await waitFor(() => {
+      expect(within(fileVarListbox).getByText("importFileVar")).toBeInTheDocument();
+    });
     await userEvent.click(within(fileVarListbox).getByText("importFileVar"));
     await userEvent.click(screen.getByText("Create new table").parentElement!);
     const tableOptionsListbox = await screen.findByRole("listbox");

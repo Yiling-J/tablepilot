@@ -32,24 +32,11 @@ export function DatasetListPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchDatasetsCallback = useCallback(async () => {
-    // This callback is passed to DatasetList to trigger a data refresh in the parent
-    // (e.g., after a create/update operation initiated from a dialog owned by DatasetListPage).
-    // The actual state update for the list displayed happens in DatasetList itself.
-    // setLoading for DatasetListPage itself is not managed here, as DatasetList handles its own loading state.
-    try {
-      await getDatasets(); // Calling this primarily to ensure any broader app state reliant on this fetch is updated.
-    } catch (error) {
-      console.error("Failed to fetch datasets in parent callback:", error);
-      toast({
-        title: "Error",
-        description:
-          "Failed to refresh datasets after operation. Please try again later.",
-        variant: "destructive",
-      });
-    }
-    // setLoading(false); // setLoading for DatasetListPage is not managed by this callback.
+    // This callback signals to DatasetList that it needs to re-fetch its data.
+    setRefreshKey(prevKey => prevKey + 1);
   }, []);
 
   const handleOpenEditDialog = (dataset: DatasetInfo) => {
@@ -79,7 +66,7 @@ export function DatasetListPage() {
         description: `Dataset "${data.name}" created successfully.`,
       });
       setIsCreateDialogOpen(false);
-      fetchDatasetsCallback();
+      fetchDatasetsCallback(); // This will update refreshKey, triggering child list refresh
     } catch (error: unknown) {
       toast({
         title: "Error Creating Dataset",
@@ -180,6 +167,7 @@ export function DatasetListPage() {
               fetchDatasets={fetchDatasetsCallback}
               onEditDataset={handleOpenEditDialog}
               searchQuery={searchQuery}
+              refreshKey={refreshKey}
             />
           </div>
         </div>
@@ -192,12 +180,14 @@ interface DatasetListProps {
   fetchDatasets: () => Promise<void>;
   onEditDataset: (dataset: DatasetInfo) => void;
   searchQuery: string;
+  refreshKey: number;
 }
 
 function DatasetList({
   fetchDatasets,
   onEditDataset,
   searchQuery,
+  refreshKey,
 }: DatasetListProps) {
   const [loading, setLoading] = useState(true);
   const [datasets, setDatasets] = useState<DatasetInfo[]>([]);
@@ -221,7 +211,7 @@ function DatasetList({
 
   useEffect(() => {
     fetchDatasetsInternal();
-  }, [fetchDatasetsInternal]);
+  }, [fetchDatasetsInternal, refreshKey]);
 
   return (
     <div className="grow overflow-auto h-full flex flex-col pt-6">
