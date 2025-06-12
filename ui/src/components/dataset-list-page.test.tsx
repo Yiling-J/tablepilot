@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { DatasetListPage } from './dataset-list-page';
 import * as actions from '@/actions';
+import { DatasetInfo, DatasetType } from '@/actions'; // Add this line
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { TestProvider } from '@/test/helpers/test-provider';
 
@@ -16,6 +17,22 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+// ... other imports
+
+interface MockCreateDatasetDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (payload: {
+    name: string;
+    description: string;
+    type: DatasetType; // Use DatasetType here
+    files?: File[];
+    options?: string[];
+  }) => void;
+  dataset?: DatasetInfo; // Use DatasetInfo here
+}
+
+// ... rest of the file
 import * as ActualToastHook from '@/hooks/use-toast';
 vi.mock('@/hooks/use-toast', async (importOriginal) => {
   const actual = await importOriginal<typeof ActualToastHook>();
@@ -128,7 +145,7 @@ describe('DatasetListPage Search Functionality', () => {
 });
 
 vi.mock('@/components/dialog/dataset/dataset', () => ({
-  CreateDatasetDialog: vi.fn(({ isOpen, onClose, onCreate, dataset }: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  CreateDatasetDialog: vi.fn(({ isOpen, onClose, onCreate, dataset }: MockCreateDatasetDialogProps) => {
     if (!isOpen) return null;
     return (
       <div data-testid="mock-create-dataset-dialog">
