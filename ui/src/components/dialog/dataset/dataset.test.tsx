@@ -3,7 +3,7 @@ import { vi, describe, test, expect, beforeEach, Mock, afterEach } from 'vitest'
 import { ReactNode } from 'react';
 import { CreateDatasetDialog, CreateDatasetDialogProps } from './dataset';
 import { DatasetInfo } from '@/actions';
-import { DragEndEvent } from '@dnd-kit/core';
+import { DragEndEvent, Active, Over, UniqueIdentifier } from '@dnd-kit/core';
 
 vi.mock('@/actions', () => ({}));
 vi.mock('@/urls', () => ({
@@ -16,6 +16,7 @@ type MockDatasetInfo = {
   description: string;
   type: "list" | "csv" | "image";
   data: string[];
+  columns: string[];
 };
 
 let dndOnDragEnd: ((event: DragEndEvent) => void) | undefined = undefined;
@@ -90,7 +91,7 @@ describe('CreateDatasetDialog Management', () => {
     HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
         drawImage: vi.fn(),
         toDataURL: vi.fn(() => 'mock-data-url-canvas'),
-    })) as any;
+    })) as unknown as () => Partial<CanvasRenderingContext2D> | null;
 
     const MockedFileReader = vi.fn((): FileReader => {
       const self = {
@@ -100,19 +101,19 @@ describe('CreateDatasetDialog Management', () => {
         result: null as string | ArrayBuffer | null,
 
         // Event handlers
-        onabort: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null),
-        onerror: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null),
-        onload: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null),
-        onloadend: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null),
-        onloadstart: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null),
-        onprogress: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null),
+        onabort: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
+        onerror: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
+        onload: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
+        onloadend: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
+        onloadstart: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
+        onprogress: null as (((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null),
 
         // Methods
         abort: vi.fn<() => void>(),
         readAsArrayBuffer: vi.fn<(blob: Blob) => void>(),
         readAsBinaryString: vi.fn<(blob: Blob) => void>(),
         readAsDataURL: vi.fn((_blob: Blob): void => { // Ensure explicit void return for readAsDataURL
-          const useFake = vi.isMockFunction(setTimeout) && (setTimeout as any).clock;
+          const useFake = vi.isMockFunction(setTimeout) && (setTimeout as unknown as { clock: unknown }).clock;
           const delayFn = useFake ? setTimeout : (fn: () => void) => Promise.resolve().then(fn);
 
           self.readyState = 1; // LOADING
@@ -120,7 +121,7 @@ describe('CreateDatasetDialog Management', () => {
             self.result = 'mock-data-url-filereader';
             self.readyState = 2; // DONE
             if (self.onload) {
-              self.onload.call(self as any, { target: self } as unknown as ProgressEvent<FileReader>);
+              self.onload.call(self as FileReader, { target: self } as unknown as ProgressEvent<FileReader>);
             }
           }, 0);
         }),
@@ -138,9 +139,9 @@ describe('CreateDatasetDialog Management', () => {
     Object.defineProperty(MockedFileReader, 'LOADING', { value: 1, writable: false });
     Object.defineProperty(MockedFileReader, 'DONE', { value: 2, writable: false });
 
-    vi.spyOn(window, 'FileReader').mockImplementation(MockedFileReader as any);
+    vi.spyOn(window, 'FileReader').mockImplementation(MockedFileReader as unknown as typeof FileReader);
 
-    // @ts-ignore
+    // @ts-expect-error window.Image is not available in a test environment
     window.Image = vi.fn(function() {
       const img = new OriginalImage();
       let _src = '';
@@ -150,7 +151,7 @@ describe('CreateDatasetDialog Management', () => {
             _src = value;
             img.width = 100;
             img.height = 100;
-            const useFake = vi.isMockFunction(setTimeout) && (setTimeout as any).clock;
+            const useFake = vi.isMockFunction(setTimeout) && (setTimeout as unknown as { clock: unknown }).clock;
             const delayFn = useFake ? setTimeout : (fn: () => void) => Promise.resolve().then(fn);
             delayFn(() => {
               if (img.onload) { // Null check before calling
@@ -167,7 +168,7 @@ describe('CreateDatasetDialog Management', () => {
     window.Image = OriginalImage;
     // Ensure fake timers are restored if a test block used them
     // Check if clock exists on setTimeout to determine if it's a Vitest fake timer
-    if (vi.isMockFunction(setTimeout) && (setTimeout as any).clock) {
+    if (vi.isMockFunction(setTimeout) && (setTimeout as unknown as { clock: unknown }).clock) {
         vi.useRealTimers();
     }
   });
@@ -248,17 +249,17 @@ describe('CreateDatasetDialog Management', () => {
   });
 
   describe('Dataset Update', () => {
-    const existingListDataset: MockDatasetInfo = { id: 'list1', name: 'Existing List', description: 'Old list description', type: 'list', data: ['Old Option 1']};
+    const existingListDataset: MockDatasetInfo = { id: 'list1', name: 'Existing List', description: 'Old list description', type: 'list', data: ['Old Option 1'], columns: []};
     test('should update a "list" type dataset', async () => {
-        render(<CreateDatasetDialog {...initialProps} dataset={existingListDataset as any} onClose={mockOnClose} onCreate={mockOnCreate} onUpdate={mockOnUpdate} />);
+        render(<CreateDatasetDialog {...initialProps} dataset={existingListDataset} onClose={mockOnClose} onCreate={mockOnCreate} onUpdate={mockOnUpdate} />);
         await act(async () => { fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Updated List Name' } });});
         await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Update' }))});
         expect(mockOnUpdate).toHaveBeenCalledWith(existingListDataset.id, expect.objectContaining({ name: 'Updated List Name' }));
     });
 
-    const existingCsvDataset: MockDatasetInfo = { id: 'csv1', name: 'Existing CSV', description: 'Old CSV file', type: 'csv', data: ['file1.csv', 'file2.csv', 'file3.csv']};
+    const existingCsvDataset: MockDatasetInfo = { id: 'csv1', name: 'Existing CSV', description: 'Old CSV file', type: 'csv', data: ['file1.csv', 'file2.csv', 'file3.csv'], columns: []};
     test('should update a "csv" type dataset by adding a new file', async () => {
-        render(<CreateDatasetDialog {...initialProps} dataset={existingCsvDataset as any} onClose={mockOnClose} onCreate={mockOnCreate} onUpdate={mockOnUpdate} />);
+        render(<CreateDatasetDialog {...initialProps} dataset={existingCsvDataset} onClose={mockOnClose} onCreate={mockOnCreate} onUpdate={mockOnUpdate} />);
         await findFileItemByName(existingCsvDataset.data[0]);
         const newCsvFile = mockFile('new_upload.csv', 'text/csv');
         const fileInput = screen.getByLabelText('CSV Files') as HTMLInputElement;
@@ -274,7 +275,7 @@ describe('CreateDatasetDialog Management', () => {
     test.skip('should update an "image" type dataset by adding a new image', async () => { /* Kept skipped */ });
 
     describe('DND Reordering', () => {
-        const existingCsvDatasetForDND: MockDatasetInfo = { id: 'csvDND', name: 'CSV DND', description: 'CSV DND test', type: 'csv', data: ['fileA.csv', 'fileB.csv', 'fileC.csv']};
+        const existingCsvDatasetForDND: MockDatasetInfo = { id: 'csvDND', name: 'CSV DND', description: 'CSV DND test', type: 'csv', data: ['fileA.csv', 'fileB.csv', 'fileC.csv'], columns: []};
         test('should reorder files for a "csv" dataset via DND and call onUpdate', async () => {
           // This test does not need fake timers as CSV file item rendering is synchronous after initial load
           render(
@@ -298,8 +299,8 @@ describe('CreateDatasetDialog Management', () => {
           expect(dndOnDragEnd).toBeDefined();
           if (dndOnDragEnd) {
             const dragEndEvent: DragEndEvent = {
-              active: { id: activeItemId } as any,
-              over: { id: overItemId } as any,
+              active: { id: activeItemId as UniqueIdentifier } as Active,
+              over: { id: overItemId as UniqueIdentifier } as Over,
             } as DragEndEvent;
 
             await act(async () => { // Wrap state update in act
